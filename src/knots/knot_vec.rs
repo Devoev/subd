@@ -10,15 +10,28 @@ pub struct KnotVec<T : RealField>(Vec<T>);
 
 impl<T : RealField + Copy> KnotVec<T> {
 
+    /// Constructs a new `KnotVec`.
+    /// If the `knots` are not sorted, `None` is returned.
     pub fn new(knots: Vec<T>) -> Option<Self> {
         if knots.is_sorted() { Some(KnotVec(knots)) }
         else { None }
     }
-
+    
+    /// Constructs a new `KnotVec` assuming that `knots` is sorted.
     pub fn from_sorted(knots: Vec<T>) -> Self {
         KnotVec(knots)
     }
+    
+    /// Constructs a uniform `KnotVec` of size `n+p+1`.
+    /// * `n` Number of basis functions.
+    /// * `p` Degree of the basis functions.
+    pub fn uniform(n: usize, p: usize) -> Self {
+        lin_space(T::zero()..=T::one(), n+p+1).collect()
+    }
 
+    /// Constructs an open uniform `KnotVec` of size `n+p+1`.
+    /// * `n` Number of basis functions.
+    /// * `p` Degree of the basis functions.
     pub fn open(n: usize, p: usize) -> Self {
         chain!(
             std::iter::repeat_n(T::zero(), p),
