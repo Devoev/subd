@@ -13,5 +13,9 @@ mod tests {
         println!("m: {:?}", m);
         println!("{}", Xi1);
         println!("{}", Xi2);
+
+        let t = 0.7;
+        let idx = Xi2.find_span(t);
+        println!("value {} in interval [{}, {})", t, Xi2[idx], Xi2[idx+1]);
     }
 }

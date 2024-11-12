@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter, Result};
-use std::ops::Index;
 use iter_num_tools::lin_space;
 use itertools::{chain, Itertools};
-use nalgebra::{DimAdd, RealField};
+use nalgebra::RealField;
+use std::fmt::{Display, Formatter, Result};
+use std::ops::Index;
 
 /// A knot vector of increasing knot values.
 ///
@@ -42,6 +42,11 @@ impl<T : RealField + Copy> KnotVec<T> {
 }
 
 impl<T : RealField> KnotVec<T> {
+
+    /// Returns the number of elements in the knot vector, i.e. `n+p+1`.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
     
     pub fn breaks(&self) -> Vec<&T> {
         self.0.iter().dedup().collect()
@@ -50,6 +55,14 @@ impl<T : RealField> KnotVec<T> {
     pub fn breaks_with_multiplicity(&self) -> (Vec<&T>, Vec<usize>) {
         let (m, z): (Vec<usize>, Vec<&T>) = self.0.iter().dedup_with_count().unzip();
         (z, m)
+    }
+
+    pub fn find_span(&self, t: T) -> usize {
+        let idx = self.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
+        match idx {
+            Ok(i) => { if i == self.len() - 1 { i - 1 } else { i } } // todo: return idx=n not i-1
+            Err(i) => { i - 1 }
+        }
     }
 }
 
