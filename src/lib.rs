@@ -24,8 +24,8 @@ mod tests {
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
 
-        let t = 0.4;
-        let idx = splines.find_span(t);
+        let t = 1.0;
+        let idx = splines.find_span(t).unwrap();
         println!("{}", knots);
         println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
     }

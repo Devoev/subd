@@ -42,11 +42,19 @@ impl<T : RealField + Copy> KnotVec<T> {
     }
 }
 
-impl<T : RealField> KnotVec<T> {
+impl<T : RealField + Copy> KnotVec<T> {
 
     /// Returns the number of elements in the knot vector, i.e. `n+p+1`.
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+    
+    pub fn first(&self) -> T {
+        self.0[0]
+    }
+    
+    pub fn last(&self) -> T {
+        self.0[self.len() - 1]
     }
     
     pub fn breaks(&self) -> Vec<&T> {
