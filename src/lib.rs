@@ -1,7 +1,9 @@
 mod knots;
+mod bspline;
 
 #[cfg(test)]
 mod tests {
+    use crate::bspline::spline_basis::SplineBasis;
     use crate::knots::knot_vec::KnotVec;
 
     #[test]
@@ -13,9 +15,18 @@ mod tests {
         println!("m: {:?}", m);
         println!("{}", Xi1);
         println!("{}", Xi2);
+    }
 
-        let t = 0.7;
-        let idx = Xi2.find_span(t);
-        println!("value {} in interval [{}, {})", t, Xi2[idx], Xi2[idx+1]);
+    #[test]
+    fn splines() {
+        let n = 4;
+        let p = 2;
+        let knots = KnotVec::<f64>::open(n, p);
+        let splines = SplineBasis::new(knots.clone(), n, p);
+
+        let t = 0.4;
+        let idx = splines.find_span(t);
+        println!("{}", knots);
+        println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
     }
 }

@@ -6,7 +6,8 @@ use std::ops::Index;
 
 /// A knot vector of increasing knot values.
 ///
-pub struct KnotVec<T : RealField>(Vec<T>);
+#[derive(Debug, Clone)]
+pub struct KnotVec<T : RealField>(pub(crate) Vec<T>);
 
 impl<T : RealField + Copy> KnotVec<T> {
 
@@ -55,14 +56,6 @@ impl<T : RealField> KnotVec<T> {
     pub fn breaks_with_multiplicity(&self) -> (Vec<&T>, Vec<usize>) {
         let (m, z): (Vec<usize>, Vec<&T>) = self.0.iter().dedup_with_count().unzip();
         (z, m)
-    }
-
-    pub fn find_span(&self, t: T) -> usize {
-        let idx = self.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
-        match idx {
-            Ok(i) => { if i == self.len() - 1 { i - 1 } else { i } } // todo: return idx=n not i-1
-            Err(i) => { i - 1 }
-        }
     }
 }
 
