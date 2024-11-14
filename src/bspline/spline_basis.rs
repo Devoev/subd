@@ -1,5 +1,5 @@
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::RealField;
+use nalgebra::{DVector, RealField, Vector};
 
 /// A B-spline basis of `n` basis functions of degree `p`.
 pub struct SplineBasis<T : RealField> {
@@ -31,5 +31,27 @@ impl<T : RealField + Copy> SplineBasis<T> {
             Ok(i) => { Ok(i) }
             Err(i) => { Ok(i - 1) }
         }
+    }
+
+    pub fn eval(&self, t: T) -> Vec<T> {
+        let idx = self.find_span(t).unwrap();
+        let mut left = vec![T::zero(); self.p + 1];
+        let mut right = vec![T::zero(); self.p + 1];
+        let mut B = vec![T::zero(); self.p + 1];
+        B[0] = T::one();
+        
+        for i in 0..self.p {
+            left[i + 1] = t - self.knots[idx - i];
+            right[i + 1] = self.knots[idx + i + 1] - t;
+            let mut saved = T::zero();
+
+            for j in 0..=i {
+                let tmp = B[j] / (right[j+1] + left[i-j+1]);
+                B[j] = saved + right[j+1]*tmp;
+                saved = left[i-j+1]*tmp;
+            }
+            B[i+1] = saved;
+        }
+        B
     }
 }
