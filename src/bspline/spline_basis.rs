@@ -33,13 +33,14 @@ impl<T : RealField + Copy> SplineBasis<T> {
         }
     }
 
+    /// Evaluates the spline basis at the parametric point `t`.
     pub fn eval(&self, t: T) -> Vec<T> {
         let idx = self.find_span(t).unwrap();
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
         let mut B = vec![T::zero(); self.p + 1];
         B[0] = T::one();
-        
+
         for i in 0..self.p {
             left[i + 1] = t - self.knots[idx - i];
             right[i + 1] = self.knots[idx + i + 1] - t;
