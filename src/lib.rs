@@ -3,7 +3,9 @@ mod bspline;
 
 #[cfg(test)]
 mod tests {
+    use nalgebra::point;
     use crate::bspline::spline_basis::SplineBasis;
+    use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
 
     #[test]
@@ -30,5 +32,20 @@ mod tests {
         println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
         
         println!("{:?}", splines.eval(t));
+    }
+
+    #[test]
+    fn spline_curves() {
+        let n = 3;
+        let p = 1;
+        let knots = KnotVec::<f64>::open(n, p);
+        let splines = SplineBasis::new(knots.clone(), n, p);
+        let curve = SplineCurve::new(
+            vec![point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]],
+            splines
+        );
+
+        let t = 0.25;
+        println!("{:?}", curve.eval(t));
     }
 }
