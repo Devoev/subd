@@ -33,7 +33,7 @@ impl<T : RealField + Copy> SplineBasis<T> {
         }
     }
 
-    /// Evaluates the spline basis at the parametric point `t`.
+    /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
     pub fn eval(&self, t: T) -> Vec<T> {
         let idx = self.find_span(t).unwrap();
         let mut left = vec![T::zero(); self.p + 1];
@@ -41,17 +41,17 @@ impl<T : RealField + Copy> SplineBasis<T> {
         let mut B = vec![T::zero(); self.p + 1];
         B[0] = T::one();
 
-        for i in 0..self.p {
-            left[i + 1] = t - self.knots[idx - i];
-            right[i + 1] = self.knots[idx + i + 1] - t;
+        for i in 1..=self.p {
+            left[i] = t - self.knots[idx - i + 1];
+            right[i] = self.knots[idx + i] - t;
             let mut saved = T::zero();
 
-            for j in 0..=i {
-                let tmp = B[j] / (right[j+1] + left[i-j+1]);
+            for j in 0..i {
+                let tmp = B[j] / (right[j+1] + left[i-j]);
                 B[j] = saved + right[j+1]*tmp;
-                saved = left[i-j+1]*tmp;
+                saved = left[i-j]*tmp;
             }
-            B[i+1] = saved;
+            B[i] = saved;
         }
         B
     }
