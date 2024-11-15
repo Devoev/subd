@@ -43,9 +43,9 @@ mod tests {
         let curve = SplineCurve::new(
             vec![point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]],
             splines
-        );
+        ).unwrap();
 
-        let t = 0.25;
+        let t = 1.0;
         println!("{:?}", curve.eval(t));
     }
 }

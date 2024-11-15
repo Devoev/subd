@@ -15,13 +15,15 @@ pub struct SplineCurve<T : RealField, const D : usize> {
 impl<T : RealField, const D : usize> SplineCurve<T, D> {
 
     /// Constructs a new `SplineCurve`.
-    pub fn new(control_points: Vec<Point<T, D>>, basis: SplineBasis<T>) -> Self {
-        SplineCurve { control_points, basis }
+    pub fn new(control_points: Vec<Point<T, D>>, basis: SplineBasis<T>) -> Option<Self> {
+        if control_points.len() == basis.n { Some(SplineCurve { control_points, basis }) }
+        else { None }
     }
 }
 
 impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
-
+    
+    /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, D> {
         let idx = self.basis.find_span(t).unwrap();
         let b = self.basis.eval(t);
