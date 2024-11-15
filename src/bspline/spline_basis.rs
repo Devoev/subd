@@ -3,8 +3,14 @@ use nalgebra::{DVector, RealField, Vector};
 
 /// A B-spline basis of `n` basis functions of degree `p`.
 pub struct SplineBasis<T : RealField> {
+    
+    /// Knot vector for the allocation of the basis functions.
     pub knots: KnotVec<T>,
+    
+    /// Number of basis functions.
     pub n: usize,
+    
+    /// Degree of basis functions.
     pub p: usize,
 }
 
