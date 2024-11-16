@@ -6,7 +6,6 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use iter_num_tools::lin_space;
     use nalgebra::point;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
@@ -41,16 +40,18 @@ mod tests {
     #[test]
     fn spline_curves() {
         let n = 5;
-        let p = 4;
+        let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
         let curve = SplineCurve::new(
             vec![point![-1.0, 0.0], point![-0.5, 0.7], point![0.0, 0.0], point![0.5, -0.7], point![1.0, 0.0]],
             splines
         ).unwrap();
+        
+        println!("{:?}", curve);
 
-        let N = 3000;
-        let data = lin_space(0.0..=1.0, N).map(|t| curve.eval(t));
+        let N = 1000;
+        let mesh = curve.mesh(N);
 
         let root_area = BitMapBackend::new("spline_curve.png", (800, 800))
             .into_drawing_area();
@@ -61,6 +62,6 @@ mod tests {
             .unwrap();
 
         ctx.configure_mesh().draw().unwrap();
-        ctx.draw_series(LineSeries::new(data.map(|x| (x[0], x[1])), RED)).unwrap();
+        ctx.draw_series(LineSeries::new(mesh.map(|x| (x[0], x[1])), RED)).unwrap();
     }
 }

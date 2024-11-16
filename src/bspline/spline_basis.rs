@@ -1,7 +1,8 @@
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::{DVector, RealField, Vector};
+use nalgebra::RealField;
 
 /// A B-spline basis of `n` basis functions of degree `p`.
+#[derive(Debug, Clone)]
 pub struct SplineBasis<T : RealField> {
     
     /// Knot vector for the allocation of the basis functions.
