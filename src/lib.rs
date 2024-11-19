@@ -1,5 +1,8 @@
+#![feature(impl_trait_in_assoc_type)]
+
 mod knots;
 mod bspline;
+mod mesh;
 
 #[cfg(test)]
 mod tests {
@@ -52,6 +55,7 @@ mod tests {
 
         let N = 1000;
         let mesh = curve.mesh(N);
+        let data = mesh.into_iter();
 
         let root_area = BitMapBackend::new("spline_curve.png", (800, 800))
             .into_drawing_area();
@@ -62,6 +66,6 @@ mod tests {
             .unwrap();
 
         ctx.configure_mesh().draw().unwrap();
-        ctx.draw_series(LineSeries::new(mesh.map(|x| (x[0], x[1])), RED)).unwrap();
+        ctx.draw_series(LineSeries::new(data.map(|x| (x[0], x[1])), RED)).unwrap();
     }
 }
