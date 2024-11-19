@@ -3,9 +3,9 @@ use itertools::{chain, Itertools};
 use nalgebra::RealField;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::Index;
+use std::vec;
 
 /// A knot vector of increasing knot values.
-///
 #[derive(Debug, Clone)]
 pub struct KnotVec<T : RealField>(pub(crate) Vec<T>);
 
@@ -78,6 +78,15 @@ impl <T : RealField> Index<usize> for KnotVec<T> {
 impl<T : RealField + Copy> FromIterator<T> for KnotVec<T> {
     fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
         Self::from_sorted(Vec::from_iter(iter))
+    }
+}
+
+impl <T : RealField + Copy> IntoIterator for KnotVec<T> {
+    type Item = T;
+    type IntoIter = vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
