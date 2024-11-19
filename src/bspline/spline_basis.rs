@@ -15,11 +15,16 @@ pub struct SplineBasis<T : RealField> {
     pub p: usize,
 }
 
-impl<T : RealField> SplineBasis<T> {
+impl<T : RealField + Copy> SplineBasis<T> {
 
-    /// Constructs a new `SplineBasis`.
+    /// Constructs a new [`SplineBasis`].
     pub fn new(knots: KnotVec<T>, n: usize, p: usize) -> Self {
         SplineBasis { knots, n, p }
+    }
+    
+    /// Constructs a new [`SplineBasis`] on an open knot vector of size `n+p+1`.
+    pub fn open(n: usize, p: usize) -> Self {
+        Self::new(KnotVec::open(n, p), n, p)
     }
 }
 
