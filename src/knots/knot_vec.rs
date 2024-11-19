@@ -23,11 +23,9 @@ impl<T : RealField + Copy> KnotVec<T> {
         KnotVec(knots)
     }
     
-    /// Constructs a uniform `KnotVec` of size `n+p+1`.
-    /// * `n` Number of basis functions.
-    /// * `p` Degree of the basis functions.
-    pub fn uniform(n: usize, p: usize) -> Self {
-        lin_space(T::zero()..=T::one(), n+p+1).collect()
+    /// Constructs a uniform `KnotVec` of size `num`.
+    pub fn uniform(num: usize) -> Self {
+        lin_space(T::zero()..=T::one(), num).collect()
     }
 
     /// Constructs an open uniform `KnotVec` of size `n+p+1`.
