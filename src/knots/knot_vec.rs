@@ -57,12 +57,12 @@ impl<T : RealField + Copy> KnotVec<T> {
         self.0[self.len() - 1]
     }
     
-    pub fn breaks(&self) -> Vec<&T> {
-        self.0.iter().dedup().collect()
+    pub fn breaks(&self) -> Vec<T> {
+        self.0.iter().dedup().copied().collect()
     }
     
-    pub fn breaks_with_multiplicity(&self) -> (Vec<&T>, Vec<usize>) {
-        let (m, z): (Vec<usize>, Vec<&T>) = self.0.iter().dedup_with_count().unzip();
+    pub fn breaks_with_multiplicity(&self) -> (Vec<T>, Vec<usize>) {
+        let (m, z): (Vec<usize>, Vec<T>) = self.0.iter().dedup_with_count().unzip();
         (z, m)
     }
 }
