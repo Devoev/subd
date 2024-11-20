@@ -1,9 +1,8 @@
-use std::iter::zip;
-use iter_num_tools::lin_space;
-use nalgebra::{point, Isometry, Point, RealField};
 use crate::bspline::spline_basis::SplineBasis;
 use crate::knots::knot_vec::KnotVec;
-use crate::mesh::mesh::Mesh;
+use crate::mesh::univariate_mesh::UnivariateMesh;
+use nalgebra::{Point, RealField};
+use std::iter::zip;
 
 /// A B-spline curve embedded in `D`-dimensional euclidian space.
 #[derive(Debug, Clone)]
@@ -36,7 +35,7 @@ impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
     }
 
     /// Meshes this curve by linearly spacing the parametric domain with `num` steps.
-    pub fn mesh(self, num: usize) -> Mesh<T, D> {
-        Mesh::new(self, KnotVec::uniform(num))
+    pub fn mesh(self, num: usize) -> UnivariateMesh<T, D> {
+        UnivariateMesh::new(self, KnotVec::uniform(num))
     }
 }
