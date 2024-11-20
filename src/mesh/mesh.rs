@@ -19,11 +19,11 @@ impl<T: RealField, const D: usize> Mesh<T, D> {
     }
 }
 
-impl<T : RealField + Copy, const D : usize> IntoIterator for Mesh<T, D> {
+impl<T : RealField + Copy, const D : usize> IntoIterator for &Mesh<T, D> {
     type Item = Point<T, D>;
     type IntoIter = impl Iterator<Item = Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.parametric_mesh.breaks().into_iter().map(move |t| self.curve.eval(t))
+        self.parametric_mesh.breaks().map(|t| self.curve.eval(t))
     }
 }
