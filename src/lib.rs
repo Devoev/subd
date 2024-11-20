@@ -59,7 +59,7 @@ mod tests {
 
         let N = 1000;
         let mesh = curve.mesh(N);
-        let data = mesh.into_iter();
+        let data = mesh.nodes();
 
         let root_area = BitMapBackend::new("spline_curve.png", (800, 800))
             .into_drawing_area();

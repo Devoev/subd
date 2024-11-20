@@ -87,7 +87,7 @@ impl<T: RealField + Copy> Mesh for KnotVec<T> {
     }
 
     fn elems(&self) -> impl Iterator<Item=Self::Elem> {
-        zip(0..self.num_nodes(), 1..=self.num_nodes())
+        zip(0..self.num_nodes(), 1..=self.num_nodes()) // todo: update return value and type
     }
 }
 
