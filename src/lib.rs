@@ -18,7 +18,7 @@ mod tests {
     fn knots() {
         let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0]);
         let Xi2 = KnotVec::<f64>::open(6, 2);
-        let (Z, m) = Xi1.breaks_with_multiplicity();
+        let (m, Z): (Vec<_>, Vec<_>) = Xi1.breaks_with_multiplicity().unzip();
         println!("Z: {:?}", Z);
         println!("m: {:?}", m);
         println!("{}", Xi1);
@@ -50,7 +50,7 @@ mod tests {
             vec![point![-1.0, 0.0], point![-0.5, 0.7], point![0.0, 0.0], point![0.5, -0.7], point![1.0, 0.0]],
             splines
         ).unwrap();
-        
+
         println!("{:?}", curve);
 
         let N = 1000;

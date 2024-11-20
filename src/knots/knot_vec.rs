@@ -47,21 +47,24 @@ impl<T : RealField + Copy> KnotVec<T> {
         self.0.len()
     }
     
+    /// Returns the first knot.
     pub fn first(&self) -> T {
         self.0[0]
     }
     
+    /// Returns the last knot.
     pub fn last(&self) -> T {
         self.0[self.len() - 1]
     }
     
-    pub fn breaks(&self) -> Vec<T> {
-        self.0.iter().dedup().copied().collect()
+    /// Returns an iterator over the breaks, i.e. unique knot values.
+    pub fn breaks(&self) -> impl Iterator<Item=T> + '_ {
+        self.0.iter().copied().dedup()
     }
     
-    pub fn breaks_with_multiplicity(&self) -> (Vec<T>, Vec<usize>) {
-        let (m, z): (Vec<usize>, Vec<T>) = self.0.iter().dedup_with_count().unzip();
-        (z, m)
+    /// Returns an iterator over (multiplicity, break) pairs.
+    pub fn breaks_with_multiplicity(&self) -> impl Iterator<Item=(usize, T)> + '_ {
+        self.0.iter().copied().dedup_with_count()
     }
 }
 
