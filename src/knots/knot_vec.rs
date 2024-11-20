@@ -2,8 +2,10 @@ use iter_num_tools::lin_space;
 use itertools::{chain, Itertools};
 use nalgebra::RealField;
 use std::fmt::{Display, Formatter, Result};
+use std::iter::zip;
 use std::ops::Index;
 use std::vec;
+use crate::mesh::Mesh;
 
 /// A knot vector of increasing knot values.
 #[derive(Debug, Clone)]
@@ -46,25 +48,46 @@ impl<T : RealField + Copy> KnotVec<T> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-    
+
     /// Returns the first knot.
     pub fn first(&self) -> T {
         self.0[0]
     }
-    
+
     /// Returns the last knot.
     pub fn last(&self) -> T {
         self.0[self.len() - 1]
     }
-    
+
     /// Returns an iterator over the breaks, i.e. unique knot values.
     pub fn breaks(&self) -> impl Iterator<Item=T> + '_ {
         self.0.iter().copied().dedup()
     }
-    
+
     /// Returns an iterator over (multiplicity, break) pairs.
     pub fn breaks_with_multiplicity(&self) -> impl Iterator<Item=(usize, T)> + '_ {
         self.0.iter().copied().dedup_with_count()
+    }
+}
+
+impl<T: RealField + Copy> Mesh for KnotVec<T> {
+    type Node = T;
+    type Elem = (usize, usize);
+
+    fn num_nodes(&self) -> usize {
+        self.breaks().collect_vec().len()
+    }
+
+    fn nodes(&self) -> impl Iterator<Item=Self::Node> {
+        self.breaks()
+    }
+
+    fn num_elems(&self) -> usize {
+        self.num_nodes() - 1
+    }
+
+    fn elems(&self) -> impl Iterator<Item=Self::Elem> {
+        zip(0..self.num_nodes(), 1..=self.num_nodes())
     }
 }
 

@@ -6,6 +6,7 @@ mod mesh;
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
@@ -13,6 +14,7 @@ mod tests {
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use crate::mesh::Mesh;
 
     #[test]
     fn knots() {
@@ -23,6 +25,8 @@ mod tests {
         println!("m: {:?}", m);
         println!("{}", Xi1);
         println!("{}", Xi2);
+        println!("{:?}", Xi1.elems().collect_vec());
+        println!("{:?}", Xi2.elems().collect_vec());
     }
 
     #[test]
