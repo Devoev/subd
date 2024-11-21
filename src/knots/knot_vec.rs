@@ -1,9 +1,10 @@
 use iter_num_tools::lin_space;
-use itertools::{chain, Itertools};
+use itertools::{chain, Dedup, DedupWithCount, Itertools};
 use nalgebra::RealField;
 use std::fmt::{Display, Formatter, Result};
 use std::iter::zip;
 use std::ops::Index;
+use std::slice::Iter;
 use std::vec;
 use crate::mesh::Mesh;
 
@@ -41,6 +42,12 @@ impl<T : RealField + Copy> KnotVec<T> {
         ).collect()
     }
 }
+
+/// An iterator that yields the breakpoints of a [`KnotVec`].
+type Breaks<'a, T> = Dedup<Iter<'a, T>>;
+
+/// An iterator that yields the breakpoints with multiplicity of a [`KnotVec`].
+type BreaksWithMultiplicity<'a, T> = DedupWithCount<Iter<'a, T>>;
 
 impl<T : RealField + Copy> KnotVec<T> {
 
