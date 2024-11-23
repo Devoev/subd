@@ -82,7 +82,7 @@ impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     type ElemIter = impl Iterator<Item=(usize, usize)>;
 
     fn num_nodes(self) -> usize {
-        self.breaks().collect_vec().len()
+        self.breaks().count()
     }
 
     fn nodes(self) -> Self::NodeIter {
