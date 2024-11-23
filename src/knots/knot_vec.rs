@@ -121,6 +121,15 @@ impl <T : RealField + Copy> IntoIterator for KnotVec<T> {
     }
 }
 
+impl <'a, T : RealField + Copy> IntoIterator for &'a KnotVec<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 impl<T : RealField> Display for KnotVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self.0)
