@@ -20,23 +20,23 @@ impl<T: RealField, const D: usize> UnivariateMesh<T, D> {
     }
 }
 
-impl<T: RealField + Copy, const D: usize> Mesh for UnivariateMesh<T, D> {
-    type Node = Point<T, D>;
-    type Elem = (usize, usize);
+impl<T: RealField + Copy, const D: usize> Mesh for &UnivariateMesh<T, D> {
+    type NodeIter = impl Iterator<Item=Point<T, D>>;
+    type ElemIter = impl Iterator<Item=(usize, usize)>;
 
-    fn num_nodes(&self) -> usize {
+    fn num_nodes(self) -> usize {
         self.parametric_mesh.num_nodes()
     }
 
-    fn nodes(&self) -> impl Iterator<Item=Self::Node> {
-        self.parametric_mesh.nodes().map(|t| self.curve.eval(t))
+    fn nodes(self) -> Self::NodeIter {
+        self.parametric_mesh.nodes().map(|t| self.curve.eval(*t))
     }
 
-    fn num_elems(&self) -> usize {
+    fn num_elems(self) -> usize {
         self.parametric_mesh.num_elems()
     }
 
-    fn elems(&self) -> impl Iterator<Item=Self::Elem> {
+    fn elems(self) -> Self::ElemIter {
         self.parametric_mesh.elems() // todo: update return value and type
     }
 }

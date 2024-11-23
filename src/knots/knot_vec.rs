@@ -67,33 +67,33 @@ impl<T : RealField + Copy> KnotVec<T> {
     }
 
     /// Returns an iterator over the breaks, i.e. unique knot values.
-    pub fn breaks(&self) -> impl Iterator<Item=T> + '_ {
-        self.0.iter().copied().dedup()
+    pub fn breaks(&self) -> Breaks<T> {
+        self.0.iter().dedup()
     }
 
     /// Returns an iterator over (multiplicity, break) pairs.
-    pub fn breaks_with_multiplicity(&self) -> impl Iterator<Item=(usize, T)> + '_ {
-        self.0.iter().copied().dedup_with_count()
+    pub fn breaks_with_multiplicity(&self) -> BreaksWithMultiplicity<T> {
+        self.0.iter().dedup_with_count()
     }
 }
 
-impl<T: RealField + Copy> Mesh for KnotVec<T> {
-    type Node = T;
-    type Elem = (usize, usize);
+impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
+    type NodeIter = Breaks<'a, T>;
+    type ElemIter = impl Iterator<Item=(usize, usize)>;
 
-    fn num_nodes(&self) -> usize {
+    fn num_nodes(self) -> usize {
         self.breaks().collect_vec().len()
     }
 
-    fn nodes(&self) -> impl Iterator<Item=Self::Node> {
+    fn nodes(self) -> Self::NodeIter {
         self.breaks()
     }
 
-    fn num_elems(&self) -> usize {
+    fn num_elems(self) -> usize {
         self.num_nodes() - 1
     }
 
-    fn elems(&self) -> impl Iterator<Item=Self::Elem> {
+    fn elems(self) -> Self::ElemIter {
         zip(0..self.num_nodes(), 1..=self.num_nodes()) // todo: update return value and type
     }
 }
