@@ -75,11 +75,19 @@ impl<T : RealField + Copy> KnotVec<T> {
     pub fn breaks_with_multiplicity(&self) -> BreaksWithMultiplicity<T> {
         self.0.iter().dedup_with_count()
     }
+    
+    /// Returns the global mesh size, i.e. `h = max{ h_Q }`.
+    pub fn mesh_size(&self) -> T {
+        self.elems()
+            .map(|q| q.elem_size())
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap()
+    }
 }
 
 impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     type NodeIter = Breaks<'a, T>;
-    type ElemIter = impl Iterator<Item=(usize, usize)>;
+    type ElemIter = impl Iterator<Item=ParametricBezierElement1D<T>>;
 
     fn num_nodes(self) -> usize {
         self.breaks().count()
@@ -94,7 +102,9 @@ impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     }
 
     fn elems(self) -> Self::ElemIter {
-        zip(0..self.num_nodes(), 1..=self.num_nodes()) // todo: update return value and type
+        self.nodes()
+            .tuple_windows()
+            .map(|(a, b)| ParametricBezierElement1D::new(*a, *b))
     }
 }
 
@@ -133,5 +143,34 @@ impl <'a, T : RealField + Copy> IntoIterator for &'a KnotVec<T> {
 impl<T : RealField> Display for KnotVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self.0)
+    }
+}
+
+// todo: update definition
+/// A 1D Bezier element in parametric domain, i.e. the open interval `(a,b)`.
+#[derive(Debug, Clone)]
+pub struct ParametricBezierElement1D<T : RealField> {
+    /// Lower bound.
+    a: T,
+    /// Upper bound.
+    b: T
+}
+
+impl<T: RealField + Copy> ParametricBezierElement1D<T> {
+
+    /// Constructs a new [`ParametricBezierElement1D`].
+    fn new(a: T, b: T) -> Self {
+        ParametricBezierElement1D { a, b }
+    }
+
+    /// Returns the element size, i.e. `diam(Q)`.
+    fn elem_size(&self) -> T {
+        self.b - self.a
+    }
+}
+
+impl<T: RealField> Display for ParametricBezierElement1D<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "({}, {})", self.a, self.b)
     }
 }
