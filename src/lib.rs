@@ -14,6 +14,7 @@ mod tests {
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use crate::knots::multivariate_knot_vec::MultivariateKnotVec;
     use crate::mesh::Mesh;
 
     #[test]
@@ -21,12 +22,17 @@ mod tests {
         let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0]);
         let Xi2 = KnotVec::<f64>::open(6, 2);
         let (m, Z): (Vec<_>, Vec<&f64>) = Xi1.breaks_with_multiplicity().unzip();
+        let Xi3 = MultivariateKnotVec::new([Xi1.clone(), Xi2.clone()]);
+        let Xi4 = MultivariateKnotVec::<f64, 2>::open([5, 3], [1, 2]);
+        
         println!("Z: {:?}", Z);
         println!("m: {:?}", m);
         println!("{}", Xi1);
         println!("{}", Xi2);
         println!("{:?}", Xi1.elems().collect_vec());
         println!("{:?}", Xi2.elems().collect_vec());
+        println!("{}", Xi3);
+        println!("{}", Xi4);
     }
 
     #[test]
