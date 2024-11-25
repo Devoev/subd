@@ -44,10 +44,10 @@ impl<T : RealField + Copy> KnotVec<T> {
 }
 
 /// An iterator that yields the breakpoints of a [`KnotVec`].
-type Breaks<'a, T> = Dedup<Iter<'a, T>>;
+pub type Breaks<'a, T> = Dedup<Iter<'a, T>>;
 
 /// An iterator that yields the breakpoints with multiplicity of a [`KnotVec`].
-type BreaksWithMultiplicity<'a, T> = DedupWithCount<Iter<'a, T>>;
+pub type BreaksWithMultiplicity<'a, T> = DedupWithCount<Iter<'a, T>>;
 
 impl<T : RealField + Copy> KnotVec<T> {
 

@@ -10,7 +10,7 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::point;
+    use nalgebra::{matrix, point};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -33,6 +33,7 @@ mod tests {
         println!("{:?}", Xi2.elems().collect_vec());
         println!("{}", Xi3);
         println!("{}", Xi4);
+        println!("{:?}", Xi4.into_iter().collect_vec());
     }
 
     #[test]
