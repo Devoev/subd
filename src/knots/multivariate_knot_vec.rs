@@ -1,12 +1,11 @@
+use crate::knots::knot_vec::KnotVec;
+use itertools::Itertools;
+use nalgebra::{Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::zip;
-use std::ops::Index;
-use itertools::Itertools;
-use nalgebra::RealField;
-use crate::knots::knot_vec::{Breaks, KnotVec};
-use crate::mesh::Mesh;
 
 /// A `D`-dimensional multivariate knot vector.
+#[derive(Debug, Clone)]
 pub struct MultivariateKnotVec<T : RealField, const D : usize>(pub(crate) [KnotVec<T>; D]);
 
 impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
@@ -29,6 +28,16 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
             .try_into()
             .unwrap();
         arr.into()
+    }
+}
+
+impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
+    
+    pub fn breaks(&self) -> impl Iterator<Item=Point<T, D>> + '_ {
+        self.0.iter()
+            .map(|knots| knots.breaks().copied())
+            .multi_cartesian_product()
+            .map(|vec| Point::from_slice(&vec))
     }
 }
 

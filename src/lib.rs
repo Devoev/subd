@@ -33,7 +33,8 @@ mod tests {
         println!("{:?}", Xi2.elems().collect_vec());
         println!("{}", Xi3);
         println!("{}", Xi4);
-        println!("{:?}", Xi4.into_iter().collect_vec());
+        println!("{:?}", (&Xi4).into_iter().collect_vec());
+        println!("{:?}", Xi4.breaks().collect_vec());
     }
 
     #[test]
