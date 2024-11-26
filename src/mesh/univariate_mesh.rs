@@ -1,5 +1,5 @@
 use crate::bspline::spline_curve::SplineCurve;
-use crate::knots::knot_vec::{KnotVec, ParametricBezierElement1D};
+use crate::knots::knot_vec::{KnotVec, ParametricBezierInterval};
 use crate::mesh::Mesh;
 use nalgebra::{Point, RealField};
 
@@ -54,7 +54,7 @@ impl<T : RealField + Copy, const D : usize> IntoIterator for &UnivariateMesh<T, 
 /// A 1D Bezier element.
 pub struct BezierElement1D<'a, T : RealField + Copy, const D : usize> {
     /// The associated parametric element.
-    parametric_elem: ParametricBezierElement1D<T>,
+    parametric_elem: ParametricBezierInterval<T>,
     /// The curve mapping the parametric element into physical domain.
     spline_curve: &'a SplineCurve<T, D>
 }
@@ -62,7 +62,7 @@ pub struct BezierElement1D<'a, T : RealField + Copy, const D : usize> {
 impl<T: RealField + Copy, const D : usize> BezierElement1D<'_, T, D> {
 
     /// Constructs a new [`BezierElement1D`].
-    fn new(parametric_elem: ParametricBezierElement1D<T>, spline_curve: &SplineCurve<T, D>) -> BezierElement1D<'_, T, D> {
+    fn new(parametric_elem: ParametricBezierInterval<T>, spline_curve: &SplineCurve<T, D>) -> BezierElement1D<'_, T, D> {
         BezierElement1D { parametric_elem, spline_curve }
     }
 }

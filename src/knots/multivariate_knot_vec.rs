@@ -1,8 +1,8 @@
-use crate::knots::knot_vec::KnotVec;
+use crate::knots::knot_vec::{KnotVec, ParametricBezierInterval};
 use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::fmt::{Display, Formatter};
-use std::iter::zip;
+use std::iter::{zip, Sum};
 use crate::mesh::Mesh;
 
 /// A `D`-dimensional multivariate knot vector.
@@ -95,6 +95,36 @@ impl<T: RealField + Copy, const D: usize> From<[KnotVec<T>; D]> for Multivariate
 }
 
 impl<T: RealField, const D: usize> Display for MultivariateKnotVec<T, D> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.iter().skip(1)
+            .fold(self.0[0].to_string(), |acc, knots| format!("{acc}×{knots}"))
+        )
+    }
+}
+
+// todo: update definition
+
+/// A Bezier element in `D`-dimensional parametric domain.
+pub struct ParametricBezierElement<T : RealField, const D : usize>(pub(crate) [ParametricBezierInterval<T>; D]);
+
+impl<T: RealField + Copy + Sum, const D : usize> ParametricBezierElement<T, D> {
+
+    /// Constructs a new [`ParametricBezierElement`] from the given knot vectors.
+    pub fn new(factors: [ParametricBezierInterval<T>; D]) -> Self {
+        ParametricBezierElement(factors)
+    }
+
+    /// Returns the element size, i.e. `diam(Q)`.
+    fn elem_size(&self) -> T {
+        self.0.iter()
+            .map(|I| I.elem_size()
+            .powi(2))
+            .sum::<T>()
+            .sqrt()
+    }
+}
+
+impl<T: RealField, const D : usize> Display for ParametricBezierElement<T, D> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.iter().skip(1)
             .fold(self.0[0].to_string(), |acc, knots| format!("{acc}×{knots}"))

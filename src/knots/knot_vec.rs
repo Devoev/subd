@@ -87,7 +87,7 @@ impl<T : RealField + Copy> KnotVec<T> {
 
 impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     type NodeIter = Breaks<'a, T>;
-    type ElemIter = impl Iterator<Item=ParametricBezierElement1D<T>>;
+    type ElemIter = impl Iterator<Item=ParametricBezierInterval<T>>;
 
     fn num_nodes(self) -> usize {
         self.breaks().count()
@@ -104,7 +104,7 @@ impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     fn elems(self) -> Self::ElemIter {
         self.nodes()
             .tuple_windows()
-            .map(|(a, b)| ParametricBezierElement1D::new(*a, *b))
+            .map(|(a, b)| ParametricBezierInterval::new(*a, *b))
     }
 }
 
@@ -149,27 +149,27 @@ impl<T : RealField> Display for KnotVec<T> {
 // todo: update definition
 /// A 1D Bezier element in parametric domain, i.e. the open interval `(a,b)`.
 #[derive(Debug, Clone)]
-pub struct ParametricBezierElement1D<T : RealField> {
+pub struct ParametricBezierInterval<T : RealField> {
     /// Lower bound.
     a: T,
     /// Upper bound.
     b: T
 }
 
-impl<T: RealField + Copy> ParametricBezierElement1D<T> {
+impl<T: RealField + Copy> ParametricBezierInterval<T> {
 
-    /// Constructs a new [`ParametricBezierElement1D`].
-    fn new(a: T, b: T) -> Self {
-        ParametricBezierElement1D { a, b }
+    /// Constructs a new [`ParametricBezierInterval`].
+    pub fn new(a: T, b: T) -> Self {
+        ParametricBezierInterval { a, b }
     }
 
     /// Returns the element size, i.e. `diam(Q)`.
-    fn elem_size(&self) -> T {
+    pub fn elem_size(&self) -> T {
         self.b - self.a
     }
 }
 
-impl<T: RealField> Display for ParametricBezierElement1D<T> {
+impl<T: RealField> Display for ParametricBezierInterval<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "({}, {})", self.a, self.b)
     }
