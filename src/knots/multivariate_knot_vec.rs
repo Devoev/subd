@@ -3,6 +3,7 @@ use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::zip;
+use crate::mesh::Mesh;
 
 /// A `D`-dimensional multivariate knot vector.
 #[derive(Debug, Clone)]
@@ -38,6 +39,28 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
             .map(|knots| knots.breaks().copied())
             .multi_cartesian_product()
             .map(|vec| Point::from_slice(&vec))
+    }
+}
+
+impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
+    
+    type NodeIter = impl Iterator<Item=Point<T, D>>;
+    type ElemIter = std::iter::Empty<T>;
+
+    fn num_nodes(self) -> usize {
+        self.breaks().count()
+    }
+
+    fn nodes(self) -> Self::NodeIter {
+        self.breaks()
+    }
+
+    fn num_elems(self) -> usize {
+        todo!()
+    }
+
+    fn elems(self) -> Self::ElemIter {
+        todo!()
     }
 }
 
