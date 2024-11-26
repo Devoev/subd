@@ -87,7 +87,7 @@ impl<T : RealField + Copy> KnotVec<T> {
 
 impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
     type NodeIter = Breaks<'a, T>;
-    type ElemIter = impl Iterator<Item=ParametricBezierInterval<T>>;
+    type ElemIter = impl Iterator<Item=ParametricBezierInterval<T>> + Clone;
 
     fn num_nodes(self) -> usize {
         self.breaks().count()

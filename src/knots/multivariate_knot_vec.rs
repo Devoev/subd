@@ -33,7 +33,7 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
 }
 
 impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
-    
+
     pub fn breaks(&self) -> impl Iterator<Item=Point<T, D>> + '_ {
         self.0.iter()
             .map(|knots| knots.breaks().copied())
@@ -43,9 +43,9 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
 }
 
 impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
-    
+
     type NodeIter = impl Iterator<Item=Point<T, D>>;
-    type ElemIter = std::iter::Empty<T>;
+    type ElemIter = impl Iterator<Item=ParametricBezierElement<T, D>>;
 
     fn num_nodes(self) -> usize {
         self.breaks().count()
@@ -60,7 +60,10 @@ impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
     }
 
     fn elems(self) -> Self::ElemIter {
-        todo!()
+        self.0.iter()
+            .map(|knots| knots.elems())
+            .multi_cartesian_product()
+            .map(|vec| ParametricBezierElement::new(vec.try_into().unwrap()))
     }
 }
 
@@ -105,20 +108,23 @@ impl<T: RealField, const D: usize> Display for MultivariateKnotVec<T, D> {
 // todo: update definition
 
 /// A Bezier element in `D`-dimensional parametric domain.
+#[derive(Debug)]
 pub struct ParametricBezierElement<T : RealField, const D : usize>(pub(crate) [ParametricBezierInterval<T>; D]);
 
-impl<T: RealField + Copy + Sum, const D : usize> ParametricBezierElement<T, D> {
+impl<T: RealField + Copy, const D : usize> ParametricBezierElement<T, D> {
 
     /// Constructs a new [`ParametricBezierElement`] from the given knot vectors.
     pub fn new(factors: [ParametricBezierInterval<T>; D]) -> Self {
         ParametricBezierElement(factors)
     }
+}
 
+impl<T: RealField + Copy + Sum, const D : usize> ParametricBezierElement<T, D> {
     /// Returns the element size, i.e. `diam(Q)`.
     fn elem_size(&self) -> T {
         self.0.iter()
             .map(|I| I.elem_size()
-            .powi(2))
+                .powi(2))
             .sum::<T>()
             .sqrt()
     }

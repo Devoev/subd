@@ -36,6 +36,12 @@ mod tests {
         println!("{:?}", (&Xi4).into_iter().collect_vec());
         println!("{:?}", Xi4.breaks().collect_vec());
         println!("{:?}", Xi4.nodes().collect_vec());
+
+        println!("Multivariate Bezier elements of Xi = {Xi4}:");
+        for elem in Xi4.elems() {
+            println!("{elem}");
+        }
+
     }
 
     #[test]
