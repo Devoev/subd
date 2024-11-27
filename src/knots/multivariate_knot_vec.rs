@@ -48,7 +48,7 @@ impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
     type ElemIter = impl Iterator<Item=ParametricBezierElement<T, D>>;
 
     fn num_nodes(self) -> usize {
-        self.breaks().count()
+        self.nodes().count()
     }
 
     fn nodes(self) -> Self::NodeIter {
@@ -56,7 +56,7 @@ impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
     }
 
     fn num_elems(self) -> usize {
-        todo!()
+        self.elems().count()
     }
 
     fn elems(self) -> Self::ElemIter {

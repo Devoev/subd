@@ -42,6 +42,8 @@ mod tests {
             println!("{elem}");
         }
 
+        println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems())
+
     }
 
     #[test]
