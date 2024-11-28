@@ -1,5 +1,5 @@
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::RealField;
+use nalgebra::{DVector, RealField, Vector};
 
 /// A B-spline basis of `n` basis functions of degree `p`.
 #[derive(Debug, Clone)]
@@ -46,11 +46,11 @@ impl<T : RealField + Copy> SplineBasis<T> {
     }
 
     /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
-    pub fn eval(&self, t: T) -> Vec<T> {
+    pub fn eval(&self, t: T) -> DVector<T> {
         let idx = self.find_span(t).unwrap();
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
-        let mut B = vec![T::zero(); self.p + 1];
+        let mut B = DVector::zeros(self.p + 1);
         B[0] = T::one();
 
         for i in 1..=self.p {

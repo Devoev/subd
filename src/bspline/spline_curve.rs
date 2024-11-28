@@ -31,7 +31,7 @@ impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
         let idx = self.basis.find_span(t).unwrap();
         let b = self.basis.eval(t);
         let c = &self.control_points[idx - self.basis.p..=idx];
-        zip(b, c).fold(Point::origin(), |pos, (bi, ci)| pos + ci.coords * bi)
+        zip(&b, c).fold(Point::origin(), |pos, (bi, ci)| pos + ci.coords * *bi)
     }
 
     /// Meshes this curve by linearly spacing the parametric domain with `num` steps.
