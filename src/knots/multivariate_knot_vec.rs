@@ -121,10 +121,9 @@ impl<T: RealField + Copy, const D : usize> ParametricBezierElement<T, D> {
 
 impl<T: RealField + Copy + Sum, const D : usize> ParametricBezierElement<T, D> {
     /// Returns the element size, i.e. `diam(Q)`.
-    fn elem_size(&self) -> T {
+    pub fn elem_size(&self) -> T {
         self.0.iter()
-            .map(|I| I.elem_size()
-                .powi(2))
+            .map(|I| I.elem_size().powi(2))
             .sum::<T>()
             .sqrt()
     }

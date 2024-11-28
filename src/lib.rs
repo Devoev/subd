@@ -39,7 +39,7 @@ mod tests {
 
         println!("Multivariate Bezier elements of Xi = {Xi4}:");
         for elem in Xi4.elems() {
-            println!("{elem}");
+            println!("Element {elem} of size {}", elem.elem_size());
         }
 
         println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems())
