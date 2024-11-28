@@ -14,6 +14,7 @@ mod tests {
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
     use crate::knots::multivariate_knot_vec::MultivariateKnotVec;
     use crate::mesh::Mesh;
 
@@ -52,13 +53,15 @@ mod tests {
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
+        let multi_splines = MultivariateSplineBasis::<f64, 2>::open([5, 3], [2, 1]);
 
         let t = 0.6;
         let idx = splines.find_span(t).unwrap();
         println!("{}", knots);
         println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
         
-        println!("{:?}", splines.eval(t));
+        println!("{}", splines.eval(t));
+        println!("{}", multi_splines.eval([t, t]));
     }
 
     #[test]
