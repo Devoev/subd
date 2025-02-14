@@ -1,6 +1,6 @@
 use crate::bspline::spline_basis::SplineBasis;
 use itertools::Itertools;
-use nalgebra::{DMatrix, RealField};
+use nalgebra::{DMatrix, DVector, RealField};
 use std::iter::zip;
 
 /// A multivariate spline basis.
@@ -24,6 +24,14 @@ impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
             .try_into()
             .unwrap();
         Self::new(bases)
+    }
+}
+
+impl <T : RealField + Copy> MultivariateSplineBasis<T, 1> {
+
+    /// Evaluates the non-vanishing basis functions at the parametric point `t`.
+    pub fn eval(&self, t: T) -> DVector<T> {
+        self.univariate_bases[0].eval(t)
     }
 }
 
