@@ -39,13 +39,13 @@ impl<T : RealField + Copy> MultivariateSplineBasis<T, 2> {
     
     /// Evaluates the non-vanishing basis functions at the parametric point `t`.
     pub fn eval(&self, t: [T; 2]) -> DMatrix<T> {
-        let mut B = zip(&self.univariate_bases, t)
+        let mut b = zip(&self.univariate_bases, t)
             .map(|(basis, ti)| basis.eval(ti));
         
-        let Bx = B.next().unwrap();
-        let By = B.next().unwrap();
+        let bx = b.next().unwrap();
+        let by = b.next().unwrap();
         
         // todo: implement this using the trace (or something similar) of the basis tensor?
-        Bx * By.transpose()
+        bx * by.transpose()
     }
 }
