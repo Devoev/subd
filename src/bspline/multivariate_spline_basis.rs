@@ -45,6 +45,7 @@ impl<T : RealField + Copy> MultivariateSplineBasis<T, 2> {
         let Bx = B.next().unwrap();
         let By = B.next().unwrap();
         
+        // todo: implement this using the trace (or something similar) of the basis tensor?
         Bx * By.transpose()
     }
 }

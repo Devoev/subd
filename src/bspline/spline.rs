@@ -8,7 +8,7 @@ use crate::bspline::spline_curve::SplineCurve;
 pub struct Spline<T : RealField, const D : usize, const M : usize>  {
 
     /// Control points for each parametric direction.
-    pub control_points: [Vec<Point<T, M>>; D],
+    pub control_points: [Vec<Point<T, M>>; D], // todo: replace with ndarray?
 
     /// B-spline basis functions for the parametrization.
     pub basis: MultivariateSplineBasis<T, D>

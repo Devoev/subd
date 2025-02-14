@@ -1,7 +1,7 @@
 use crate::bspline::spline_basis::SplineBasis;
 use crate::knots::knot_vec::KnotVec;
 use crate::mesh::univariate_mesh::UnivariateMesh;
-use nalgebra::{Point, RealField};
+use nalgebra::{Matrix, Point, RealField};
 use std::iter::zip;
 
 /// A B-spline curve embedded in `D`-dimensional euclidian space.
@@ -9,7 +9,7 @@ use std::iter::zip;
 pub struct SplineCurve<T : RealField, const D : usize> {
 
     /// Control points of the curve.
-    pub control_points: Vec<Point<T, D>>,
+    pub control_points: Vec<Point<T, D>>, // todo: replace with matrix?
 
     /// Spline basis of the curve.
     pub basis: SplineBasis<T>
@@ -31,6 +31,7 @@ impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
         let idx = self.basis.find_span(t).unwrap();
         let b = self.basis.eval(t);
         let c = &self.control_points[idx - self.basis.p..=idx];
+        // todo: implement this using matrix-vector product
         zip(&b, c).fold(Point::origin(), |pos, (bi, ci)| pos + ci.coords * *bi)
     }
 
