@@ -6,7 +6,7 @@ use std::iter::zip;
 /// A multivariate spline basis.
 #[derive(Clone, Debug)]
 pub struct MultivariateSplineBasis<T : RealField, const D : usize> {
-    univariate_bases: [SplineBasis<T>; D]
+    pub univariate_bases: [SplineBasis<T>; D]
 }
 
 impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {

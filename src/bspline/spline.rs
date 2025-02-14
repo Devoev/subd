@@ -1,0 +1,30 @@
+use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
+use nalgebra::{Point, RealField};
+use std::iter::zip;
+
+/// A `D`-dimensional B-spline manifold embedded `M`-dimensional euclidian space.
+#[derive(Debug, Clone)]
+pub struct Spline<T : RealField, const D : usize, const M : usize>  {
+
+    /// Control points for each parametric direction.
+    pub control_points: [Vec<Point<T, M>>; D],
+
+    /// B-spline basis functions for the parametrization.
+    pub basis: MultivariateSplineBasis<T, D>
+}
+
+impl<T : RealField, const D : usize, const M : usize> Spline<T, D, M> {
+
+    /// Returns `true` if there are the same amount of control points as basis functions.
+    fn coeffs_match_basis(control_points: &[Vec<Point<T, M>>; D], basis: &MultivariateSplineBasis<T, D>) -> bool {
+        zip(control_points, &basis.univariate_bases).all(|(c, b)| c.len() == b.n)
+    }
+
+    /// Constructs a new [`Spline`].
+    pub fn new(control_points: [Vec<Point<T, M>>; D], basis: MultivariateSplineBasis<T, D>) -> Option<Self> {
+        if Self::coeffs_match_basis(&control_points, &basis) {
+            Some(Spline { control_points, basis })
+        }
+        else { None }
+    }
+}
