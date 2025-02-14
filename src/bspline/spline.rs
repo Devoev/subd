@@ -8,7 +8,7 @@ use crate::bspline::spline_curve::SplineCurve;
 pub struct Spline<T : RealField, const D : usize, const M : usize>  {
 
     /// Control points for each parametric direction.
-    pub control_points: [Vec<Point<T, M>>; D], // todo: replace with ndarray?
+    pub control_points: [Vec<Point<T, M>>; D], // todo: replace with ndarray or matrix?
 
     /// B-spline basis functions for the parametrization.
     pub basis: MultivariateSplineBasis<T, D>
@@ -31,7 +31,7 @@ impl<T : RealField, const D : usize, const M : usize> Spline<T, D, M> {
 }
 
 impl<T : RealField + Copy, const M : usize> Spline<T, 1, M> {
-    
+
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, M> {
         let basis = &self.basis.univariate_bases[0];
@@ -43,7 +43,7 @@ impl<T : RealField + Copy, const M : usize> Spline<T, 1, M> {
 }
 
 impl<T : RealField + Copy, const M : usize> Spline<T, 2, M> {
-    
+
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, M> {
         // let idx = self.basis.find_span(t).unwrap();

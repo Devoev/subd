@@ -1,7 +1,8 @@
 use crate::bspline::spline_basis::SplineBasis;
 use itertools::Itertools;
 use nalgebra::{DMatrix, DVector, RealField};
-use std::iter::zip;
+use std::iter::{zip, Map};
+use std::slice::Iter;
 
 /// A multivariate spline basis.
 #[derive(Clone, Debug)]
@@ -24,6 +25,21 @@ impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
             .try_into()
             .unwrap();
         Self::new(bases)
+    }
+    
+    /// Returns the total number of basis functions.
+    pub fn num(&self) -> usize {
+        self.univariate_bases.iter().map(|basis| basis.n).product()
+    }
+    
+    /// Returns an iterator over the number of basis functions in each parametric direction.
+    pub fn n(&self) -> impl Iterator + '_ {
+        self.univariate_bases.iter().map(|basis| basis.n)
+    }
+    
+    /// Returns an iterator over the degrees of basis functions in each parametric direction.
+    pub fn p(&self) -> impl Iterator + '_ {
+        self.univariate_bases.iter().map(|basis| basis.p)
     }
 }
 
