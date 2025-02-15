@@ -16,12 +16,12 @@ pub struct Spline<T : RealField, const D : usize, const M : usize>  {
     pub basis: MultivariateSplineBasis<T, D>
 }
 
-impl<T : RealField, const D : usize, const M : usize> Spline<T, D, M> {
+impl<T : RealField + Copy, const D : usize, const M : usize> Spline<T, D, M> {
 
     /// Returns `true` if there are the same amount of control points as basis functions.
     fn coeffs_match_basis(control_points: &ControlPoints<T, M>, basis: &MultivariateSplineBasis<T, D>) -> bool {
-        // zip(control_points, &basis.univariate_bases).all(|(c, b)| c.len() == b.n)
-        todo!("Unflatten control points")
+        let (_, num) = control_points.shape();
+        basis.num() == num
     }
 
     /// Constructs a new [`Spline`].
