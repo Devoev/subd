@@ -1,5 +1,5 @@
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::{DVector, RealField, Vector};
+use nalgebra::{DVector, RealField};
 
 /// A B-spline basis of `n` basis functions of degree `p`.
 #[derive(Debug, Clone)]

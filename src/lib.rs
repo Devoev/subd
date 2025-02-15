@@ -69,7 +69,7 @@ mod tests {
         let n = 5;
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
-        let splines = SplineBasis::new(knots.clone(), n, p);
+        let splines = SplineBasis::new(knots, n, p);
         let curve = SplineCurve::new(
             vec![point![-1.0, 0.0], point![-0.5, 0.7], point![0.0, 0.0], point![0.5, -0.7], point![1.0, 0.0]],
             splines

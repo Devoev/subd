@@ -37,12 +37,12 @@ impl<T : RealField + Copy, const M : usize> Spline<T, 1, M> {
 
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, M> {
-        // let basis = &self.basis.univariate_bases[0];
-        // let idx = basis.find_span(t).unwrap();
-        // let b = self.basis.eval(t);
-        // let c = &self.control_points[0][idx - basis.p..=idx];
-        // zip(&b, c).fold(Point::origin(), |pos, (bi, ci)| pos + ci.coords * *bi)
-        todo!("Fix control points type")
+        let basis = &self.basis.univariate_bases[0];
+        let idx = basis.find_span(t).unwrap();
+        let span = idx - basis.p..=idx;
+        let b = basis.eval(t);
+        let c = &self.control_points.columns_range(span);
+        Point::from(c * b)
     }
 }
 
