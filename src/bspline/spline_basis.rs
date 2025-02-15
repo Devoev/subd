@@ -50,8 +50,8 @@ impl<T : RealField + Copy> SplineBasis<T> {
         let idx = self.find_span(t).unwrap();
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
-        let mut B = DVector::zeros(self.p + 1);
-        B[0] = T::one();
+        let mut b = DVector::zeros(self.p + 1);
+        b[0] = T::one();
 
         for i in 1..=self.p {
             left[i] = t - self.knots[idx - i + 1];
@@ -59,12 +59,12 @@ impl<T : RealField + Copy> SplineBasis<T> {
             let mut saved = T::zero();
 
             for j in 0..i {
-                let tmp = B[j] / (right[j+1] + left[i-j]);
-                B[j] = saved + right[j+1]*tmp;
+                let tmp = b[j] / (right[j+1] + left[i-j]);
+                b[j] = saved + right[j+1]*tmp;
                 saved = left[i-j]*tmp;
             }
-            B[i] = saved;
+            b[i] = saved;
         }
-        B
+        b
     }
 }
