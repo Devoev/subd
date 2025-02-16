@@ -53,7 +53,8 @@ mod tests {
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
-        let multi_splines = MultivariateSplineBasis::<f64, 2>::open([5, 3], [2, 1]);
+        let splines_2d = MultivariateSplineBasis::<f64, 2>::open([5, 5], [1, 1]);
+        let splines_3d = MultivariateSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
         let idx = splines.find_span(t).unwrap();
@@ -61,7 +62,9 @@ mod tests {
         println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
         
         println!("{}", splines.eval(t));
-        println!("{}", multi_splines.eval([t, t]));
+        println!("{}", splines_2d.eval_surf([t, t]));
+        println!("{}", splines_2d.eval([t, t]));
+        println!("{}", splines_3d.eval([t, t, t]));
     }
 
     #[test]
