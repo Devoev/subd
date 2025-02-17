@@ -57,9 +57,7 @@ mod tests {
         let splines_3d = MultivariateSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
-        let idx = splines.find_span(t).unwrap();
         println!("{}", knots);
-        println!("index {} in interval [{}, {})", idx, knots[idx], knots[idx+1]);
         
         println!("{}", splines.eval(t));
         println!("{}", splines_2d.eval_surf([t, t]));

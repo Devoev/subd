@@ -30,32 +30,18 @@ impl<T : RealField + Copy> SplineBasis<T> {
 
 impl<T : RealField + Copy> SplineBasis<T> {
     
-    /// Finds the index `i` such that `knots[i] <= t < knots[i+1]`.
-    pub fn find_span(&self, t: T) -> Result<usize, ()> {
-        if t < self.knots.first() || t > self.knots.last() { return Err(()) }
-        
-        if t == self.knots[self.n + 1] {
-            return Ok(self.n - 1);
-        }
-
-        let idx = self.knots.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
-        match idx {
-            Ok(i) => { Ok(i) }
-            Err(i) => { Ok(i - 1) }
-        }
-    }
-
     /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
     pub fn eval(&self, t: T) -> DVector<T> {
-        let idx = self.find_span(t).unwrap();
+        let span = self.knots.find_span(t, self.n)
+            .expect("Parametric value is outside of knot vector.");
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
         let mut b = DVector::zeros(self.p + 1);
         b[0] = T::one();
 
         for i in 1..=self.p {
-            left[i] = t - self.knots[idx - i + 1];
-            right[i] = self.knots[idx + i] - t;
+            left[i] = t - self.knots[span.index - i + 1];
+            right[i] = self.knots[span.index + i] - t;
             let mut saved = T::zero();
 
             for j in 0..i {

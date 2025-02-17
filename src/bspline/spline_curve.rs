@@ -28,9 +28,9 @@ impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
     
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, D> {
-        let idx = self.basis.find_span(t).unwrap();
+        let span = self.basis.knots.find_span(t, self.basis.n).unwrap();
         let b = self.basis.eval(t);
-        let c = &self.control_points[idx - self.basis.p..=idx];
+        let c = &self.control_points[span.nonzero_indices(self.basis.p)];
         // todo: implement this using matrix-vector product
         zip(&b, c).fold(Point::origin(), |pos, (bi, ci)| pos + ci.coords * *bi)
     }
