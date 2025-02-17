@@ -1,19 +1,24 @@
 use crate::knots::knot_span::KnotSpan;
-use nalgebra::{Const, Dyn, Matrix, RawStorage, RealField};
+use nalgebra::{Const, Dim, Dyn, Matrix, Owned, RawStorage, RealField, Storage, ViewStorage};
 
 
 /// The coordinates of control points, stored column wise as a matrix.
 type Coords<T, const M: usize, S> = Matrix<T, Const<M>, Dyn, S>;
 
-type ViewStorage<'a, T, const M: usize, S> = nalgebra::ViewStorage<'a, T, Const<M>, Dyn, <S as RawStorage<T, Const<M>, Dyn>>::RStride, <S as RawStorage<T, Const<M>, Dyn>>::CStride>;
-
 /// Control points of a spline in `M` dimensions.
-struct ControlPoints<T: RealField, const M: usize, S: RawStorage<T, Const<M>, Dyn>> {
+#[derive(Debug, Clone)]
+pub struct ControlPoints<T: RealField, const M: usize, S: Storage<T, Const<M>, Dyn>> {
     /// Control point coordinates.
     pub coords: Coords<T, M, S>,
 }
 
-impl<T: RealField + Copy, const M: usize, S: RawStorage<T, Const<M>, Dyn>> ControlPoints<T, M, S> {
+/// Owned control points.
+pub type OControlPoints<T, const M: usize> = ControlPoints<T, M, Owned<T, Const<M>, Dyn>>;
+
+/// Control points view.
+pub type ControlPointsView<'a, T, const M: usize, RStride, CStride> = ControlPoints<T, M, ViewStorage<'a, T, Const<M>, Dyn, RStride, CStride>>;
+
+impl<T: RealField + Copy, const M: usize, S: Storage<T, Const<M>, Dyn>> ControlPoints<T, M, S> {
     /// Constructs new [ControlPoints].
     pub fn new(coords: Coords<T, M, S>) -> Self {
         ControlPoints { coords }
@@ -25,12 +30,12 @@ impl<T: RealField + Copy, const M: usize, S: RawStorage<T, Const<M>, Dyn>> Contr
     }
 
     /// Returns all control points belonging to nonzero basis functions in the given `span`.
-    pub fn get_nonzero(&self, span: KnotSpan<T>, p: usize) -> ControlPoints<T, M, ViewStorage<T, M, S>> {
+    pub fn get_nonzero(&self, span: KnotSpan<T>, p: usize) -> ControlPointsView<T, M, S::RStride, S::CStride> {
         match M {
             1 => {
                 ControlPoints::new(self.coords.columns_range(span.nonzero_indices(p)))
             }
-            _ => todo!()
+            _ => todo!("Implement for multivariate splines by multivariate knot spans")
         }
     }
 }
