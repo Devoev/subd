@@ -40,6 +40,22 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
             .multi_cartesian_product()
             .map(|vec| Point::from_slice(&vec))
     }
+    
+    /// Converts the given multi index `idx` into a linear index.
+    pub fn linear_index(&self, idx: [usize; D]) -> usize {
+        // todo: debug this algorithm
+        let knots = &self.0;
+        let mut linear_index = 0;
+        let mut stride = 1;
+
+        // Iterate backwards through the dimensions and multi-index
+        for i in (0..idx.len()).rev() {
+            linear_index += idx[i] * stride;
+            stride *= knots[i].len();
+        }
+
+        linear_index
+    }
 }
 
 impl<T: RealField + Copy, const D: usize> Mesh for &MultiKnotVec<T, D> {

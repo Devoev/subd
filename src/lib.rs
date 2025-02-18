@@ -45,8 +45,20 @@ mod tests {
             println!("Element {elem} of size {}", elem.elem_size());
         }
 
-        println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems())
+        println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems());
 
+        let t = 0.6;
+        let span1 = Xi2.find_span(t, 6).unwrap();
+        let span2 = Xi4.find_span([t, t], [5, 3]).unwrap();
+        
+        println!("Span for univariate knot vec {:?}", span1.nonzero_indices(2).collect_vec());
+        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices([1, 2]).collect_vec());
+        
+        let lin_indices = span2.nonzero_indices([1, 2])
+            .map(|idx| Xi4.linear_index(idx.into_iter().collect_array().unwrap()))
+            .collect_vec();
+        
+        println!("Span for multivariate knot vec {:?} (linear)", lin_indices);
     }
 
     #[test]

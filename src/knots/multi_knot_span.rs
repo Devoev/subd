@@ -1,9 +1,9 @@
-use std::ops::RangeInclusive;
-use itertools::Itertools;
-use nalgebra::RealField;
 use crate::knots::knot_span::KnotSpan;
-use crate::knots::knot_vec::KnotVec;
 use crate::knots::multi_knot_vec::MultiKnotVec;
+use itertools::{Itertools, MultiProduct};
+use nalgebra::RealField;
+use std::iter::zip;
+use std::ops::RangeInclusive;
 
 /// A `D`-variate knot span.
 #[derive(Clone, Debug)]
@@ -21,16 +21,26 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
     pub fn new(knots: &'a MultiKnotVec<T, D>, indices: [usize; D]) -> Self {
         MultiKnotSpan { knots, indices }
     }
+    
+    /// Creates [D] univariate [knot spans][KnotSpan].
+    pub fn as_univariate(&self) -> [KnotSpan<T>; D] {
+        zip(self.indices, &self.knots.0)
+            .map(|(i, knots)| KnotSpan::new(knots, i))
+            .collect_array()
+            .unwrap()
+    }
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self, p: [usize; D]) -> RangeInclusive<usize> {
+    pub fn nonzero_indices(&self, p: [usize; D]) -> MultiProduct<RangeInclusive<usize>> {
         // todo:
         // - get ranges per parametric direction
         // - build cartesian product
         // - flatten index
         
-        todo!("")
+        self.as_univariate().iter().enumerate()
+            .map(|(i, span)| span.nonzero_indices(p[i]))
+            .multi_cartesian_product()
     }
 }
 
