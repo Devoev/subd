@@ -5,23 +5,23 @@ use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
 use crate::mesh::Mesh;
 
-/// A `D`-dimensional multivariate knot vector.
+/// A `D`-variate multivariate knot vector.
 #[derive(Debug, Clone)]
-pub struct MultivariateKnotVec<T : RealField, const D : usize>(pub(crate) [KnotVec<T>; D]);
+pub struct MultiKnotVec<T : RealField, const D : usize>(pub(crate) [KnotVec<T>; D]);
 
-impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
+impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
 
-    /// Constructs a new [`MultivariateKnotVec`] from the given knot vectors.
+    /// Constructs a new [`MultiKnotVec`] from the given knot vectors.
     pub fn new(factors: [KnotVec<T>; D]) -> Self {
-        MultivariateKnotVec(factors)
+        MultiKnotVec(factors)
     }
 
-    /// Constructs a uniform [`MultivariateKnotVec`] of size `nums[i]` for each direction.
+    /// Constructs a uniform [`MultiKnotVec`] of size `nums[i]` for each direction.
     pub fn uniform(nums: [usize; D]) -> Self {
         nums.map(|num| KnotVec::uniform(num)).into()
     }    
     
-    /// Constructs a open [`MultivariateKnotVec`] of size `n[i] + p[i] + 1` for each direction.
+    /// Constructs a open [`MultiKnotVec`] of size `n[i] + p[i] + 1` for each direction.
     pub fn open(n: [usize; D], p: [usize; D]) -> Self {
         let arr: [KnotVec<T>; D] = zip(n, p)
             .map(|(n, p)| KnotVec::open(n, p))
@@ -32,7 +32,7 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
     }
 }
 
-impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
+impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
 
     pub fn breaks(&self) -> impl Iterator<Item=Point<T, D>> + '_ {
         self.0.iter()
@@ -42,7 +42,7 @@ impl<T: RealField + Copy, const D : usize> MultivariateKnotVec<T, D> {
     }
 }
 
-impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
+impl<T: RealField + Copy, const D: usize> Mesh for &MultiKnotVec<T, D> {
 
     type NodeIter = impl Iterator<Item=Point<T, D>>;
     type ElemIter = impl Iterator<Item=ParametricBezierElement<T, D>>;
@@ -67,7 +67,7 @@ impl<T: RealField + Copy, const D: usize> Mesh for &MultivariateKnotVec<T, D> {
     }
 }
 
-impl<T: RealField + Copy, const D : usize> IntoIterator for MultivariateKnotVec<T, D> {
+impl<T: RealField + Copy, const D : usize> IntoIterator for MultiKnotVec<T, D> {
     type Item = [T; D];
     type IntoIter = impl Iterator<Item=Self::Item>;
 
@@ -79,7 +79,7 @@ impl<T: RealField + Copy, const D : usize> IntoIterator for MultivariateKnotVec<
     }
 }
 
-impl<'a, T: RealField + Copy, const D : usize> IntoIterator for &'a MultivariateKnotVec<T, D> {
+impl<'a, T: RealField + Copy, const D : usize> IntoIterator for &'a MultiKnotVec<T, D> {
     type Item = [&'a T; D];
     type IntoIter = impl Iterator<Item=Self::Item>;
 
@@ -91,13 +91,13 @@ impl<'a, T: RealField + Copy, const D : usize> IntoIterator for &'a Multivariate
     }
 }
 
-impl<T: RealField + Copy, const D: usize> From<[KnotVec<T>; D]> for MultivariateKnotVec<T, D> {
+impl<T: RealField + Copy, const D: usize> From<[KnotVec<T>; D]> for MultiKnotVec<T, D> {
     fn from(value: [KnotVec<T>; D]) -> Self {
-        MultivariateKnotVec::new(value)
+        MultiKnotVec::new(value)
     }
 }
 
-impl<T: RealField, const D: usize> Display for MultivariateKnotVec<T, D> {
+impl<T: RealField, const D: usize> Display for MultiKnotVec<T, D> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.iter().skip(1)
             .fold(self.0[0].to_string(), |acc, knots| format!("{acc}×{knots}"))

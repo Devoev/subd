@@ -17,7 +17,7 @@ mod tests {
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
     use crate::bspline::spline::Spline;
-    use crate::knots::multivariate_knot_vec::MultivariateKnotVec;
+    use crate::knots::multi_knot_vec::MultiKnotVec;
     use crate::mesh::Mesh;
 
     #[test]
@@ -25,8 +25,8 @@ mod tests {
         let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0]);
         let Xi2 = KnotVec::<f64>::open(6, 2);
         let (m, Z): (Vec<_>, Vec<&f64>) = Xi1.breaks_with_multiplicity().unzip();
-        let Xi3 = MultivariateKnotVec::new([Xi1.clone(), Xi2.clone()]);
-        let Xi4 = MultivariateKnotVec::<f64, 2>::open([5, 3], [1, 2]);
+        let Xi3 = MultiKnotVec::new([Xi1.clone(), Xi2.clone()]);
+        let Xi4 = MultiKnotVec::<f64, 2>::open([5, 3], [1, 2]);
         
         println!("Z: {:?}", Z);
         println!("m: {:?}", m);
