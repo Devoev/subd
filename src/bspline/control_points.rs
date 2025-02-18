@@ -19,7 +19,6 @@ pub type OControlPoints<T, const M: usize, C> = ControlPoints<T, M, C, Owned<T, 
 pub type ControlPointsView<'a, T, const M: usize, C, RStride, CStride> = ControlPoints<T, M, C, ViewStorage<'a, T, Const<M>, C, RStride, CStride>>;
 
 impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlPoints<T, M, C, S> {
-    
     /// Constructs new [ControlPoints].
     pub fn new(coords: Coords<T, M, C, S>) -> Self {
         ControlPoints { coords }
@@ -37,7 +36,7 @@ impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> Co
                 ControlPoints::new(self.coords.columns_range(span[0].nonzero_indices(p)))
             }
             2 => {
-                
+
                 todo!()
             }
             _ => todo!("Implement for multivariate splines by multivariate knot spans")
@@ -46,12 +45,11 @@ impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> Co
 }
 
 impl <T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlPoints<T, M, C, S> {
-    
     /// Iterates through the control points as matrix views.
     pub fn iter(&self) -> ColumnIter<'_, T, Const<M>, C, S> {
         self.coords.column_iter()
     }
-    
+
     /// Iterates through the control points as owned [Point]s.
     pub fn point_iter(&self) -> impl Iterator<Item=Point<T, M>> + '_ {
         self.iter().map(|col| Point::from(col.clone_owned()))
@@ -59,7 +57,7 @@ impl <T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlP
 }
 
 impl <'a, T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> IntoIterator for &'a ControlPoints<T, M, C, S> {
-    
+
     type Item = VectorView<'a, T, Const<M>, S::RStride, S::CStride>;
     type IntoIter = ColumnIter<'a, T, Const<M>, C, S>;
 

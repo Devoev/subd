@@ -78,14 +78,16 @@ mod tests {
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
         let coords_dyn = <MatrixView<f64, U2, Dyn>>::into_owned(coords.as_view());
+        let coords_dyn = OMatrix::<f64, U2, Dyn>::from_column_slice(coords.as_slice());
         let control_points = ControlPoints::new(coords);
+        dbg!(coords_dyn.clone());
         dbg!(coords_dyn.shape_generic());
         
         let curve = SplineCurve::new(
             control_points.clone().point_iter().collect_vec(),
             splines.clone()
         ).unwrap();
-        
+
         let curve2 = Spline::new(control_points, MultivariateSplineBasis::new([splines])).unwrap();
 
         dbg!(curve.eval(0.0));
