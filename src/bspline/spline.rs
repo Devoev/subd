@@ -17,10 +17,7 @@ impl<T : RealField + Copy, const D : usize, const M : usize> Spline<T, D, M> {
 
     /// Constructs a new [`Spline`].
     pub fn new(control_points: OControlPoints<T, M>, basis: MultivariateSplineBasis<T, D>) -> Option<Self> {
-        if basis.num() == control_points.num() {
-            Some(Spline { control_points, basis })
-        }
-        else { None }
+        (basis.num() == control_points.num()).then_some(Spline { control_points, basis })
     }
 }
 
