@@ -10,11 +10,13 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{matrix, point};
+    use nalgebra::{dmatrix, matrix, point, Dyn, Matrix3, Matrix3xX, MatrixView, OMatrix, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
+    use crate::bspline::spline::Spline;
     use crate::knots::multivariate_knot_vec::MultivariateKnotVec;
     use crate::mesh::Mesh;
 
@@ -71,12 +73,23 @@ mod tests {
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots, n, p);
+        let coords = matrix![
+            -1.0, -0.5, 0.0, 0.5, 1.0;
+            0.0, 0.7, 0.0, -0.7, 0.0;
+        ];
+        let coords_dyn = <MatrixView<f64, U2, Dyn>>::into_owned(coords.as_view());
+        let control_points = ControlPoints::new(coords);
+        dbg!(coords_dyn.shape_generic());
+        
         let curve = SplineCurve::new(
-            vec![point![-1.0, 0.0], point![-0.5, 0.7], point![0.0, 0.0], point![0.5, -0.7], point![1.0, 0.0]],
-            splines
+            control_points.clone().point_iter().collect_vec(),
+            splines.clone()
         ).unwrap();
+        
+        let curve2 = Spline::new(control_points, MultivariateSplineBasis::new([splines])).unwrap();
 
-        println!("{:?}", curve);
+        dbg!(curve.eval(0.0));
+        dbg!(curve2.eval(0.0));
 
         let N = 1000;
         let mesh = curve.mesh(N);

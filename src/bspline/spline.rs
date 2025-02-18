@@ -1,39 +1,60 @@
 use crate::bspline::control_points::OControlPoints;
 use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
-use nalgebra::{Point, RealField};
+use nalgebra::{Const, DefaultAllocator, Dim, Dyn, Point, RealField};
+use nalgebra::allocator::Allocator;
 
 /// A `D`-dimensional B-spline manifold embedded `M`-dimensional euclidian space.
 #[derive(Debug, Clone)]
-pub struct Spline<T : RealField, const D : usize, const M : usize>  {
+pub struct Spline<T, const D : usize, const M : usize, C> 
+where 
+    T: RealField,
+    C: Dim,
+    DefaultAllocator: Allocator<Const<M>, C> 
+{
 
     /// Control points for each parametric direction.
-    pub control_points: OControlPoints<T, M>,
+    pub control_points: OControlPoints<T, M, C>,
 
     /// B-spline basis functions for the parametrization.
     pub basis: MultivariateSplineBasis<T, D>
 }
 
-impl<T : RealField + Copy, const D : usize, const M : usize> Spline<T, D, M> {
+impl<T, const D : usize, const M : usize, C> Spline<T, D, M, C> 
+where 
+    T: RealField + Copy,
+    C: Dim,
+    DefaultAllocator: Allocator<Const<M>, C> 
+{
 
     /// Constructs a new [`Spline`].
-    pub fn new(control_points: OControlPoints<T, M>, basis: MultivariateSplineBasis<T, D>) -> Option<Self> {
+    pub fn new(control_points: OControlPoints<T, M, C>, basis: MultivariateSplineBasis<T, D>) -> Option<Self> {
         (basis.num() == control_points.num()).then_some(Spline { control_points, basis })
     }
 }
 
-impl<T : RealField + Copy, const M : usize> Spline<T, 1, M> {
+impl<T, const M : usize, C> Spline<T, 1, M, C>
+where
+    T: RealField + Copy,
+    C: Dim,
+    DefaultAllocator: Allocator<Const<M>, C>
+{
 
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval(&self, t: T) -> Point<T, M> {
         let basis = &self.basis.univariate_bases[0];
         let span = basis.knots.find_span(t, basis.n).unwrap();
         let b = basis.eval(t);
-        let c = &self.control_points.get_nonzero(span, basis.p);
+        let c = &self.control_points.get_nonzero([span], basis.p);
         Point::from(c.coords * b)
     }
 }
 
-impl<T : RealField + Copy, const M : usize> Spline<T, 2, M> {
+impl<T, const M : usize, C> Spline<T, 2, M, C>
+where
+    T: RealField + Copy,
+    C: Dim,
+    DefaultAllocator: Allocator<Const<M>, C>
+{
 
     /// Evaluates the spline at the parametric point `t`.
     pub fn eval(&self, t: [T; 2]) -> Point<T, M> {
