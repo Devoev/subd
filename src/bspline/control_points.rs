@@ -5,7 +5,7 @@ use nalgebra::{Const, Dim, Dyn, Matrix, Owned, Point, RealField, Storage, Vector
 /// The coordinates of control points, stored column wise as a matrix.
 type Coords<T, const M: usize, C, S> = Matrix<T, Const<M>, C, S>;
 
-/// Control points of a spline in `M` dimensions.
+/// Control points of a spline in [M] dimensions.
 #[derive(Debug, Clone)]
 pub struct ControlPoints<T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> {
     /// Control point coordinates.
@@ -50,7 +50,7 @@ impl <T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlP
         self.coords.column_iter()
     }
 
-    /// Iterates through the control points as owned [Point]s.
+    /// Iterates through the control points as owned [points][Point].
     pub fn point_iter(&self) -> impl Iterator<Item=Point<T, M>> + '_ {
         self.iter().map(|col| Point::from(col.clone_owned()))
     }
