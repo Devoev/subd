@@ -15,7 +15,7 @@ mod tests {
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use crate::bspline::control_points::ControlPoints;
-    use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
+    use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::Spline;
     use crate::knots::multi_knot_vec::MultiKnotVec;
     use crate::mesh::Mesh;
@@ -91,14 +91,13 @@ mod tests {
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
-        let splines_2d = MultivariateSplineBasis::<f64, 2>::open([5, 5], [1, 1]);
-        let splines_3d = MultivariateSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
+        let splines_2d = MultiSplineBasis::<f64, 2>::open([5, 5], [1, 1]);
+        let splines_3d = MultiSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
         println!("{}", knots);
         
         println!("{}", splines.eval(t));
-        println!("{}", splines_2d.eval_surf([t, t]));
         println!("{}", splines_2d.eval([t, t]));
         println!("{}", splines_3d.eval([t, t, t]));
     }
@@ -120,7 +119,7 @@ mod tests {
             splines.clone()
         ).unwrap();
 
-        let curve2 = Spline::new(control_points, MultivariateSplineBasis::new([splines])).unwrap();
+        let curve2 = Spline::new(control_points, MultiSplineBasis::new([splines])).unwrap();
 
         dbg!(curve.eval(0.0));
         dbg!(curve2.eval_curve(0.0));
@@ -148,7 +147,7 @@ mod tests {
 
         let knots = KnotVec::<f64>::open(n, p);
         let splines_uni = SplineBasis::new(knots, n, p);
-        let splines_2d = MultivariateSplineBasis::new([splines_uni.clone(), splines_uni.clone()]);
+        let splines_2d = MultiSplineBasis::new([splines_uni.clone(), splines_uni.clone()]);
 
         let control_points = ControlPoints::new(matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;

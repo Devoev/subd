@@ -1,5 +1,5 @@
 use crate::bspline::control_points::OControlPoints;
-use crate::bspline::multivariate_spline_basis::MultivariateSplineBasis;
+use crate::bspline::multi_spline_basis::MultiSplineBasis;
 use crate::knots::multi_knot_vec::MultiKnotVec;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
@@ -18,7 +18,7 @@ where
     pub control_points: OControlPoints<T, M, C>,
 
     /// B-spline basis functions for the parametrization.
-    pub basis: MultivariateSplineBasis<T, D>
+    pub basis: MultiSplineBasis<T, D>
 }
 
 impl<T, const D : usize, const M : usize, C> Spline<T, D, M, C> 
@@ -29,7 +29,7 @@ where
 {
 
     /// Constructs a new [`Spline`].
-    pub fn new(control_points: OControlPoints<T, M, C>, basis: MultivariateSplineBasis<T, D>) -> Option<Self> {
+    pub fn new(control_points: OControlPoints<T, M, C>, basis: MultiSplineBasis<T, D>) -> Option<Self> {
         (basis.num() == control_points.num()).then_some(Spline { control_points, basis })
     }
 }

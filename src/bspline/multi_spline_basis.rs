@@ -4,20 +4,20 @@ use nalgebra::{DMatrix, DVector, RealField};
 use std::iter::{zip, Map};
 use std::slice::Iter;
 
-/// A multivariate spline basis.
+/// A [D]-variate spline basis.
 #[derive(Clone, Debug)]
-pub struct MultivariateSplineBasis<T : RealField, const D : usize> {
+pub struct MultiSplineBasis<T : RealField, const D : usize> {
     pub univariate_bases: [SplineBasis<T>; D]
 }
 
-impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
+impl<T : RealField + Copy, const D : usize> MultiSplineBasis<T, D> {
 
-    /// Constructs a new [`MultivariateSplineBasis`].
+    /// Constructs a new [`MultiSplineBasis`].
     pub fn new(univariate_bases: [SplineBasis<T>; D]) -> Self {
-        MultivariateSplineBasis { univariate_bases }
+        MultiSplineBasis { univariate_bases }
     }
 
-    /// Constructs a new [`MultivariateSplineBasis`] on an open knot vector of size `n+p+1`.
+    /// Constructs a new [`MultiSplineBasis`] on an open knot vector of size `n+p+1`.
     pub fn open(n: [usize; D], p: [usize; D]) -> Self {
         let bases: [SplineBasis<T>; D] = zip(n, p)
             .map(|(n, p)| SplineBasis::open(n, p))
@@ -43,7 +43,7 @@ impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
     }
 }
 
-impl <T : RealField + Copy> MultivariateSplineBasis<T, 1> {
+impl <T : RealField + Copy> MultiSplineBasis<T, 1> {
 
     /// Evaluates the non-vanishing basis functions at the parametric point `t`.
     pub fn eval_curve(&self, t: T) -> DVector<T> {
@@ -51,22 +51,7 @@ impl <T : RealField + Copy> MultivariateSplineBasis<T, 1> {
     }
 }
 
-impl<T : RealField + Copy> MultivariateSplineBasis<T, 2> {
-    
-    // todo: remove this impl
-    /// Evaluates the non-vanishing basis functions at the parametric point `t`.
-    pub fn eval_surf(&self, t: [T; 2]) -> DMatrix<T> {
-        let mut b = zip(&self.univariate_bases, t)
-            .map(|(basis, ti)| basis.eval(ti));
-        
-        let bx = b.next().unwrap();
-        let by = b.next().unwrap();
-        
-        bx * by.transpose()
-    }
-}
-
-impl <T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
+impl <T : RealField + Copy, const D : usize> MultiSplineBasis<T, D> {
     
     /// Evaluates the non-vanishing basis functions at the parametric point `t`.
     pub fn eval(&self, t: [T; D]) -> DVector<T> {
