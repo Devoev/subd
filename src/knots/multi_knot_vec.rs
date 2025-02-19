@@ -42,16 +42,19 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     }
     
     /// Converts the given multi index `idx` into a linear index.
-    pub fn linear_index(&self, idx: [usize; D]) -> usize {
-        // todo: debug this algorithm
-        let knots = &self.0;
+    /// 
+    /// # Arguments
+    /// - `idx`: The multi index.
+    /// - `n`: The number of basis functions in each direction.
+    /// 
+    /// todo: move to MultiIndex struct
+    pub fn linear_index(idx: [usize; D], n: [usize; D]) -> usize {
         let mut linear_index = 0;
         let mut stride = 1;
 
-        // Iterate backwards through the dimensions and multi-index
-        for i in (0..idx.len()).rev() {
-            linear_index += idx[i] * stride;
-            stride *= knots[i].len();
+        for (i, ni) in zip(idx, n) {
+            linear_index += i * stride;
+            stride *= ni;
         }
 
         linear_index

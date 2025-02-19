@@ -10,7 +10,7 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{dmatrix, matrix, point, Dyn, Matrix3, Matrix3xX, MatrixView, OMatrix, U2};
+    use nalgebra::{dmatrix, matrix, point, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, U2, U7};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -55,10 +55,32 @@ mod tests {
         println!("Span for multivariate knot vec {:?}", span2.nonzero_indices([1, 2]).collect_vec());
         
         let lin_indices = span2.nonzero_indices([1, 2])
-            .map(|idx| Xi4.linear_index(idx.into_iter().collect_array().unwrap()))
+            .map(|idx| MultiKnotVec::<f64, 2>::linear_index(idx.into_iter().collect_array().unwrap(), [5, 3]))
             .collect_vec();
         
         println!("Span for multivariate knot vec {:?} (linear)", lin_indices);
+    }
+
+    #[test]
+    fn multi_index() {
+        let n = 5;
+        let p = 1;
+        let t = 0.5;
+
+        let knots = MultiKnotVec::<f64, 2>::open([n, n], [p, p]);
+        let span = knots.find_span([t, t], [n, n]).unwrap();
+        let idx = span.nonzero_indices([1, 1]).collect_vec();
+        let lin_idx = idx.clone().into_iter()
+            .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [n, n]))
+            .collect_vec();
+        let mat_idx = lin_idx.iter()
+            .map(|i| Matrix5::<f64>::zeros().vector_to_matrix_index(*i))
+            .collect_vec();
+
+        println!("{}", knots);
+        println!("{:?}", idx);
+        println!("{:?}", lin_idx);
+        println!("{:?}", mat_idx);
     }
 
     #[test]
