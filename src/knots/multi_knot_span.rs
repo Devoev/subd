@@ -1,4 +1,4 @@
-use crate::knots::knot_span::KnotSpan;
+use crate::knots::knot_span::UniKnotSpan;
 use crate::knots::multi_knot_vec::MultiKnotVec;
 use itertools::{multipeek, Itertools, MultiProduct};
 use nalgebra::RealField;
@@ -23,9 +23,9 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
     }
     
     /// Creates [D] univariate [knot spans][KnotSpan].
-    pub fn as_univariate(&self) -> [KnotSpan<T>; D] {
+    pub fn as_univariate(&self) -> [UniKnotSpan<T>; D] {
         zip(self.indices, &self.knots.0)
-            .map(|(i, knots)| KnotSpan::new(knots, i))
+            .map(|(i, knots)| UniKnotSpan::new(knots, i))
             .collect_array()
             .unwrap()
     }

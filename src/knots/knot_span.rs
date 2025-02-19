@@ -4,7 +4,7 @@ use crate::knots::knot_vec::KnotVec;
 
 /// A knot span `[xi[i], xi[i+1])`.
 #[derive(Debug, Clone)]
-pub struct KnotSpan<'a, T: RealField> {
+pub struct UniKnotSpan<'a, T: RealField> {
 
     /// The knot vector.
     knots: &'a KnotVec<T>,
@@ -14,11 +14,11 @@ pub struct KnotSpan<'a, T: RealField> {
 }
 
 // todo: make n and p part of KnotVec
-impl<'a, T: RealField + Copy> KnotSpan<'a, T> {
+impl<'a, T: RealField + Copy> UniKnotSpan<'a, T> {
 
-    /// Constructs a new [KnotSpan].
+    /// Constructs a new [UniKnotSpan].
     pub fn new(knots: &'a KnotVec<T>, index: usize) -> Self {
-        KnotSpan { knots, index }
+        UniKnotSpan { knots, index }
     }
 
     /// Returns a range over all indices of basis functions
@@ -30,17 +30,17 @@ impl<'a, T: RealField + Copy> KnotSpan<'a, T> {
 
 impl <T: RealField + Copy> KnotVec<T> {
 
-    /// Finds the [KnotSpan] containing the parametric value `t`.
+    /// Finds the [UniKnotSpan] containing the parametric value `t`.
     ///
     /// # Arguments
     /// * `t` - Parametric value.
     /// * `n` - Number of basis functions.
     ///
-    pub fn find_span(&self, t: T, n: usize) -> Result<KnotSpan<T>, ()> {
+    pub fn find_span(&self, t: T, n: usize) -> Result<UniKnotSpan<T>, ()> {
         if t < self.first() || t > self.last() { return Err(()) }
 
         if t == self[n + 1] {
-            return Ok(KnotSpan::new(self, n - 1));
+            return Ok(UniKnotSpan::new(self, n - 1));
         }
 
         let idx = self.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
@@ -48,6 +48,6 @@ impl <T: RealField + Copy> KnotVec<T> {
             Ok(i) => { i }
             Err(i) => { i - 1 }
         };
-        Ok(KnotSpan::new(self, idx))
+        Ok(UniKnotSpan::new(self, idx))
     }
 }
