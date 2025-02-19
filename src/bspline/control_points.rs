@@ -1,6 +1,7 @@
-use crate::knots::knot_span::KnotSpan;
+use crate::knots::multi_knot_span::MultiKnotSpan;
+use itertools::Itertools;
 use nalgebra::iter::ColumnIter;
-use nalgebra::{Const, Dim, Dyn, Matrix, Owned, Point, RealField, Storage, VectorView, ViewStorage};
+use nalgebra::{Const, Dim, Dyn, Matrix, OMatrix, Owned, Point, RealField, Storage, VectorView, ViewStorage};
 
 /// The coordinates of control points, stored column wise as a matrix.
 type Coords<T, const M: usize, C, S> = Matrix<T, Const<M>, C, S>;
@@ -30,17 +31,12 @@ impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> Co
     }
 
     /// Returns all control points belonging to nonzero basis functions in the given `span`.
-    pub fn get_nonzero<const D: usize>(&self, span: [KnotSpan<T>; D], p: usize) -> ControlPointsView<T, M, Dyn, S::RStride, S::CStride> {
-        match D {
-            1 => {
-                ControlPoints::new(self.coords.columns_range(span[0].nonzero_indices(p)))
-            }
-            2 => {
-
-                todo!()
-            }
-            _ => todo!("Implement for multivariate splines by multivariate knot spans")
-        }
+    pub fn get_nonzero<const D: usize>(&self, span: MultiKnotSpan<T, D>, n: [usize; D], p: [usize; D]) -> OControlPoints<T, M, Dyn> {
+        // todo: return matrix view and not cloned matrix
+        let idx = span.nonzero_lin_indices(n, p);
+        let columns = idx.map(|i| self.coords.column(i)).collect_vec();
+        let coords = OMatrix::<T, Const<M>, Dyn>::from_columns(&columns);
+        ControlPoints::new(coords)
     }
 }
 

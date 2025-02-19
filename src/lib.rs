@@ -10,7 +10,7 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{dmatrix, matrix, point, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, U2, U7};
+    use nalgebra::{dmatrix, matrix, point, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, SMatrix, U2, U7};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -109,15 +109,14 @@ mod tests {
         let p = 2;
         let knots = KnotVec::<f64>::open(n, p);
         let splines = SplineBasis::new(knots, n, p);
+        let splines_2d = MultivariateSplineBasis::new([splines.clone(), splines.clone()]);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
-        let coords_dyn = <MatrixView<f64, U2, Dyn>>::into_owned(coords.as_view());
-        let coords_dyn = OMatrix::<f64, U2, Dyn>::from_column_slice(coords.as_slice());
+        let coords2 = SMatrix::<f64, 2, 25>::new_random();
         let control_points = ControlPoints::new(coords);
-        dbg!(coords_dyn.clone());
-        dbg!(coords_dyn.shape_generic());
+        let control_points2 = ControlPoints::new(coords2);
         
         let curve = SplineCurve::new(
             control_points.clone().point_iter().collect_vec(),
@@ -125,9 +124,11 @@ mod tests {
         ).unwrap();
 
         let curve2 = Spline::new(control_points, MultivariateSplineBasis::new([splines])).unwrap();
-
+        let surf = Spline::new(control_points2, splines_2d).unwrap();
+        
         dbg!(curve.eval(0.0));
-        dbg!(curve2.eval(0.0));
+        dbg!(curve2.eval_curve(0.0));
+        dbg!(surf.eval([0.0, 0.0]));
 
         let N = 1000;
         let mesh = curve.mesh(N);

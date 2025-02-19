@@ -37,7 +37,7 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
             .map(|(i, span)| span.nonzero_indices(p[i]))
             .multi_cartesian_product()
     }
-    
+
     /// Returns an iterator over all linear indices of basis functions which are nonzero in this span.
     pub fn nonzero_lin_indices(&self, n: [usize; D], p: [usize; D]) -> impl Iterator<Item=usize> {
         self.nonzero_indices(p)
