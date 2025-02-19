@@ -73,6 +73,7 @@ mod tests {
         let lin_idx = idx.clone().into_iter()
             .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [N, N]))
             .collect_vec();
+        let lin_idx_2 = span.nonzero_lin_indices([N, N], [p, p]).collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
@@ -80,6 +81,7 @@ mod tests {
         println!("{}", knots);
         println!("{:?}", idx);
         println!("{:?}", lin_idx);
+        println!("{:?}", lin_idx_2);
         println!("{:?}", mat_idx);
     }
 

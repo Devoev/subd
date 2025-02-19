@@ -1,6 +1,6 @@
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::multi_knot_vec::MultiKnotVec;
-use itertools::{Itertools, MultiProduct};
+use itertools::{multipeek, Itertools, MultiProduct};
 use nalgebra::RealField;
 use std::iter::zip;
 use std::ops::RangeInclusive;
@@ -36,6 +36,15 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
         self.as_univariate().iter().enumerate()
             .map(|(i, span)| span.nonzero_indices(p[i]))
             .multi_cartesian_product()
+    }
+    
+    /// Returns an iterator over all linear indices of basis functions which are nonzero in this span.
+    pub fn nonzero_lin_indices(&self, n: [usize; D], p: [usize; D]) -> impl Iterator<Item=usize> {
+        self.nonzero_indices(p)
+            .map(move |idx| {
+                let multi_idx = idx.into_iter().collect_array().unwrap();
+                MultiKnotVec::<T, D>::linear_index(multi_idx, n)
+            })
     }
 }
 
