@@ -33,12 +33,12 @@ impl<T : RealField + Copy, const D : usize> MultivariateSplineBasis<T, D> {
     }
     
     /// Returns an iterator over the number of basis functions in each parametric direction.
-    pub fn n(&self) -> impl Iterator + '_ {
+    pub fn n(&self) -> impl Iterator<Item=usize> + '_ {
         self.univariate_bases.iter().map(|basis| basis.n)
     }
     
     /// Returns an iterator over the degrees of basis functions in each parametric direction.
-    pub fn p(&self) -> impl Iterator + '_ {
+    pub fn p(&self) -> impl Iterator<Item=usize> + '_ {
         self.univariate_bases.iter().map(|basis| basis.p)
     }
 }
