@@ -42,11 +42,11 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     }
     
     /// Converts the given multi index `idx` into a linear index.
-    /// 
+    ///
     /// # Arguments
     /// - `idx`: The multi index.
     /// - `n`: The number of basis functions in each direction.
-    /// 
+    ///
     /// todo: move to MultiIndex struct
     pub fn linear_index(idx: [usize; D], n: [usize; D]) -> usize {
         let mut linear_index = 0;

@@ -10,7 +10,7 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{dmatrix, matrix, point, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, U2, U7};
+    use nalgebra::{dmatrix, matrix, point, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, U2, U7};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -63,18 +63,18 @@ mod tests {
 
     #[test]
     fn multi_index() {
-        let n = 5;
-        let p = 1;
+        const N: usize = 6;
+        let p = 2;
         let t = 0.5;
 
-        let knots = MultiKnotVec::<f64, 2>::open([n, n], [p, p]);
-        let span = knots.find_span([t, t], [n, n]).unwrap();
-        let idx = span.nonzero_indices([1, 1]).collect_vec();
+        let knots = MultiKnotVec::<f64, 2>::open([N, N], [p, p]);
+        let span = knots.find_span([t, t], [N, N]).unwrap();
+        let idx = span.nonzero_indices([p, p]).collect_vec();
         let lin_idx = idx.clone().into_iter()
-            .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [n, n]))
+            .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [N, N]))
             .collect_vec();
         let mat_idx = lin_idx.iter()
-            .map(|i| Matrix5::<f64>::zeros().vector_to_matrix_index(*i))
+            .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
 
         println!("{}", knots);

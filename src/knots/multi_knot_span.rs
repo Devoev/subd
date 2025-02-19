@@ -33,11 +33,6 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
     pub fn nonzero_indices(&self, p: [usize; D]) -> MultiProduct<RangeInclusive<usize>> {
-        // todo:
-        // - get ranges per parametric direction
-        // - build cartesian product
-        // - flatten index
-        
         self.as_univariate().iter().enumerate()
             .map(|(i, span)| span.nonzero_indices(p[i]))
             .multi_cartesian_product()
