@@ -1,14 +1,14 @@
+use crate::knots::knots_trait::Knots;
+use crate::mesh::Mesh;
 use iter_num_tools::lin_space;
 use itertools::{chain, Dedup, DedupWithCount, Itertools};
 use nalgebra::RealField;
 use std::fmt::{Display, Formatter, Result};
-use std::iter::zip;
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
-use crate::mesh::Mesh;
 
-/// A knot vector of increasing knot values.
+/// A knot vector backed by a [`Vec<T>`].
 #[derive(Debug, Clone)]
 pub struct KnotVec<T : RealField>(pub(crate) Vec<T>);
 
