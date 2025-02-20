@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+num-traits = "0.2.19"
 iter_num_tools = "0.7.1"
 itertools = "0.14.0"
 nalgebra = { version = "0.33.2", features = ["rand"] }

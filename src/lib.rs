@@ -11,13 +11,14 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::bspline::spline_curve::SplineCurve;
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{dmatrix, matrix, point, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, Point, SMatrix, U2, U7};
+    use nalgebra::{dmatrix, matrix, point, CStride, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, Point, SMatrix, U2, U7};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::Spline;
+    use crate::knots::index::{MultiIndex, Strides};
     use crate::knots::multi_knot_vec::MultiKnotVec;
     use crate::mesh::Mesh;
 
@@ -67,6 +68,12 @@ mod tests {
         const N: usize = 6;
         let p = 2;
         let t = 0.5;
+        
+        let dims = [3, 3, 3];
+        let strides = Strides::from_dims(dims);
+        let multi_idx = MultiIndex([2, 2, 2]);
+        println!("{:?}", multi_idx);
+        println!("{:?}", multi_idx.into_lin(strides));
 
         let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
         let span = knots.find_span([t, t]).unwrap();
