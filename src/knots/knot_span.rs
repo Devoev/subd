@@ -1,6 +1,7 @@
+use crate::knots::index::{MultiIndex, Strides};
 use crate::knots::knot_vec::KnotVec;
 use crate::knots::multi_knot_vec::MultiKnotVec;
-use itertools::{Itertools, MultiProduct};
+use itertools::Itertools;
 use nalgebra::RealField;
 use std::iter::zip;
 use std::ops::RangeInclusive;
@@ -23,7 +24,7 @@ impl<'a, Idx, K> KnotSpan<'a, Idx, K> {
 }
 
 /// A multivariate knot span.
-pub type MultiKnotSpan<'a, T, const D: usize> = KnotSpan<'a, [usize; D], MultiKnotVec<T, D>>;
+pub type MultiKnotSpan<'a, T, const D: usize> = KnotSpan<'a, MultiIndex<usize, D>, MultiKnotVec<T, D>>;
 
 /// A univariate knot span.
 pub type KnotSpan1<'a, T> = KnotSpan<'a, usize, KnotVec<T>>;
@@ -64,31 +65,29 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
             .collect_array()
             .ok_or(())?;
 
-        Ok(KnotSpan::new(knots, index))
+        Ok(KnotSpan::new(knots, MultiIndex(index)))
     }
     
-    /// Creates [D] univariate [knot spans][KnotSpan].
-    pub fn as_univariate(&self) -> [KnotSpan1<T>; D] {
-        zip(self.index, &self.knots.0)
-            .map(|(i, knots)| KnotSpan1::new(knots, i))
-            .collect_array()
-            .unwrap()
+    /// Returns an iterator of univariate [knot spans][KnotSpan] for each parametric direction.
+    fn spans(&self) -> impl Iterator<Item=KnotSpan1<T>> {
+        zip(&self.index, &self.knots.0)
+            .map(|(i, knots)| KnotSpan1::new(knots, *i))
     }
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self) -> MultiProduct<RangeInclusive<usize>> {
-        self.as_univariate().iter()
+    pub fn nonzero_indices(&self) -> impl Iterator<Item=MultiIndex<usize, D>> {
+        self.spans()
             .map(|span| span.nonzero_indices())
             .multi_cartesian_product()
+            .map(|vec| MultiIndex(vec.into_iter().collect_array().unwrap()))
     }
 
     /// Returns an iterator over all linear indices of basis functions which are nonzero in this span.
     pub fn nonzero_lin_indices(&self) -> impl Iterator<Item=usize> + '_ {
+        // todo: put a strides() function in multi knot vec or somewhere else
+        let strides = Strides::from_dims(self.knots.n());
         self.nonzero_indices()
-            .map(move |idx| {
-                let multi_idx = idx.into_iter().collect_array().unwrap();
-                MultiKnotVec::<T, D>::linear_index(multi_idx, self.knots.n())
-            })
+            .map(move |idx| idx.into_lin(&strides))
     }
 }

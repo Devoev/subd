@@ -73,7 +73,7 @@ mod tests {
         let strides = Strides::from_dims(dims);
         let multi_idx = MultiIndex([2, 2, 2]);
         println!("{:?}", multi_idx);
-        println!("{:?}", multi_idx.into_lin(strides));
+        println!("{:?}", multi_idx.into_lin(&strides));
 
         let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
         let span = knots.find_span([t, t]).unwrap();

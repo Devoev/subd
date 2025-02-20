@@ -28,6 +28,15 @@ impl<I, const D: usize> IntoIterator for Strides<I, D> {
     }
 }
 
+impl<'a, I, const D: usize> IntoIterator for &'a Strides<I, D> {
+    type Item = &'a I;
+    type IntoIter = std::slice::Iter<'a, I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 /// A [`D`]-variate [multi index](https://en.wikipedia.org/wiki/Multi-index_notation)
 /// with index type [`I`].
 #[derive(Debug, Clone)]
@@ -37,8 +46,8 @@ impl <I: PrimInt + NumAssign + Sum, const D: usize> MultiIndex<I, D> {
 
     /// Converts this [`MultiIndex`] into a linear index,
     /// with the given `strides`.
-    pub fn into_lin(self, strides: Strides<I, D>) -> I {
-        zip(self, strides).map(|(i, stride)| i * stride).sum()
+    pub fn into_lin(self, strides: &Strides<I, D>) -> I {
+        zip(self, strides).map(|(i, stride)| i * *stride).sum()
     }
 }
 
@@ -55,5 +64,14 @@ impl<I, const D: usize> IntoIterator for MultiIndex<I, D> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<'a, I, const D: usize> IntoIterator for &'a MultiIndex<I, D> {
+    type Item = &'a I;
+    type IntoIter = std::slice::Iter<'a, I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
     }
 }
