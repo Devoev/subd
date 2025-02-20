@@ -110,29 +110,6 @@ impl<T : RealField + Copy> KnotVec<T> {
     }
 }
 
-impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
-    type NodeIter = Breaks<'a, T>;
-    type ElemIter = impl Iterator<Item=ParametricBezierInterval<T>> + Clone;
-
-    fn num_nodes(self) -> usize {
-        self.breaks().count()
-    }
-
-    fn nodes(self) -> Self::NodeIter {
-        self.breaks()
-    }
-
-    fn num_elems(self) -> usize {
-        self.num_nodes() - 1
-    }
-
-    fn elems(self) -> Self::ElemIter {
-        self.nodes()
-            .tuple_windows()
-            .map(|(a, b)| ParametricBezierInterval::new(*a, *b))
-    }
-}
-
 impl <T : RealField> Index<usize> for KnotVec<T> {
     type Output = T;
 
@@ -166,6 +143,30 @@ impl<T : RealField> Display for KnotVec<T> {
 }
 
 // todo: update definition
+
+impl<'a, T: RealField + Copy> Mesh for &'a KnotVec<T> {
+    type NodeIter = Breaks<'a, T>;
+    type ElemIter = impl Iterator<Item=ParametricBezierInterval<T>> + Clone;
+
+    fn num_nodes(self) -> usize {
+        self.breaks().count()
+    }
+
+    fn nodes(self) -> Self::NodeIter {
+        self.breaks()
+    }
+
+    fn num_elems(self) -> usize {
+        self.num_nodes() - 1
+    }
+
+    fn elems(self) -> Self::ElemIter {
+        self.nodes()
+            .tuple_windows()
+            .map(|(a, b)| ParametricBezierInterval::new(*a, *b))
+    }
+}
+
 /// A 1D Bezier element in parametric domain, i.e. the open interval `(a,b)`.
 #[derive(Debug, Clone)]
 pub struct ParametricBezierInterval<T : RealField> {

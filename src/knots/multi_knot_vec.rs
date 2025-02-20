@@ -66,31 +66,6 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     }
 }
 
-impl<T: RealField + Copy, const D: usize> Mesh for &MultiKnotVec<T, D> {
-
-    type NodeIter = impl Iterator<Item=Point<T, D>>;
-    type ElemIter = impl Iterator<Item=ParametricBezierElement<T, D>>;
-
-    fn num_nodes(self) -> usize {
-        self.nodes().count()
-    }
-
-    fn nodes(self) -> Self::NodeIter {
-        self.breaks()
-    }
-
-    fn num_elems(self) -> usize {
-        self.elems().count()
-    }
-
-    fn elems(self) -> Self::ElemIter {
-        self.0.iter()
-            .map(|knots| knots.elems())
-            .multi_cartesian_product()
-            .map(|vec| ParametricBezierElement::new(vec.try_into().unwrap()))
-    }
-}
-
 impl<T: RealField + Copy, const D : usize> IntoIterator for MultiKnotVec<T, D> {
     type Item = [T; D];
     type IntoIter = impl Iterator<Item=Self::Item>;
@@ -130,6 +105,31 @@ impl<T: RealField, const D: usize> Display for MultiKnotVec<T, D> {
 }
 
 // todo: update definition
+
+impl<T: RealField + Copy, const D: usize> Mesh for &MultiKnotVec<T, D> {
+
+    type NodeIter = impl Iterator<Item=Point<T, D>>;
+    type ElemIter = impl Iterator<Item=ParametricBezierElement<T, D>>;
+
+    fn num_nodes(self) -> usize {
+        self.nodes().count()
+    }
+
+    fn nodes(self) -> Self::NodeIter {
+        self.breaks()
+    }
+
+    fn num_elems(self) -> usize {
+        self.elems().count()
+    }
+
+    fn elems(self) -> Self::ElemIter {
+        self.0.iter()
+            .map(|knots| knots.elems())
+            .multi_cartesian_product()
+            .map(|vec| ParametricBezierElement::new(vec.try_into().unwrap()))
+    }
+}
 
 /// A Bezier element in `D`-dimensional parametric domain.
 #[derive(Debug)]
