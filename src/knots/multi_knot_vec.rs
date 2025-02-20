@@ -5,11 +5,11 @@ use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
 use crate::mesh::Mesh;
 
-/// A `D`-variate multivariate knot vector.
+/// A [`D`]-variate multivariate knot vector.
 #[derive(Debug, Clone)]
-pub struct MultiKnotVec<T : RealField, const D : usize>(pub(crate) [KnotVec<T>; D]);
+pub struct MultiKnotVec<T: RealField, const D: usize>(pub(crate) [KnotVec<T>; D]);
 
-impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
+impl<T: RealField + Copy, const D: usize> MultiKnotVec<T, D> {
 
     /// Constructs a new [`MultiKnotVec`] from the given knot vectors.
     pub fn new(knot_vecs: [KnotVec<T>; D]) -> Self {
@@ -28,6 +28,16 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
 }
 
 impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
+    
+    /// Return the number of basis functions per parametric direction.
+    pub fn n(&self) -> [usize; D] {
+        self.0.iter().map(|knot_vec| knot_vec.n).collect_array().unwrap()
+    }
+    
+    /// Return the degrees of basis functions per parametric direction.
+    pub fn p(&self) -> [usize; D] {
+        self.0.iter().map(|knot_vec| knot_vec.p).collect_array().unwrap()
+    }
 
     pub fn breaks(&self) -> impl Iterator<Item=Point<T, D>> + '_ {
         self.0.iter()
