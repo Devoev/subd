@@ -1,7 +1,7 @@
-use crate::knots::multi_knot_span::MultiKnotSpan;
 use itertools::Itertools;
 use nalgebra::iter::ColumnIter;
 use nalgebra::{Const, Dim, Dyn, Matrix, OMatrix, Owned, Point, RealField, Storage, VectorView, ViewStorage};
+use crate::knots::knot_span::MultiKnotSpan;
 
 /// The coordinates of control points, stored column wise as a matrix.
 type Coords<T, const M: usize, C, S> = Matrix<T, Const<M>, C, S>;

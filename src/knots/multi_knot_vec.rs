@@ -1,9 +1,10 @@
+use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::knots::knot_vec::{KnotVec, ParametricBezierInterval};
+use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
-use crate::mesh::Mesh;
 
 /// A [`D`]-variate multivariate knot vector.
 #[derive(Debug, Clone)]
@@ -44,6 +45,11 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
             .map(|knots| knots.breaks().copied())
             .multi_cartesian_product()
             .map(|vec| Point::from_slice(&vec))
+    }
+
+    /// Finds the [`KnotSpan`] containing the given parametric value `t`.
+    pub fn find_span(&self, t: [T; D]) -> Result<MultiKnotSpan<T, D>, ()> {
+        MultiKnotSpan::find(self, t)
     }
     
     /// Converts the given multi index `idx` into a linear index.

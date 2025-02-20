@@ -1,11 +1,13 @@
+use core::fmt;
 use crate::mesh::Mesh;
 use iter_num_tools::lin_space;
 use itertools::{chain, Dedup, DedupWithCount, Itertools};
 use nalgebra::RealField;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter};
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
+use crate::knots::knot_span::{KnotSpan1, KnotSpan};
 
 /// A knot vector of length `n + p + 1`, backed by a [`Vec<T>`].
 #[derive(Debug, Clone)]
@@ -90,6 +92,11 @@ impl<T : RealField + Copy> KnotVec<T> {
     pub fn last(&self) -> T {
         self.vec[self.len() - 1]
     }
+    
+    /// Finds the [`KnotSpan`] containing the given parametric value `t`.
+    pub fn find_span(&self, t: T) -> Result<KnotSpan1<T>, ()> {
+        KnotSpan1::find(self, t)
+    }
 
     /// Returns an iterator over the breaks, i.e. unique knot values.
     pub fn breaks(&self) -> Breaks<T> {
@@ -137,7 +144,7 @@ impl <'a, T : RealField + Copy> IntoIterator for &'a KnotVec<T> {
 }
 
 impl<T : RealField> Display for KnotVec<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.vec)
     }
 }
@@ -190,7 +197,7 @@ impl<T: RealField + Copy> ParametricBezierInterval<T> {
 }
 
 impl<T: RealField> Display for ParametricBezierInterval<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.a, self.b)
     }
 }
