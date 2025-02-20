@@ -12,19 +12,14 @@ pub struct MultiKnotVec<T : RealField, const D : usize>(pub(crate) [KnotVec<T>; 
 impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
 
     /// Constructs a new [`MultiKnotVec`] from the given knot vectors.
-    pub fn new(factors: [KnotVec<T>; D]) -> Self {
-        MultiKnotVec(factors)
+    pub fn new(knot_vecs: [KnotVec<T>; D]) -> Self {
+        MultiKnotVec(knot_vecs)
     }
-
-    /// Constructs a uniform [`MultiKnotVec`] of size `nums[i]` for each direction.
-    pub fn uniform(nums: [usize; D]) -> Self {
-        nums.map(|num| KnotVec::uniform(num)).into()
-    }    
     
     /// Constructs a open [`MultiKnotVec`] of size `n[i] + p[i] + 1` for each direction.
-    pub fn open(n: [usize; D], p: [usize; D]) -> Self {
+    pub fn open_uniform(n: [usize; D], p: [usize; D]) -> Self {
         let arr: [KnotVec<T>; D] = zip(n, p)
-            .map(|(n, p)| KnotVec::open(n, p))
+            .map(|(n, p)| KnotVec::open_uniform(n, p))
             .collect_vec()
             .try_into()
             .unwrap();

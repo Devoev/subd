@@ -22,11 +22,11 @@ mod tests {
 
     #[test]
     fn knots() {
-        let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0]);
-        let Xi2 = KnotVec::<f64>::open(6, 2);
+        let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0], 3, 1);
+        let Xi2 = KnotVec::<f64>::open_uniform(6, 2);
         let (m, Z): (Vec<_>, Vec<&f64>) = Xi1.breaks_with_multiplicity().unzip();
         let Xi3 = MultiKnotVec::new([Xi1.clone(), Xi2.clone()]);
-        let Xi4 = MultiKnotVec::<f64, 2>::open([5, 3], [1, 2]);
+        let Xi4 = MultiKnotVec::<f64, 2>::open_uniform([5, 3], [1, 2]);
         
         println!("Z: {:?}", Z);
         println!("m: {:?}", m);
@@ -67,7 +67,7 @@ mod tests {
         let p = 2;
         let t = 0.5;
 
-        let knots = MultiKnotVec::<f64, 2>::open([N, N], [p, p]);
+        let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
         let span = knots.find_span([t, t], [N, N]).unwrap();
         let idx = span.nonzero_indices([p, p]).collect_vec();
         let lin_idx = idx.clone().into_iter()
@@ -89,7 +89,7 @@ mod tests {
     fn splines() {
         let n = 4;
         let p = 2;
-        let knots = KnotVec::<f64>::open(n, p);
+        let knots = KnotVec::<f64>::open_uniform(n, p);
         let splines = SplineBasis::new(knots.clone(), n, p);
         let splines_2d = MultiSplineBasis::<f64, 2>::open([5, 5], [1, 1]);
         let splines_3d = MultiSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
@@ -106,7 +106,7 @@ mod tests {
     fn spline_curves() {
         let n = 5;
         let p = 2;
-        let knots = KnotVec::<f64>::open(n, p);
+        let knots = KnotVec::<f64>::open_uniform(n, p);
         let splines = SplineBasis::new(knots, n, p);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
@@ -145,7 +145,7 @@ mod tests {
         let n = 3;
         let p = 2;
 
-        let knots = KnotVec::<f64>::open(n, p);
+        let knots = KnotVec::<f64>::open_uniform(n, p);
         let splines_uni = SplineBasis::new(knots, n, p);
         let splines_2d = MultiSplineBasis::new([splines_uni.clone(), splines_uni.clone()]);
 

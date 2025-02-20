@@ -24,7 +24,7 @@ impl<T : RealField + Copy> SplineBasis<T> {
     
     /// Constructs a new [`SplineBasis`] on an open knot vector of size `n+p+1`.
     pub fn open(n: usize, p: usize) -> Self {
-        Self::new(KnotVec::open(n, p), n, p)
+        Self::new(KnotVec::open_uniform(n, p), n, p)
     }
 }
 

@@ -37,6 +37,6 @@ impl<T : RealField + Copy, const D : usize> SplineCurve<T, D> {
 
     /// Meshes this curve by linearly spacing the parametric domain with `num` steps.
     pub fn mesh(self, num: usize) -> UnivariateMesh<T, D> {
-        UnivariateMesh::new(self, KnotVec::uniform(num))
+        UnivariateMesh::new(self, KnotVec::uniform(num, 1))
     }
 }

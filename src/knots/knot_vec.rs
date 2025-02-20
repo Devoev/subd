@@ -1,4 +1,3 @@
-use crate::knots::knots_trait::Knots;
 use crate::mesh::Mesh;
 use iter_num_tools::lin_space;
 use itertools::{chain, Dedup, DedupWithCount, Itertools};
@@ -8,38 +7,64 @@ use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
 
-/// A knot vector backed by a [`Vec<T>`].
+/// A knot vector of length `n + p + 1`, backed by a [`Vec<T>`].
 #[derive(Debug, Clone)]
-pub struct KnotVec<T : RealField>(pub(crate) Vec<T>);
+pub struct KnotVec<T: RealField> {
+    /// The vector of knot values.
+    pub(crate) vec: Vec<T>,
+    
+    /// Number of basis functions.
+    pub n: usize,
+    
+    /// Degree of basis functions.
+    pub p: usize
+}
 
 impl<T : RealField + Copy> KnotVec<T> {
 
-    /// Constructs a new `KnotVec`.
-    /// If the `knots` are not sorted, `None` is returned.
-    pub fn new(knots: Vec<T>) -> Option<Self> {
-        if knots.is_sorted() { Some(KnotVec(knots)) }
-        else { None }
+    /// Constructs a new [`KnotVec`].
+    /// 
+    /// If the `knots` are not sorted 
+    /// or the values of `n` and `p` don't match the length of the knots, 
+    /// [`None`] is returned.
+    pub fn new(knots: Vec<T>, n: usize, p: usize) -> Option<Self> {
+        (knots.is_sorted() && knots.len() == n + p + 1)
+            .then_some(KnotVec { vec: knots, n, p })
     }
     
     /// Constructs a new `KnotVec` assuming that `knots` is sorted.
-    pub fn from_sorted(knots: Vec<T>) -> Self {
-        KnotVec(knots)
+    pub fn from_sorted(knots: Vec<T>, n: usize, p: usize) -> Self {
+        KnotVec { vec: knots, n, p }
     }
     
-    /// Constructs a uniform `KnotVec` of size `num`.
-    pub fn uniform(num: usize) -> Self {
-        lin_space(T::zero()..=T::one(), num).collect()
+    /// Constructs a uniform [`KnotVec`].
+    pub fn uniform(n: usize, p: usize) -> Self {
+        let vec = lin_space(T::zero()..=T::one(), n + p + 1).collect_vec();
+        KnotVec { vec, n, p }
+    }
+    
+    /// Constructs an open [`KnotVec`] with given `internal` knot values.
+    /// 
+    /// If internal knots are not inside `(0,1)`, [`None`] is returned.
+    pub fn open(internal: Vec<T>, n: usize, p: usize) -> Option<Self> {
+        let vec = chain!(
+            std::iter::repeat_n(T::zero(), p+1),
+            internal,
+            std::iter::repeat_n(T::one(), p+1)
+        ).collect();
+        
+        Self::new(vec, n, p)
     }
 
-    /// Constructs an open uniform `KnotVec` of size `n+p+1`.
-    /// * `n` Number of basis functions.
-    /// * `p` Degree of the basis functions.
-    pub fn open(n: usize, p: usize) -> Self {
-        chain!(
+    /// Constructs an open uniform [`KnotVec`].
+    pub fn open_uniform(n: usize, p: usize) -> Self {
+        let vec = chain!(
             std::iter::repeat_n(T::zero(), p),
             lin_space(T::zero()..=T::one(), n-p+1),
             std::iter::repeat_n(T::one(), p)
-        ).collect()
+        ).collect();
+        
+        KnotVec { vec, n, p }
     }
 }
 
@@ -53,27 +78,27 @@ impl<T : RealField + Copy> KnotVec<T> {
 
     /// Returns the number of elements in the knot vector, i.e. `n+p+1`.
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.vec.len()
     }
 
     /// Returns the first knot.
     pub fn first(&self) -> T {
-        self.0[0]
+        self.vec[0]
     }
 
     /// Returns the last knot.
     pub fn last(&self) -> T {
-        self.0[self.len() - 1]
+        self.vec[self.len() - 1]
     }
 
     /// Returns an iterator over the breaks, i.e. unique knot values.
     pub fn breaks(&self) -> Breaks<T> {
-        self.0.iter().dedup()
+        self.vec.iter().dedup()
     }
 
     /// Returns an iterator over (multiplicity, break) pairs.
     pub fn breaks_with_multiplicity(&self) -> BreaksWithMultiplicity<T> {
-        self.0.iter().dedup_with_count()
+        self.vec.iter().dedup_with_count()
     }
     
     /// Returns the global mesh size, i.e. `h = max{ h_Q }`.
@@ -112,13 +137,7 @@ impl <T : RealField> Index<usize> for KnotVec<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
-    }
-}
-
-impl<T : RealField + Copy> FromIterator<T> for KnotVec<T> {
-    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
-        Self::from_sorted(Vec::from_iter(iter))
+        &self.vec[index]
     }
 }
 
@@ -127,7 +146,7 @@ impl <T : RealField + Copy> IntoIterator for KnotVec<T> {
     type IntoIter = vec::IntoIter<T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
+        self.vec.into_iter()
     }
 }
 
@@ -136,13 +155,13 @@ impl <'a, T : RealField + Copy> IntoIterator for &'a KnotVec<T> {
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
+        self.vec.iter()
     }
 }
 
 impl<T : RealField> Display for KnotVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:?}", self.0)
+        write!(f, "{:?}", self.vec)
     }
 }
 

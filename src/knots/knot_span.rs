@@ -43,7 +43,7 @@ impl <T: RealField + Copy> KnotVec<T> {
             return Ok(UniKnotSpan::new(self, n - 1));
         }
 
-        let idx = self.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
+        let idx = self.vec.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
         let idx = match idx {
             Ok(i) => { i }
             Err(i) => { i - 1 }
