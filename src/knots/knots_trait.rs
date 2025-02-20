@@ -1,9 +1,16 @@
 use std::ops::Index;
-use nalgebra::RealField;
 
-/// A [D]-variate knot vector of increasing knot values of type [T].
-pub trait Knots<'a, T: RealField, const D: usize, Idx> : Index<Idx> {
+/// A knot vector of increasing knot values of type [T].
+pub trait Knots<T, N, P, Idx> : Index<Idx, Output=T> {
+    /// Returns the numbers of basis functions on this knot vector for each parametric direction.
+    fn nums(&self) -> N;
+    
+    /// Returns the degrees of basis functions on this knot vector for each parametric direction.
+    fn degrees(&self) -> P;
+}
 
+/// Conversion into breakpoints.
+pub trait IntoBreaks<'a> {
     /// An iterator that yields the knot breakpoints.
     type Breaks: Iterator;
 
@@ -16,5 +23,3 @@ pub trait Knots<'a, T: RealField, const D: usize, Idx> : Index<Idx> {
     /// Returns an iterator over `(multiplicity, break)` pairs.
     fn breaks_with_multiplicity(&'a self) -> Self::BreaksWithMultiplicity;
 }
-
-// move breakpoint stuff to Breakpoints trait
