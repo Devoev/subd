@@ -32,18 +32,18 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self, p: [usize; D]) -> MultiProduct<RangeInclusive<usize>> {
-        self.as_univariate().iter().enumerate()
-            .map(|(i, span)| span.nonzero_indices(p[i]))
+    pub fn nonzero_indices(&self) -> MultiProduct<RangeInclusive<usize>> {
+        self.as_univariate().iter()
+            .map(|span| span.nonzero_indices())
             .multi_cartesian_product()
     }
 
     /// Returns an iterator over all linear indices of basis functions which are nonzero in this span.
-    pub fn nonzero_lin_indices(&self, n: [usize; D], p: [usize; D]) -> impl Iterator<Item=usize> {
-        self.nonzero_indices(p)
+    pub fn nonzero_lin_indices(&self) -> impl Iterator<Item=usize> + '_ {
+        self.nonzero_indices()
             .map(move |idx| {
                 let multi_idx = idx.into_iter().collect_array().unwrap();
-                MultiKnotVec::<T, D>::linear_index(multi_idx, n)
+                MultiKnotVec::<T, D>::linear_index(multi_idx, self.knots.n())
             })
     }
 }
@@ -51,14 +51,9 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
 impl <T: RealField + Copy, const D: usize> MultiKnotVec<T, D> {
 
     /// Finds the [MultiKnotSpan] containing the parametric value `t`.
-    ///
-    /// # Arguments
-    /// * `t` - Parametric values.
-    /// * `n` - Number of basis functions in each parametric direction.
-    ///
-    pub fn find_span(&self, t: [T; D], n: [usize; D]) -> Result<MultiKnotSpan<T, D>, ()> {
-        let indices = self.0.iter().enumerate()
-            .flat_map(|(i, knots)| knots.find_span(t[i], n[i]))
+    pub fn find_span(&self, t: [T; D]) -> Result<MultiKnotSpan<T, D>, ()> {
+        let indices = zip(&self.0, t)
+            .flat_map(|(knots, ti)| knots.find_span(ti))
             .map(|span| span.index)
             .collect_array()
             .ok_or(())?;

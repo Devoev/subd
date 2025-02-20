@@ -23,24 +23,19 @@ impl<'a, T: RealField + Copy> UniKnotSpan<'a, T> {
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self, p: usize) -> RangeInclusive<usize> {
-        self.index - p..=self.index
+    pub fn nonzero_indices(&self) -> RangeInclusive<usize> {
+        self.index - self.knots.p..=self.index
     }
 }
 
 impl <T: RealField + Copy> KnotVec<T> {
 
     /// Finds the [UniKnotSpan] containing the parametric value `t`.
-    ///
-    /// # Arguments
-    /// * `t` - Parametric value.
-    /// * `n` - Number of basis functions.
-    ///
-    pub fn find_span(&self, t: T, n: usize) -> Result<UniKnotSpan<T>, ()> {
+    pub fn find_span(&self, t: T) -> Result<UniKnotSpan<T>, ()> {
         if t < self.first() || t > self.last() { return Err(()) }
 
-        if t == self[n + 1] {
-            return Ok(UniKnotSpan::new(self, n - 1));
+        if t == self[self.n + 1] {
+            return Ok(UniKnotSpan::new(self, self.n - 1));
         }
 
         let idx = self.vec.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());

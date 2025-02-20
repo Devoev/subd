@@ -48,13 +48,13 @@ mod tests {
         println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems());
 
         let t = 0.6;
-        let span1 = Xi2.find_span(t, 6).unwrap();
-        let span2 = Xi4.find_span([t, t], [5, 3]).unwrap();
+        let span1 = Xi2.find_span(t).unwrap();
+        let span2 = Xi4.find_span([t, t]).unwrap();
         
-        println!("Span for univariate knot vec {:?}", span1.nonzero_indices(2).collect_vec());
-        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices([1, 2]).collect_vec());
+        println!("Span for univariate knot vec {:?}", span1.nonzero_indices().collect_vec());
+        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices().collect_vec());
         
-        let lin_indices = span2.nonzero_indices([1, 2])
+        let lin_indices = span2.nonzero_indices()
             .map(|idx| MultiKnotVec::<f64, 2>::linear_index(idx.into_iter().collect_array().unwrap(), [5, 3]))
             .collect_vec();
         
@@ -68,12 +68,12 @@ mod tests {
         let t = 0.5;
 
         let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
-        let span = knots.find_span([t, t], [N, N]).unwrap();
-        let idx = span.nonzero_indices([p, p]).collect_vec();
+        let span = knots.find_span([t, t]).unwrap();
+        let idx = span.nonzero_indices().collect_vec();
         let lin_idx = idx.clone().into_iter()
             .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [N, N]))
             .collect_vec();
-        let lin_idx_2 = span.nonzero_lin_indices([N, N], [p, p]).collect_vec();
+        let lin_idx_2 = span.nonzero_lin_indices().collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();

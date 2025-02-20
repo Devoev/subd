@@ -32,7 +32,7 @@ impl<T : RealField + Copy> SplineBasis<T> {
     
     /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
     pub fn eval(&self, t: T) -> DVector<T> {
-        let span = self.knots.find_span(t, self.n)
+        let span = self.knots.find_span(t)
             .expect("Parametric value is outside of knot vector.");
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
