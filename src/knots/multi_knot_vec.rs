@@ -51,25 +51,6 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     pub fn find_span(&self, t: [T; D]) -> Result<MultiKnotSpan<T, D>, ()> {
         MultiKnotSpan::find(self, t)
     }
-    
-    /// Converts the given multi index `idx` into a linear index.
-    ///
-    /// # Arguments
-    /// - `idx`: The multi index.
-    /// - `n`: The number of basis functions in each direction.
-    ///
-    /// todo: move to MultiIndex struct
-    pub fn linear_index(idx: [usize; D], n: [usize; D]) -> usize {
-        let mut linear_index = 0;
-        let mut stride = 1;
-
-        for (i, ni) in zip(idx, n) {
-            linear_index += i * stride;
-            stride *= ni;
-        }
-
-        linear_index
-    }
 }
 
 impl<T: RealField + Copy, const D : usize> IntoIterator for MultiKnotVec<T, D> {

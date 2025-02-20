@@ -55,12 +55,6 @@ mod tests {
         
         println!("Span for univariate knot vec {:?}", span1.nonzero_indices().collect_vec());
         println!("Span for multivariate knot vec {:?}", span2.nonzero_indices().collect_vec());
-        
-        let lin_indices = span2.nonzero_indices()
-            .map(|idx| MultiKnotVec::<f64, 2>::linear_index(idx.into_iter().collect_array().unwrap(), [5, 3]))
-            .collect_vec();
-        
-        println!("Span for multivariate knot vec {:?} (linear)", lin_indices);
     }
 
     #[test]
@@ -76,10 +70,11 @@ mod tests {
         println!("{:?}", multi_idx.into_lin(&strides));
 
         let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
+        let strides = Strides::from_dims(knots.n());
         let span = knots.find_span([t, t]).unwrap();
         let idx = span.nonzero_indices().collect_vec();
         let lin_idx = idx.clone().into_iter()
-            .map(|i| MultiKnotVec::<f64, 2>::linear_index(i.into_iter().collect_array().unwrap(), [N, N]))
+            .map(|i| i.into_lin(&strides))
             .collect_vec();
         let lin_idx_2 = span.nonzero_lin_indices().collect_vec();
         let mat_idx = lin_idx.iter()
