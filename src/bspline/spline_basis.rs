@@ -1,56 +1,73 @@
 use crate::knots::knot_vec::KnotVec;
+use crate::knots::multi_knot_vec::MultiKnotVec;
 use nalgebra::{DVector, RealField};
 
-/// A B-spline basis of `n` basis functions of degree `p`.
+/// A set of B-spline basis functions.
 #[derive(Debug, Clone)]
-pub struct SplineBasis<T : RealField> {
-    
+pub struct SplineBasis<K> {
     /// Knot vector for the allocation of the basis functions.
-    pub knots: KnotVec<T>,
-    
-    /// Number of basis functions.
-    pub n: usize,
-    
-    /// Degree of basis functions.
-    pub p: usize,
+    pub knots: K
 }
 
-impl<T : RealField + Copy> SplineBasis<T> {
-
+impl<K> SplineBasis<K> {
     /// Constructs a new [`SplineBasis`].
-    pub fn new(knots: KnotVec<T>, n: usize, p: usize) -> Self {
-        SplineBasis { knots, n, p }
+    pub fn new(knots: K) -> Self { SplineBasis { knots } }
+}
+
+/// A multivariate spline basis.
+pub type MultiSplineBasis<T, const D: usize> = SplineBasis<MultiKnotVec<T, D>>;
+
+/// A univariate spline basis.
+pub type SplineBasis1<T> = SplineBasis<KnotVec<T>>;
+
+/// A bivariate spline basis.
+pub type SplineBasis2<T> = SplineBasis<MultiKnotVec<T, 2>>;
+
+impl <T: RealField + Copy> SplineBasis1<T> {
+    /// Constructs a new [`SplineBasis`] on an open uniform [`KnotVec`] of size `n+p+1`.
+    pub fn open_uniform(n: usize, p: usize) -> Self {
+        SplineBasis::new(KnotVec::open_uniform(n, p))
     }
     
-    /// Constructs a new [`SplineBasis`] on an open knot vector of size `n+p+1`.
-    pub fn open(n: usize, p: usize) -> Self {
-        Self::new(KnotVec::open_uniform(n, p), n, p)
+    /// Returns the total number of basis functions.
+    pub fn num(&self) -> usize {
+        self.knots.n
+    }
+
+    /// Evaluates this basis at `t`.
+    pub fn eval(&self, t: T) -> DVector<T> {
+        self.knots.eval_basis(t)
     }
 }
 
-impl<T : RealField + Copy> SplineBasis<T> {
-    
-    /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
-    pub fn eval(&self, t: T) -> DVector<T> {
-        let span = self.knots.find_span(t)
-            .expect("Parametric value is outside of knot vector.");
-        let mut left = vec![T::zero(); self.p + 1];
-        let mut right = vec![T::zero(); self.p + 1];
-        let mut b = DVector::zeros(self.p + 1);
-        b[0] = T::one();
+impl<T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
+    /// Constructs a new [`MultiSplineBasis`] from given univariate bases.
+    pub fn from_bases(bases: [SplineBasis1<T>; D]) -> Self {
+        MultiSplineBasis::new(MultiKnotVec(bases.map(|b| b.knots)))
+    }
 
-        for i in 1..=self.p {
-            left[i] = t - self.knots[span.index - i + 1];
-            right[i] = self.knots[span.index + i] - t;
-            let mut saved = T::zero();
+    /// Constructs a new [`MultiSplineBasis`] on an open uniform knot vector of size `n+p+1`.
+    pub fn open_uniform(n: [usize; D], p: [usize; D]) -> Self {
+        MultiSplineBasis::new(MultiKnotVec::open_uniform(n, p))
+    }
 
-            for j in 0..i {
-                let tmp = b[j] / (right[j+1] + left[i-j]);
-                b[j] = saved + right[j+1]*tmp;
-                saved = left[i-j]*tmp;
-            }
-            b[i] = saved;
-        }
-        b
+    /// Returns the total number of basis functions.
+    pub fn num(&self) -> usize {
+        self.knots.0.iter().map(|basis| basis.n).product()
+    }
+
+    /// Returns an iterator over the number of basis functions in each parametric direction.
+    pub fn n(&self) -> impl Iterator<Item=usize> + '_ {
+        self.knots.0.iter().map(|basis| basis.n)
+    }
+
+    /// Returns an iterator over the degrees of basis functions in each parametric direction.
+    pub fn p(&self) -> impl Iterator<Item=usize> + '_ {
+        self.knots.0.iter().map(|basis| basis.p)
+    }
+
+    /// Evaluates this basis at `t`.
+    pub fn eval(&self, t: [T; D]) -> DVector<T> {
+        self.knots.eval_basis(t)
     }
 }

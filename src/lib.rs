@@ -7,20 +7,18 @@ mod mesh;
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-    use crate::bspline::spline_basis::SplineBasis;
-    use crate::bspline::spline_curve::SplineCurve;
+    use crate::bspline::control_points::ControlPoints;
+    use crate::bspline::spline::Spline;
+    use crate::knots::index::{MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
-    use nalgebra::{dmatrix, matrix, point, CStride, Const, Dyn, Matrix, Matrix3, Matrix3xX, Matrix5, MatrixView, OMatrix, Point, SMatrix, U2, U7};
+    use crate::knots::multi_knot_vec::MultiKnotVec;
+    use crate::mesh::Mesh;
+    use itertools::Itertools;
+    use nalgebra::{matrix, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
-    use crate::bspline::control_points::ControlPoints;
-    use crate::bspline::multi_spline_basis::MultiSplineBasis;
-    use crate::bspline::spline::Spline;
-    use crate::knots::index::{MultiIndex, Strides};
-    use crate::knots::multi_knot_vec::MultiKnotVec;
-    use crate::mesh::Mesh;
+    use crate::bspline::spline_basis::{MultiSplineBasis, SplineBasis, SplineBasis1};
 
     #[test]
     fn knots() {
@@ -93,9 +91,9 @@ mod tests {
         let n = 4;
         let p = 2;
         let knots = KnotVec::<f64>::open_uniform(n, p);
-        let splines = SplineBasis::new(knots.clone(), n, p);
-        let splines_2d = MultiSplineBasis::<f64, 2>::open([5, 5], [1, 1]);
-        let splines_3d = MultiSplineBasis::<f64, 3>::open([5, 5, 5], [1, 1, 1]);
+        let splines = SplineBasis1::new(knots.clone());
+        let splines_2d = MultiSplineBasis::<f64, 2>::open_uniform([5, 5], [1, 1]);
+        let splines_3d = MultiSplineBasis::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
         println!("{}", knots);
@@ -110,37 +108,15 @@ mod tests {
         let n = 5;
         let p = 2;
         let knots = KnotVec::<f64>::open_uniform(n, p);
-        let splines = SplineBasis::new(knots, n, p);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
         let control_points = ControlPoints::new(coords);
-
-        let curve = SplineCurve::new(
-            control_points.clone().point_iter().collect_vec(),
-            splines.clone()
-        ).unwrap();
-
-        let curve2 = Spline::new(control_points, MultiSplineBasis::new([splines])).unwrap();
-
-        dbg!(curve.eval(0.0));
-        dbg!(curve2.eval_curve(0.0));
-
-        let N = 1000;
-        let mesh = curve.mesh(N);
-        let data = mesh.nodes();
-
-        let root_area = BitMapBackend::new("spline_curve.png", (800, 800))
-            .into_drawing_area();
-        root_area.fill(&WHITE).unwrap();
-
-        let mut ctx = ChartBuilder::on(&root_area)
-            .build_cartesian_2d(-1.5..1.5, -1.5..1.5)
-            .unwrap();
-
-        ctx.configure_mesh().draw().unwrap();
-        ctx.draw_series(LineSeries::new(data.map(|x| (x[0], x[1])), RED)).unwrap();
+        
+        let basis = SplineBasis::new(knots);
+        let curve = Spline::<_, KnotVec<f64>, 1, 2, _>::new(control_points, basis).unwrap();
+        dbg!(curve.eval_curve(0.0));
     }
 
     #[test]
@@ -149,18 +125,18 @@ mod tests {
         let p = 2;
 
         let knots = KnotVec::<f64>::open_uniform(n, p);
-        let splines_uni = SplineBasis::new(knots, n, p);
-        let splines_2d = MultiSplineBasis::new([splines_uni.clone(), splines_uni.clone()]);
+        let splines_uni = SplineBasis1::new(knots);
+        let splines_2d = MultiSplineBasis::from_bases([splines_uni.clone(), splines_uni.clone()]);
 
         let control_points = ControlPoints::new(matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
-            0.0, 0.2, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.8
+            0.1, 0.2, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.8
         ]);
 
         let coords_rand = SMatrix::<f64, 2, 25>::new_random();
         let control_points_rand = ControlPoints::new(coords_rand);
 
-        let surf = Spline::new(control_points, splines_2d).unwrap();
+        let surf = Spline::<_, _, 2, 2, _>::new(control_points, splines_2d).unwrap();
 
         const N: i32 = 100;
         let mut points: Vec<(f64, f64)> = vec![];

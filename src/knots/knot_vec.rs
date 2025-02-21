@@ -2,7 +2,7 @@ use core::fmt;
 use crate::mesh::Mesh;
 use iter_num_tools::lin_space;
 use itertools::{chain, Dedup, DedupWithCount, Itertools};
-use nalgebra::RealField;
+use nalgebra::{DVector, RealField};
 use std::fmt::{Display, Formatter};
 use std::ops::Index;
 use std::slice::Iter;
@@ -96,6 +96,30 @@ impl<T : RealField + Copy> KnotVec<T> {
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
     pub fn find_span(&self, t: T) -> Result<KnotSpan1<T>, ()> {
         KnotSpan1::find(self, t)
+    }
+
+    /// Evaluates the `p+1` non-vanishing basis functions at the parametric point `t`.
+    pub fn eval_basis(&self, t: T) -> DVector<T> {
+        let span = self.find_span(t)
+            .expect("Parametric value is outside of knot vector.");
+        let mut left = vec![T::zero(); self.p + 1];
+        let mut right = vec![T::zero(); self.p + 1];
+        let mut b = DVector::zeros(self.p + 1);
+        b[0] = T::one();
+
+        for i in 1..=self.p {
+            left[i] = t - self[span.index - i + 1];
+            right[i] = self[span.index + i] - t;
+            let mut saved = T::zero();
+
+            for j in 0..i {
+                let tmp = b[j] / (right[j+1] + left[i-j]);
+                b[j] = saved + right[j+1]*tmp;
+                saved = left[i-j]*tmp;
+            }
+            b[i] = saved;
+        }
+        b
     }
 
     /// Returns an iterator over the breaks, i.e. unique knot values.

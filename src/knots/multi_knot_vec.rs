@@ -2,11 +2,12 @@ use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::knots::knot_vec::{KnotVec, ParametricBezierInterval};
 use crate::mesh::Mesh;
 use itertools::Itertools;
-use nalgebra::{Point, RealField};
+use nalgebra::{DVector, Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
+use crate::bspline::spline_basis::SplineBasis1;
 
-/// A [`D`]-variate multivariate knot vector.
+/// A [`D`]-variate knot vector.
 #[derive(Debug, Clone)]
 pub struct MultiKnotVec<T: RealField, const D: usize>(pub(crate) [KnotVec<T>; D]);
 
@@ -50,6 +51,14 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
     pub fn find_span(&self, t: [T; D]) -> Result<MultiKnotSpan<T, D>, ()> {
         MultiKnotSpan::find(self, t)
+    }
+
+    /// Evaluates the non-vanishing basis functions at the parametric point `t`.
+    pub fn eval_basis(&self, t: [T; D]) -> DVector<T> {
+        zip(&self.0, t)
+            .map(|(knot_vec, ti)| knot_vec.eval_basis(ti))
+            .reduce(|acc, bi| acc.kronecker(&bi))
+            .expect("Dimension D must be greater than 0!")
     }
 }
 

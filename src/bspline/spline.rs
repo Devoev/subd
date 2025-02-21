@@ -1,13 +1,15 @@
 use crate::bspline::control_points::OControlPoints;
-use crate::bspline::multi_spline_basis::MultiSplineBasis;
-use crate::knots::multi_knot_vec::MultiKnotVec;
-use itertools::Itertools;
+use crate::bspline::spline_basis::{MultiSplineBasis, SplineBasis, SplineBasis1};
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField};
+use crate::knots::index::MultiIndex;
+use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
+use crate::knots::knot_vec::KnotVec;
+use crate::knots::multi_knot_vec::MultiKnotVec;
 
-/// A `D`-dimensional B-spline manifold embedded `M`-dimensional euclidian space.
+/// A [`D`]-dimensional B-spline manifold embedded [`M`]-dimensional euclidian space.
 #[derive(Debug, Clone)]
-pub struct Spline<T, const D : usize, const M : usize, C> 
+pub struct Spline<T, K, const D : usize, const M : usize, C> 
 where 
     T: RealField,
     C: Dim,
@@ -18,10 +20,23 @@ where
     pub control_points: OControlPoints<T, M, C>,
 
     /// B-spline basis functions for the parametrization.
-    pub basis: MultiSplineBasis<T, D>
+    pub basis: SplineBasis<K>
 }
 
-impl<T, const D : usize, const M : usize, C> Spline<T, D, M, C> 
+impl<T, const M : usize, C> Spline<T, KnotVec<T>, 1, M, C> 
+where 
+    T: RealField + Copy,
+    C: Dim,
+    DefaultAllocator: Allocator<Const<M>, C> 
+{
+
+    /// Constructs a new [`Spline`].
+    pub fn new(control_points: OControlPoints<T, M, C>, basis: SplineBasis1<T>) -> Option<Self> {
+        (basis.num() == control_points.num()).then_some(Spline { control_points, basis })
+    }
+}
+
+impl<T, const D : usize, const M : usize, C> Spline<T, MultiKnotVec<T, D>, D, M, C> 
 where 
     T: RealField + Copy,
     C: Dim,
@@ -34,7 +49,7 @@ where
     }
 }
 
-impl<T, const M : usize, C> Spline<T, 1, M, C>
+impl<T, const M : usize, C> Spline<T, KnotVec<T>, 1, M, C>
 where
     T: RealField + Copy,
     C: Dim,
@@ -43,16 +58,20 @@ where
 
     /// Evaluates the spline curve at the parametric point `t`.
     pub fn eval_curve(&self, t: T) -> Point<T, M> {
-        let basis = &self.basis.univariate_bases[0];
-        let knots = MultiKnotVec::new([basis.clone().knots]);
-        let span = knots.find_span([t]).unwrap();
-        let b = basis.eval(t);
+        // todo: remove this method
+        let span = self.basis.knots.find_span(t).unwrap();
+        let knots = MultiKnotVec([self.basis.knots.clone()]);
+        let span = MultiKnotSpan::new(
+            &knots,
+            MultiIndex([span.index])
+        );
+        let b = self.basis.eval(t);
         let c = self.control_points.get_nonzero(span);
         Point::from(c.coords * b)
     }
 }
 
-impl<T, const D: usize, const M : usize, C> Spline<T, D, M, C>
+impl<T, const D: usize, const M : usize, C> Spline<T, MultiKnotVec<T, D>, D, M, C>
 where
     T: RealField + Copy,
     C: Dim,
@@ -62,11 +81,8 @@ where
     /// Evaluates the spline at the parametric point `t`.
     pub fn eval(&self, t: [T; D]) -> Point<T, M> {
         // todo: debug this function
-        let basis = &self.basis;
-        let knots_uni = basis.univariate_bases.iter().map(|b| b.knots.clone()).collect_array::<D>().unwrap();
-        let knots = MultiKnotVec::new(knots_uni);
-        let span = knots.find_span(t).unwrap();
-        let b = basis.eval(t);
+        let span = self.basis.knots.find_span(t).unwrap();
+        let b = self.basis.eval(t);
         let c = self.control_points.get_nonzero(span);
         Point::from(c.coords * b)
     }
