@@ -1,6 +1,7 @@
 use crate::knots::knot_vec::KnotVec;
 use crate::knots::multi_knot_vec::MultiKnotVec;
 use nalgebra::{DVector, RealField};
+use crate::knots::knots_trait::Knots;
 
 /// A set of B-spline basis functions.
 #[derive(Debug, Clone)]

@@ -1,11 +1,10 @@
 use crate::bspline::control_points::OControlPoints;
 use crate::bspline::spline_basis::{MultiSplineBasis, SplineBasis, SplineBasis1};
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField};
-use crate::knots::index::MultiIndex;
-use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::knots::knot_vec::KnotVec;
 use crate::knots::multi_knot_vec::MultiKnotVec;
+use nalgebra::allocator::Allocator;
+use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField};
+use crate::knots::knots_trait::Knots;
 
 /// A [`D`]-dimensional B-spline manifold embedded [`M`]-dimensional euclidian space.
 #[derive(Debug, Clone)]

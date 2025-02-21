@@ -1,12 +1,21 @@
-use std::ops::Index;
+use crate::knots::knot_span::KnotSpan;
+use nalgebra::{DVector, RealField};
 
-/// A knot vector of increasing knot values of type [T].
-pub trait Knots<T, N, P, Idx> : Index<Idx, Output=T> {
-    /// Returns the numbers of basis functions on this knot vector for each parametric direction.
-    fn nums(&self) -> N;
+/// A knot vector of increasing knot values.
+/// 
+/// # Type parameters
+/// - [`T`] : Knot values and parametric values.
+/// - [`F`] : Real scalar type.
+/// - [`I`] : Index type of the knot vector.
+pub trait Knots<'a, T, F: RealField, I> where Self: Sized {
+    /// Returns the total number of basis functions.
+    fn num(&self) -> usize;
     
-    /// Returns the degrees of basis functions on this knot vector for each parametric direction.
-    fn degrees(&self) -> P;
+    /// Finds the [`KnotSpan`] containing the given parametric value `t`.
+    fn find_span(&'a self, t: T) -> Result<KnotSpan<'a, I, Self>, ()>;
+    
+    /// Evaluates the nonzero basis functions at the parametric point `t`.
+    fn eval_basis(&self, t: T) -> DVector<F>;
 }
 
 /// Conversion into breakpoints.

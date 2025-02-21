@@ -5,6 +5,7 @@ use itertools::Itertools;
 use nalgebra::RealField;
 use std::iter::zip;
 use std::ops::RangeInclusive;
+use crate::knots::knots_trait::Knots;
 
 /// A knot span `[xi[i], xi[i+1])`.
 #[derive(Debug, Clone)]

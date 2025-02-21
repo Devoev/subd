@@ -1,11 +1,12 @@
 use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::knots::knot_vec::{KnotVec, ParametricBezierInterval};
+use crate::knots::knots_trait::Knots;
 use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::{DVector, Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
-use crate::bspline::spline_basis::SplineBasis1;
+use crate::knots::index::MultiIndex;
 
 /// A [`D`]-variate knot vector.
 #[derive(Debug, Clone)]
@@ -29,6 +30,23 @@ impl<T: RealField + Copy, const D: usize> MultiKnotVec<T, D> {
     }
 }
 
+impl <'a, T: RealField + Copy, const D: usize> Knots<'a, [T; D], T, MultiIndex<usize, D>> for MultiKnotVec<T, D> {
+    fn num(&self) -> usize {
+        self.n().iter().product()
+    }
+
+    fn find_span(&'a self, t: [T; D]) -> Result<KnotSpan<'a, MultiIndex<usize, D>, Self>, ()> {
+        MultiKnotSpan::find(self, t)
+    }
+
+    fn eval_basis(&self, t: [T; D]) -> DVector<T> {
+        zip(&self.0, t)
+            .map(|(knot_vec, ti)| knot_vec.eval_basis(ti))
+            .reduce(|acc, bi| acc.kronecker(&bi))
+            .expect("Dimension D must be greater than 0!")
+    }
+}
+
 impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     
     /// Return the number of basis functions per parametric direction.
@@ -46,19 +64,6 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
             .map(|knots| knots.breaks().copied())
             .multi_cartesian_product()
             .map(|vec| Point::from_slice(&vec))
-    }
-
-    /// Finds the [`KnotSpan`] containing the given parametric value `t`.
-    pub fn find_span(&self, t: [T; D]) -> Result<MultiKnotSpan<T, D>, ()> {
-        MultiKnotSpan::find(self, t)
-    }
-
-    /// Evaluates the non-vanishing basis functions at the parametric point `t`.
-    pub fn eval_basis(&self, t: [T; D]) -> DVector<T> {
-        zip(&self.0, t)
-            .map(|(knot_vec, ti)| knot_vec.eval_basis(ti))
-            .reduce(|acc, bi| acc.kronecker(&bi))
-            .expect("Dimension D must be greater than 0!")
     }
 }
 

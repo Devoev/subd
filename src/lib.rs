@@ -19,6 +19,7 @@ mod tests {
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use crate::bspline::spline_basis::{MultiSplineBasis, SplineBasis, SplineBasis1};
+    use crate::knots::knots_trait::Knots;
 
     #[test]
     fn knots() {
