@@ -30,12 +30,10 @@ impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> Co
         self.coords.shape().1
     }
 
-    /// Returns all control points belonging to nonzero basis functions in the given `span`.
-    pub fn get_nonzero<const D: usize>(&self, span: MultiKnotSpan<T, D>) -> OControlPoints<T, M, Dyn> {
-        // todo: return matrix view and not cloned matrix
-        // todo: change span input to generic span 
-        let idx = span.nonzero_lin_indices();
-        let columns = idx.map(|i| self.coords.column(i)).collect_vec();
+    /// Returns all control points belonging to nonzero basis functions, 
+    /// determined by the `nonzero_indices`.
+    pub fn get_nonzero(&self, nonzero_indices: impl Iterator<Item=usize>) -> OControlPoints<T, M, Dyn> {
+        let columns = nonzero_indices.map(|i| self.coords.column(i)).collect_vec();
         let coords = OMatrix::<T, Const<M>, Dyn>::from_columns(&columns);
         ControlPoints::new(coords)
     }

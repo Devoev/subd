@@ -113,7 +113,7 @@ mod tests {
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
         let control_points = ControlPoints::new(coords);
-        
+
         let basis = SplineBasis::new(knots);
         let curve = Spline::<_, KnotVec<f64>, 1, 2, _>::new(control_points, basis).unwrap();
         dbg!(curve.eval_curve(0.0));

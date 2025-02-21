@@ -60,13 +60,8 @@ where
     pub fn eval_curve(&self, t: T) -> Point<T, M> {
         // todo: remove this method
         let span = self.basis.knots.find_span(t).unwrap();
-        let knots = MultiKnotVec([self.basis.knots.clone()]);
-        let span = MultiKnotSpan::new(
-            &knots,
-            MultiIndex([span.index])
-        );
         let b = self.basis.eval(t);
-        let c = self.control_points.get_nonzero(span);
+        let c = self.control_points.get_nonzero(span.nonzero_indices());
         Point::from(c.coords * b)
     }
 }
@@ -83,7 +78,7 @@ where
         // todo: debug this function
         let span = self.basis.knots.find_span(t).unwrap();
         let b = self.basis.eval(t);
-        let c = self.control_points.get_nonzero(span);
+        let c = self.control_points.get_nonzero(span.nonzero_lin_indices());
         Point::from(c.coords * b)
     }
 }
