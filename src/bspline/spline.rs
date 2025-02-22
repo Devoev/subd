@@ -4,6 +4,7 @@ use crate::knots::knot_vec::KnotVec;
 use crate::knots::multi_knot_vec::MultiKnotVec;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField};
+use crate::knots::index::Linearize;
 use crate::knots::knots_trait::Knots;
 
 /// A [`D`]-dimensional B-spline manifold embedded [`M`]-dimensional euclidian space.
@@ -76,8 +77,10 @@ where
     pub fn eval(&self, t: [T; D]) -> Point<T, M> {
         // todo: debug this function
         let span = self.basis.knots.find_span(t).unwrap();
+        let strides = self.basis.knots.strides();
+        let idx = span.nonzero_indices().linearize(&strides);
         let b = self.basis.eval(t);
-        let c = self.control_points.get_nonzero(span.nonzero_lin_indices());
+        let c = self.control_points.get_nonzero(idx);
         Point::from(c.coords * b)
     }
 }

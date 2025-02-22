@@ -1,11 +1,12 @@
 use num_traits::{NumAssign, PrimInt};
 use std::iter::{zip, Sum};
+use itertools::Itertools;
 
 /// Strides of a [`D`]-variate [`MultiIndex`].
 #[derive(Debug, Clone)]
 pub struct Strides<I, const D: usize>([I; D]);
 
-impl <I: PrimInt + NumAssign, const D: usize> Strides<I, D> {
+impl <I: PrimInt, const D: usize> Strides<I, D> {
 
     /// Calculates [`Strides`] of the given dimensions array `dims`.
     pub fn from_dims(mut dims: [I; D]) -> Self {
@@ -42,7 +43,7 @@ impl<'a, I, const D: usize> IntoIterator for &'a Strides<I, D> {
 #[derive(Debug, Clone)]
 pub struct MultiIndex<I, const D: usize>(pub [I; D]);
 
-impl <I: PrimInt + NumAssign + Sum, const D: usize> MultiIndex<I, D> {
+impl <I: PrimInt + Sum, const D: usize> MultiIndex<I, D> {
 
     /// Converts this [`MultiIndex`] into a linear index,
     /// with the given `strides`.
@@ -75,3 +76,17 @@ impl<'a, I, const D: usize> IntoIterator for &'a MultiIndex<I, D> {
         self.0.iter()
     }
 }
+
+/// Blanked implementation for [`Self::linearize`].
+pub trait Linearize<I: PrimInt + Sum, const D: usize> : Iterator<Item=MultiIndex<I, D>> + Sized {
+    /// Linearizes each [`MultiIndex`] into a linear index of type [`I`].
+    fn linearize(self, strides: &Strides<I, D>) -> impl Iterator<Item=I> {
+        self.map(|idx| idx.into_lin(strides))
+    }
+}
+
+impl<T, I, const D: usize> Linearize<I, D> for T
+where
+    T: Iterator<Item=MultiIndex<I, D>>,
+    I: PrimInt + Sum
+{}

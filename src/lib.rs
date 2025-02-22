@@ -9,7 +9,7 @@ mod mesh;
 mod tests {
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::spline::Spline;
-    use crate::knots::index::{MultiIndex, Strides};
+    use crate::knots::index::{Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
     use crate::knots::multi_knot_vec::MultiKnotVec;
     use crate::mesh::Mesh;
@@ -75,7 +75,7 @@ mod tests {
         let lin_idx = idx.clone().into_iter()
             .map(|i| i.into_lin(&strides))
             .collect_vec();
-        let lin_idx_2 = span.nonzero_lin_indices().collect_vec();
+        let lin_idx_2 = span.nonzero_indices().linearize(&strides).collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();

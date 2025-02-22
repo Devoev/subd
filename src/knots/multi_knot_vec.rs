@@ -6,7 +6,7 @@ use itertools::Itertools;
 use nalgebra::{DVector, Point, RealField};
 use std::fmt::{Display, Formatter};
 use std::iter::{zip, Sum};
-use crate::knots::index::MultiIndex;
+use crate::knots::index::{MultiIndex, Strides};
 
 /// A [`D`]-variate knot vector.
 #[derive(Debug, Clone)]
@@ -57,6 +57,11 @@ impl<T: RealField + Copy, const D : usize> MultiKnotVec<T, D> {
     /// Return the degrees of basis functions per parametric direction.
     pub fn p(&self) -> [usize; D] {
         self.0.iter().map(|knot_vec| knot_vec.p).collect_array().unwrap()
+    }
+    
+    /// Returns the strides of the underlying storage.
+    pub fn strides(&self) -> Strides<usize, D> {
+        Strides::from_dims(self.n())
     }
 
     pub fn breaks(&self) -> impl Iterator<Item=Point<T, D>> + '_ {

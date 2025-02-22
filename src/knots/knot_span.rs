@@ -1,11 +1,11 @@
-use crate::knots::index::{MultiIndex, Strides};
+use crate::knots::index::MultiIndex;
 use crate::knots::knot_vec::KnotVec;
+use crate::knots::knots_trait::Knots;
 use crate::knots::multi_knot_vec::MultiKnotVec;
 use itertools::Itertools;
 use nalgebra::RealField;
 use std::iter::zip;
 use std::ops::RangeInclusive;
-use crate::knots::knots_trait::Knots;
 
 /// A knot span `[xi[i], xi[i+1])`.
 #[derive(Debug, Clone)]
@@ -82,13 +82,5 @@ impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
             .map(|span| span.nonzero_indices())
             .multi_cartesian_product()
             .map(|vec| MultiIndex(vec.into_iter().collect_array().unwrap()))
-    }
-
-    /// Returns an iterator over all linear indices of basis functions which are nonzero in this span.
-    pub fn nonzero_lin_indices(&self) -> impl Iterator<Item=usize> + '_ {
-        // todo: put a strides() function in multi knot vec or somewhere else
-        let strides = Strides::from_dims(self.knots.n());
-        self.nonzero_indices()
-            .map(move |idx| idx.into_lin(&strides))
     }
 }
