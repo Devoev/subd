@@ -7,50 +7,37 @@ mod mesh;
 
 #[cfg(test)]
 mod tests {
+    use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
+    use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::Spline;
+    use crate::bspline::spline_basis::SplineBasis;
     use crate::knots::index::{Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
-    use crate::knots::multi_knot_vec::MultiKnotVec;
-    use crate::mesh::Mesh;
     use itertools::Itertools;
     use nalgebra::{matrix, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
-    use crate::bspline::spline_basis::{MultiSplineBasis, SplineBasis, SplineBasis1};
-    use crate::knots::knots_trait::Knots;
 
     #[test]
     fn knots() {
-        let Xi1 = KnotVec::from_sorted(vec![0.0, 0.0, 0.5, 1.0, 1.0], 3, 1);
-        let Xi2 = KnotVec::<f64>::open_uniform(6, 2);
-        let (m, Z): (Vec<_>, Vec<&f64>) = Xi1.breaks_with_multiplicity().unzip();
-        let Xi3 = MultiKnotVec::new([Xi1.clone(), Xi2.clone()]);
-        let Xi4 = MultiKnotVec::<f64, 2>::open_uniform([5, 3], [1, 2]);
+        let xi1 = SplineBasis::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
+        let xi2 = SplineBasis::<f64>::open_uniform(6, 2);
+        let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity().unzip();
+        let xi3 = MultiSplineBasis::new([xi1.clone(), xi2.clone()]);
+        let xi4 = MultiSplineBasis::<f64, 2>::open_uniform([5, 3], [1, 2]);
         
-        println!("Z: {:?}", Z);
+        println!("Z: {:?}", z);
         println!("m: {:?}", m);
-        println!("{}", Xi1);
-        println!("{}", Xi2);
-        println!("{:?}", Xi1.elems().collect_vec());
-        println!("{:?}", Xi2.elems().collect_vec());
-        println!("{}", Xi3);
-        println!("{}", Xi4);
-        println!("{:?}", (&Xi4).into_iter().collect_vec());
-        println!("{:?}", Xi4.breaks().collect_vec());
-        println!("{:?}", Xi4.nodes().collect_vec());
-
-        println!("Multivariate Bezier elements of Xi = {Xi4}:");
-        for elem in Xi4.elems() {
-            println!("Element {elem} of size {}", elem.elem_size());
-        }
-
-        println!("Multivariate knot vector has {} nodes and {} elems.", Xi4.num_nodes(), Xi4.num_elems());
+        println!("{:?}", xi1);
+        println!("{:?}", xi2);
+        println!("{:?}", xi3);
+        println!("{:?}", xi4);
 
         let t = 0.6;
-        let span1 = Xi2.find_span(t).unwrap();
-        let span2 = Xi4.find_span([t, t]).unwrap();
+        let span1 = xi2.find_span(t).unwrap();
+        let span2 = xi4.find_span([t, t]).unwrap();
         
         println!("Span for univariate knot vec {:?}", span1.nonzero_indices().collect_vec());
         println!("Span for multivariate knot vec {:?}", span2.nonzero_indices().collect_vec());
@@ -68,9 +55,9 @@ mod tests {
         println!("{:?}", multi_idx);
         println!("{:?}", multi_idx.into_lin(&strides));
 
-        let knots = MultiKnotVec::<f64, 2>::open_uniform([N, N], [p, p]);
-        let strides = Strides::from_dims(knots.n());
-        let span = knots.find_span([t, t]).unwrap();
+        let space = MultiSplineBasis::<f64, 2>::open_uniform([N, N], [p, p]);
+        let strides = Strides::from_dims(space.n());
+        let span = space.find_span([t, t]).unwrap();
         let idx = span.nonzero_indices().collect_vec();
         let lin_idx = idx.clone().into_iter()
             .map(|i| i.into_lin(&strides))
@@ -80,7 +67,7 @@ mod tests {
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
 
-        println!("{}", knots);
+        println!("{:?}", space);
         println!("{:?}", idx);
         println!("{:?}", lin_idx);
         println!("{:?}", lin_idx_2);
@@ -91,14 +78,11 @@ mod tests {
     fn splines() {
         let n = 4;
         let p = 2;
-        let knots = KnotVec::<f64>::open_uniform(n, p);
-        let splines = SplineBasis1::new(knots.clone());
+        let splines = SplineBasis::<f64>::open_uniform(n, p);
         let splines_2d = MultiSplineBasis::<f64, 2>::open_uniform([5, 5], [1, 1]);
         let splines_3d = MultiSplineBasis::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
-        println!("{}", knots);
-        
         println!("{}", splines.eval(t));
         println!("{}", splines_2d.eval([t, t]));
         println!("{}", splines_3d.eval([t, t, t]));
@@ -108,15 +92,14 @@ mod tests {
     fn spline_curves() {
         let n = 5;
         let p = 2;
-        let knots = KnotVec::<f64>::open_uniform(n, p);
+        let space = SplineBasis::<f64>::open_uniform(n, p);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
         let control_points = ControlPoints::new(coords);
 
-        let basis = SplineBasis::new(knots);
-        let curve = Spline::<_, KnotVec<f64>, 1, 2, _>::new(control_points, basis).unwrap();
+        let curve = Spline::<_, SplineBasis<f64>, 1, 2, _>::new(control_points, space).unwrap();
         dbg!(curve.eval_curve(0.0));
     }
 
@@ -125,9 +108,8 @@ mod tests {
         let n = 3;
         let p = 2;
 
-        let knots = KnotVec::<f64>::open_uniform(n, p);
-        let splines_uni = SplineBasis1::new(knots);
-        let splines_2d = MultiSplineBasis::from_bases([splines_uni.clone(), splines_uni.clone()]);
+        let splines_1d = SplineBasis::<f64>::open_uniform(n, p);
+        let splines_2d = MultiSplineBasis::new([splines_1d.clone(), splines_1d.clone()]);
 
         let control_points = ControlPoints::new(matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;

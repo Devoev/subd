@@ -1,6 +1,5 @@
-use num_traits::{NumAssign, PrimInt};
+use num_traits::PrimInt;
 use std::iter::{zip, Sum};
-use itertools::Itertools;
 
 /// Strides of a [`D`]-variate [`MultiIndex`].
 #[derive(Debug, Clone)]

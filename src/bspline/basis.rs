@@ -1,13 +1,13 @@
 use crate::knots::knot_span::KnotSpan;
 use nalgebra::{DVector, RealField};
 
-/// A knot vector of increasing knot values.
+/// A basis for a spline function space.
 /// 
 /// # Type parameters
 /// - [`T`] : Knot values and parametric values.
 /// - [`F`] : Real scalar type.
 /// - [`I`] : Index type of the knot vector.
-pub trait Knots<'a, T, F: RealField, I> where Self: Sized {
+pub trait Basis<'a, T, F: RealField, I> where Self: Sized {
     /// Returns the total number of basis functions.
     fn num(&self) -> usize;
     
@@ -15,7 +15,7 @@ pub trait Knots<'a, T, F: RealField, I> where Self: Sized {
     fn find_span(&'a self, t: T) -> Result<KnotSpan<'a, I, Self>, ()>;
     
     /// Evaluates the nonzero basis functions at the parametric point `t`.
-    fn eval_basis(&self, t: T) -> DVector<F>;
+    fn eval(&self, t: T) -> DVector<F>;
 }
 
 /// Conversion into breakpoints.
