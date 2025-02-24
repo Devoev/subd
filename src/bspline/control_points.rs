@@ -6,7 +6,7 @@ use nalgebra::{Const, Dim, Dyn, Matrix, OMatrix, Owned, Point, RealField, Storag
 type Coords<T, const M: usize, N, S> = Matrix<T, Const<M>, N, S>;
 
 /// Control points of a spline in [M] dimensions.
-/// 
+///
 /// # Type parameters
 /// - [`T`]: Real scalar type
 /// - [`M`]: Size of the embedding euclidian space, i.e. number of coordinates of each point.
@@ -24,7 +24,7 @@ pub type OControlPoints<T, const M: usize, N> = ControlPoints<T, M, N, Owned<T, 
 /// Control points view.
 pub type ControlPointsView<'a, T, const M: usize, N, RStride, CStride> = ControlPoints<T, M, N, ViewStorage<'a, T, Const<M>, N, RStride, CStride>>;
 
-impl<T: RealField + Copy, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPoints<T, M, N, S> {
+impl<T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPoints<T, M, N, S> {
     /// Constructs new [ControlPoints].
     pub fn new(coords: Coords<T, M, N, S>) -> Self {
         ControlPoints { coords }
@@ -42,9 +42,7 @@ impl<T: RealField + Copy, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> Co
         let coords = OMatrix::<T, Const<M>, Dyn>::from_columns(&columns);
         ControlPoints::new(coords)
     }
-}
 
-impl <T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPoints<T, M, N, S> {
     /// Iterates through the control points as matrix views.
     pub fn iter(&self) -> ColumnIter<'_, T, Const<M>, N, S> {
         self.coords.column_iter()

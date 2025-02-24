@@ -10,12 +10,12 @@ mod tests {
     use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
-    use crate::bspline::spline::Spline;
+    use crate::bspline::spline::{Spline, SplineCurve, SplineSurf};
     use crate::bspline::spline_basis::SplineBasis;
-    use crate::knots::index::{Linearize, MultiIndex, Strides};
+    use crate::knots::index::{IntoLinear, Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
     use itertools::Itertools;
-    use nalgebra::{matrix, Const, OMatrix, SMatrix};
+    use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -37,7 +37,7 @@ mod tests {
 
         let t = 0.6;
         let span1 = xi2.find_span(t).unwrap();
-        let span2 = xi4.find_span([t, t]).unwrap();
+        let span2 = xi4.find_span(vector![t, t]).unwrap();
         
         println!("Span for univariate knot vec {:?}", span1.nonzero_indices(xi2.p).collect_vec());
         println!("Span for multivariate knot vec {:?}", span2.nonzero_indices(xi4.p()).collect_vec());
@@ -53,16 +53,16 @@ mod tests {
         let strides = Strides::from_dims(dims);
         let multi_idx = MultiIndex([2, 2, 2]);
         println!("{:?}", multi_idx);
-        println!("{:?}", multi_idx.into_lin(&strides));
+        println!("{:?}", multi_idx.into_lin(strides));
 
         let space = MultiSplineBasis::<f64, 2>::open_uniform([N, N], [p, p]);
         let strides = Strides::from_dims(space.n());
-        let span = space.find_span([t, t]).unwrap();
+        let span = space.find_span(vector![t, t]).unwrap();
         let idx = span.nonzero_indices(space.p()).collect_vec();
         let lin_idx = idx.clone().into_iter()
-            .map(|i| i.into_lin(&strides))
+            .map(|i| i.into_lin(strides))
             .collect_vec();
-        let lin_idx_2 = span.nonzero_indices(space.p()).linearize(&strides).collect_vec();
+        let lin_idx_2 = span.nonzero_indices(space.p()).linearize(strides).collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
@@ -84,8 +84,8 @@ mod tests {
 
         let t = 0.6;
         println!("{}", splines.eval(t, &splines.find_span(t).unwrap()));
-        println!("{}", splines_2d.eval([t, t], &splines_2d.find_span([t, t]).unwrap()));
-        println!("{}", splines_3d.eval([t, t, t], &splines_3d.find_span([t, t, t]).unwrap()));
+        println!("{}", splines_2d.eval(vector![t, t], &splines_2d.find_span(vector![t, t]).unwrap()));
+        println!("{}", splines_3d.eval(vector![t, t, t], &splines_3d.find_span(vector![t, t, t]).unwrap()));
     }
 
     #[test]
@@ -99,8 +99,8 @@ mod tests {
         ];
         let control_points = ControlPoints::new(coords);
 
-        let curve = Spline::<_, SplineBasis<f64>, 1, 2, _>::new(control_points, space).unwrap();
-        dbg!(curve.eval_curve(0.0));
+        let curve = SplineCurve::new(control_points, space).unwrap();
+        dbg!(curve.eval(0.0));
     }
 
     #[test]
@@ -119,7 +119,7 @@ mod tests {
         let coords_rand = SMatrix::<f64, 2, 25>::new_random();
         let control_points_rand = ControlPoints::new(coords_rand);
 
-        let surf = Spline::<_, _, 2, 2, _>::new(control_points, splines_2d).unwrap();
+        let surf = SplineSurf::new(control_points, splines_2d).unwrap();
 
         const N: i32 = 100;
         let mut points: Vec<(f64, f64)> = vec![];
@@ -128,7 +128,7 @@ mod tests {
             for j in 0..N {
                 let tx = i as f64 / N as f64;
                 let ty = j as f64 / N as f64;
-                let p = surf.eval([tx, ty]);
+                let p = surf.eval(vector![tx, ty]);
                 points.push((p.x, p.y));
             }
         }

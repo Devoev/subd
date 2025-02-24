@@ -1,9 +1,9 @@
+use crate::bspline::basis::Basis;
 use crate::bspline::spline_basis::SplineBasis;
 use crate::knots::index::{Linearize, MultiIndex, Strides};
 use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
-use crate::bspline::basis::Basis;
 use itertools::{izip, Itertools};
-use nalgebra::{DVector, RealField};
+use nalgebra::{DVector, RealField, SVector};
 use std::iter::zip;
 
 /// A [`D`]-variate B-spline space. 
@@ -29,14 +29,14 @@ impl<T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> Basis<[T; D], T, MultiIndex<usize, D>> for MultiSplineBasis<T, D> {
+impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<usize, D>> for MultiSplineBasis<T, D> {
     type LinIndices = impl Iterator<Item=usize>;
 
     fn num(&self) -> usize {
         self.n().iter().product()
     }
 
-    fn find_span(&self, t: [T; D]) -> Result<KnotSpan<MultiIndex<usize, D>>, ()> {
+    fn find_span(&self, t: SVector<T, D>) -> Result<KnotSpan<MultiIndex<usize, D>>, ()> {
         MultiKnotSpan::find(self, t)
     }
 
@@ -44,9 +44,9 @@ impl <T: RealField + Copy, const D: usize> Basis<[T; D], T, MultiIndex<usize, D>
         span.nonzero_indices(self.p()).linearize(self.strides())
     }
 
-    fn eval(&self, t: [T; D], span: &MultiKnotSpan<D>) -> DVector<T> {
-        izip!(&self.0, t, &span.0)
-            .map(|(space, ti, i)| space.eval(ti, &KnotSpan(*i)))
+    fn eval(&self, t: SVector<T, D>, span: &MultiKnotSpan<D>) -> DVector<T> {
+        izip!(&self.0, t.into_iter(), &span.0)
+            .map(|(space, ti, i)| space.eval(*ti, &KnotSpan(*i)))
             .reduce(|acc, bi| acc.kronecker(&bi))
             .expect("Dimension D must be greater than 0!")
     }

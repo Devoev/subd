@@ -4,10 +4,10 @@ use nalgebra::{DVector, RealField};
 /// A basis for a spline function space.
 /// 
 /// # Type parameters
-/// - [`T`] : Knot values and parametric values.
-/// - [`F`] : Real scalar type.
-/// - [`I`] : Index type of the knot vector.
-pub trait Basis<T: Copy, F: RealField, I> where Self: Sized {
+/// - [`T`] : Real scalar type.
+/// - [`Knt`] : Knot values and parametric values.
+/// - [`Idx`] : Index type of the knot vector.
+pub trait Basis<T: RealField, Knt: Copy, Idx> where Self: Sized {
     /// An iterator over linear indices.
     type LinIndices: Iterator<Item=usize>;
     
@@ -15,13 +15,13 @@ pub trait Basis<T: Copy, F: RealField, I> where Self: Sized {
     fn num(&self) -> usize;
     
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
-    fn find_span(&self, t: T) -> Result<KnotSpan<I>, ()>;
+    fn find_span(&self, t: Knt) -> Result<KnotSpan<Idx>, ()>;
     
     /// Finds the indices of nonzero basis functions in the given `span`.
-    fn nonzero(&self, span: &KnotSpan<I>) -> Self::LinIndices;
+    fn nonzero(&self, span: &KnotSpan<Idx>) -> Self::LinIndices;
     
     /// Evaluates the nonzero basis functions in the `span` at the parametric point `t`.
-    fn eval(&self, t: T, span: &KnotSpan<I>) -> DVector<F>;
+    fn eval(&self, t: Knt, span: &KnotSpan<Idx>) -> DVector<T>;
 }
 
 /// Conversion into breakpoints.

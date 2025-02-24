@@ -3,7 +3,7 @@ use crate::bspline::spline_basis::SplineBasis;
 use crate::bspline::basis::Basis;
 use crate::bspline::multi_spline_basis::MultiSplineBasis;
 use itertools::Itertools;
-use nalgebra::RealField;
+use nalgebra::{RealField, SVector};
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
@@ -51,9 +51,9 @@ impl KnotSpan1 {
 
 impl<const D: usize> MultiKnotSpan<D> {
     /// Finds the [`KnotSpan`] containing the parametric value `t`.
-    pub fn find<T: RealField + Copy>(space: &MultiSplineBasis<T, D>, t: [T; D]) -> Result<Self, ()> {
-        let index = zip(&space.0, t)
-            .flat_map(|(space, ti)| space.find_span(ti))
+    pub fn find<T: RealField + Copy>(space: &MultiSplineBasis<T, D>, t: SVector<T, D>) -> Result<Self, ()> {
+        let index = zip(&space.0, t.iter())
+            .flat_map(|(space, ti)| space.find_span(*ti))
             .map(|span| span.0)
             .collect_array()
             .ok_or(())?;

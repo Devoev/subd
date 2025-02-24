@@ -1,83 +1,56 @@
-use crate::bspline::control_points::OControlPoints;
-use crate::bspline::spline_basis::SplineBasis;
-use crate::bspline::multi_spline_basis::MultiSplineBasis;
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField};
-use crate::knots::index::Linearize;
 use crate::bspline::basis::Basis;
+use crate::bspline::control_points::OControlPoints;
+use nalgebra::allocator::Allocator;
+use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField, SVector};
+use std::marker::PhantomData;
+use crate::bspline::multi_spline_basis::MultiSplineBasis;
+use crate::bspline::spline_basis::SplineBasis;
+use crate::knots::index::MultiIndex;
 
 /// A [`D`]-dimensional B-spline manifold embedded [`M`]-dimensional euclidian space.
 #[derive(Debug, Clone)]
-pub struct Spline<T, S, const D : usize, const M : usize, C> 
-where 
+pub struct Spline<T, Knt, Idx, S, const M: usize, N>
+where
     T: RealField,
-    C: Dim,
-    DefaultAllocator: Allocator<Const<M>, C> 
+    Knt: Copy,
+    S: Basis<T, Knt, Idx>,
+    N: Dim,
+    DefaultAllocator: Allocator<Const<M>, N>
 {
 
     /// Control points for each parametric direction.
-    pub control_points: OControlPoints<T, M, C>,
+    pub control_points: OControlPoints<T, M, N>,
 
     /// B-spline basis functions for the parametrization.
-    pub space: S
+    pub space: S,
+
+    phantoms: PhantomData<(Knt, Idx)>
 }
 
-impl<T, const M : usize, C> Spline<T, SplineBasis<T>, 1, M, C> 
-where 
-    T: RealField + Copy,
-    C: Dim,
-    DefaultAllocator: Allocator<Const<M>, C> 
-{
+/// A spline curve in [`M`] dimensions.
+pub type SplineCurve<T, const M: usize, N> = Spline<T, T, usize, SplineBasis<T>, M, N>;
 
-    /// Constructs a new [`Spline`].
-    pub fn new(control_points: OControlPoints<T, M, C>, basis: SplineBasis<T>) -> Option<Self> {
-        (basis.num() == control_points.num()).then_some(Spline { control_points, space: basis })
-    }
-}
+/// A spline surface in [`M`] dimensions.
+pub type SplineSurf<T, const M: usize, N> = Spline<T, SVector<T, 2>, MultiIndex<usize, 2>, MultiSplineBasis<T, 2>, M, N>;
 
-impl<T, const D : usize, const M : usize, C> Spline<T, MultiSplineBasis<T, D>, D, M, C> 
-where 
-    T: RealField + Copy,
-    C: Dim,
-    DefaultAllocator: Allocator<Const<M>, C> 
-{
+/// A spline volume in [`M`] dimensions.
+pub type SplineVol<T, const M: usize, N> = Spline<T, SVector<T, 3>, MultiIndex<usize, 3>, MultiSplineBasis<T, 3>, M, N>;
 
-    /// Constructs a new [`Spline`].
-    pub fn new(control_points: OControlPoints<T, M, C>, basis: MultiSplineBasis<T, D>) -> Option<Self> {
-        (basis.num() == control_points.num()).then_some(Spline { control_points, space: basis })
-    }
-}
-
-impl<T, const M : usize, C> Spline<T, SplineBasis<T>, 1, M, C>
+impl<T, Knt, Idx, S, const M : usize, N> Spline<T, Knt, Idx, S, M, N>
 where
-    T: RealField + Copy,
-    C: Dim,
-    DefaultAllocator: Allocator<Const<M>, C>
+    T: RealField,
+    Knt: Copy,
+    S: Basis<T, Knt, Idx>,
+    N: Dim,
+    DefaultAllocator: Allocator<Const<M>, N>
 {
-
-    /// Evaluates the spline curve at the parametric point `t`.
-    pub fn eval_curve(&self, t: T) -> Point<T, M> {
-        // todo: remove this method
-        let span = self.space.find_span(t).unwrap();
-        let b = self.space.eval(t, &span);
-        let c = self.control_points.get_nonzero(span.nonzero_indices(self.space.p));
-        Point::from(c.coords * b)
+    pub fn new(control_points: OControlPoints<T, M, N>, basis: S) -> Option<Self> {
+        (basis.num() == control_points.num()).then_some(Spline { control_points, space: basis, phantoms: Default::default() })
     }
-}
 
-impl<T, const D: usize, const M : usize, C> Spline<T, MultiSplineBasis<T, D>, D, M, C>
-where
-    T: RealField + Copy,
-    C: Dim,
-    DefaultAllocator: Allocator<Const<M>, C>
-{
-
-    /// Evaluates the spline at the parametric point `t`.
-    pub fn eval(&self, t: [T; D]) -> Point<T, M> {
-        // todo: debug this function
+    pub fn eval(&self, t: Knt) -> Point<T, M> {
         let span = self.space.find_span(t).unwrap();
-        let strides = self.space.strides();
-        let idx = span.nonzero_indices(self.space.p()).linearize(&strides);
+        let idx = self.space.nonzero(&span);
         let b = self.space.eval(t, &span);
         let c = self.control_points.get_nonzero(idx);
         Point::from(c.coords * b)
