@@ -1,27 +1,32 @@
 use itertools::Itertools;
 use nalgebra::iter::ColumnIter;
 use nalgebra::{Const, Dim, Dyn, Matrix, OMatrix, Owned, Point, RealField, Storage, VectorView, ViewStorage};
-use crate::knots::knot_span::MultiKnotSpan;
 
 /// The coordinates of control points, stored column wise as a matrix.
-type Coords<T, const M: usize, C, S> = Matrix<T, Const<M>, C, S>;
+type Coords<T, const M: usize, N, S> = Matrix<T, Const<M>, N, S>;
 
 /// Control points of a spline in [M] dimensions.
+/// 
+/// # Type parameters
+/// - [`T`]: Real scalar type
+/// - [`M`]: Size of the embedding euclidian space, i.e. number of coordinates of each point.
+/// - [`N`]: Total number of control points.
+/// - [`S`]: Underlying storage for the [`Coords`].
 #[derive(Debug, Clone)]
-pub struct ControlPoints<T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> {
+pub struct ControlPoints<T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> {
     /// Control point coordinates.
-    pub coords: Coords<T, M, C, S>,
+    pub coords: Coords<T, M, N, S>,
 }
 
 /// Owned control points.
-pub type OControlPoints<T, const M: usize, C> = ControlPoints<T, M, C, Owned<T, Const<M>, C>>;
+pub type OControlPoints<T, const M: usize, N> = ControlPoints<T, M, N, Owned<T, Const<M>, N>>;
 
 /// Control points view.
-pub type ControlPointsView<'a, T, const M: usize, C, RStride, CStride> = ControlPoints<T, M, C, ViewStorage<'a, T, Const<M>, C, RStride, CStride>>;
+pub type ControlPointsView<'a, T, const M: usize, N, RStride, CStride> = ControlPoints<T, M, N, ViewStorage<'a, T, Const<M>, N, RStride, CStride>>;
 
-impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlPoints<T, M, C, S> {
+impl<T: RealField + Copy, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPoints<T, M, N, S> {
     /// Constructs new [ControlPoints].
-    pub fn new(coords: Coords<T, M, C, S>) -> Self {
+    pub fn new(coords: Coords<T, M, N, S>) -> Self {
         ControlPoints { coords }
     }
 
@@ -39,9 +44,9 @@ impl<T: RealField + Copy, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> Co
     }
 }
 
-impl <T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlPoints<T, M, C, S> {
+impl <T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPoints<T, M, N, S> {
     /// Iterates through the control points as matrix views.
-    pub fn iter(&self) -> ColumnIter<'_, T, Const<M>, C, S> {
+    pub fn iter(&self) -> ColumnIter<'_, T, Const<M>, N, S> {
         self.coords.column_iter()
     }
 
@@ -51,10 +56,10 @@ impl <T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> ControlP
     }
 }
 
-impl <'a, T: RealField, const M: usize, C: Dim, S: Storage<T, Const<M>, C>> IntoIterator for &'a ControlPoints<T, M, C, S> {
+impl <'a, T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> IntoIterator for &'a ControlPoints<T, M, N, S> {
 
     type Item = VectorView<'a, T, Const<M>, S::RStride, S::CStride>;
-    type IntoIter = ColumnIter<'a, T, Const<M>, C, S>;
+    type IntoIter = ColumnIter<'a, T, Const<M>, N, S>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
