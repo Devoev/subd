@@ -39,8 +39,8 @@ mod tests {
         let span1 = xi2.find_span(t).unwrap();
         let span2 = xi4.find_span([t, t]).unwrap();
         
-        println!("Span for univariate knot vec {:?}", span1.nonzero_indices().collect_vec());
-        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices().collect_vec());
+        println!("Span for univariate knot vec {:?}", span1.nonzero_indices(xi2.p).collect_vec());
+        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices(xi4.p()).collect_vec());
     }
 
     #[test]
@@ -58,11 +58,11 @@ mod tests {
         let space = MultiSplineBasis::<f64, 2>::open_uniform([N, N], [p, p]);
         let strides = Strides::from_dims(space.n());
         let span = space.find_span([t, t]).unwrap();
-        let idx = span.nonzero_indices().collect_vec();
+        let idx = span.nonzero_indices(space.p()).collect_vec();
         let lin_idx = idx.clone().into_iter()
             .map(|i| i.into_lin(&strides))
             .collect_vec();
-        let lin_idx_2 = span.nonzero_indices().linearize(&strides).collect_vec();
+        let lin_idx_2 = span.nonzero_indices(space.p()).linearize(&strides).collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
@@ -83,9 +83,9 @@ mod tests {
         let splines_3d = MultiSplineBasis::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
-        println!("{}", splines.eval(t));
-        println!("{}", splines_2d.eval([t, t]));
-        println!("{}", splines_3d.eval([t, t, t]));
+        println!("{}", splines.eval(t, &splines.find_span(t).unwrap()));
+        println!("{}", splines_2d.eval([t, t], &splines_2d.find_span([t, t]).unwrap()));
+        println!("{}", splines_3d.eval([t, t, t], &splines_3d.find_span([t, t, t]).unwrap()));
     }
 
     #[test]

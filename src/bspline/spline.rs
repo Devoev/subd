@@ -59,8 +59,8 @@ where
     pub fn eval_curve(&self, t: T) -> Point<T, M> {
         // todo: remove this method
         let span = self.space.find_span(t).unwrap();
-        let b = self.space.eval(t);
-        let c = self.control_points.get_nonzero(span.nonzero_indices());
+        let b = self.space.eval(t, &span);
+        let c = self.control_points.get_nonzero(span.nonzero_indices(self.space.p));
         Point::from(c.coords * b)
     }
 }
@@ -77,8 +77,8 @@ where
         // todo: debug this function
         let span = self.space.find_span(t).unwrap();
         let strides = self.space.strides();
-        let idx = span.nonzero_indices().linearize(&strides);
-        let b = self.space.eval(t);
+        let idx = span.nonzero_indices(self.space.p()).linearize(&strides);
+        let b = self.space.eval(t, &span);
         let c = self.control_points.get_nonzero(idx);
         Point::from(c.coords * b)
     }

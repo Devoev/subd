@@ -7,41 +7,31 @@ use nalgebra::RealField;
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
-/// A knot span `[xi[i], xi[i+1])`.
+/// A knot span represented by a knot index `i`.
+///
+/// For a knot vector `xi`,
+/// the span is the half-open interval `[xi[i], xi[i+1])`
 #[derive(Debug, Clone)]
-pub struct KnotSpan<'a, Idx, S> {
-    /// The B-spline function space.
-    space: &'a S,
-    
-    /// The span index.
-    pub index: Idx
-}
-
-impl<'a, Idx, K> KnotSpan<'a, Idx, K> {
-    /// Constructs a new [`KnotSpan`].
-    pub fn new(space: &'a K, index: Idx) -> Self {
-        KnotSpan { space, index }
-    }
-}
+pub struct KnotSpan<Idx>(pub(crate) Idx);
 
 /// A multivariate knot span.
-pub type MultiKnotSpan<'a, T, const D: usize> = KnotSpan<'a, MultiIndex<usize, D>, MultiSplineBasis<T, D>>;
+pub type MultiKnotSpan<const D: usize> = KnotSpan<MultiIndex<usize, D>>;
 
 /// A univariate knot span.
-pub type KnotSpan1<'a, T> = KnotSpan<'a, usize, SplineBasis<T>>;
+pub type KnotSpan1 = KnotSpan<usize>;
 
 /// A bivariate knot span.
-pub type KnotSpan2<'a, T> = MultiKnotSpan<'a, T, 2>;
+pub type KnotSpan2 = MultiKnotSpan<2>;
 
-impl<'a, T: RealField + Copy> KnotSpan1<'a, T> {
+impl KnotSpan1 {
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
-    pub fn find(space: &'a SplineBasis<T>, t: T) -> Result<Self, ()> {
+    pub fn find<T: RealField + Copy>(space: &SplineBasis<T>, t: T) -> Result<Self, ()> {
         let knots = &space.knots;
         if !knots.range().contains(&t) { return Err(()) }
 
         // todo: update the usage of space.n in this algorithm and DEBUG in general
         if t == knots[space.n + 1] {
-            return Ok(KnotSpan::new(space, space.n - 1));
+            return Ok(KnotSpan(space.n - 1));
         }
 
         let idx = knots.0.binary_search_by(|xi| xi.partial_cmp(&t).unwrap());
@@ -49,39 +39,33 @@ impl<'a, T: RealField + Copy> KnotSpan1<'a, T> {
             Ok(i) => { i }
             Err(i) => { i - 1 }
         };
-        Ok(KnotSpan::new(space, idx))
+        Ok(KnotSpan(idx))
     }
     
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self) -> RangeInclusive<usize> {
-        self.index - self.space.p..=self.index
+    pub fn nonzero_indices(&self, p: usize) -> RangeInclusive<usize> {
+        self.0 - p..=self.0
     }
 }
 
-impl<'a, T: RealField + Copy, const D: usize> MultiKnotSpan<'a, T, D> {
+impl<const D: usize> MultiKnotSpan<D> {
     /// Finds the [`KnotSpan`] containing the parametric value `t`.
-    pub fn find(knots: &'a MultiSplineBasis<T, D>, t: [T; D]) -> Result<Self, ()> {
-        let index = zip(&knots.0, t)
-            .flat_map(|(knots, ti)| knots.find_span(ti))
-            .map(|span| span.index)
+    pub fn find<T: RealField + Copy>(space: &MultiSplineBasis<T, D>, t: [T; D]) -> Result<Self, ()> {
+        let index = zip(&space.0, t)
+            .flat_map(|(space, ti)| space.find_span(ti))
+            .map(|span| span.0)
             .collect_array()
             .ok_or(())?;
 
-        Ok(KnotSpan::new(knots, MultiIndex(index)))
-    }
-    
-    /// Returns an iterator of univariate [knot spans][KnotSpan] for each parametric direction.
-    fn spans(&self) -> impl Iterator<Item=KnotSpan1<T>> {
-        zip(&self.index, &self.space.0)
-            .map(|(i, knots)| KnotSpan1::new(knots, *i))
+        Ok(KnotSpan(MultiIndex(index)))
     }
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self) -> impl Iterator<Item=MultiIndex<usize, D>> {
-        self.spans()
-            .map(|span| span.nonzero_indices())
+    pub fn nonzero_indices(&self, p: [usize; D]) -> impl Iterator<Item=MultiIndex<usize, D>> {
+        zip(&self.0, p)
+            .map(|(i, p)| KnotSpan(*i).nonzero_indices(p))
             .multi_cartesian_product()
             .map(|vec| MultiIndex(vec.into_iter().collect_array().unwrap()))
     }

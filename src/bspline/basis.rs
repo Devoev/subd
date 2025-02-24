@@ -7,15 +7,15 @@ use nalgebra::{DVector, RealField};
 /// - [`T`] : Knot values and parametric values.
 /// - [`F`] : Real scalar type.
 /// - [`I`] : Index type of the knot vector.
-pub trait Basis<'a, T, F: RealField, I> where Self: Sized {
+pub trait Basis<T, F: RealField, I> where Self: Sized {
     /// Returns the total number of basis functions.
     fn num(&self) -> usize;
     
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
-    fn find_span(&'a self, t: T) -> Result<KnotSpan<'a, I, Self>, ()>;
+    fn find_span(&self, t: T) -> Result<KnotSpan<I>, ()>;
     
     /// Evaluates the nonzero basis functions at the parametric point `t`.
-    fn eval(&self, t: T) -> DVector<F>;
+    fn eval(&self, t: T, span: &KnotSpan<I>) -> DVector<F>;
 }
 
 /// Conversion into breakpoints.

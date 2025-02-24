@@ -54,20 +54,17 @@ impl<T : RealField + Copy> SplineBasis<T> {
     }
 }
 
-impl<'a, T: RealField + Copy> Basis<'a, T, T, usize> for SplineBasis<T> {
+impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
 
     fn num(&self) -> usize {
         self.n
     }
 
-    fn find_span(&'a self, t: T) -> Result<KnotSpan<'a, usize, SplineBasis<T>>, ()> {
+    fn find_span(&self, t: T) -> Result<KnotSpan<usize>, ()> {
         KnotSpan1::find(self, t)
     }
 
-    fn eval(&self, t: T) -> DVector<T> {
-        let span = self.find_span(t)
-            .expect("Parametric value is outside of knot vector.");
-
+    fn eval(&self, t: T, span: &KnotSpan1) -> DVector<T> {
         let knots = &self.knots;
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
@@ -75,8 +72,8 @@ impl<'a, T: RealField + Copy> Basis<'a, T, T, usize> for SplineBasis<T> {
         b[0] = T::one();
 
         for i in 1..=self.p {
-            left[i] = t - knots[span.index - i + 1];
-            right[i] = knots[span.index + i] - t;
+            left[i] = t - knots[span.0 - i + 1];
+            right[i] = knots[span.0 + i] - t;
             let mut saved = T::zero();
 
             for j in 0..i {
