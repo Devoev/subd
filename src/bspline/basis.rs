@@ -7,7 +7,7 @@ use nalgebra::{DVector, RealField};
 /// - [`T`] : Knot values and parametric values.
 /// - [`F`] : Real scalar type.
 /// - [`I`] : Index type of the knot vector.
-pub trait Basis<T, F: RealField, I> where Self: Sized {
+pub trait Basis<T: Copy, F: RealField, I> where Self: Sized {
     /// Returns the total number of basis functions.
     fn num(&self) -> usize;
     
