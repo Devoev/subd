@@ -2,7 +2,7 @@ use num_traits::PrimInt;
 use std::iter::{zip, Sum};
 
 /// Strides of a [`D`]-variate [`MultiIndex`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Strides<I, const D: usize>([I; D]);
 
 impl <I: PrimInt, const D: usize> Strides<I, D> {
@@ -39,15 +39,13 @@ impl<'a, I, const D: usize> IntoIterator for &'a Strides<I, D> {
 
 /// A [`D`]-variate [multi index](https://en.wikipedia.org/wiki/Multi-index_notation)
 /// with index type [`I`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct MultiIndex<I, const D: usize>(pub [I; D]);
 
-impl <I: PrimInt + Sum, const D: usize> MultiIndex<I, D> {
+impl <I: PrimInt + Sum, const D: usize> IntoLinear<I, D> for MultiIndex<I, D> {
 
-    /// Converts this [`MultiIndex`] into a linear index,
-    /// with the given `strides`.
-    pub fn into_lin(self, strides: &Strides<I, D>) -> I {
-        zip(self, strides).map(|(i, stride)| i * *stride).sum()
+    fn into_lin(self, strides: Strides<I, D>) -> I {
+        zip(self, strides).map(|(i, stride)| i * stride).sum()
     }
 }
 
@@ -76,16 +74,29 @@ impl<'a, I, const D: usize> IntoIterator for &'a MultiIndex<I, D> {
     }
 }
 
+/// Conversion into a linear index `I`.
+pub trait IntoLinear<I, const D: usize> {
+
+    /// Converts `self` into a linear index using the given `strides`.
+    fn into_lin(self, strides: Strides<I, D>) -> I;
+}
+
 /// Blanked implementation for [`Self::linearize`].
-pub trait Linearize<I: PrimInt + Sum, const D: usize> : Iterator<Item=MultiIndex<I, D>> + Sized {
-    /// Linearizes each [`MultiIndex`] into a linear index of type [`I`].
-    fn linearize(self, strides: &Strides<I, D>) -> impl Iterator<Item=I> {
-        self.map(|idx| idx.into_lin(strides))
+pub trait Linearize<I, const D: usize>
+where
+    I: PrimInt + Sum,
+    Self: Iterator + Sized,
+    Self::Item: IntoLinear<I, D>
+{
+    /// Linearizes each multi index into a linear index of type [`I`].
+    fn linearize(self, strides: Strides<I, D>) -> impl Iterator<Item=I> {
+        self.map(move |idx| idx.into_lin(strides))
     }
 }
 
 impl<T, I, const D: usize> Linearize<I, D> for T
 where
-    T: Iterator<Item=MultiIndex<I, D>>,
-    I: PrimInt + Sum
+    T: Iterator,
+    I: PrimInt + Sum,
+    T::Item: IntoLinear<I, D>
 {}

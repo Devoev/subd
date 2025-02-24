@@ -11,7 +11,7 @@ use std::ops::RangeInclusive;
 ///
 /// For a knot vector `xi`,
 /// the span is the half-open interval `[xi[i], xi[i+1])`
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct KnotSpan<Idx>(pub(crate) Idx);
 
 /// A multivariate knot span.
