@@ -8,13 +8,19 @@ use nalgebra::{DVector, RealField};
 /// - [`F`] : Real scalar type.
 /// - [`I`] : Index type of the knot vector.
 pub trait Basis<T: Copy, F: RealField, I> where Self: Sized {
+    /// An iterator over linear indices.
+    type LinIndices: Iterator<Item=usize>;
+    
     /// Returns the total number of basis functions.
     fn num(&self) -> usize;
     
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
     fn find_span(&self, t: T) -> Result<KnotSpan<I>, ()>;
     
-    /// Evaluates the nonzero basis functions at the parametric point `t`.
+    /// Finds the indices of nonzero basis functions in the given `span`.
+    fn nonzero(&self, span: &KnotSpan<I>) -> Self::LinIndices;
+    
+    /// Evaluates the nonzero basis functions in the `span` at the parametric point `t`.
     fn eval(&self, t: T, span: &KnotSpan<I>) -> DVector<F>;
 }
 

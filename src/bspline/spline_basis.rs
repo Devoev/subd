@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use crate::knots::knot_span::{KnotSpan, KnotSpan1};
 use crate::knots::knot_vec::KnotVec;
 use crate::bspline::basis::Basis;
@@ -55,6 +56,7 @@ impl<T : RealField + Copy> SplineBasis<T> {
 }
 
 impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
+    type LinIndices = RangeInclusive<usize>;
 
     fn num(&self) -> usize {
         self.n
@@ -62,6 +64,10 @@ impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
 
     fn find_span(&self, t: T) -> Result<KnotSpan<usize>, ()> {
         KnotSpan1::find(self, t)
+    }
+
+    fn nonzero(&self, span: &KnotSpan<usize>) -> Self::LinIndices {
+        span.nonzero_indices(self.p)
     }
 
     fn eval(&self, t: T, span: &KnotSpan1) -> DVector<T> {

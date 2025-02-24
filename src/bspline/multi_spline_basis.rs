@@ -1,5 +1,5 @@
 use crate::bspline::spline_basis::SplineBasis;
-use crate::knots::index::{MultiIndex, Strides};
+use crate::knots::index::{Linearize, MultiIndex, Strides};
 use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::bspline::basis::Basis;
 use itertools::{izip, Itertools};
@@ -30,12 +30,18 @@ impl<T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
 }
 
 impl <T: RealField + Copy, const D: usize> Basis<[T; D], T, MultiIndex<usize, D>> for MultiSplineBasis<T, D> {
+    type LinIndices = impl Iterator<Item=usize>;
+
     fn num(&self) -> usize {
         self.n().iter().product()
     }
 
     fn find_span(&self, t: [T; D]) -> Result<KnotSpan<MultiIndex<usize, D>>, ()> {
         MultiKnotSpan::find(self, t)
+    }
+
+    fn nonzero(&self, span: &KnotSpan<MultiIndex<usize, D>>) -> Self::LinIndices {
+        span.nonzero_indices(self.p()).linearize(self.strides())
     }
 
     fn eval(&self, t: [T; D], span: &MultiKnotSpan<D>) -> DVector<T> {
