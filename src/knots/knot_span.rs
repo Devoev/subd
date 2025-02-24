@@ -31,7 +31,7 @@ pub type MultiKnotSpan<'a, T, const D: usize> = KnotSpan<'a, MultiIndex<usize, D
 pub type KnotSpan1<'a, T> = KnotSpan<'a, usize, SplineBasis<T>>;
 
 /// A bivariate knot span.
-pub type KnotSpan2<'a, T> = KnotSpan<'a, [usize; 2], MultiSplineBasis<T, 2>>;
+pub type KnotSpan2<'a, T> = MultiKnotSpan<'a, T, 2>;
 
 impl<'a, T: RealField + Copy> KnotSpan1<'a, T> {
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
