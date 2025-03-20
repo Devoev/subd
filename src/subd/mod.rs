@@ -4,3 +4,5 @@ mod face;
 mod mesh;
 mod patch;
 mod plot;
+mod repeated_averaging;
+mod catmull_clark;
