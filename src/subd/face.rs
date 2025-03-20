@@ -22,7 +22,7 @@ pub fn edges_of_face(face: Face) -> [Edge; 4] {
 }
 
 /// Returns a sorted version of the given `face`. The face is sorted in positive orientation as
-/// ```
+/// ```text
 /// y   3 --- 2
 /// ^   |  c  |
 /// |   0 --- 1
@@ -47,7 +47,7 @@ pub fn sort_face<T: RealField + Copy>(face: Face, nodes: [Point2<T>; 4], centroi
 /// Returns a sorted face, such that the given `node` is at the face position `idx`.
 ///
 /// For `idx=3` the faces nodes get sorted as
-/// ```
+/// ```text
 /// v   3 --- 2         n --- 0
 /// ^   |     |   ==>   |     |
 /// |   0 --- n         2 --- 3
@@ -67,7 +67,7 @@ pub fn sort_by_node(face: Face, node: Node, idx: usize) -> Face {
 
 /// Returns a sorted face, such that the node `uv_origin` is the first node.
 /// The sorting is
-/// ```
+/// ```text
 /// v   2 --- 1         3 --- 2
 /// ^   |     |   ==>   |     |
 /// |   3 --- 0         0 --- 1

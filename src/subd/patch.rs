@@ -8,7 +8,7 @@ use std::iter::once;
 
 /// A patch of a quadrilateral mesh.
 /// The faces are sorted in clockwise order, i.e.
-/// ```
+/// ```text
 /// +---+---+---+
 /// | 1 | 2 | 3 |
 /// +---+---+---+
@@ -147,7 +147,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     }
 
     /// Returns the nodes of this regular patch in lexicographical order, i.e.
-    /// ```
+    /// ```text
     /// 12 -- 13 -- 14 -- 15
     ///  |     |     |     |
     ///  8 --- 9 -- 10 -- 11
@@ -168,7 +168,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     }
 
     /// Returns the nodes of this irregular patch in the following order
-    /// ```
+    /// ```text
     /// 2N+7--2N+6--2N+5--2N+1
     ///   |     |     |     |
     ///   2 --- 3 --- 4 --2N+2
@@ -264,7 +264,7 @@ impl <'a, T: RealField + Copy> ExtendedPatch<'a, T> {
     }
 
     /// Returns the nodes of this extended patch in the following order
-    /// ```
+    /// ```text
     /// 2N+16-2N+15-2N+14-2N+13-2N+8
     ///   |     |     |     |     |
     /// 2N+7--2N+6--2N+5--2N+1--2N+9
