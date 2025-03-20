@@ -1,0 +1,92 @@
+use crate::subd::mesh::{LogicalMesh, QuadMesh};
+use nalgebra::{matrix, point};
+use crate::subd::plot::{plot_faces, plot_nodes};
+
+#[test]
+pub fn run_example() {
+    println!("Subdivision IGA example");
+    
+    let coords_quad = vec![
+        point![0.2, 0.0], point![0.9, 0.1], point![1.0, 1.0], point![0.0, 1.0]
+    ];
+    let faces_quad = vec![[0, 1, 2, 3]];
+    
+
+    let coords_fichera = vec![
+        point![0.0, 0.0], point![0.0, 0.5], point![0.0, 1.0],
+        point![0.5, 0.0], point![0.5, 0.5], point![0.5, 1.0],
+        point![1.0, 0.0], point![1.0, 0.5]
+    ];
+    let faces_fichera = vec![
+        [0, 1, 4, 3], [1, 2, 5, 4], [3, 4, 7, 6]
+    ];
+    
+    let coords_irregular = vec![
+        point![0.0, 0.0],
+        point![2.0, -1.0],
+        point![3.0, 1.0],
+        point![1.0, 2.0],
+        point![0.0, 4.0],
+        point![-1.0, 2.0],
+        point![-3.0, 1.0],
+        point![-2.0, -1.0],
+        point![-2.0, -4.0],
+        point![-0.0, -3.0],
+        point![2.0, -4.0]
+    ];
+    let faces_irregular = vec![
+        [0, 1, 2, 3],
+        [0, 3, 4, 5],
+        [7, 0, 5, 6],
+        [8, 9, 0, 7],
+        [9, 10, 1, 0]
+    ];
+
+    let mut msh = QuadMesh {
+        nodes: coords_irregular,
+        logical_mesh: LogicalMesh {
+            faces: faces_irregular
+        }
+    };
+    
+    msh.lin_subd();
+    msh.lin_subd();
+    // msh.dual();
+    // msh.dual();
+    // msh.repeated_averaging(3, 2);
+
+    // Plot of mesh
+    let msh_plot = plot_faces(&msh, msh.faces.iter().copied());
+    // msh_plot.show_html("msh.html");
+
+    let msh_nodes_plot = plot_nodes(&msh, 0..msh.num_nodes());
+    // msh_nodes_plot.show_html("msh_nodes.html");
+
+    // Plot extended patch
+    // for face_id in 0..=3 {
+    //     let patch = msh.find_patch(msh.faces[face_id]);
+    //     let patch_plot = plot_faces(&msh, patch.faces.iter().copied());
+    //     patch_plot.show_html(format!("plot_{face_id}.html"));
+    // }
+    
+    // let face_id = 3;
+    // let patch = msh.find_patch(msh.faces[face_id]);
+    // let patch = patch.sort_by_origin(patch.faces[7][3]);
+    
+    let face_irr_id = 0;
+    // let patch_irr = msh.find_patch(msh.faces[face_irr_id]);
+    let patch_ext = msh.find_patch_ext(msh.faces[face_irr_id]);
+
+    // Plots
+    // let patch_plot = plot_nodes(&msh, patch.nodes_regular().into_iter());
+    // patch_plot.show_html("patch.html");
+
+    // let patch_irr_plot = plot_nodes(&msh, patch_irr.nodes_irregular().into_iter());
+    // patch_irr_plot.show_html("patch_irr.html");
+
+    let patch_ext_plot = plot_nodes(&msh, patch_ext.nodes().into_iter());
+    patch_ext_plot.show_html("patch_ext.html");
+    
+    // Test Catmull-Clark
+    // msh.catmull_clark();
+}

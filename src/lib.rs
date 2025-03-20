@@ -3,6 +3,7 @@ extern crate core;
 
 mod knots;
 mod bspline;
+mod subd;
 
 #[cfg(test)]
 mod tests {
