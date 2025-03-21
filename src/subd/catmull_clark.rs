@@ -1,8 +1,29 @@
+use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
+use itertools::{chain, Itertools};
+use nalgebra::{matrix, DMatrix, DVector, MatrixXx2, Point2, RealField, RowDVector, SMatrix};
 use std::collections::HashMap;
 use std::iter::once;
-use itertools::{chain, Itertools};
-use nalgebra::{DMatrix, DVector, MatrixXx2, Point2, RealField, RowDVector};
-use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
+use std::sync::LazyLock;
+
+/// The matrix `S11` for extended catmull clark subdivision.
+static S11: LazyLock<SMatrix<f64, 11, 7>> = LazyLock::new(|| {
+   todo!()
+});
+
+/// The matrix `S12` for extended catmull clark subdivision.
+static S12: LazyLock<SMatrix<f64, 7, 7>> = LazyLock::new(|| {
+    matrix![
+        1.0, 6.0, 1.0, 0.0, 6.0, 1.0, 0.0;
+        0.0, 4.0, 4.0, 0.0, 0.0, 0.0, 0.0;
+        0.0, 1.0, 6.0, 1.0, 0.0, 0.0, 0.0;
+        0.0, 0.0, 4.0, 4.0, 0.0, 0.0, 0.0;
+        0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.0;
+        0.0, 0.0, 0.0, 0.0, 1.0, 6.0, 1.0;
+        0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0;
+    ] / 64.0
+});
+
+
 
 /// Builds the `2n+1 ✕ 2n+1` subdivision matrix.
 /// 
