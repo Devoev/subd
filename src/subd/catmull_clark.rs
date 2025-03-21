@@ -5,6 +5,8 @@ use nalgebra::{DMatrix, DVector, MatrixXx2, Point2, RealField, RowDVector};
 use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
 
 /// Builds the `2n+1 ✕ 2n+1` subdivision matrix.
+/// 
+/// The ordering of nodes is taken from "Andersson 2016".
 pub fn build_mat<T: RealField>(n: usize) -> DMatrix<T> {
     let weight = 1.0 / 16.0;
     let n_inv_squared = 1.0 / (n as f64).powi(2);
@@ -60,6 +62,33 @@ pub fn build_mat<T: RealField>(n: usize) -> DMatrix<T> {
     s[(2 * n, 2 * n)] = vv;
 
     (s * weight).cast()
+}
+
+/// Reorders the columns and rows of the subdivision matrix to match the ordering of "Stam 1998".
+/// 
+/// The DOFs get reordered as
+/// ```text
+/// (F1,...,Fn,E1,...,En,V) -> (V,E1,F1,...,En,Fn)
+/// ```
+pub fn permute_matrix<T: RealField>(s: &DMatrix<T>) -> DMatrix<T> {
+    let (r, _) = s.shape();
+    let n = (r - 1) / 2;
+    let face_edge_it = (0..n).flat_map(|i| once(i + n).chain(once(i)));
+    let indices = once(2*n).chain(face_edge_it);
+    
+    // Permute columns
+    let mut tmp = DMatrix::<T>::zeros(r, r);
+    for (idx_new, idx_old) in indices.clone().enumerate() {
+        tmp.set_column(idx_new, &s.column(idx_old));
+    }
+    
+    // Permute rows
+    let mut mat = DMatrix::<T>::zeros(r, r);
+    for (idx_new, idx_old) in indices.enumerate() {
+        mat.set_row(idx_new, &tmp.row(idx_old));
+    }
+
+    mat
 }
 
 impl <T: RealField + Copy> QuadMesh<T> {

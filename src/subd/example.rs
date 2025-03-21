@@ -1,9 +1,10 @@
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use nalgebra::{matrix, point};
+use crate::subd::catmull_clark;
 use crate::subd::plot::{plot_faces, plot_nodes};
 
 #[test]
-pub fn run_example() {
+fn run_example() {
     println!("Subdivision IGA example");
     
     let coords_quad = vec![
@@ -89,4 +90,14 @@ pub fn run_example() {
     
     // Test Catmull-Clark
     // msh.catmull_clark();
+}
+
+#[test]
+fn catmull_clark_matrix() {
+    let n = 5;
+    let s = catmull_clark::build_mat::<f64>(4) * 16f64;
+    println!("Catmull clark matrix in (F1,...,Fn,E1,...,En,V) ordering: {s}");
+    
+    let s = catmull_clark::permute_matrix(&s);
+    println!("Catmull clark matrix in (V,E1,F1,...,En,Fn) ordering: {s}");
 }
