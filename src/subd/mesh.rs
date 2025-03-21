@@ -8,6 +8,7 @@ use nalgebra::{
 use std::collections::HashMap;
 use std::iter::once;
 use std::ops::{Deref, DerefMut};
+use crate::subd::basis::eval_regular;
 
 pub type Node = usize;
 pub type Edge = [Node; 2];
@@ -141,25 +142,6 @@ impl<T: RealField + Copy> QuadMesh<T> {
         ExtendedPatch::find(self, face)
     }
 
-    /// Evaluates the basis patch at the parametric point `(u,v)`.
-    pub fn eval_basis_patch(u: T, v: T) -> SVector<T, 16> {
-        let mat = matrix![
-            -1.0, 3.0, -3.0, 1.0;
-            3.0, -6.0, 3.0, 0.0;
-            -3.0, 0.0, 3.0, 0.0;
-            1.0, 4.0, 1.0, 0.0;
-        ]
-        .cast::<T>()
-            / T::from_i32(6).unwrap();
-
-        let u_pow = vector![u.powi(3), u.powi(2), u, T::one()];
-        let v_pow = vector![v.powi(3), v.powi(2), v, T::one()];
-
-        let bu = mat * u_pow;
-        let bv = mat * v_pow;
-        bu.kronecker(&bv)
-    }
-
     /// Evaluates the patch of `face` at the parametric point `(u,v)`.
     pub fn eval_patch(&self, face: Face, u: T, v: T) -> SVector<T, 2> {
         // Convert patch control points to matrix
@@ -171,7 +153,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
         let coords = SMatrix::<T, 2, 16>::from_columns(&rows);
 
         // Evaluate basis functions at (u,v)
-        let b = QuadMesh::eval_basis_patch(u, v);
+        let b = eval_regular(u, v);
 
         // Compute surface point
         coords * b
