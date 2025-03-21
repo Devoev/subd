@@ -1,9 +1,9 @@
-use std::ops::Deref;
 use crate::subd::catmull_clark::{S11, S12};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
-use nalgebra::{matrix, point};
-use crate::subd::{basis, catmull_clark};
 use crate::subd::plot::{plot_faces, plot_nodes};
+use crate::subd::{basis, catmull_clark};
+use nalgebra::point;
+use std::ops::Deref;
 
 #[test]
 fn run_example() {
@@ -123,5 +123,7 @@ fn catmull_clark_matrix() {
 fn eval_basis() {
     let u = 0.015;
     let v = 0.613;
-    basis::eval_irregular(u, v);
+    let b = basis::eval_regular(u, v);
+    let p = basis::permutation_vec(0, 5);
+    println!("Basis functions on irregular patch {}", basis::apply_permutation(5, b, p))
 }
