@@ -295,26 +295,26 @@ impl <'a, T: RealField + Copy> ExtendedPatch<'a, T> {
     /// mapping from the control points of the extended patch to the 3 regular sub-patches.
     pub fn picking_matrices(&self) -> [[usize; 16]; 3] {
         let node_irr = self.patch_irr.msh.irregular_node_of_face(self.patch_irr.center).unwrap();
-        let m = 2 * self.patch_irr.msh.valence(node_irr);
+        let n = 2 * self.patch_irr.msh.valence(node_irr);
         
         let p1 = [
-            7, 6, m + 4, m + 12, 
-            0, 5, m + 3, m + 11,
-            3, 4, m + 2, m + 10,
-            m + 6, m + 5, m + 1, m + 9
+            7, 6, n + 4, n + 12, 
+            0, 5, n + 3, n + 11,
+            3, 4, n + 2, n + 10,
+            n + 6, n + 5, n + 1, n + 9
         ];
         let p2 = [
-            0, 5, m + 3, m + 11,
-            3, 4, m + 2, m + 10,
-            m + 6, m + 5, m + 1, m + 9,
-            m + 15, m + 14, m + 13, m + 8
+            0, 5, n + 3, n + 11,
+            3, 4, n + 2, n + 10,
+            n + 6, n + 5, n + 1, n + 9,
+            n + 15, n + 14, n + 13, n + 8
         ];
         
         let p3 = [
-            1, 0, 5, m + 3,
-            2, 3, 4, m + 2,
-            m + 7, m + 6, m + 5, m + 1,
-            m + 16, m + 15, m + 14, m + 13
+            1, 0, 5, n + 3,
+            2, 3, 4, n + 2,
+            n + 7, n + 6, n + 5, n + 1,
+            n + 16, n + 15, n + 14, n + 13
         ];
         
         [p1, p2, p3]
