@@ -5,13 +5,25 @@ use std::collections::HashMap;
 use std::iter::once;
 use std::sync::LazyLock;
 
-/// The matrix `S11` for extended catmull clark subdivision.
-static S11: LazyLock<SMatrix<f64, 11, 7>> = LazyLock::new(|| {
-   todo!()
+/// The `7✕8` matrix `S11` for extended catmull clark subdivision.
+/// Taken from "Stam 1998" without trailing zeroes.
+pub static S11: LazyLock<SMatrix<f64, 7, 8>> = LazyLock::new(|| {
+    // a = 36, b = 6, c = 1, d = 24, e = 4, f = 16 (see "Stam 1998")
+    // todo: implement special case n=3 (valence=3)
+    matrix![
+        1, 0, 0, 6, 36, 6, 0, 0;
+        4, 0, 0, 4, 24, 24, 0, 0;
+        6, 0, 0, 1, 6, 36, 6, 1;
+        4, 0, 0, 0, 0, 24, 24, 4;
+        4, 0, 0, 24, 24, 4, 0, 0;
+        6, 1, 6, 36, 6, 1, 0, 0;
+        4, 4, 24, 24, 0, 0, 0, 0;
+   ].cast() / 64.0
 });
 
-/// The matrix `S12` for extended catmull clark subdivision.
-static S12: LazyLock<SMatrix<f64, 7, 7>> = LazyLock::new(|| {
+/// The `7✕7` matrix `S12` for extended catmull clark subdivision.
+/// Taken from "Stam 1998".
+pub static S12: LazyLock<SMatrix<f64, 7, 7>> = LazyLock::new(|| {
     matrix![
         1.0, 6.0, 1.0, 0.0, 6.0, 1.0, 0.0;
         0.0, 4.0, 4.0, 0.0, 0.0, 0.0, 0.0;
@@ -23,7 +35,36 @@ static S12: LazyLock<SMatrix<f64, 7, 7>> = LazyLock::new(|| {
     ] / 64.0
 });
 
+/// The `9✕7 `matrix `S21` for extended catmull clark subdivision.
+/// Taken from "Stam 1998" without trailing zeroes.
+pub static S21: LazyLock<SMatrix<f64, 9, 7>> = LazyLock::new(|| {
+    matrix![
+        0, 0, 0, 0, 16, 0, 0;
+        0, 0, 0, 0, 24, 4, 0;
+        0, 0, 0, 0, 16, 16, 0;
+        0, 0, 0, 0, 4, 24, 4;
+        0, 0, 0, 0, 0, 16, 16;
+        0, 0, 0, 4, 24, 0, 0;
+        0, 0, 0, 16, 16, 0, 0;
+        0, 0, 4, 24, 4, 0, 0;
+        0, 0, 16, 16, 0, 0, 0
+    ].cast() / 64.0
+});
 
+/// The `9✕7 `matrix `S22` for extended catmull clark subdivision. Taken from "Stam 1998".
+pub static S22: LazyLock<SMatrix<f64, 9, 7>> = LazyLock::new(|| {
+    matrix![
+        16, 16, 0, 0, 16, 0, 0;
+        4, 24, 4, 0, 4, 0, 0;
+        0, 16, 16, 0, 0, 0, 0;
+        0, 4, 24, 4, 0, 0, 0;
+        0, 0, 16, 16, 0, 0, 0;
+        4, 4, 0, 0, 24, 4, 0;
+        0, 0, 0, 0, 16, 16, 0;
+        0, 0, 0, 0, 4, 24, 4;
+        0, 0, 0, 0, 0, 16, 16
+    ].cast() / 64.0
+});
 
 /// Builds the `2n+1 ✕ 2n+1` subdivision matrix.
 /// 
@@ -86,12 +127,12 @@ pub fn build_mat<T: RealField>(n: usize) -> DMatrix<T> {
 }
 
 /// Reorders the columns and rows of the subdivision matrix to match the ordering of "Stam 1998".
-/// 
 /// The DOFs get reordered as
 /// ```text
 /// (F1,...,Fn,E1,...,En,V) -> (V,E1,F1,...,En,Fn)
 /// ```
 pub fn permute_matrix<T: RealField>(s: &DMatrix<T>) -> DMatrix<T> {
+    // todo: possibly remove this method and directly build correct ordering
     let (r, _) = s.shape();
     let n = (r - 1) / 2;
     let face_edge_it = (0..n).flat_map(|i| once(i + n).chain(once(i)));
@@ -110,6 +151,24 @@ pub fn permute_matrix<T: RealField>(s: &DMatrix<T>) -> DMatrix<T> {
     }
 
     mat
+}
+
+/// Builds the extended `2n+8 ✕ 2n+8` and `2n+17 ✕ 2n+8` subdivision matrices.
+///
+/// The ordering of nodes is taken from "Stam 1998".
+pub fn build_extended_mats<T: RealField>(n: usize) -> (DMatrix<T>, DMatrix<T>) {
+    let s = permute_matrix(&build_mat(n));
+    let mut a = DMatrix::<T>::zeros(2*n + 8, 2*n + 8);
+    a.view_mut((0, 0), (2*n + 1, 2*n + 1)).copy_from(&s);
+    a.fixed_view_mut::<7, 8>(2*n + 1, 0).copy_from(&S11.cast());
+    a.fixed_view_mut::<7, 7>(2*n + 1, 2*n + 1).copy_from(&S12.cast());
+
+    let mut a_bar = DMatrix::<T>::zeros(2*n + 17, 2*n + 8);
+    a_bar.view_mut((0, 0), (2*n + 8, 2*n + 8)).copy_from(&a);
+    a_bar.fixed_view_mut::<9, 7>(2*n + 8, 0).copy_from(&S21.cast());
+    a_bar.fixed_view_mut::<9, 7>(2*n + 8, 2*n + 1).copy_from(&S22.cast());
+
+    (a, a_bar)
 }
 
 impl <T: RealField + Copy> QuadMesh<T> {

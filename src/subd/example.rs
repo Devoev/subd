@@ -1,3 +1,5 @@
+use std::ops::Deref;
+use crate::subd::catmull_clark::{S11, S12};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use nalgebra::{matrix, point};
 use crate::subd::catmull_clark;
@@ -95,9 +97,19 @@ fn run_example() {
 #[test]
 fn catmull_clark_matrix() {
     let n = 5;
+    
+    // Normal subd matrix
     let s = catmull_clark::build_mat::<f64>(4) * 16f64;
     println!("Catmull clark matrix in (F1,...,Fn,E1,...,En,V) ordering: {s}");
     
     let s = catmull_clark::permute_matrix(&s);
     println!("Catmull clark matrix in (V,E1,F1,...,En,Fn) ordering: {s}");
+    
+    // S11 and S12
+    println!("S11 = {} and S12 = {}", S11.deref(), S12.deref());
+    
+    // Extended subd matrices
+    let (a, a_bar) = catmull_clark::build_extended_mats::<f64>(n);
+    println!("Catmull clark extended matrix {a}");
+    println!("Catmull clark bigger extended matrix {a_bar}");
 }
