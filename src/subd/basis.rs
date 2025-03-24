@@ -27,13 +27,9 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> DVector<T> {
     // Determine number of required subdivisions
     // todo: floor or ceil?
-    let n= (-u.log2()).min(-v.log2()).ceil().to_usize().unwrap();
-
-    if n == 0 {
-        dbg!(u, v);
-        // todo: what to do in this case? Evaluate regular patch?
-        return DVector::zeros(18);
-    }
+    let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
+        .map(|n| if n == 0 { 1 } else { n }) // todo: what to do if n==0
+        .unwrap();
 
     // Transform (u,v) to regular sub-patch
     let mid = T::from_f64(0.5).unwrap();
@@ -61,7 +57,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> 
     // Evaluate regular basis on sub-patch
     let b = eval_regular(u, v);
     let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
-    
+
     // Evaluate irregular basis
     q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
 }
