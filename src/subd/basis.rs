@@ -20,7 +20,7 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 
     let bu = mat * u_pow;
     let bv = mat * v_pow;
-    bu.kronecker(&bv)
+    bv.kronecker(&bu)
 }
 
 /// Evaluates the irregular basis functions at the parametric point `(u,v)`.
@@ -60,6 +60,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> 
 
     // Evaluate irregular basis
     q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
+    // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
 }
 
 /// A permutation vector to map control points from an irregular patch to a sub-patch.
