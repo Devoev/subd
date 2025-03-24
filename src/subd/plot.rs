@@ -52,7 +52,7 @@ pub fn plot_nodes(msh: &QuadMesh<f64>, nodes: impl Iterator<Item=Node>) -> Plot 
 }
 
 /// Plots the scalar function `b: (0,1)² ⟶ ℝ` on the parametric domain.
-pub fn plot_fn(b: fn(f64, f64) -> f64, num: usize) -> Plot {
+pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     let mut plot = Plot::new();
     let min = 1e-5;
     let u_range = lin_space(min..=1.0, num);

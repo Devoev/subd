@@ -121,14 +121,17 @@ fn catmull_clark_matrix() {
 
 #[test]
 fn eval_basis() {
-    let u = 0.215;
-    let v = 0.613;
-    let b_reg = basis::eval_regular(u, v);
-    let b = basis::eval_irregular(u, v);
-    println!("Basis on regular patch {b_reg}");
-    println!("Basis on irregular patch {b}");
+    // let u = 0.215;
+    // let v = 0.613;
+    // let b_reg = basis::eval_regular(u, v);
+    // let b = basis::eval_irregular(u, v);
+    // println!("Basis on regular patch {b_reg}");
+    // println!("Basis on irregular patch {b}");
 
     let num = 10;
-    let basis_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[0], num);
-    basis_plot.show_html("basis.html");
+    let b_idx = 0;
+    let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
+    let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v)[b_idx], num);
+    basis_reg_plot.show_html("basis.html");
+    basis_irr_plot.show_html("basis_irr.html");
 }
