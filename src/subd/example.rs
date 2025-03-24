@@ -1,9 +1,8 @@
-use crate::subd::catmull_clark::{S11, S12};
+use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_nodes};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::{point, Matrix, SMatrix};
-use std::ops::Deref;
+use nalgebra::{point, SMatrix};
 
 #[test]
 fn run_example() {
@@ -105,8 +104,8 @@ fn catmull_clark_matrix() {
     let s = catmull_clark::permute_matrix(&s);
     println!("Catmull clark matrix in (V,E1,F1,...,En,Fn) ordering: {s}");
 
-    // S11 and S12
-    println!("S11 = {} and S12 = {}", S11.deref(), S12.deref());
+    // S11, S12, S21 and S22
+    println!("S11 = {} S12 = {} S21 = {} S22 = {}", *S11, *S12, *S21, *S22);
 
     // Extended subd matrices
     let (a, a_bar) = catmull_clark::build_extended_mats::<f64>(n);
