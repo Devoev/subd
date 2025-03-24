@@ -2,7 +2,7 @@ use crate::subd::catmull_clark::{S11, S12};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_nodes};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::point;
+use nalgebra::{point, Matrix, SMatrix};
 use std::ops::Deref;
 
 #[test]
@@ -115,6 +115,7 @@ fn catmull_clark_matrix() {
 
     // EV decomposition
     let (q, t) = a.schur().unpack();
+    println!("Error ||qq^t - id||_2 = {}", (q.clone() * q.transpose() - SMatrix::<f64, 18, 18>::identity()).norm());
     let lambda = t.diagonal();
     println!("Eigenvectors {q} and eigenvalues {lambda}");
 }
@@ -128,10 +129,10 @@ fn eval_basis() {
     // println!("Basis on regular patch {b_reg}");
     // println!("Basis on irregular patch {b}");
 
-    let num = 10;
+    let num = 20;
     let b_idx = 0;
     let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
     let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v)[b_idx], num);
-    basis_reg_plot.show_html("basis.html");
+    // basis_reg_plot.show_html("basis.html");
     basis_irr_plot.show_html("basis_irr.html");
 }

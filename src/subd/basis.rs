@@ -1,5 +1,6 @@
 use std::iter::zip;
-use nalgebra::{matrix, one, vector, DVector, Matrix, RealField, SVector};
+use nalgebra::{matrix, min, one, vector, DVector, Matrix, RealField, SVector};
+use num_traits::{AsPrimitive, ToPrimitive};
 use crate::subd::catmull_clark;
 
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
@@ -22,16 +23,21 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 }
 
 /// Evaluates the irregular basis functions at the parametric point `(u,v)`.
-pub fn eval_irregular<T: RealField + Copy>(mut u: T, mut v: T) -> DVector<T> {
+pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> DVector<T> {
     // Determine number of required subdivisions
-    let uf: f64 = u.to_subset().unwrap();
-    let vf: f64 = u.to_subset().unwrap();
-    let n = -uf.log2().min(-vf.log2()).floor() as usize;
+    // todo: floor or ceil?
+    let n= (-u.log2()).min(-v.log2()).ceil().to_usize().unwrap();
+
+    if n == 0 {
+        dbg!(u, v);
+        // todo: what to do in this case? Evaluate regular patch?
+        return DVector::zeros(18);
+    }
 
     // Transform (u,v) to regular sub-patch
-    let pow = T::from_i32(2_i32.pow(n as u32)).unwrap();
     let mid = T::from_f64(0.5).unwrap();
     let two = T::from_i32(2).unwrap();
+    let pow = two.powi((n - 1) as i32);
 
     u *= pow;
     v *= pow;
@@ -48,12 +54,12 @@ pub fn eval_irregular<T: RealField + Copy>(mut u: T, mut v: T) -> DVector<T> {
     let valence = 5; // todo: move to function signature
     let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
     let (q, t) = a.schur().unpack();
-    let lambda = Matrix::from_diagonal(&t.diagonal().map(|e| e.powi((n - 1) as i32)));
+    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| e.powi((n - 1) as i32)));
 
     // Evaluate regular basis on sub-patch
     let b = eval_regular(u, v);
     let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
-
+    
     // Evaluate irregular basis
     q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
 }

@@ -57,7 +57,7 @@ pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     let min = 1e-5;
     let u_range = lin_space(min..=1.0, num);
     let v_range = u_range.clone();
-    
+
     // Calculate data
     let mut z = vec![vec![0.0; num]; num];
     for (i, u) in u_range.clone().enumerate() {
@@ -65,9 +65,9 @@ pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
             z[i][j] = b(u, v);
         }
     }
-    
+
     let trace = Surface::new(z).x(u_range.collect()).y(v_range.collect());
     plot.add_trace(trace);
-    
+
     plot
 }
