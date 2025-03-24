@@ -1,5 +1,6 @@
 use std::iter::zip;
-use nalgebra::{matrix, one, vector, DVector, RealField, SVector};
+use nalgebra::{matrix, one, vector, DVector, Matrix, RealField, SVector};
+use crate::subd::catmull_clark;
 
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
 pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
@@ -21,7 +22,7 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 }
 
 /// Evaluates the irregular basis functions at the parametric point `(u,v)`.
-pub fn eval_irregular<T: RealField + Copy>(mut u: T, mut v: T) -> SVector<T, 16> {
+pub fn eval_irregular<T: RealField + Copy>(mut u: T, mut v: T) -> DVector<T> {
     // Determine number of required subdivisions
     let uf: f64 = u.to_subset().unwrap();
     let vf: f64 = u.to_subset().unwrap();
@@ -43,7 +44,18 @@ pub fn eval_irregular<T: RealField + Copy>(mut u: T, mut v: T) -> SVector<T, 16>
         (1, u*two - one(), v*two - one())
     };
 
-    todo!("Evaluate sub-patch using regular basis functions")
+    // EV decomposition
+    let valence = 5; // todo: move to function signature
+    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
+    let (q, t) = a.schur().unpack();
+    let lambda = Matrix::from_diagonal(&t.diagonal().map(|e| e.powi((n - 1) as i32)));
+
+    // Evaluate regular basis on sub-patch
+    let b = eval_regular(u, v);
+    let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
+
+    // Evaluate irregular basis
+    q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
 }
 
 /// A permutation vector to map control points from an irregular patch to a sub-patch.

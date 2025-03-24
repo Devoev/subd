@@ -1,7 +1,7 @@
 use crate::subd::catmull_clark::{S11, S12};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_nodes};
-use crate::subd::{basis, catmull_clark};
+use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::point;
 use std::ops::Deref;
 
@@ -121,9 +121,14 @@ fn catmull_clark_matrix() {
 
 #[test]
 fn eval_basis() {
-    let u = 0.015;
+    let u = 0.215;
     let v = 0.613;
-    let b = basis::eval_regular(u, v);
-    let p = basis::permutation_vec(0, 5);
-    println!("Basis functions on irregular patch {}", basis::apply_permutation(5, b, p))
+    let b_reg = basis::eval_regular(u, v);
+    let b = basis::eval_irregular(u, v);
+    println!("Basis on regular patch {b_reg}");
+    println!("Basis on irregular patch {b}");
+
+    let num = 10;
+    let basis_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[0], num);
+    basis_plot.show_html("basis.html");
 }
