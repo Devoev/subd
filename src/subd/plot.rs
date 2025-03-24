@@ -1,9 +1,8 @@
-use iter_num_tools::lin_space;
-use itertools::Itertools;
+use crate::subd::face::edges_of_face;
 use crate::subd::mesh::{Face, Node, QuadMesh};
+use iter_num_tools::lin_space;
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
-use crate::subd::face::edges_of_face;
 
 /// Plots the given `faces` of a `msh`.
 pub fn plot_faces(msh: &QuadMesh<f64>, faces: impl Iterator<Item=Face>) -> Plot {

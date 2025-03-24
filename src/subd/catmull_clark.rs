@@ -1,6 +1,6 @@
 use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
 use itertools::{chain, Itertools};
-use nalgebra::{matrix, DMatrix, DVector, MatrixXx2, Point2, RealField, RowDVector, SMatrix};
+use nalgebra::{matrix, DMatrix, DVector, Dyn, MatrixXx2, Point2, RealField, RowDVector, SMatrix, Schur};
 use std::collections::HashMap;
 use std::iter::once;
 use std::sync::LazyLock;
@@ -64,6 +64,13 @@ pub static S22: LazyLock<SMatrix<f64, 9, 7>> = LazyLock::new(|| {
         0, 0, 0, 0, 4, 24, 4;
         0, 0, 0, 0, 0, 16, 16
     ].cast() / 64.0
+});
+
+/// The Schur decomposition of the `2n+8 ✕ 2n+8` extended subdivision matrix for valence `5`.
+pub static EV5: LazyLock<Schur<f64, Dyn>> = LazyLock::new(|| {
+    // todo: rename and change signature
+    let (a, _) = build_extended_mats(5);
+    a.schur()
 });
 
 /// Builds the `2n+1 ✕ 2n+1` subdivision matrix.

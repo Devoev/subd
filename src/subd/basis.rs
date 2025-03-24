@@ -1,7 +1,8 @@
-use std::iter::zip;
-use nalgebra::{matrix, min, one, vector, DVector, Matrix, RealField, SVector};
-use num_traits::{AsPrimitive, ToPrimitive};
 use crate::subd::catmull_clark;
+use crate::subd::catmull_clark::EV5;
+use nalgebra::{matrix, one, vector, DVector, Matrix, RealField, SVector};
+use num_traits::ToPrimitive;
+use std::iter::zip;
 
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
 pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
@@ -53,8 +54,9 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> 
     // EV decomposition
     let valence = 5; // todo: move to function signature
     let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
-    let (q, t) = a.schur().unpack();
-    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| e.powi((n - 1) as i32)));
+    let (q, t) = EV5.clone().unpack();
+    let q = q.cast::<T>();
+    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((n - 1) as i32)).unwrap()));
 
     // Evaluate regular basis on sub-patch
     let b = eval_regular(u, v);

@@ -129,7 +129,7 @@ fn eval_basis() {
     // println!("Basis on regular patch {b_reg}");
     // println!("Basis on irregular patch {b}");
 
-    let num = 20;
+    let num = 100;
     let b_idx = 0;
     let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
     let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v)[b_idx], num);
