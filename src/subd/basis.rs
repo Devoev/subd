@@ -46,10 +46,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
 pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
     // Determine number of required subdivisions
-    // todo: floor or ceil?
-    let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
-        .map(|n| if n == 0 { 1 } else { n }) // todo: what to do if n==0
-        .unwrap();
+    let n = (-u.log2()).min(-v.log2()).ceil().to_usize().unwrap();
 
     // Transform (u,v) to regular sub-patch
     let mid = T::from_f64(0.5).unwrap();
@@ -59,15 +56,13 @@ pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T
     u *= pow;
     v *= pow;
 
-    let (k, u, v) = if v < mid {
-        (0, u*two - one(), v*two)
+    if v < mid {
+        (u*two - one(), v*two, n, 0)
     } else if u < mid {
-        (2, u*two, v*two - one())
+        (u*two, v*two - one(), n, 2)
     } else {
-        (1, u*two - one(), v*two - one())
-    };
-
-    (u, v, n, k)
+        (u*two - one(), v*two - one(), n, 1)
+    }
 }
 
 /// A permutation vector to map control points from an irregular patch to a sub-patch.

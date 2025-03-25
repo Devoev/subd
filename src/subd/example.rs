@@ -140,6 +140,6 @@ fn eval_basis() {
     let b_idx = 7;
     let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
     let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, 5)[b_idx], num);
-    basis_reg_plot.show_html("basis.html");
+    // basis_reg_plot.show_html("basis.html");
     basis_irr_plot.show_html("basis_irr.html");
 }
