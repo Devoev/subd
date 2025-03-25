@@ -24,7 +24,28 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 }
 
 /// Evaluates the irregular basis functions at the parametric point `(u,v)`.
-pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> DVector<T> {
+pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T) -> DVector<T> {
+    // Transform (u,v)
+    let (u, v, n, k) = transform(u, v);
+
+    // EV decomposition
+    let valence = 5; // todo: move to function signature
+    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
+    let (q, t) = EV5.clone().unpack();
+    let q = q.cast::<T>();
+    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((n - 1) as i32)).unwrap()));
+
+    // Evaluate regular basis on sub-patch
+    let b = eval_regular(u, v);
+    let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
+
+    // Evaluate irregular basis
+    q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
+    // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
+}
+
+/// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
+pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
     // Determine number of required subdivisions
     // todo: floor or ceil?
     let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
@@ -47,20 +68,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> 
         (1, u*two - one(), v*two - one())
     };
 
-    // EV decomposition
-    let valence = 5; // todo: move to function signature
-    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
-    let (q, t) = EV5.clone().unpack();
-    let q = q.cast::<T>();
-    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((n - 1) as i32)).unwrap()));
-
-    // Evaluate regular basis on sub-patch
-    let b = eval_regular(u, v);
-    let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
-
-    // Evaluate irregular basis
-    q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
-    // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
+    (u, v, n, k)
 }
 
 /// A permutation vector to map control points from an irregular patch to a sub-patch.
