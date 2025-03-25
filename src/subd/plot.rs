@@ -1,8 +1,10 @@
 use crate::subd::face::edges_of_face;
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use iter_num_tools::lin_space;
-use plotly::layout::Annotation;
+use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter, Surface};
+use plotly::common::Font;
+use crate::subd::basis;
 
 /// Plots the given `faces` of a `msh`.
 pub fn plot_faces(msh: &QuadMesh<f64>, faces: impl Iterator<Item=Face>) -> Plot {
@@ -68,5 +70,44 @@ pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     let trace = Surface::new(z).x(u_range.collect()).y(v_range.collect());
     plot.add_trace(trace);
 
+    plot
+}
+
+/// Plots the hierarchy of sub-patches,
+/// such that the parametric values `(u,v)` lie in sub-patch `(n,k)`.
+pub fn plot_sub_patches(u: f64, v: f64) -> Plot {
+    let mut plot = Plot::new();
+    plot.add_trace(Scatter::new(vec![u], vec![v]));
+
+    let (_, _, num, k) = basis::transform(u, v);
+
+    let mut layout = Layout::new()
+        .x_axis(Axis::new().range(vec![0, 1]))
+        .y_axis(Axis::new().range(vec![0, 1]));
+
+    layout.add_annotation(Annotation::new()
+        .text(format!("Ω^{num}_{k}"))
+        .font(Font::new().size(20))
+        .show_arrow(true)
+        .x(u)
+        .y(v)
+    );
+
+    for n in 0..=num {
+        let z0 = 2f32.powi(-(n as i32) + 1);
+        let z1 = 2f32.powi(-(n as i32));
+        let vert_line = Shape::new().shape_type(ShapeType::Line)
+            .x0(z1).y0(0.0)
+            .x1(z1).y1(z0);
+        let hor_line = Shape::new().shape_type(ShapeType::Line)
+            .x0(0.0).y0(z1)
+            .x1(z0).y1(z1);
+
+
+        layout.add_shape(vert_line);
+        layout.add_shape(hor_line);
+    }
+
+    plot.set_layout(layout);
     plot
 }

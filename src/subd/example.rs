@@ -1,6 +1,6 @@
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
-use crate::subd::plot::{plot_faces, plot_nodes};
+use crate::subd::plot::{plot_faces, plot_nodes, plot_sub_patches};
 use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::{point, SMatrix};
 
@@ -117,6 +117,14 @@ fn catmull_clark_matrix() {
     println!("Error ||qq^t - id||_2 = {}", (q.clone() * q.transpose() - SMatrix::<f64, 18, 18>::identity()).norm());
     let lambda = t.diagonal();
     println!("Eigenvectors {q} and eigenvalues {lambda}");
+}
+
+#[test]
+fn sub_patch_transform() {
+    let u = 0.26;
+    let v = 0.04;
+    let sub_patches_plot = plot_sub_patches(u, v);
+    sub_patches_plot.show_html("sub_patches.html");
 }
 
 #[test]
