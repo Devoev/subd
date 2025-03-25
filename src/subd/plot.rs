@@ -79,7 +79,7 @@ pub fn plot_sub_patches(u: f64, v: f64) -> Plot {
     let mut plot = Plot::new();
     plot.add_trace(Scatter::new(vec![u], vec![v]));
 
-    let (_, _, num, k) = basis::transform(u, v);
+    let (ut, vt, num, k) = basis::transform(u, v);
 
     let mut layout = Layout::new()
         .x_axis(Axis::new().range(vec![0, 1]))
@@ -91,6 +91,14 @@ pub fn plot_sub_patches(u: f64, v: f64) -> Plot {
         .show_arrow(true)
         .x(u)
         .y(v)
+    );
+    
+    layout.add_annotation(Annotation::new()
+        .text("Mapped point")
+        .font(Font::new().size(20))
+        .show_arrow(true)
+        .x(ut)
+        .y(vt)
     );
 
     for n in 0..=num {

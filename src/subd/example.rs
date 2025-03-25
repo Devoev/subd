@@ -122,7 +122,7 @@ fn catmull_clark_matrix() {
 #[test]
 fn sub_patch_transform() {
     let u = 0.26;
-    let v = 0.04;
+    let v = 0.24;
     let sub_patches_plot = plot_sub_patches(u, v);
     sub_patches_plot.show_html("sub_patches.html");
 }
