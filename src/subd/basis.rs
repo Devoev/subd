@@ -11,10 +11,9 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
             3.0, -6.0, 3.0, 0.0;
             -3.0, 0.0, 3.0, 0.0;
             1.0, 4.0, 1.0, 0.0;
-        ]
-        .cast::<T>()
-        / T::from_i32(6).unwrap();
-
+        ].transpose()
+        .cast::<T>() / T::from_i32(6).unwrap();
+    
     let u_pow = vector![u.powi(3), u.powi(2), u, T::one()];
     let v_pow = vector![v.powi(3), v.powi(2), v, T::one()];
 
@@ -30,7 +29,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T) -> DVector<
 
     // EV decomposition
     let valence = 5; // todo: move to function signature
-    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
+    let (_, a_bar) = catmull_clark::build_extended_mats::<T>(valence);
     let (q, t) = EV5.clone().unpack();
     let q = q.cast::<T>();
     let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((n - 1) as i32)).unwrap()));
@@ -40,8 +39,9 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T) -> DVector<
     let b_perm = apply_permutation(valence, b, permutation_vec(k, valence));
 
     // Evaluate irregular basis
-    q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
-    // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
+    // todo: return eigenbasis or subd basis?
+    // q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
+    lambda * (q.transpose() * (a_bar.transpose() * b_perm))
 }
 
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
