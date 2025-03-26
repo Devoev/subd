@@ -5,6 +5,7 @@ use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter, Surface};
 use plotly::common::Font;
 use crate::subd::basis;
+use crate::subd::patch::Patch;
 
 /// Plots the given `faces` of a `msh`.
 pub fn plot_faces(msh: &QuadMesh<f64>, faces: impl Iterator<Item=Face>) -> Plot {
@@ -73,9 +74,30 @@ pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     plot
 }
 
+pub fn plot_patch(patch: Patch<f64>, num: usize, is_regular: bool) -> Plot {
+    let mut plot = Plot::new();
+    let min = 1e-5;
+    let u_range = lin_space(min..=1.0, num);
+    let v_range = u_range.clone();
+
+    for u in u_range.clone() {
+        for v in v_range.clone() {
+            let pos = if is_regular { 
+                patch.eval_regular(u, v)
+            } else { 
+                patch.eval_irregular(u, v)
+            };
+            let trace = Scatter::new(vec![pos.x], vec![pos.y]);
+            plot.add_trace(trace);
+        }
+    }
+
+    plot
+}
+
 /// Plots the hierarchy of sub-patches,
 /// such that the parametric values `(u,v)` lie in sub-patch `(n,k)`.
-pub fn plot_sub_patches(u: f64, v: f64) -> Plot {
+pub fn plot_sub_patch_hierarchy(u: f64, v: f64) -> Plot {
     let mut plot = Plot::new();
     plot.add_trace(Scatter::new(vec![u], vec![v]));
 

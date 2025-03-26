@@ -36,7 +36,7 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -
 
     // Evaluate irregular basis
     a.pow((nsub - 1) as u32).transpose() * (a_bar.transpose() * b_perm)
-    
+
     // todo: implement EV decomposition. Or maybe parse from Stam file?
     // let (q, t) = EV5.clone().unpack(); // todo: don't hardcode
     // let q = q.cast::<T>();
@@ -47,7 +47,9 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
 pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
     // Determine number of required subdivisions
-    let n = (-u.log2()).min(-v.log2()).ceil().to_usize().unwrap();
+    // For u,v = 1, set the value to 1 still
+    let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
+        .map(|n| if n == 0 { 1 } else { n }).unwrap();
 
     // Transform (u,v) to regular sub-patch
     let mid = T::from_f64(0.5).unwrap();

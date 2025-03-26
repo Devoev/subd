@@ -1,6 +1,6 @@
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
-use crate::subd::plot::{plot_faces, plot_nodes, plot_sub_patches};
+use crate::subd::plot::{plot_faces, plot_nodes, plot_patch, plot_sub_patch_hierarchy};
 use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::{point, Matrix, SMatrix};
 
@@ -93,7 +93,8 @@ fn run_example() {
     // msh.catmull_clark();
 
     // Evaluation
-    println!("Patch evaluated as {}", patch_irr.eval_irregular(0.0, 0.4));
+    let patch_eval_plot = plot_patch(patch_irr, 100, false);
+    patch_eval_plot.show_html("patch_eval.html");
 }
 
 #[test]
@@ -135,7 +136,7 @@ fn catmull_clark_matrix() {
 fn sub_patch_transform() {
     let u = 0.26;
     let v = 0.24;
-    let sub_patches_plot = plot_sub_patches(u, v);
+    let sub_patches_plot = plot_sub_patch_hierarchy(u, v);
     sub_patches_plot.show_html("sub_patches.html");
 }
 
