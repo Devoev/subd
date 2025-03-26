@@ -82,7 +82,9 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
     let u_range = lin_space(min..=1.0, num);
     let v_range = u_range.clone();
 
-    let is_regular = patch.irregular_node().is_none();
+    let irregular_node = patch.irregular_node();
+    let is_regular = irregular_node.is_none();
+
     for u in u_range.clone() {
         for v in v_range.clone() {
             let pos = if is_regular {
@@ -104,7 +106,8 @@ pub fn plot_surf(msh: &QuadMesh<f64>, num: usize) -> Plot {
     let mut plot = Plot::new();
 
     for &face in &msh.faces {
-        // fixme: check for boundary mesh
+        if msh.is_boundary(face) { continue }
+
         let patch = msh.find_patch(face);
         let plot_patch = plot_patch(patch, num);
         plot.add_traces(plot_patch.data().iter().cloned().collect_vec())

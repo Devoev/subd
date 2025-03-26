@@ -98,7 +98,12 @@ impl<T: RealField + Copy> QuadMesh<T> {
         self.faces
             .iter()
             .enumerate()
-            .filter(move |(_, f)| is_adjacent(f, &face))
+            .filter(move |(_, f)| is_adjacent(f, &face) && **f != face) // todo: move f != face check to is_adjacent
+    }
+
+    /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
+    pub fn is_boundary(&self, face: Face) -> bool {
+        self.adjacent_faces(face).count() < 4
     }
 
     /// Returns the one-ring around the given `node`.

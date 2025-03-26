@@ -96,7 +96,7 @@ fn run_example() {
     let patch_eval_plot = plot_patch(patch_irr, 20);
     // patch_eval_plot.show_html("patch_eval.html");
 
-    let surf_eval_plot = plot_surf(&msh, 20);
+    let surf_eval_plot = plot_surf(&msh, 10);
     surf_eval_plot.show_html("surf_eval.html")
 }
 
