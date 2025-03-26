@@ -1,8 +1,10 @@
+use crate::subd::basis;
 use crate::subd::edge::{next_edge, reverse_edge, sort_edge};
 use crate::subd::face::{edges_of_face, sort_by_node, sort_by_origin};
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use itertools::{izip, Itertools};
-use nalgebra::RealField;
+use nalgebra::{Dyn, OMatrix, Point2, RealField, U2};
+use num_traits::ToPrimitive;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
 
@@ -213,6 +215,42 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         // Combine both
         inner_nodes.extend_from_slice(&outer_nodes);
         inner_nodes
+    }
+}
+
+impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
+
+    /// Evaluates this regular patch at the parametric point `(u,v)`.
+    pub fn eval_regular(&self, u: T, v: T) -> Point2<T> {
+        // Store control points in matrix (c1,...,cN)
+        let points = self.nodes_regular()
+            .into_iter()
+            .map(|n| self.msh.node(n).coords)
+            .collect_vec();
+        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
+
+        // Evaluate basis functions and patch
+        let b = basis::eval_regular(u, v);
+        Point2::from(c * b)
+    }
+
+    /// Evaluates this irregular patch at the parametric point `(u,v)`.
+    pub fn eval_irregular(&self, u: T, v: T) -> Point2<T> {
+        // Get valence of irregular node
+        let node_irr = self.msh.irregular_node_of_face(self.center)
+            .expect("Center patch of face must be irregular!");
+        let n = self.msh.valence(node_irr);
+
+        // Store control points in matrix (c1,...,cN)
+        let points = self.nodes_irregular()
+            .into_iter()
+            .map(|n| self.msh.node(n).coords)
+            .collect_vec();
+        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
+
+        // Evaluate basis functions and patch
+        let b = basis::eval_irregular(u, v, n);
+        Point2::from(c * b)
     }
 }
 

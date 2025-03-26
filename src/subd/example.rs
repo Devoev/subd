@@ -76,8 +76,8 @@ fn run_example() {
     // let patch = patch.sort_by_origin(patch.faces[7][3]);
     
     let face_irr_id = 0;
-    // let patch_irr = msh.find_patch(msh.faces[face_irr_id]);
-    let patch_ext = msh.find_patch_ext(msh.faces[face_irr_id]);
+    let patch_irr = msh.find_patch(msh.faces[face_irr_id]);
+    // let patch_ext = msh.find_patch_ext(msh.faces[face_irr_id]);
 
     // Plots
     // let patch_plot = plot_nodes(&msh, patch.nodes_regular().into_iter());
@@ -86,11 +86,14 @@ fn run_example() {
     // let patch_irr_plot = plot_nodes(&msh, patch_irr.nodes_irregular().into_iter());
     // patch_irr_plot.show_html("patch_irr.html");
 
-    let patch_ext_plot = plot_nodes(&msh, patch_ext.nodes().into_iter());
-    patch_ext_plot.show_html("patch_ext.html");
+    // let patch_ext_plot = plot_nodes(&msh, patch_ext.nodes().into_iter());
+    // patch_ext_plot.show_html("patch_ext.html");
     
     // Test Catmull-Clark
     // msh.catmull_clark();
+
+    // Evaluation
+    println!("Patch evaluated as {}", patch_irr.eval_irregular(0.0, 0.4));
 }
 
 #[test]
@@ -150,7 +153,7 @@ fn eval_basis() {
     let b_idx = 0;
     // let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
     // basis_reg_plot.show_html("basis.html");
-    
+
     // Plot all irregular basis functions
     for i in 0..18 {
         let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num);
