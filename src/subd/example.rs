@@ -93,7 +93,7 @@ fn run_example() {
     // msh.catmull_clark();
 
     // Evaluation
-    let patch_eval_plot = plot_patch(patch_irr, 100, false);
+    let patch_eval_plot = plot_patch(patch_irr, 20);
     patch_eval_plot.show_html("patch_eval.html");
 }
 

@@ -74,17 +74,19 @@ pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     plot
 }
 
-pub fn plot_patch(patch: Patch<f64>, num: usize, is_regular: bool) -> Plot {
+/// Plots the given `patch` by evaluating `num` times in both parametric directions.
+pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
     let mut plot = Plot::new();
     let min = 1e-5;
     let u_range = lin_space(min..=1.0, num);
     let v_range = u_range.clone();
 
+    let is_regular = patch.irregular_node().is_none();
     for u in u_range.clone() {
         for v in v_range.clone() {
-            let pos = if is_regular { 
+            let pos = if is_regular {
                 patch.eval_regular(u, v)
-            } else { 
+            } else {
                 patch.eval_irregular(u, v)
             };
             let trace = Scatter::new(vec![pos.x], vec![pos.y]);

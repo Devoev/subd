@@ -83,6 +83,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     }
     
     /// Finds the patch with the center `face`, assuming it is a regular patch.
+    #[deprecated]
     pub fn find_regular(msh: &'a QuadMesh<T>, face: Face) -> Self {
         // todo: this is the old code for regular faces. Remove this or optimize at some point
 
@@ -122,6 +123,14 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         }
 
         Patch { msh, faces: sorted, center: face }
+    }
+
+    /// Finds and returns the irregular node index and its valence.
+    /// Returns `None` if there is no irregular node.
+    pub fn irregular_node(&self) -> Option<(usize, usize)> {
+        let node_irr = self.msh.irregular_node_of_face(self.center)?;
+        let n = self.msh.valence(node_irr);
+        Some((node_irr, n))
     }
 
     /// Sorts the faces of this patch, such that the origin is given by `uv_origin`.
@@ -184,9 +193,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     /// where `N` is the valence of the irregular node (`0` in the graphic).
     pub fn nodes_irregular(&self) -> Vec<Node> {
         // Get valence of irregular node
-        let node_irr = self.msh.irregular_node_of_face(self.center)
-            .expect("Center patch of face must be irregular!");
-        let n = self.msh.valence(node_irr);
+        let (node_irr, n) = self.irregular_node().expect("Patch must be irregular!");
 
         // Get faces at irregular node
         let mut inner_faces = vec![self.faces[0], self.center];
@@ -237,9 +244,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
     /// Evaluates this irregular patch at the parametric point `(u,v)`.
     pub fn eval_irregular(&self, u: T, v: T) -> Point2<T> {
         // Get valence of irregular node
-        let node_irr = self.msh.irregular_node_of_face(self.center)
-            .expect("Center patch of face must be irregular!");
-        let n = self.msh.valence(node_irr);
+        let (_, n) = self.irregular_node().expect("Patch must be irregular!");
 
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_irregular()
