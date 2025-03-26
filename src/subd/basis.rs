@@ -1,6 +1,6 @@
 use crate::subd::catmull_clark;
 use crate::subd::catmull_clark::EV5;
-use nalgebra::{matrix, one, vector, DVector, Matrix, RealField, SVector};
+use nalgebra::{matrix, one, vector, DMatrix, DVector, Matrix, RealField, SVector};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 
@@ -104,4 +104,14 @@ pub fn apply_permutation<T: RealField + Copy>(n: usize, b: SVector<T, 16>, p: Pe
         res[pi] = *bi;
     }
     res
+}
+
+/// Constructs the permutation matrix from the given permutation vector `p` and valence `n`.
+fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
+    let mut mat = DMatrix::<usize>::zeros(16, 2*n + 17);
+    for (i, pi) in p.into_iter().enumerate() {
+        // Set i-th row and pi-th column to 1
+        mat[(i, pi)] = 1;
+    }
+    mat
 }
