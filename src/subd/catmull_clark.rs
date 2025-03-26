@@ -68,7 +68,7 @@ pub static S22: LazyLock<SMatrix<f64, 9, 7>> = LazyLock::new(|| {
 
 /// The Schur decomposition of the `2n+8 ✕ 2n+8` extended subdivision matrix for valence `5`.
 pub static EV5: LazyLock<Schur<f64, Dyn>> = LazyLock::new(|| {
-    // todo: rename and change signature
+    // todo: rename and change signature. Schur decomposition is not what we want here
     let (a, _) = build_extended_mats(5);
     a.schur()
 });

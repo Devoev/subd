@@ -2,7 +2,7 @@ use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_nodes, plot_sub_patches};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::{point, SMatrix};
+use nalgebra::{point, Matrix, SMatrix};
 
 #[test]
 fn run_example() {
@@ -100,7 +100,7 @@ fn catmull_clark_matrix() {
     // Normal subd matrix
     let s = catmull_clark::build_mat::<f64>(4) * 16f64;
     println!("Catmull clark matrix in (F1,...,Fn,E1,...,En,V) ordering: {s}");
-    
+
     let s = catmull_clark::permute_matrix(&s);
     println!("Catmull clark matrix in (V,E1,F1,...,En,Fn) ordering: {s}");
 
@@ -113,10 +113,19 @@ fn catmull_clark_matrix() {
     println!("Catmull clark bigger extended matrix {a_bar}");
 
     // EV decomposition
-    let (q, t) = a.schur().unpack();
-    println!("Error ||qq^t - id||_2 = {}", (q.clone() * q.transpose() - SMatrix::<f64, 18, 18>::identity()).norm());
-    let lambda = t.diagonal();
-    println!("Eigenvectors {q} and eigenvalues {lambda}");
+    let svd = a.clone().svd_unordered(true, true);
+    let u = svd.u.unwrap();
+    let vt = svd.v_t.unwrap();
+    let e = svd.singular_values;
+    let lambda = Matrix::from_diagonal(&e);
+    println!("Error ||uu^t - id||_2 = {:e}", (u.clone() * u.transpose() - SMatrix::<f64, 18, 18>::identity()).norm());
+    println!("Error ||vv^t - id||_2 = {:e}", (vt.transpose() * vt.clone() - SMatrix::<f64, 18, 18>::identity()).norm());
+    println!("Error ||A - U Λ V^T|| = {:e}", (a.clone() - u.clone() * lambda * vt.clone()).norm());
+
+    // Power calculation
+    let nsub = 5;
+    let lambda_pow = Matrix::from_diagonal(&e.map(|e| e.powi(nsub)));
+    println!("Error ||A^n - U Λ^n V^T|| = {:e}", (a.pow(nsub as u32) - u.clone() * lambda_pow * vt).norm());
 }
 
 #[test]
@@ -138,7 +147,7 @@ fn eval_basis() {
 
     let num = 50;
     let b_idx = 7;
-    let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
+    // let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
     let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, 5)[b_idx], num);
     // basis_reg_plot.show_html("basis.html");
     basis_irr_plot.show_html("basis_irr.html");

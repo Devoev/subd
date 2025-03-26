@@ -27,20 +27,21 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -
     // Transform (u,v)
     let (u, v, nsub, k) = transform(u, v);
 
-    // EV decomposition
-    let (_, a_bar) = catmull_clark::build_extended_mats::<T>(n);
-    let (q, t) = EV5.clone().unpack(); // todo: don't hardcode
-    let q = q.cast::<T>();
-    let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((nsub - 1) as i32)).unwrap()));
+    // Build subdivision matrices
+    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(n);
 
     // Evaluate regular basis on sub-patch
     let b = eval_regular(u, v);
     let b_perm = apply_permutation(n, b, permutation_vec(k, n));
 
     // Evaluate irregular basis
-    // todo: return eigenbasis or subd basis?
-    // q.clone() * (lambda * (q.transpose() * (a_bar.transpose() * b_perm)))
-    lambda * (q.transpose() * (a_bar.transpose() * b_perm))
+    a.pow((nsub - 1) as u32).transpose() * (a_bar.transpose() * b_perm)
+    
+    // todo: implement EV decomposition. Or maybe parse from Stam file?
+    // let (q, t) = EV5.clone().unpack(); // todo: don't hardcode
+    // let q = q.cast::<T>();
+    // let lambda = Matrix::from_diagonal(&t.map_diagonal(|e| T::from_f64(e.powi((nsub - 1) as i32)).unwrap()));
+    // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
 }
 
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
