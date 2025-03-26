@@ -146,9 +146,14 @@ fn eval_basis() {
     // println!("Basis on irregular patch {b}");
 
     let num = 50;
-    let b_idx = 7;
+    let valence = 5;
+    let b_idx = 0;
     // let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
-    let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, 5)[b_idx], num);
     // basis_reg_plot.show_html("basis.html");
-    basis_irr_plot.show_html("basis_irr.html");
+    
+    // Plot all irregular basis functions
+    for i in 0..18 {
+        let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num);
+        basis_irr_plot.show_html(format!("basis_irr_{i}.html"));
+    }
 }
