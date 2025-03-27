@@ -4,6 +4,8 @@ use crate::subd::plot::{plot_faces, plot_nodes, plot_patch, plot_sub_patch_hiera
 use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::{point, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
+use itertools::Itertools;
+use crate::subd::patch::Patch;
 
 /// Vector of coordinates in 2D.
 type Coords = Vec<Point2<f64>>;
@@ -106,6 +108,32 @@ fn msh() {
 }
 
 #[test]
+fn patch() {
+    // Refine mesh
+    let mut msh = MSH_STAR.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+    
+    let face_id = 2;
+    let face = msh.faces[face_id];
+    let patch1 = Patch::find(&msh, face, face[0]);
+    let patch2 = Patch::find(&msh, face, face[1]);
+
+    let same_faces = patch2.faces.iter().sorted().collect_vec() == patch1.faces.iter().sorted().collect_vec();
+    let same_center = patch1.center == patch2.center;
+    let same_nodes = patch1.nodes_regular().iter().sorted().collect_vec() == patch2.nodes_regular().iter().sorted().collect_vec();
+    if !same_faces || !same_center || !same_nodes {
+        eprint!("Faces, center face or nodes are not the same! \
+            faces = {same_faces}, center = {same_center}, nodes = {same_nodes}");
+    }
+
+    dbg!(patch2.faces.iter().map(|face| msh.faces.iter().position(|f| f == face).unwrap()).collect_vec());
+
+    let nodes_plot = plot_nodes(&msh, patch2.nodes_regular().into_iter());
+    nodes_plot.show_html("patch_nodes.html");
+}
+
+#[test]
 fn surf() {
     // Refine mesh
     let mut msh = MSH_STAR.clone();
@@ -113,16 +141,17 @@ fn surf() {
     msh.lin_subd();
 
     let face_id = 17;
-    let patch = msh.find_patch(msh.faces[face_id]);
+    let face = msh.faces[face_id];
+    let patch = Patch::find(&msh, face, face[0]);
 
     // Evaluation
     let num_eval = 10;
 
     let patch_eval_plot = plot_patch(patch, num_eval);
-    patch_eval_plot.show_html("patch_eval.html");
+    // patch_eval_plot.show_html("patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);
-    surf_eval_plot.show_html("surf_eval.html");
+    // surf_eval_plot.show_html("surf_eval.html");
 }
 
 #[test]
