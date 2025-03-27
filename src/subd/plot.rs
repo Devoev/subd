@@ -4,9 +4,10 @@ use crate::subd::mesh::{Face, Node, QuadMesh};
 use crate::subd::patch::Patch;
 use iter_num_tools::lin_space;
 use itertools::Itertools;
-use plotly::common::Font;
+use plotly::common::{ColorScale, ColorScalePalette, Font};
 use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter, Surface};
+use plotly::color::Rgb;
 
 /// Plots the given `faces` of a `msh`.
 pub fn plot_faces(msh: &QuadMesh<f64>, faces: impl Iterator<Item=Face>) -> Plot {
@@ -91,19 +92,22 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
 
     for (i, u) in u_range.clone().enumerate() {
         for (j, v) in v_range.clone().enumerate() {
+            // Evaluate patch
             let pos = if is_regular {
                 patch.eval_regular(u, v)
             } else {
                 patch.eval_irregular(u, v)
             };
 
+            // Set coordinates
             x[i][j] = pos.x;
             y[i][j] = pos.y;
-            z[i][j] = 0.0 // todo: nonzero for 3d surfaces
+            z[i][j] = pos.coords.norm(); // todo: nonzero for 3d surfaces, this is just for color
         }
     }
 
-    let trace = Surface::new(z).x(x).y(y);
+    let trace = Surface::new(z).x(x).y(y)
+        .color_scale(ColorScale::Palette(ColorScalePalette::Cividis));
     plot.add_trace(trace);
     plot
 }
