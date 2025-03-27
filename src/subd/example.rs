@@ -75,7 +75,7 @@ fn run_example() {
     // let patch = msh.find_patch(msh.faces[face_id]);
     // let patch = patch.sort_by_origin(patch.faces[7][3]);
     
-    let face_irr_id = 54;
+    let face_irr_id = 0;
     let patch_irr = msh.find_patch(msh.faces[face_irr_id]);
     // let patch_ext = msh.find_patch_ext(msh.faces[face_irr_id]);
 
@@ -93,10 +93,10 @@ fn run_example() {
     // msh.catmull_clark();
 
     // Evaluation
-    let patch_eval_plot = plot_patch(patch_irr, 10);
+    let patch_eval_plot = plot_patch(patch_irr, 5);
     // patch_eval_plot.show_html("patch_eval.html");
 
-    let surf_eval_plot = plot_surf(&msh, 10);
+    let surf_eval_plot = plot_surf(&msh, 5);
     surf_eval_plot.show_html("surf_eval.html");
 }
 

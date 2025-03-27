@@ -106,9 +106,9 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
         }
     }
 
-    let trace = Surface::new(z).x(x).y(y)
-        .color_scale(ColorScale::Palette(ColorScalePalette::Cividis));
-    plot.add_trace(trace);
+    let surface = Surface::new(z).x(x).y(y)
+        .color_scale(ColorScale::Palette(ColorScalePalette::Viridis));
+    plot.add_trace(surface.clone());
     plot
 }
 
@@ -122,7 +122,8 @@ pub fn plot_surf(msh: &QuadMesh<f64>, num: usize) -> Plot {
 
         let patch = msh.find_patch(face);
         let plot_patch = plot_patch(patch, num);
-        plot.add_traces(plot_patch.data().iter().cloned().collect_vec())
+
+        plot.add_traces(plot_patch.data().iter().cloned().collect_vec());
     }
 
     plot
