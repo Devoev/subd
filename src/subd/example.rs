@@ -1,29 +1,43 @@
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
-use crate::subd::mesh::{LogicalMesh, QuadMesh};
+use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::{point, Matrix, SMatrix};
+use nalgebra::{point, Matrix, Point2, SMatrix};
+use std::sync::LazyLock;
 
-#[test]
-fn run_example() {
-    println!("Subdivision IGA example");
-    
-    let coords_quad = vec![
-        point![0.2, 0.0], point![0.9, 0.1], point![1.0, 1.0], point![0.0, 1.0]
-    ];
-    let faces_quad = vec![[0, 1, 2, 3]];
-    
+/// Vector of coordinates in 2D.
+type Coords = Vec<Point2<f64>>;
 
-    let coords_fichera = vec![
+/// Vector of faces.
+type Faces = Vec<Face>;
+
+/// Rectangle coordinates.
+static COORDS_QUAD: LazyLock<Coords> = LazyLock::new(|| {
+    vec![point![0.2, 0.0], point![0.9, 0.1], point![1.0, 1.0], point![0.0, 1.0]]
+});
+
+/// Rectangle faces.
+static FACES_QUAD: LazyLock<Faces> = LazyLock::new(|| {
+    vec![[0, 1, 2, 3]]
+});
+
+/// Fichera coordinates.
+static COORDS_FICHERA: LazyLock<Coords> = LazyLock::new(|| {
+    vec![
         point![0.0, 0.0], point![0.0, 0.5], point![0.0, 1.0],
         point![0.5, 0.0], point![0.5, 0.5], point![0.5, 1.0],
         point![1.0, 0.0], point![1.0, 0.5]
-    ];
-    let faces_fichera = vec![
-        [0, 1, 4, 3], [1, 2, 5, 4], [3, 4, 7, 6]
-    ];
-    
-    let coords_irregular = vec![
+    ]
+});
+
+/// Fichera faces.
+static FACES_FICHERA: LazyLock<Faces> = LazyLock::new(|| {
+    vec![[0, 1, 4, 3], [1, 2, 5, 4], [3, 4, 7, 6]]
+});
+
+/// Star coordinates.
+static COORDS_STAR: LazyLock<Coords> = LazyLock::new(|| {
+    vec![
         point![0.0, 0.0],
         point![2.0, -1.0],
         point![3.0, 1.0],
@@ -35,34 +49,43 @@ fn run_example() {
         point![-2.0, -4.0],
         point![-0.0, -3.0],
         point![2.0, -4.0]
-    ];
-    let faces_irregular = vec![
+    ]
+});
+
+/// Star faces.
+static FACES_STASR: LazyLock<Faces> = LazyLock::new(|| {
+    vec![
         [0, 1, 2, 3],
         [0, 3, 4, 5],
         [7, 0, 5, 6],
         [8, 9, 0, 7],
         [9, 10, 1, 0]
-    ];
+    ]
+});
 
-    let mut msh = QuadMesh {
-        nodes: coords_irregular,
+/// Quad mesh of star coordinates.
+static MSH_STAR: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
+    QuadMesh {
+        nodes: COORDS_STAR.clone(),
         logical_mesh: LogicalMesh {
-            faces: faces_irregular
+            faces: FACES_STASR.clone()
         }
-    };
-    
+    }
+});
+
+#[test]
+fn msh() {
+    // Refine mesh
+    let mut msh = MSH_STAR.clone();
     msh.lin_subd();
     msh.lin_subd();
-    // msh.dual();
-    // msh.dual();
-    // msh.repeated_averaging(3, 2);
 
     // Plot of mesh
     let msh_plot = plot_faces(&msh, msh.faces.iter().copied());
-    // msh_plot.show_html("msh.html");
+    msh_plot.show_html("msh.html");
 
     let msh_nodes_plot = plot_nodes(&msh, 0..msh.num_nodes());
-    // msh_nodes_plot.show_html("msh_nodes.html");
+    msh_nodes_plot.show_html("msh_nodes.html");
 
     // Plot extended patch
     // for face_id in 0..=3 {
@@ -70,14 +93,6 @@ fn run_example() {
     //     let patch_plot = plot_faces(&msh, patch.faces.iter().copied());
     //     patch_plot.show_html(format!("plot_{face_id}.html"));
     // }
-    
-    // let face_id = 3;
-    // let patch = msh.find_patch(msh.faces[face_id]);
-    // let patch = patch.sort_by_origin(patch.faces[7][3]);
-    
-    let face_irr_id = 0;
-    let patch_irr = msh.find_patch(msh.faces[face_irr_id]);
-    // let patch_ext = msh.find_patch_ext(msh.faces[face_irr_id]);
 
     // Plots
     // let patch_plot = plot_nodes(&msh, patch.nodes_regular().into_iter());
@@ -88,15 +103,25 @@ fn run_example() {
 
     // let patch_ext_plot = plot_nodes(&msh, patch_ext.nodes().into_iter());
     // patch_ext_plot.show_html("patch_ext.html");
-    
-    // Test Catmull-Clark
-    // msh.catmull_clark();
+}
+
+#[test]
+fn surf() {
+    // Refine mesh
+    let mut msh = MSH_STAR.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    let face_id = 17;
+    let patch = msh.find_patch(msh.faces[face_id]);
 
     // Evaluation
-    let patch_eval_plot = plot_patch(patch_irr, 5);
-    // patch_eval_plot.show_html("patch_eval.html");
+    let num_eval = 10;
 
-    let surf_eval_plot = plot_surf(&msh, 5);
+    let patch_eval_plot = plot_patch(patch, num_eval);
+    patch_eval_plot.show_html("patch_eval.html");
+
+    let surf_eval_plot = plot_surf(&msh, num_eval);
     surf_eval_plot.show_html("surf_eval.html");
 }
 
