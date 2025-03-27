@@ -136,7 +136,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     /// Sorts the faces of this **regular** patch, such that the origin is given by `uv_origin`.
     /// This is done by successively applying [`sort_by_origin`] to each patch face.
     pub fn sort_faces_regular(&self, uv_origin: Node) -> Self {
-        // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin. 
+        // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin.
         //  In general this may not be true! Maybe fix this, by ALWAYS sorting in the construction process?
         // Sort face 7
         let &last = self.faces.last().unwrap();
@@ -170,6 +170,12 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///  0 --- 1 --- 2 --- 3
     /// ```
     pub fn nodes_regular(&self) -> [Node; 16] {
+        // Find uv origin and sort all faces
+        // todo: move this to the creation process of a patch
+        let uv_opposite = self.faces[7].iter().position(|n| self.center.contains(n)).unwrap();
+        let uv_origin = (uv_opposite + 2) % 4;
+        let sorted = self.sort_faces_regular(self.faces[7][uv_origin]);
+
         let pick = [
             (7, 0), (7, 1), (6, 1), (5, 1),
             (7, 3), (7, 2), (6, 2), (5, 2),
@@ -177,7 +183,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (1, 3), (1, 2), (2, 2), (3, 2),
             
         ];
-        pick.map(|(face, node)| self.faces[face][node])
+        pick.map(|(face, node)| sorted.faces[face][node])
     }
 
     /// Returns the nodes of this irregular patch in the following order

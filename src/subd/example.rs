@@ -125,15 +125,12 @@ fn patch() {
     let same_center = patch1.center == patch2.center;
     let same_nodes = patch1.nodes_regular().iter().sorted().collect_vec() == patch2.nodes_regular().iter().sorted().collect_vec();
     if !same_faces || !same_center || !same_nodes {
-        eprint!("Faces, center face or nodes are not the same! \
+        eprintln!("Faces, center face or nodes are not the same! \
             faces = {same_faces}, center = {same_center}, nodes = {same_nodes}");
     }
 
-    // Sort patch
-    let sorted = patch2.sort_faces_regular(36);
-
     // Plot nodes of patch
-    let nodes_plot = plot_nodes(&msh, sorted.nodes_regular().into_iter());
+    let nodes_plot = plot_nodes(&msh, patch2.nodes_regular().into_iter());
     nodes_plot.show_html("patch_nodes.html");
 }
 
