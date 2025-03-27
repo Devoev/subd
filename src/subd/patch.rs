@@ -133,9 +133,11 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         Some((node_irr, n))
     }
 
-    /// Sorts the faces of this patch, such that the origin is given by `uv_origin`.
-    pub fn sort_by_origin(&self, uv_origin: Node) -> Self {
-        // todo: this assumes that face 7 is the lower left one. In general this may not be true!
+    /// Sorts the faces of this **regular** patch, such that the origin is given by `uv_origin`.
+    /// This is done by successively applying [`sort_by_origin`] to each patch face.
+    pub fn sort_faces_regular(&self, uv_origin: Node) -> Self {
+        // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin. 
+        //  In general this may not be true! Maybe fix this, by ALWAYS sorting in the construction process?
         // Sort face 7
         let &last = self.faces.last().unwrap();
         let f7 = sort_by_origin(last, uv_origin);
@@ -296,7 +298,7 @@ impl <'a, T: RealField + Copy> ExtendedPatch<'a, T> {
         let patches_reg = izip!(patch_faces, starts, origins)
             .map(|(face, start_idx, origin_idx)| {
                 let patch = Patch::find(msh, face, nodes_irr[start_idx]);
-                patch.sort_by_origin(nodes_irr[origin_idx])
+                patch.sort_faces_regular(nodes_irr[origin_idx])
             })
             .collect_array().unwrap();
 

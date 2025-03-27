@@ -113,12 +113,14 @@ fn patch() {
     let mut msh = MSH_STAR.clone();
     msh.lin_subd();
     msh.lin_subd();
-    
+
+    // Find patches
     let face_id = 2;
     let face = msh.faces[face_id];
     let patch1 = Patch::find(&msh, face, face[0]);
     let patch2 = Patch::find(&msh, face, face[1]);
 
+    // Test if patches are the same
     let same_faces = patch2.faces.iter().sorted().collect_vec() == patch1.faces.iter().sorted().collect_vec();
     let same_center = patch1.center == patch2.center;
     let same_nodes = patch1.nodes_regular().iter().sorted().collect_vec() == patch2.nodes_regular().iter().sorted().collect_vec();
@@ -127,9 +129,11 @@ fn patch() {
             faces = {same_faces}, center = {same_center}, nodes = {same_nodes}");
     }
 
-    dbg!(patch2.faces.iter().map(|face| msh.faces.iter().position(|f| f == face).unwrap()).collect_vec());
+    // Sort patch
+    let sorted = patch2.sort_faces_regular(36);
 
-    let nodes_plot = plot_nodes(&msh, patch2.nodes_regular().into_iter());
+    // Plot nodes of patch
+    let nodes_plot = plot_nodes(&msh, sorted.nodes_regular().into_iter());
     nodes_plot.show_html("patch_nodes.html");
 }
 
