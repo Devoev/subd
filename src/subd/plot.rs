@@ -1,12 +1,12 @@
+use crate::subd::basis;
 use crate::subd::face::edges_of_face;
 use crate::subd::mesh::{Face, Node, QuadMesh};
+use crate::subd::patch::Patch;
 use iter_num_tools::lin_space;
 use itertools::Itertools;
+use plotly::common::Font;
 use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter, Surface};
-use plotly::common::Font;
-use crate::subd::basis;
-use crate::subd::patch::Patch;
 
 /// Plots the given `faces` of a `msh`.
 pub fn plot_faces(msh: &QuadMesh<f64>, faces: impl Iterator<Item=Face>) -> Plot {
@@ -85,18 +85,26 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
     let irregular_node = patch.irregular_node();
     let is_regular = irregular_node.is_none();
 
-    for u in u_range.clone() {
-        for v in v_range.clone() {
+    let mut x = vec![vec![0.0; num]; num];
+    let mut y = vec![vec![0.0; num]; num];
+    let mut z = vec![vec![0.0; num]; num];
+
+    for (i, u) in u_range.clone().enumerate() {
+        for (j, v) in v_range.clone().enumerate() {
             let pos = if is_regular {
                 patch.eval_regular(u, v)
             } else {
                 patch.eval_irregular(u, v)
             };
-            let trace = Scatter::new(vec![pos.x], vec![pos.y]);
-            plot.add_trace(trace);
+
+            x[i][j] = pos.x;
+            y[i][j] = pos.y;
+            z[i][j] = 0.0 // todo: nonzero for 3d surfaces
         }
     }
 
+    let trace = Surface::new(z).x(x).y(y);
+    plot.add_trace(trace);
     plot
 }
 
