@@ -48,6 +48,11 @@ impl<T: RealField + Copy> QuadMesh<T> {
     pub fn num_nodes(&self) -> usize {
         self.nodes.len()
     }
+    
+    /// Finds the index of the given face.
+    pub fn face_idx(&self, face: Face) -> usize {
+        self.faces.iter().position(|f| f == &face).unwrap()
+    }
 
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = Edge> + '_ {

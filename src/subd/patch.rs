@@ -19,6 +19,7 @@ use std::iter::once;
 /// | 7 | 6 | 5 |
 /// +---+---+---+
 /// ```
+#[derive(Debug, Clone)]
 pub struct Patch<'a, T: RealField> {
     /// The mesh reference.
     msh: &'a QuadMesh<T>,
