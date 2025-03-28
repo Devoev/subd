@@ -1,24 +1,38 @@
 use crate::subd::catmull_clark;
-use crate::subd::catmull_clark::EV5;
-use nalgebra::{matrix, one, vector, DMatrix, DVector, Matrix, RealField, SVector};
+use nalgebra::{matrix, one, vector, DMatrix, DVector, RealField, SVector};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 
+/// Evaluates the 4 cubic B-Splines at the parametric point `u`.
+pub fn bspline<T: RealField + Copy>(u: T) -> SVector<T, 4> {
+    let mat = matrix![
+        -1.0, 3.0, -3.0, 1.0;
+        3.0, -6.0, 0.0, 4.0;
+        -3.0, 3.0, 3.0, 1.0;
+        1.0, 0.0, 0.0, 0.0;
+    ].cast::<T>() / T::from_i32(6).unwrap();
+
+    let u_pow = vector![u.powi(3), u.powi(2), u, T::one()];
+    mat * u_pow
+}
+
+/// Evaluates the 3 interpolating cubic B-Splines at the parametric point `u`.
+/// The basis interpolates the left boundary `u = 0`.
+pub fn bspline_interpolating<T: RealField + Copy>(u: T) -> SVector<T, 3> {
+    let mat = matrix![
+        1.0, -6.0, 6.0;
+        -2.0, 6.0, 0.0;
+        1.0, 0.0, 0.0
+    ].cast::<T>() / T::from_i32(6).unwrap();
+
+    let u_pow = vector![u.powi(3), u, T::one()];
+    mat * u_pow
+}
+
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
 pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
-    let mat = matrix![
-            -1.0, 3.0, -3.0, 1.0;
-            3.0, -6.0, 3.0, 0.0;
-            -3.0, 0.0, 3.0, 0.0;
-            1.0, 4.0, 1.0, 0.0;
-        ].transpose()
-        .cast::<T>() / T::from_i32(6).unwrap();
-    
-    let u_pow = vector![u.powi(3), u.powi(2), u, T::one()];
-    let v_pow = vector![v.powi(3), v.powi(2), v, T::one()];
-
-    let bu = mat * u_pow;
-    let bv = mat * v_pow;
+    let bu = bspline(u);
+    let bv = bspline(v);
     bv.kronecker(&bu)
 }
 

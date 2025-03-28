@@ -55,8 +55,20 @@ pub fn plot_nodes(msh: &QuadMesh<f64>, nodes: impl Iterator<Item=Node>) -> Plot 
     plot
 }
 
-/// Plots the scalar function `b: (0,1)² ⟶ ℝ` on the parametric domain.
-pub fn plot_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
+/// Plots the univariate scalar function `b: (0,1) ⟶ ℝ` on the parametric domain.
+pub fn plot_fn(b: impl Fn(f64) -> f64, num: usize) -> Plot {
+    let mut plot = Plot::new();
+    let u_range = lin_space(0.0..=1.0, num);
+    let y = u_range.clone().map(b);
+
+    let trace = Scatter::new(u_range.collect(), y.collect());
+    plot.add_trace(trace);
+
+    plot
+}
+
+/// Plots the bivariate scalar function `b: (0,1)² ⟶ ℝ` on the parametric domain.
+pub fn plot_surf_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
     let mut plot = Plot::new();
     let min = 1e-5;
     let u_range = lin_space(min..=1.0, num);

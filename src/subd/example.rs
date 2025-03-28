@@ -1,10 +1,11 @@
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
-use crate::subd::plot::{plot_faces, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
+use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
 use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::{point, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
 use itertools::Itertools;
+use plotly::Plot;
 use crate::subd::patch::Patch;
 
 /// Vector of coordinates in 2D.
@@ -199,6 +200,28 @@ fn sub_patch_transform() {
 }
 
 #[test]
+fn eval_bspline() {
+    let num = 50;
+
+    // Plot B-splines
+    let mut bspline_plot = Plot::new();
+    for i in 0..4 {
+        let plot = plot_fn(|u| { basis::bspline(u)[i] }, num);
+        bspline_plot.add_traces(plot.data().iter().cloned().collect());
+    }
+    bspline_plot.show_html("out/bspline.html".to_string());
+
+    
+    // Plot boundary B-splines
+    let mut bspline_bnd_plot = Plot::new();
+    for i in 0..3 {
+        let plot = plot_fn(|u| { basis::bspline_interpolating(u)[i] }, num);
+        bspline_bnd_plot.add_traces(plot.data().iter().cloned().collect());
+    }
+    bspline_bnd_plot.show_html("out/bspline_bnd.html".to_string());
+}
+
+#[test]
 fn eval_basis() {
     // let u = 0.215;
     // let v = 0.613;
@@ -215,7 +238,7 @@ fn eval_basis() {
 
     // Plot all irregular basis functions
     for i in 0..18 {
-        let basis_irr_plot = plot::plot_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num);
+        let basis_irr_plot = plot::plot_surf_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num);
         basis_irr_plot.show_html(format!("basis_irr_{i}.html"));
     }
 }
