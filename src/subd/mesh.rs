@@ -82,7 +82,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: Node) -> usize {
-        self.faces_of_node(node).count()
+        self.edges_of_node(node).count()
     }
 
     /// Finds the irregular node of the given `face`, if any exists.
