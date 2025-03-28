@@ -1,4 +1,5 @@
 #![feature(impl_trait_in_assoc_type)]
+#![feature(cmp_minmax)]
 extern crate core;
 
 mod knots;

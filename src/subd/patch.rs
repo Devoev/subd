@@ -1,5 +1,5 @@
 use crate::subd::basis;
-use crate::subd::edge::{next_edge, reverse_edge, sort_edge};
+use crate::subd::edge::{next_edge, reverse_edge, sort_edge_by_face};
 use crate::subd::face::{edges_of_face, sort_by_node, sort_by_origin};
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use itertools::{izip, Itertools};
@@ -99,7 +99,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
                 match intersection[..] {
                     [] => { None }
                     [a, b] => {
-                        let edge = sort_edge([a, b], *other);
+                        let edge = sort_edge_by_face([a, b], *other);
                         Some((edge.to_vec(), other))
                     }
                     _ => { Some((intersection, other)) }

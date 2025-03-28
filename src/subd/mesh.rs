@@ -1,14 +1,12 @@
-use crate::subd::face::{edges_of_face, is_adjacent, sort_face};
-use crate::subd::patch::{ExtendedPatch, Patch};
-use itertools::{chain, Itertools};
-use nalgebra::{
-    center, matrix, vector, DMatrix, DVector, MatrixXx2
-    , Point2, RealField, RowDVector, SMatrix, SVector, Vector2,
-};
-use std::collections::HashMap;
-use std::iter::once;
-use std::ops::{Deref, DerefMut};
 use crate::subd::basis::eval_regular;
+use crate::subd::edge::sort_edge;
+use crate::subd::face::{edges_of_face, is_adjacent};
+use crate::subd::patch::{ExtendedPatch, Patch};
+use itertools::Itertools;
+use nalgebra::{
+    Point2, RealField, SMatrix, SVector, Vector2,
+};
+use std::ops::{Deref, DerefMut};
 
 pub type Node = usize;
 pub type Edge = [Node; 2];
@@ -51,6 +49,14 @@ impl<T: RealField + Copy> QuadMesh<T> {
         self.nodes.len()
     }
 
+    /// Returns an iterator over all unique and sorted edges in this mesh.
+    pub fn edges(&self) -> impl Iterator<Item = Edge> + '_ {
+        self.faces.iter()
+            .flat_map(|&face| edges_of_face(face))
+            .map(sort_edge)
+            .unique()
+    }
+
     /// Returns the nodes of the given `edge`.
     pub fn nodes_of_edge(&self, edge: &Edge) -> [Point2<T>; 2] {
         edge.map(|n| self.node(n))
@@ -61,7 +67,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
         face.map(|node| self.node(node))
     }
 
-    /// Returns all faces who have the given `node` as a vertex.
+    /// Returns all `(index,face)`-pairs of faces who have the given `node` as a vertex.
     pub fn faces_of_node(&self, node: Node) -> impl Iterator<Item = (usize, &Face)> {
         self.faces
             .iter()
@@ -69,7 +75,12 @@ impl<T: RealField + Copy> QuadMesh<T> {
             .filter(move |(_, face)| face.contains(&node))
     }
 
-    /// Calculates the valence of the given `node`.
+    /// Returns all edges connected to the given `node`.
+    pub fn edges_of_node(&self, node: Node) -> impl Iterator<Item = Edge> + '_ {
+        self.edges().filter(move |edge| edge.contains(&node))
+    }
+
+    /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: Node) -> usize {
         self.faces_of_node(node).count()
     }
