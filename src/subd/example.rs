@@ -211,7 +211,7 @@ fn eval_bspline() {
     }
     bspline_plot.show_html("out/bspline.html".to_string());
 
-    
+
     // Plot boundary B-splines
     let mut bspline_bnd_plot = Plot::new();
     for i in 0..3 {
@@ -223,22 +223,28 @@ fn eval_bspline() {
 
 #[test]
 fn eval_basis() {
-    // let u = 0.215;
-    // let v = 0.613;
-    // let b_reg = basis::eval_regular(u, v);
-    // let b = basis::eval_irregular(u, v);
-    // println!("Basis on regular patch {b_reg}");
-    // println!("Basis on irregular patch {b}");
-
-    let num = 50;
+    let num_plot = 50;
+    
     let valence = 5;
-    let b_idx = 0;
-    // let basis_reg_plot = plot::plot_fn(|u, v| basis::eval_regular(u, v)[b_idx], num);
-    // basis_reg_plot.show_html("basis.html");
+    let num_irr = 2*valence + 8;
+    
+    let u_bnd = true;
+    let v_bnd = true;
+    let num_bnd = match (u_bnd, v_bnd) { 
+        (false, false) => 16,
+        (true, true) => 6,
+        _ => 9
+    };
+
+    // Plot all boundary basis functions
+    for i in 0..num_bnd {
+        let basis_bnd_plot = plot::plot_surf_fn(|u, v| basis::eval_boundary(u, v, false, false)[i], num_plot);
+        basis_bnd_plot.show_html(format!("basis_bnd_{i}.html"));
+    }
 
     // Plot all irregular basis functions
-    for i in 0..18 {
-        let basis_irr_plot = plot::plot_surf_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num);
-        basis_irr_plot.show_html(format!("basis_irr_{i}.html"));
+    for i in 0..num_irr {
+        let basis_irr_plot = plot::plot_surf_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num_plot);
+        // basis_irr_plot.show_html(format!("basis_irr_{i}.html"));
     }
 }

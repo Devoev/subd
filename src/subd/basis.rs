@@ -36,6 +36,23 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
     bv.kronecker(&bu)
 }
 
+/// Evaluates the interpolating cubic B-Spline basis at the parametric point `(u,v)`.
+/// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
+pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
+    let eval = |t: T, bnd: bool| {
+        if bnd {
+            DVector::from_vec(bspline_interpolating(t).as_slice().to_vec())
+        } else {
+            DVector::from_vec(bspline(t).as_slice().to_vec())
+        }
+    };
+
+    let bu = eval(u, u_bnd);
+    let bv = eval(v, v_bnd);
+
+    bv.kronecker(&bu)
+}
+
 /// Evaluates the basis functions of an irregular patch of valence `n` at the parametric point `(u,v)`.
 pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> DVector<T> {
     // Transform (u,v)
