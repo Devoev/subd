@@ -141,11 +141,11 @@ fn boundary() {
     let mut msh = MSH.clone();
     msh.lin_subd();
     msh.lin_subd();
-    
-    let face_id = 64;
+
+    let face_id = 48;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
-    
+
     println!("{:?}", patch.faces.iter().map(|face| msh.face_idx(*face)).collect_vec());
 }
 

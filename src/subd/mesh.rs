@@ -48,7 +48,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
     pub fn num_nodes(&self) -> usize {
         self.nodes.len()
     }
-    
+
     /// Finds the index of the given face.
     pub fn face_idx(&self, face: Face) -> usize {
         self.faces.iter().position(|f| f == &face).unwrap()
@@ -90,15 +90,26 @@ impl<T: RealField + Copy> QuadMesh<T> {
         self.edges_of_node(node).count()
     }
 
+    /// Returns `true` if the face is regular.
+    pub fn is_regular(&self, face: Face) -> bool {
+        face.iter().all(|node| self.valence(*node) == 4)
+    }
+
     /// Finds the irregular node of the given `face`, if any exists.
     pub fn irregular_node_of_face(&self, face: Face) -> Option<Node> {
         face.into_iter()
             .find(|&v| self.valence(v) != 4)
     }
 
-    /// Returns `true` if the face is regular.
-    pub fn is_regular(&self, face: Face) -> bool {
-        face.iter().all(|node| self.valence(*node) == 4)
+    /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
+    pub fn is_boundary(&self, face: Face) -> bool {
+        self.adjacent_faces(face).count() < 4
+    }
+
+    /// Finds all boundary nodes of the given `face`,
+    /// i.e. all irregular nodes, assuming the face is a boundary face.
+    pub fn boundary_nodes_of_face(&self, face: Face) -> Vec<Node> {
+        face.into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
 
     /// Computes the centroid of the given `face`.
@@ -115,11 +126,6 @@ impl<T: RealField + Copy> QuadMesh<T> {
             .iter()
             .enumerate()
             .filter(move |(_, f)| is_adjacent(f, &face) && **f != face) // todo: move f != face check to is_adjacent
-    }
-
-    /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
-    pub fn is_boundary(&self, face: Face) -> bool {
-        self.adjacent_faces(face).count() < 4
     }
 
     /// Returns the one-ring around the given `node`.
@@ -155,7 +161,23 @@ impl<T: RealField + Copy> QuadMesh<T> {
     /// Finds the patch of the regular or irregular `face`.
     pub fn find_patch(&self, face: Face) -> Patch<T> {
         // todo: describe how the starting node is selected or change
-        Patch::find(self, face, self.irregular_node_of_face(face).unwrap_or(face[0]))
+        let start = if self.is_boundary(face) {
+            // Get the irregular (=boundary) node, such that the preceding node is regular
+            face.into_iter().enumerate()
+                .find_map(|(idx, node)| {
+                    let next_idx = (idx + 1) % 4;
+                    let next_node = face[next_idx];
+                    (self.valence(node) == 4 && self.valence(next_node) != 4).then_some(next_node)
+                }).unwrap()
+        } else if !self.is_regular(face) {
+            // Get irregular node, if face is irregular
+            self.irregular_node_of_face(face).unwrap()
+        } else {
+            // Get arbitrary node, if face is regular
+            face[0]
+        };
+
+        Patch::find(self, face, start)
     }
 
     /// Finds an extended patch of the irregular `face`.
