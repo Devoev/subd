@@ -138,7 +138,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     /// This is done by successively applying [`sort_by_origin`] to each patch face.
     pub fn sort_faces_regular(&self, uv_origin: Node) -> Self {
         // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin.
-        //  In general this may not be true! Maybe fix this, by ALWAYS sorting in the construction process?
+        //  Is this always true? Maybe fix this, by ALWAYS sorting in the construction process?
         // Sort face 7
         let &last = self.faces.last().unwrap();
         let f7 = sort_by_origin(last, uv_origin);
@@ -158,6 +158,30 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             .collect();
 
         Patch { msh: self.msh, faces: sorted_faces, center: sorted_center }
+    }
+
+    /// Sorts the faces of this **planar boundary** patch, such that the origin is given by `uv_origin`.
+    /// This is done by successively applying [`sort_by_origin`] to each patch face.
+    pub fn sort_faces_boundary_planar(&self, uv_origin: Node) -> Self {
+        // Sort face 0
+        let &first = self.faces.first().unwrap();
+        let f0 = sort_by_origin(first, uv_origin);
+        let n1 = f0[1];
+        
+        // Sort center face
+        let sorted_center = sort_by_origin(self.center, n1);
+        let [_, _, n6, n5] = sorted_center;
+
+        // Sort other faces
+        let anchor_to_idx = [
+            (n5, 1), (n6, 1), (n6, 0), (n6, 3)
+        ];
+        let sorted_faces = once(f0).chain(
+            anchor_to_idx.iter().enumerate()
+                .map(|(face_id, (node, idx))| sort_by_node(self.faces[face_id + 1], *node, *idx))
+        ).collect();
+        
+        Patch { msh: self.msh, faces: sorted_faces, center: self.center }
     }
 
     /// Returns the nodes of this regular patch in lexicographical order, i.e.
@@ -197,9 +221,10 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     /// ```
     pub fn nodes_boundary_planar(&self) -> [Node; 12]{
         // Find uv origin and sort all faces
-        let uv_next = self.faces[0].iter().position(|n| self.center.contains(n)).unwrap();
-        let uv_origin = (uv_next + 3) % 4;
-        let sorted = self.sort_faces_regular(self.faces[0][uv_origin]);
+        let n5 = self.faces[1].iter().find(|n| self.center.contains(n)).unwrap();
+        let n1_idx = self.faces[0].iter().position(|n| self.center.contains(n) && n != n5).unwrap();
+        let uv_origin = (n1_idx + 3) % 4;
+        let sorted = self.sort_faces_boundary_planar(self.faces[0][uv_origin]);
 
         let pick = [
             (0, 0), (0, 1), (4, 0), (4, 1),
@@ -270,6 +295,20 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
 
         // Evaluate basis functions and patch
         let b = basis::eval_regular(u, v);
+        Point2::from(c * b)
+    }
+
+    /// Evaluates this planar boundary patch at the parametric point `(u,v)`.
+    pub fn eval_boundary_planar(&self, u: T, v: T) -> Point2<T> {
+        // Store control points in matrix (c1,...,cN)
+        let points = self.nodes_boundary_planar()
+            .into_iter()
+            .map(|n| self.msh.node(n).coords)
+            .collect_vec();
+        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
+
+        // Evaluate basis functions and patch
+        let b = basis::eval_boundary(u, v, false, true);
         Point2::from(c * b)
     }
 

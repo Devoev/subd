@@ -184,21 +184,4 @@ impl<T: RealField + Copy> QuadMesh<T> {
     pub fn find_patch_ext(&self, face: Face) -> ExtendedPatch<T> {
         ExtendedPatch::find(self, face)
     }
-
-    /// Evaluates the patch of `face` at the parametric point `(u,v)`.
-    pub fn eval_patch(&self, face: Face, u: T, v: T) -> SVector<T, 2> {
-        // Convert patch control points to matrix
-        let patch_nodes = self.find_patch(face).nodes_regular();
-        let rows = patch_nodes
-            .iter()
-            .map(|node| self.node(*node).coords)
-            .collect_vec();
-        let coords = SMatrix::<T, 2, 16>::from_columns(&rows);
-
-        // Evaluate basis functions at (u,v)
-        let b = eval_regular(u, v);
-
-        // Compute surface point
-        coords * b
-    }
 }

@@ -89,14 +89,11 @@ pub fn plot_surf_fn(b: impl Fn(f64, f64) -> f64, num: usize) -> Plot {
 }
 
 /// Plots the given `patch` by evaluating `num` times in both parametric directions.
-pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
+pub fn plot_patch(patch: Patch<f64>, num: usize, is_boundary: bool, is_irregular: bool) -> Plot {
     let mut plot = Plot::new();
     let min = 1e-5;
     let u_range = lin_space(min..=1.0, num);
     let v_range = u_range.clone();
-
-    let irregular_node = patch.irregular_node();
-    let is_regular = irregular_node.is_none();
 
     let mut x = vec![vec![0.0; num]; num];
     let mut y = vec![vec![0.0; num]; num];
@@ -105,10 +102,12 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
     for (i, u) in u_range.clone().enumerate() {
         for (j, v) in v_range.clone().enumerate() {
             // Evaluate patch
-            let pos = if is_regular {
-                patch.eval_regular(u, v)
-            } else {
+            let pos = if is_boundary {
+                patch.eval_boundary_planar(u, v)
+            } else if is_irregular {
                 patch.eval_irregular(u, v)
+            } else {
+                patch.eval_regular(u, v)
             };
 
             // Set coordinates
@@ -130,10 +129,14 @@ pub fn plot_surf(msh: &QuadMesh<f64>, num: usize) -> Plot {
     let mut plot = Plot::new();
 
     for &face in &msh.faces {
-        if msh.is_boundary(face) { continue }
-
         let patch = msh.find_patch(face);
-        let plot_patch = plot_patch(patch, num);
+        let is_boundary = msh.is_boundary(patch.center);
+        let is_boundary_planar = is_boundary && patch.faces.len() == 5;
+        let is_irregular = !msh.is_regular(patch.center) && !is_boundary;
+
+        if is_boundary && !is_boundary_planar{ continue }
+        
+        let plot_patch = plot_patch(patch, num, is_boundary_planar, is_irregular);
 
         plot.add_traces(plot_patch.data().iter().cloned().collect_vec());
     }

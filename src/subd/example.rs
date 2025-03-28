@@ -142,11 +142,12 @@ fn boundary() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 48;
+    let face_id = 11;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 
-    println!("{:?}", patch.faces.iter().map(|face| msh.face_idx(*face)).collect_vec());
+    let nodes_plot = plot_nodes(&msh, patch.nodes_boundary_planar().iter().copied());
+    nodes_plot.show_html("out/patch_bnd_nodes.html");
 }
 
 #[test]
@@ -156,14 +157,14 @@ fn surf() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 2;
+    let face_id = 64;
     let face = msh.faces[face_id];
     let patch = Patch::find(&msh, face, face[0]);
 
     // Evaluation
     let num_eval = 10;
 
-    let patch_eval_plot = plot_patch(patch, num_eval);
+    let patch_eval_plot = plot_patch(patch, num_eval, true, false);
     patch_eval_plot.show_html("patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);
