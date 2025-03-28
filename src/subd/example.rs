@@ -65,8 +65,8 @@ static FACES_STASR: LazyLock<Faces> = LazyLock::new(|| {
     ]
 });
 
-/// Quad mesh of star coordinates.
-static MSH_STAR: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
+/// The used quad mesh.
+static MSH: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
     QuadMesh {
         nodes: COORDS_STAR.clone(),
         logical_mesh: LogicalMesh {
@@ -78,16 +78,16 @@ static MSH_STAR: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
 #[test]
 fn msh() {
     // Refine mesh
-    let mut msh = MSH_STAR.clone();
+    let mut msh = MSH.clone();
     msh.lin_subd();
     msh.lin_subd();
 
     // Plot of mesh
     let msh_plot = plot_faces(&msh, msh.faces.iter().copied());
-    msh_plot.show_html("msh.html");
+    msh_plot.show_html("out/msh.html");
 
     let msh_nodes_plot = plot_nodes(&msh, 0..msh.num_nodes());
-    msh_nodes_plot.show_html("msh_nodes.html");
+    msh_nodes_plot.show_html("out/msh_nodes.html");
 
     // Plot extended patch
     // for face_id in 0..=3 {
@@ -110,7 +110,7 @@ fn msh() {
 #[test]
 fn patch() {
     // Refine mesh
-    let mut msh = MSH_STAR.clone();
+    let mut msh = MSH.clone();
     msh.lin_subd();
     msh.lin_subd();
 
@@ -131,17 +131,17 @@ fn patch() {
 
     // Plot nodes of patch
     let nodes_plot = plot_nodes(&msh, patch2.nodes_regular().into_iter());
-    nodes_plot.show_html("patch_nodes.html");
+    nodes_plot.show_html("out/patch_nodes.html");
 }
 
 #[test]
 fn surf() {
     // Refine mesh
-    let mut msh = MSH_STAR.clone();
+    let mut msh = MSH.clone();
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 17;
+    let face_id = 2;
     let face = msh.faces[face_id];
     let patch = Patch::find(&msh, face, face[0]);
 
@@ -149,10 +149,10 @@ fn surf() {
     let num_eval = 10;
 
     let patch_eval_plot = plot_patch(patch, num_eval);
-    // patch_eval_plot.show_html("patch_eval.html");
+    patch_eval_plot.show_html("patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);
-    // surf_eval_plot.show_html("surf_eval.html");
+    surf_eval_plot.show_html("surf_eval.html");
 }
 
 #[test]
@@ -195,7 +195,7 @@ fn sub_patch_transform() {
     let u = 0.26;
     let v = 0.24;
     let sub_patches_plot = plot_sub_patch_hierarchy(u, v);
-    sub_patches_plot.show_html("sub_patches.html");
+    sub_patches_plot.show_html("out/sub_patches.html");
 }
 
 #[test]
