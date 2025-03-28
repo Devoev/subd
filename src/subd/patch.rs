@@ -171,8 +171,8 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///  0 --- 1 --- 2 --- 3
     /// ```
     pub fn nodes_regular(&self) -> [Node; 16] {
-        // Find uv origin and sort all faces
         // todo: move this to the creation process of a patch
+        // Find uv origin and sort all faces
         let uv_opposite = self.faces[7].iter().position(|n| self.center.contains(n)).unwrap();
         let uv_origin = (uv_opposite + 2) % 4;
         let sorted = self.sort_faces_regular(self.faces[7][uv_origin]);
@@ -183,6 +183,29 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (1, 0), (1, 1), (2, 1), (3, 1),
             (1, 3), (1, 2), (2, 2), (3, 2),
             
+        ];
+        pick.map(|(face, node)| sorted.faces[face][node])
+    }
+
+    /// Returns the nodes of this planar boundary patch in lexicographical order, i.e.
+    /// ```text
+    ///  8 --- 9 -- 10 -- 11
+    ///  |     |     |     |
+    ///  4 --- 5 --- 6 --- 7
+    ///  |     |     |     |
+    ///  0 --- 1 --- 2 --- 3
+    /// ```
+    pub fn nodes_boundary_planar(&self) -> [Node; 12]{
+        // Find uv origin and sort all faces
+        let uv_next = self.faces[0].iter().position(|n| self.center.contains(n)).unwrap();
+        let uv_origin = (uv_next + 3) % 4;
+        let sorted = self.sort_faces_regular(self.faces[0][uv_origin]);
+
+        let pick = [
+            (0, 0), (0, 1), (4, 0), (4, 1),
+            (1, 0), (1, 1), (2, 1), (3, 1),
+            (1, 3), (1, 2), (2, 2), (3, 2),
+
         ];
         pick.map(|(face, node)| sorted.faces[face][node])
     }
