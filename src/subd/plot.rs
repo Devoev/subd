@@ -112,7 +112,8 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
     }
 
     let surface = Surface::new(z).x(x).y(y)
-        .color_scale(ColorScale::Palette(ColorScalePalette::Viridis));
+        .color_scale(ColorScale::Palette(ColorScalePalette::Viridis))
+        .show_scale(false);
     plot.add_trace(surface.clone());
     plot
 }
