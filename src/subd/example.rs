@@ -164,7 +164,7 @@ fn surf() {
     // Evaluation
     let num_eval = 10;
 
-    let patch_eval_plot = plot_patch(patch, num_eval, true, false);
+    let patch_eval_plot = plot_patch(patch, num_eval);
     patch_eval_plot.show_html("patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);

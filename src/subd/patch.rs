@@ -310,7 +310,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
     }
 
     /// Evaluates this regular patch at the parametric point `(u,v)`.
-    pub fn eval_regular(&self, u: T, v: T) -> Point2<T> {
+    fn eval_regular(&self, u: T, v: T) -> Point2<T> {
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_regular()
             .into_iter()
@@ -324,7 +324,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
     }
 
     /// Evaluates this planar boundary patch at the parametric point `(u,v)`.
-    pub fn eval_boundary_planar(&self, u: T, v: T) -> Point2<T> {
+    fn eval_boundary_planar(&self, u: T, v: T) -> Point2<T> {
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_boundary_planar()
             .into_iter()
@@ -338,7 +338,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
     }
 
     /// Evaluates this irregular patch at the parametric point `(u,v)`.
-    pub fn eval_irregular(&self, u: T, v: T) -> Point2<T> {
+    fn eval_irregular(&self, u: T, v: T) -> Point2<T> {
         // Get valence of irregular node
         let (_, n) = self.irregular_node().expect("Patch must be irregular!");
 
