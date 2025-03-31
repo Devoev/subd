@@ -46,6 +46,11 @@ pub enum Patch<'a, T: RealField> {
         msh: &'a QuadMesh<T>,
         faces: Vec<Face>,
         center: Face
+    },
+    BoundaryRegularCorner {
+        msh: &'a QuadMesh<T>,
+        faces: Vec<Face>,
+        center: Face
     }
 }
 
@@ -105,8 +110,10 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             } else {
                 Patch::Irregular { msh, faces: faces_sorted, center }
             }
-        } else if n == 2 || n == 3 {
+        } else if n == 3 && faces_sorted.len() == 5 {
             Patch::BoundaryRegular { msh, faces: faces_sorted, center }
+        } else if n == 2 || n == 3 {
+            Patch::BoundaryRegularCorner { msh, faces: faces_sorted, center }
         } else {
             panic!("Irregular boundary patches (e.g. concave corners) are not implemented yet!")
         }
@@ -121,6 +128,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             Patch::Regular { msh, .. } => msh,
             Patch::Irregular { msh, .. } => msh,
             Patch::BoundaryRegular { msh, .. } => msh,
+            Patch::BoundaryRegularCorner { msh, .. } => msh,
         }
     }
 
@@ -129,7 +137,8 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         match self {
             Patch::Regular { msh: _, center, .. } => *center,
             Patch::Irregular { msh: _, center, .. } => *center,
-            Patch::BoundaryRegular { msh: _, center, .. } => *center
+            Patch::BoundaryRegular { msh: _, center, .. } => *center,
+            Patch::BoundaryRegularCorner { msh: _, center, .. } => *center
         }
     }
 
@@ -139,6 +148,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             Patch::Regular { msh: _, center: _, faces } => faces,
             Patch::Irregular { msh: _, center: _, faces } => faces,
             Patch::BoundaryRegular { msh: _, center: _, faces } => faces,
+            Patch::BoundaryRegularCorner { msh: _, center: _, faces } => faces,
         }
     }
 
@@ -197,7 +207,26 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
                 .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id + 1], *node, *idx))
         ).collect();
         
-        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: self.center() }
+        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
+    }
+
+    /// Sorts the faces of this **convex boundary** patch, such that the origin is given by `uv_origin`.
+    /// This is done by successively applying [`sort_by_origin`] to each patch face.
+    fn sort_faces_boundary_convex(&self, uv_origin: Node) -> Self {
+        // Sort center face
+        let sorted_center = sort_by_origin(self.center(), uv_origin);
+        let [_, _, n4, _] = sorted_center;
+
+        // Sort other faces
+        let anchor_to_idx = [
+            (n4, 1), (n4, 0), (n4, 3)
+        ];
+
+        let sorted_faces = anchor_to_idx.iter().enumerate()
+            .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id], *node, *idx))
+            .collect();
+
+        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
     }
 
     /// Returns the nodes of this regular patch in lexicographical order, i.e.
@@ -229,13 +258,14 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
     /// Returns the nodes of this planar boundary patch in lexicographical order, i.e.
     /// ```text
+    ///  |     |     |     |
     ///  8 --- 9 -- 10 -- 11
     ///  |     |     |     |
     ///  4 --- 5 --- 6 --- 7
-    ///  |     |     |     |
+    ///  |     |  p  |     |
     ///  0 --- 1 --- 2 --- 3
     /// ```
-    pub fn nodes_boundary_planar(&self) -> [Node; 12]{
+    pub fn nodes_boundary_planar(&self) -> [Node; 12] {
         // Find uv origin and sort all faces
         let n5 = self.faces()[1].iter().find(|n| self.center().contains(n)).unwrap();
         let n1_idx = self.faces()[0].iter().position(|n| self.center().contains(n) && n != n5).unwrap();
@@ -249,6 +279,31 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
         ];
         pick.map(|(face, node)| sorted.faces()[face][node])
+    }
+
+    /// Returns the nodes of this convex corner boundary patch in lexicographical order, i.e.
+    /// ```text
+    ///  |     |     |
+    ///  6 --- 7 --- 8 ---
+    ///  |     |     |
+    ///  3 --- 4 --- 5 ---
+    ///  |  p  |     |
+    ///  0 --- 1 --- 2 ---
+    /// ```
+    pub fn nodes_boundary_convex(&self) -> [Node; 9] {
+        // Find uv origin and sort all faces
+        let n0 = self.center().into_iter().find(|&n| self.msh().valence(n) == 2).unwrap();
+        let sorted = self.sort_faces_boundary_convex(n0);
+
+        let pick = [
+            (2, 0), (2, 1),
+            (0, 0), (1, 0), (1, 1),
+            (0, 3), (1, 3), (1, 2)
+        ];
+
+        once(n0).chain(
+            pick.into_iter().map(|(face, node)| sorted.faces()[face][node])
+        ).collect_array().unwrap()
     }
 
     /// Returns the nodes of this irregular patch in the following order
@@ -305,7 +360,8 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         match self {
             Patch::Regular { .. } => self.eval_regular(u, v),
             Patch::Irregular { .. } => self.eval_irregular(u, v),
-            Patch::BoundaryRegular { .. } => self.eval_boundary_planar(u, v)
+            Patch::BoundaryRegular { .. } => self.eval_boundary_planar(u, v),
+            Patch::BoundaryRegularCorner { .. } => self.eval_boundary_convex(u, v),
         }
     }
 
@@ -334,6 +390,20 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
 
         // Evaluate basis functions and patch
         let b = basis::eval_boundary(u, v, false, true);
+        Point2::from(c * b)
+    }
+
+    /// Evaluates this convex boundary patch at the parametric point `(u,v)`.
+    fn eval_boundary_convex(&self, u: T, v: T) -> Point2<T> {
+        // Store control points in matrix (c1,...,cN)
+        let points = self.nodes_boundary_convex()
+            .into_iter()
+            .map(|n| self.msh().node(n).coords)
+            .collect_vec();
+        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
+
+        // Evaluate basis functions and patch
+        let b = basis::eval_boundary(u, v, true, true);
         Point2::from(c * b)
     }
 
