@@ -162,7 +162,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
     /// Sorts the faces of this **regular** patch, such that the origin is given by `uv_origin`.
     /// This is done by successively applying [`sort_by_origin`] to each patch face.
-    pub fn sort_faces_regular(&self, uv_origin: Node) -> Self {
+    fn sort_faces_regular(&self, uv_origin: Node) -> Self {
         // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin.
         //  Is this always true? Maybe fix this, by ALWAYS sorting in the construction process?
         // Sort face 7
@@ -188,7 +188,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
     /// Sorts the faces of this **planar boundary** patch, such that the origin is given by `uv_origin`.
     /// This is done by successively applying [`sort_by_origin`] to each patch face.
-    pub fn sort_faces_boundary_planar(&self, uv_origin: Node) -> Self {
+    fn sort_faces_boundary_planar(&self, uv_origin: Node) -> Self {
         // Sort face 0
         let &first = self.faces().first().unwrap();
         let f0 = sort_by_origin(first, uv_origin);
