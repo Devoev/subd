@@ -1,8 +1,9 @@
+use std::f64::consts::PI;
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::{point, Matrix, Point2, SMatrix};
+use nalgebra::{center, point, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
 use itertools::Itertools;
 use plotly::Plot;
@@ -56,7 +57,7 @@ static COORDS_STAR: LazyLock<Coords> = LazyLock::new(|| {
 });
 
 /// Star faces.
-static FACES_STASR: LazyLock<Faces> = LazyLock::new(|| {
+static FACES_STAR: LazyLock<Faces> = LazyLock::new(|| {
     vec![
         [0, 1, 2, 3],
         [0, 3, 4, 5],
@@ -66,12 +67,43 @@ static FACES_STASR: LazyLock<Faces> = LazyLock::new(|| {
     ]
 });
 
+/// Pentagon coordinates.
+static COORDS_PENTAGON: LazyLock<Coords> = LazyLock::new(|| {
+    let r = 1;
+    let n = 5;
+    let phi = 2.0*PI / n as f64;
+
+    let mut coords = vec![point![0.0, 0.0]];
+
+    for i in 0..n {
+        let phi_i = phi * i as f64;
+        let phi_j = phi * (i + 1) as f64;
+        let pi = point![phi_i.cos(), phi_i.sin()];
+        let pj = point![phi_j.cos(), phi_j.sin()];
+        coords.push(pi);
+        coords.push(center(&pi, &pj));
+    }
+
+    coords
+});
+
+/// Pentagon faces.
+static FACES_PENTAGON: LazyLock<Faces> = LazyLock::new(|| {
+    vec![
+        [0, 10, 1, 2],
+        [0, 2, 3, 4],
+        [0, 4, 5, 6],
+        [0, 6, 7, 8],
+        [0, 8, 9, 10]
+    ]
+});
+
 /// The used quad mesh.
 static MSH: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
     QuadMesh {
-        nodes: COORDS_STAR.clone(),
+        nodes: COORDS_PENTAGON.clone(),
         logical_mesh: LogicalMesh {
-            faces: FACES_STASR.clone()
+            faces: FACES_PENTAGON.clone()
         }
     }
 });
@@ -165,7 +197,7 @@ fn surf() {
     let num_eval = 10;
 
     let patch_eval_plot = plot_patch(patch, num_eval);
-    patch_eval_plot.show_html("out/patch_eval.html");
+    // patch_eval_plot.show_html("out/patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);
     surf_eval_plot.show_html("out/surf_eval.html");
