@@ -20,30 +20,47 @@ use std::iter::once;
 /// +---+---+---+
 /// ```
 #[derive(Debug, Clone)]
-pub struct Patch<'a, T: RealField> {
-    /// The mesh reference.
-    msh: &'a QuadMesh<T>,
+// pub struct Patch<'a, T: RealField> {
+//     /// The mesh reference.
+//     msh: &'a QuadMesh<T>,
+//
+//     /// The faces of this mesh.
+//     pub faces: Vec<Face>,
+//
+//     /// The center face `f`.
+//     pub center: Face
+// }
 
-    /// The faces of this mesh.
-    pub faces: Vec<Face>,
-
-    /// The center face `f`.
-    pub center: Face
+pub enum Patch<'a, T: RealField> {
+    Regular {
+        msh: &'a QuadMesh<T>,
+        faces: Vec<Face>,
+        center: Face
+    },
+    Irregular {
+        msh: &'a QuadMesh<T>,
+        faces: Vec<Face>,
+        center: Face
+    },
+    BoundaryRegular {
+        msh: &'a QuadMesh<T>,
+        faces: Vec<Face>,
+        center: Face
+    }
 }
 
 impl<'a, T: RealField + Copy> Patch<'a, T> {
-
-    /// Finds the patch with the center `face`.
+    /// Finds the patch with the `center` face.
     ///
     /// The node `start` is the node between the faces `f`, `0`, `7` and `6`,
     /// i.e. the node of the center face closest to the parametric origin.
-    pub fn find(msh: &'a QuadMesh<T>, face: Face, start: Node) -> Self {
-        // todo: possibly make this function work the same as face_ring
+    pub fn find(msh: &'a QuadMesh<T>, center: Face, start: Node) -> Self {
+        // todo: update/ optimize this code
 
         // Find all faces in the 1-ring neighborhood
         let mut faces_neighborhood = msh.faces.iter().filter(|other| {
             let other_set = HashSet::from(**other);
-            let face_set = HashSet::from(face);
+            let face_set = HashSet::from(center);
             let count = face_set.intersection(&other_set).count();
             count == 1 || count == 2
         }).collect_vec();
@@ -53,7 +70,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             .find_map(|(i, other)| {
                 let edges = edges_of_face(**other);
                 // Find edge that is included in face and starts with start
-                let edge_irr = edges.iter().find(|edge| edge[0] == start && face.contains(&edge[1]));
+                let edge_irr = edges.iter().find(|edge| edge[0] == start && center.contains(&edge[1]));
                 edge_irr.map(|edge| (i, *other, *edge))
             }).unwrap();
 
@@ -80,57 +97,56 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             faces_sorted.push(*found_face);
         }
 
-        Patch { msh, faces: faces_sorted, center: face }
-    }
-    
-    /// Finds the patch with the center `face`, assuming it is a regular patch.
-    #[deprecated]
-    pub fn find_regular(msh: &'a QuadMesh<T>, face: Face) -> Self {
-        // todo: this is the old code for regular faces. Remove this or optimize at some point
-
-        // Get all faces intersecting the patch face and store them by their intersection
-        let face_intersection_pairs: HashMap<Vec<Node>, &Face> = msh
-            .faces
-            .iter()
-            .filter_map(|other| {
-                let other_set = HashSet::from(*other);
-                let face_set = HashSet::from(face);
-                let intersection = face_set.intersection(&other_set).cloned().collect_vec();
-
-                match intersection[..] {
-                    [] => { None }
-                    [a, b] => {
-                        let edge = sort_edge_by_face([a, b], *other);
-                        Some((edge.to_vec(), other))
-                    }
-                    _ => { Some((intersection, other)) }
-                }
-            })
-            .collect();
-
-        // Vertex indices of the center face
-        let edges = edges_of_face(face);
-        let mut sorted = vec![];
-
-        for edge in edges {
-            // Add face with only corner intersection
-            sorted.push(*face_intersection_pairs[&vec![edge[0]]]);
-
-            // Add face with edge intersection
-            let edge_inv = vec![edge[1], edge[0]];
-            let &&next_face = face_intersection_pairs.get(edge.as_slice())
-                .unwrap_or_else(|| &face_intersection_pairs[&edge_inv]);
-            sorted.push(next_face);
+        // Check the type of patch
+        let n = msh.valence(start);
+        if !msh.is_boundary(center) {
+            if n == 4 {
+                Patch::Regular { msh, faces: faces_sorted, center }
+            } else {
+                Patch::Irregular { msh, faces: faces_sorted, center }
+            }
+        } else if n == 2 || n == 3 {
+            Patch::BoundaryRegular { msh, faces: faces_sorted, center }
+        } else {
+            panic!("Irregular boundary patches (e.g. concave corners) are not implemented yet!")
         }
+    }
+}
 
-        Patch { msh, faces: sorted, center: face }
+impl<'a, T: RealField + Copy> Patch<'a, T> {
+
+    /// Returns the [`QuadMesh`] belonging to this patch.
+    fn msh(&self) -> &'a QuadMesh<T> {
+        match self {
+            Patch::Regular { msh, .. } => msh,
+            Patch::Irregular { msh, .. } => msh,
+            Patch::BoundaryRegular { msh, .. } => msh,
+        }
+    }
+
+    /// Returns the center [`Face`] of this patch.
+    pub fn center(&self) -> Face {
+        match self {
+            Patch::Regular { msh: _, center, .. } => *center,
+            Patch::Irregular { msh: _, center, .. } => *center,
+            Patch::BoundaryRegular { msh: _, center, .. } => *center
+        }
+    }
+
+    /// Returns the vector of faces of this patch.
+    pub fn faces(&self) -> &Vec<Face> {
+        match self {
+            Patch::Regular { msh: _, center: _, faces } => faces,
+            Patch::Irregular { msh: _, center: _, faces } => faces,
+            Patch::BoundaryRegular { msh: _, center: _, faces } => faces,
+        }
     }
 
     /// Finds and returns the irregular node index and its valence.
     /// Returns `None` if there is no irregular node.
     pub fn irregular_node(&self) -> Option<(usize, usize)> {
-        let node_irr = self.msh.irregular_node_of_face(self.center)?;
-        let n = self.msh.valence(node_irr);
+        let node_irr = self.msh().irregular_node_of_face(self.center())?;
+        let n = self.msh().valence(node_irr);
         Some((node_irr, n))
     }
 
@@ -140,12 +156,12 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin.
         //  Is this always true? Maybe fix this, by ALWAYS sorting in the construction process?
         // Sort face 7
-        let &last = self.faces.last().unwrap();
+        let &last = self.faces().last().unwrap();
         let f7 = sort_by_origin(last, uv_origin);
         let n5 = f7[2];
 
         // Sort center face
-        let sorted_center = sort_by_origin(self.center, n5);
+        let sorted_center = sort_by_origin(self.center(), n5);
         let [_, n6, n10, n9] = sorted_center;
 
         // Sort other faces
@@ -153,23 +169,23 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (n5, 1), (n9, 1), (n10, 1), (n10, 0), (n6, 0), (n6, 3), (n6, 2)
         ];
         let sorted_faces = anchor_to_idx.iter().enumerate()
-            .map(|(face_id, (node, idx))| sort_by_node(self.faces[face_id], *node, *idx))
+            .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id], *node, *idx))
             .chain(once(f7))
             .collect();
 
-        Patch { msh: self.msh, faces: sorted_faces, center: sorted_center }
+        Patch::Regular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
     }
 
     /// Sorts the faces of this **planar boundary** patch, such that the origin is given by `uv_origin`.
     /// This is done by successively applying [`sort_by_origin`] to each patch face.
     pub fn sort_faces_boundary_planar(&self, uv_origin: Node) -> Self {
         // Sort face 0
-        let &first = self.faces.first().unwrap();
+        let &first = self.faces().first().unwrap();
         let f0 = sort_by_origin(first, uv_origin);
         let n1 = f0[1];
         
         // Sort center face
-        let sorted_center = sort_by_origin(self.center, n1);
+        let sorted_center = sort_by_origin(self.center(), n1);
         let [_, _, n6, n5] = sorted_center;
 
         // Sort other faces
@@ -178,10 +194,10 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         ];
         let sorted_faces = once(f0).chain(
             anchor_to_idx.iter().enumerate()
-                .map(|(face_id, (node, idx))| sort_by_node(self.faces[face_id + 1], *node, *idx))
+                .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id + 1], *node, *idx))
         ).collect();
         
-        Patch { msh: self.msh, faces: sorted_faces, center: self.center }
+        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: self.center() }
     }
 
     /// Returns the nodes of this regular patch in lexicographical order, i.e.
@@ -197,9 +213,9 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     pub fn nodes_regular(&self) -> [Node; 16] {
         // todo: move this to the creation process of a patch
         // Find uv origin and sort all faces
-        let uv_opposite = self.faces[7].iter().position(|n| self.center.contains(n)).unwrap();
+        let uv_opposite = self.faces()[7].iter().position(|n| self.center().contains(n)).unwrap();
         let uv_origin = (uv_opposite + 2) % 4;
-        let sorted = self.sort_faces_regular(self.faces[7][uv_origin]);
+        let sorted = self.sort_faces_regular(self.faces()[7][uv_origin]);
 
         let pick = [
             (7, 0), (7, 1), (6, 1), (5, 1),
@@ -208,7 +224,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (1, 3), (1, 2), (2, 2), (3, 2),
             
         ];
-        pick.map(|(face, node)| sorted.faces[face][node])
+        pick.map(|(face, node)| sorted.faces()[face][node])
     }
 
     /// Returns the nodes of this planar boundary patch in lexicographical order, i.e.
@@ -221,10 +237,10 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     /// ```
     pub fn nodes_boundary_planar(&self) -> [Node; 12]{
         // Find uv origin and sort all faces
-        let n5 = self.faces[1].iter().find(|n| self.center.contains(n)).unwrap();
-        let n1_idx = self.faces[0].iter().position(|n| self.center.contains(n) && n != n5).unwrap();
+        let n5 = self.faces()[1].iter().find(|n| self.center().contains(n)).unwrap();
+        let n1_idx = self.faces()[0].iter().position(|n| self.center().contains(n) && n != n5).unwrap();
         let uv_origin = (n1_idx + 3) % 4;
-        let sorted = self.sort_faces_boundary_planar(self.faces[0][uv_origin]);
+        let sorted = self.sort_faces_boundary_planar(self.faces()[0][uv_origin]);
 
         let pick = [
             (0, 0), (0, 1), (4, 0), (4, 1),
@@ -232,7 +248,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (1, 3), (1, 2), (2, 2), (3, 2),
 
         ];
-        pick.map(|(face, node)| sorted.faces[face][node])
+        pick.map(|(face, node)| sorted.faces()[face][node])
     }
 
     /// Returns the nodes of this irregular patch in the following order
@@ -253,8 +269,8 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         let (node_irr, n) = self.irregular_node().expect("Patch must be irregular!");
 
         // Get faces at irregular node
-        let mut inner_faces = vec![self.faces[0], self.center];
-        inner_faces.extend_from_slice(&self.faces[6..n+4]);
+        let mut inner_faces = vec![self.faces()[0], self.center()];
+        inner_faces.extend_from_slice(&self.faces()[6..n+4]);
 
         // Get nodes of inner faces by setting their uv origin to the irregular node
         let nodes_it = inner_faces.iter().flat_map(|&face| {
@@ -266,7 +282,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         inner_nodes.extend(nodes_it);
 
         // Get faces away from irregular node
-        let outer_faces = &self.faces[1..=5].iter().enumerate().map(|(i, &face)| {
+        let outer_faces = &self.faces()[1..=5].iter().enumerate().map(|(i, &face)| {
            sort_by_origin(face, inner_nodes[i + 2])
         }).collect_vec();
 
@@ -284,12 +300,21 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
 impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
 
+    /// Evaluates this patch at the parametric point `(u,v)`.
+    pub fn eval(&self, u: T, v: T) -> Point2<T> {
+        match self {
+            Patch::Regular { .. } => self.eval_regular(u, v),
+            Patch::Irregular { .. } => self.eval_irregular(u, v),
+            Patch::BoundaryRegular { .. } => self.eval_boundary_planar(u, v)
+        }
+    }
+
     /// Evaluates this regular patch at the parametric point `(u,v)`.
     pub fn eval_regular(&self, u: T, v: T) -> Point2<T> {
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_regular()
             .into_iter()
-            .map(|n| self.msh.node(n).coords)
+            .map(|n| self.msh().node(n).coords)
             .collect_vec();
         let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
 
@@ -303,7 +328,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_boundary_planar()
             .into_iter()
-            .map(|n| self.msh.node(n).coords)
+            .map(|n| self.msh().node(n).coords)
             .collect_vec();
         let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
 
@@ -320,7 +345,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         // Store control points in matrix (c1,...,cN)
         let points = self.nodes_irregular()
             .into_iter()
-            .map(|n| self.msh.node(n).coords)
+            .map(|n| self.msh().node(n).coords)
             .collect_vec();
         let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
 

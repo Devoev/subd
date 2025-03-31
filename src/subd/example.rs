@@ -122,8 +122,8 @@ fn patch() {
     let patch2 = Patch::find(&msh, face, face[1]);
 
     // Test if patches are the same
-    let same_faces = patch2.faces.iter().sorted().collect_vec() == patch1.faces.iter().sorted().collect_vec();
-    let same_center = patch1.center == patch2.center;
+    let same_faces = patch2.faces().iter().sorted().collect_vec() == patch1.faces().iter().sorted().collect_vec();
+    let same_center = patch1.center() == patch2.center();
     let same_nodes = patch1.nodes_regular().iter().sorted().collect_vec() == patch2.nodes_regular().iter().sorted().collect_vec();
     if !same_faces || !same_center || !same_nodes {
         eprintln!("Faces, center face or nodes are not the same! \

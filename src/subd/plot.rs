@@ -130,9 +130,9 @@ pub fn plot_surf(msh: &QuadMesh<f64>, num: usize) -> Plot {
 
     for &face in &msh.faces {
         let patch = msh.find_patch(face);
-        let is_boundary = msh.is_boundary(patch.center);
-        let is_boundary_planar = is_boundary && patch.faces.len() == 5;
-        let is_irregular = !msh.is_regular(patch.center) && !is_boundary;
+        let is_boundary = msh.is_boundary(patch.center());
+        let is_boundary_planar = is_boundary && patch.faces().len() == 5;
+        let is_irregular = !msh.is_regular(patch.center()) && !is_boundary;
 
         if is_boundary && !is_boundary_planar{ continue }
         
