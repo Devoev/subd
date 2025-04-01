@@ -280,6 +280,7 @@ fn eval_basis() {
     let num_plot = 50;
     
     let valence = 5;
+    let num_reg = 16;
     let num_irr = 2*valence + 8;
     
     let u_bnd = true;
@@ -290,15 +291,21 @@ fn eval_basis() {
         _ => 9
     };
 
+    // Plot derivatives of basis functions
+    for i in 0..num_reg {
+        let basis_deriv_plot = plot::plot_surf_fn(|u, v| basis::eval_regular_du(u, v)[i], num_plot);
+        basis_deriv_plot.show_html(format!("out/basis_deriv_{i}.html"));
+    }
+
     // Plot all boundary basis functions
     for i in 0..num_bnd {
         let basis_bnd_plot = plot::plot_surf_fn(|u, v| basis::eval_boundary(u, v, false, false)[i], num_plot);
-        basis_bnd_plot.show_html(format!("basis_bnd_{i}.html"));
+        // basis_bnd_plot.show_html(format!("out/basis_bnd_{i}.html"));
     }
 
     // Plot all irregular basis functions
     for i in 0..num_irr {
         let basis_irr_plot = plot::plot_surf_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num_plot);
-        // basis_irr_plot.show_html(format!("basis_irr_{i}.html"));
+        // basis_irr_plot.show_html(format!("out/basis_irr_{i}.html"));
     }
 }

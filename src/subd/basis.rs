@@ -49,6 +49,22 @@ pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
     bv.kronecker(&bu)
 }
 
+/// Evaluates the derivative of the regular cubic B-Spline basis 
+/// with respect to `u` at the parametric point `(u,v)`.
+pub fn eval_regular_du<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
+    let bu_du = bspline_deriv(u);
+    let bv = bspline(v);
+    bv.kronecker(&bu_du)
+}
+
+/// Evaluates the derivative of the regular cubic B-Spline basis 
+/// with respect to `v` at the parametric point `(u,v)`.
+pub fn eval_regular_dv<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
+    let bu = bspline(u);
+    let bv_dv = bspline_deriv(v);
+    bv_dv.kronecker(&bu)
+}
+
 /// Evaluates the interpolating cubic B-Spline basis at the parametric point `(u,v)`.
 /// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
 pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
