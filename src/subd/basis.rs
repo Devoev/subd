@@ -143,6 +143,42 @@ pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -
     // lambda * (q.transpose() * (a_bar.transpose() * b_perm))
 }
 
+/// Evaluates the derivative of the basis functions with respect to `u` 
+/// of an irregular patch of valence `n` at the parametric point `(u,v)`.
+pub fn eval_irregular_du<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> DVector<T> {
+    // Transform (u,v)
+    let (u, v, nsub, k) = transform(u, v);
+
+    // Build subdivision matrices
+    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(n);
+
+    // Evaluate regular basis on sub-patch
+    let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
+    let b = eval_regular_du(u, v) * pow2;
+    let b_perm = apply_permutation(n, b, permutation_vec(k, n));
+
+    // Evaluate irregular basis
+    a.pow((nsub - 1) as u32).transpose() * (a_bar.transpose() * b_perm)
+}
+
+/// Evaluates the derivative of the basis functions with respect to `v` 
+/// of an irregular patch of valence `n` at the parametric point `(u,v)`.
+pub fn eval_irregular_dv<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> DVector<T> {
+    // Transform (u,v)
+    let (u, v, nsub, k) = transform(u, v);
+
+    // Build subdivision matrices
+    let (a, a_bar) = catmull_clark::build_extended_mats::<T>(n);
+
+    // Evaluate regular basis on sub-patch
+    let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
+    let b = eval_regular_dv(u, v) * pow2;
+    let b_perm = apply_permutation(n, b, permutation_vec(k, n));
+
+    // Evaluate irregular basis
+    a.pow((nsub - 1) as u32).transpose() * (a_bar.transpose() * b_perm)
+}
+
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
 pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
     // Determine number of required subdivisions

@@ -317,7 +317,7 @@ fn quadrature() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 10;
+    let face_id = 0;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 

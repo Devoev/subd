@@ -32,7 +32,10 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
                 [c.clone() * b_du, c * b_dv]
             }
             Patch::Irregular { .. } => {
-                panic!("Irregular patches are not implemented yet!")
+                let (_, n) = self.irregular_node().expect("Patch must be irregular!");
+                let b_du = basis::eval_irregular_du(u, v, n);
+                let b_dv = basis::eval_irregular_dv(u, v, n);
+                [c.clone() * b_du, c * b_dv]
             }
             Patch::BoundaryRegular { .. } => {
                 let b_du = basis::eval_boundary_du(u, v, false, true);
