@@ -7,6 +7,7 @@ use nalgebra::{Dyn, Matrix2, OMatrix, Point2, RealField, SMatrix, U2};
 use num_traits::ToPrimitive;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
+use gauss_quad::GaussLegendre;
 
 /// A patch of a quadrilateral mesh.
 /// The faces are sorted in clockwise order, i.e.
@@ -393,6 +394,16 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         let c = self.coords();
         
         Matrix2::from_columns(&[c.clone() * b_du, c * b_dv])
+    }
+
+    /// Numerically calculates the area of this patch using Gaussian quadrature.
+    pub fn calc_area(&self) -> f64 {
+        let quad = GaussLegendre::new(2).unwrap();
+        let integrand = |u, v| {
+            let d_phi = self.eval_jacobian(T::from_f64(u).unwrap(), T::from_f64(v).unwrap());
+            d_phi.determinant().abs().powi(2).to_f64().unwrap() // fixme: why is powi(2) required??
+        };
+        quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
     }
 
     /// Evaluates this regular patch at the parametric point `(u,v)`.

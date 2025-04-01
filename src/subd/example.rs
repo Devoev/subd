@@ -3,7 +3,7 @@ use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
 use crate::subd::{basis, catmull_clark, plot};
-use nalgebra::{center, point, Matrix, Point2, SMatrix};
+use nalgebra::{center, point, vector, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
 use itertools::Itertools;
 use plotly::Plot;
@@ -17,7 +17,7 @@ type Faces = Vec<Face>;
 
 /// Rectangle coordinates.
 static COORDS_QUAD: LazyLock<Coords> = LazyLock::new(|| {
-    vec![point![0.2, 0.0], point![0.9, 0.1], point![1.0, 1.0], point![0.0, 1.0]]
+    vec![point![0.0, 0.0], point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]]
 });
 
 /// Rectangle faces.
@@ -189,7 +189,7 @@ fn surf() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 48;
+    let face_id = 2;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 
@@ -197,7 +197,7 @@ fn surf() {
     let num_eval = 10;
 
     let patch_eval_plot = plot_patch(patch, num_eval);
-    // patch_eval_plot.show_html("out/patch_eval.html");
+    patch_eval_plot.show_html("out/patch_eval.html");
 
     let surf_eval_plot = plot_surf(&msh, num_eval);
     surf_eval_plot.show_html("out/surf_eval.html");
@@ -317,10 +317,21 @@ fn quadrature() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 3;
+    let face_id = 2;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
-    
-    let j = patch.eval_jacobian(0.0, 0.0);
-    println!("{}", j.determinant());
+
+    // Approximate area by parallelogram
+    let nodes = face.map(|n| msh.node(n));
+    let ab = nodes[1] - nodes[0];
+    let ad = nodes[3] - nodes[0];
+    let area_lin = (ab.x * ad.y - ab.y * ad.x).abs();
+
+    // Calculate area by quadrature
+    let area_quad = patch.calc_area();
+
+    // Compare values
+    println!("Parallelogram area = {area_lin}");
+    println!("Quadrature area = {area_quad}");
+    println!("Relative error = {}%", (area_quad - area_lin).abs() / area_lin * 100.0);
 }
