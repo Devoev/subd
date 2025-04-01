@@ -309,3 +309,18 @@ fn eval_basis() {
         // basis_irr_plot.show_html(format!("out/basis_irr_{i}.html"));
     }
 }
+
+#[test]
+fn quadrature() {
+    // Refine mesh
+    let mut msh = MSH.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    let face_id = 3;
+    let face = msh.faces[face_id];
+    let patch = msh.find_patch(face);
+    
+    let j = patch.eval_jacobian(0.0, 0.0);
+    println!("{}", j.determinant());
+}

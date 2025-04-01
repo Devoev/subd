@@ -3,7 +3,7 @@ use crate::subd::edge::{next_edge, reverse_edge, sort_edge_by_face};
 use crate::subd::face::{edges_of_face, sort_by_node, sort_by_origin};
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use itertools::{izip, Itertools};
-use nalgebra::{Dyn, OMatrix, Point2, RealField, U2};
+use nalgebra::{Dyn, Matrix2, OMatrix, Point2, RealField, SMatrix, U2};
 use num_traits::ToPrimitive;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
@@ -382,6 +382,17 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
             Patch::BoundaryRegular { .. } => self.eval_boundary_planar(u, v),
             Patch::BoundaryRegularCorner { .. } => self.eval_boundary_convex(u, v),
         }
+    }
+    
+    /// Evaluates the jacobian of this patch at the parametric point `(u,v)`.
+    pub fn eval_jacobian(&self, u: T, v: T) -> Matrix2<T> {
+        if !matches!(self, Patch::Regular { .. }) { panic!("Only regular patches are implemented for now!") }
+        
+        let b_du = basis::eval_regular_du(u, v);
+        let b_dv = basis::eval_regular_dv(u, v);
+        let c = self.coords();
+        
+        Matrix2::from_columns(&[c.clone() * b_du, c * b_dv])
     }
 
     /// Evaluates this regular patch at the parametric point `(u,v)`.
