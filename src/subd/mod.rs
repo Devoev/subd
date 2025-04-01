@@ -7,3 +7,4 @@ mod plot;
 mod repeated_averaging;
 mod catmull_clark;
 mod basis;
+mod surface;
