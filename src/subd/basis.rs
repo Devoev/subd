@@ -23,7 +23,7 @@ pub fn bspline_deriv<T: RealField + Copy>(t: T) -> SVector<T, 4> {
         3.0, -4.0, 0.0;
         -3.0, 2.0, 1.0;
         1.0, 0.0, 0.0;
-    ].cast::<T>();
+    ].cast::<T>() / T::from_i32(2).unwrap();;
 
     let u_pow = vector![t.powi(2), t, T::one()];
     mat * u_pow

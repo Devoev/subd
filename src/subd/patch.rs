@@ -401,7 +401,7 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         let quad = GaussLegendre::new(2).unwrap();
         let integrand = |u, v| {
             let d_phi = self.eval_jacobian(T::from_f64(u).unwrap(), T::from_f64(v).unwrap());
-            d_phi.determinant().abs().powi(2).to_f64().unwrap() // fixme: why is powi(2) required??
+            d_phi.determinant().abs().to_f64().unwrap()
         };
         quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
     }
