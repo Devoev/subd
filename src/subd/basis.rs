@@ -3,8 +3,8 @@ use nalgebra::{matrix, one, vector, DMatrix, DVector, RealField, SVector};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 
-/// Evaluates the 4 cubic B-Splines at the parametric point `u`.
-pub fn bspline<T: RealField + Copy>(u: T) -> SVector<T, 4> {
+/// Evaluates the 4 cubic B-Splines at the parametric point `t`.
+pub fn bspline<T: RealField + Copy>(t: T) -> SVector<T, 4> {
     let mat = matrix![
         -1.0, 3.0, -3.0, 1.0;
         3.0, -6.0, 0.0, 4.0;
@@ -12,20 +12,33 @@ pub fn bspline<T: RealField + Copy>(u: T) -> SVector<T, 4> {
         1.0, 0.0, 0.0, 0.0;
     ].cast::<T>() / T::from_i32(6).unwrap();
 
-    let u_pow = vector![u.powi(3), u.powi(2), u, T::one()];
+    let u_pow = vector![t.powi(3), t.powi(2), t, T::one()];
     mat * u_pow
 }
 
-/// Evaluates the 3 interpolating cubic B-Splines at the parametric point `u`.
-/// The basis interpolates the left boundary `u = 0`.
-pub fn bspline_interpolating<T: RealField + Copy>(u: T) -> SVector<T, 3> {
+/// Evaluates the derivatives of the 4 cubic B-Splines at the parametric point `t`.
+pub fn bspline_deriv<T: RealField + Copy>(t: T) -> SVector<T, 4> {
+    let mat = matrix![
+        -1.0, 2.0, -1.0;
+        3.0, -4.0, 0.0;
+        -3.0, 2.0, 1.0;
+        1.0, 0.0, 0.0;
+    ].cast::<T>();
+
+    let u_pow = vector![t.powi(2), t, T::one()];
+    mat * u_pow
+}
+
+/// Evaluates the 3 interpolating cubic B-Splines at the parametric point `t`.
+/// The basis interpolates the left boundary `t = 0`.
+pub fn bspline_interpolating<T: RealField + Copy>(t: T) -> SVector<T, 3> {
     let mat = matrix![
         1.0, -6.0, 6.0;
         -2.0, 6.0, 0.0;
         1.0, 0.0, 0.0
     ].cast::<T>() / T::from_i32(6).unwrap();
 
-    let u_pow = vector![u.powi(3), u, T::one()];
+    let u_pow = vector![t.powi(3), t, T::one()];
     mat * u_pow
 }
 

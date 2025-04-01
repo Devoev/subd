@@ -253,16 +253,23 @@ fn eval_bspline() {
     // Plot B-splines
     let mut bspline_plot = Plot::new();
     for i in 0..4 {
-        let plot = plot_fn(|u| { basis::bspline(u)[i] }, num);
+        let plot = plot_fn(|t| { basis::bspline(t)[i] }, num);
         bspline_plot.add_traces(plot.data().iter().cloned().collect());
     }
     bspline_plot.show_html("out/bspline.html".to_string());
 
+    // Plot derivative
+    let mut bspline_deriv_plot = Plot::new();
+    for i in 0..4 {
+        let plot = plot_fn(|t| { basis::bspline_deriv(t)[i] }, num);
+        bspline_deriv_plot.add_traces(plot.data().iter().cloned().collect());
+    }
+    bspline_deriv_plot.show_html("out/bspline_deriv.html".to_string());
 
     // Plot boundary B-splines
     let mut bspline_bnd_plot = Plot::new();
     for i in 0..3 {
-        let plot = plot_fn(|u| { basis::bspline_interpolating(u)[i] }, num);
+        let plot = plot_fn(|t| { basis::bspline_interpolating(t)[i] }, num);
         bspline_bnd_plot.add_traces(plot.data().iter().cloned().collect());
     }
     bspline_bnd_plot.show_html("out/bspline_bnd.html".to_string());
