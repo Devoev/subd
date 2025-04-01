@@ -179,6 +179,11 @@ impl<T: RealField + Copy> QuadMesh<T> {
 
         Patch::find(self, face, start)
     }
+    
+    /// Returns an iterator over all patches in this mesh.
+    pub fn patches(&self) -> impl Iterator<Item = Patch<T>> {
+        self.faces.iter().map(|&face| self.find_patch(face))
+    }
 
     /// Finds an extended patch of the irregular `face`.
     pub fn find_patch_ext(&self, face: Face) -> ExtendedPatch<T> {

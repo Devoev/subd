@@ -123,8 +123,7 @@ pub fn plot_patch(patch: Patch<f64>, num: usize) -> Plot {
 pub fn plot_surf(msh: &QuadMesh<f64>, num: usize) -> Plot {
     let mut plot = Plot::new();
 
-    for &face in &msh.faces {
-        let patch = msh.find_patch(face);
+    for patch in msh.patches() {
         let plot_patch = plot_patch(patch, num);
 
         plot.add_traces(plot_patch.data().iter().cloned().collect_vec());
