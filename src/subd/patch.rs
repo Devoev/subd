@@ -387,13 +387,32 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
     
     /// Evaluates the jacobian of this patch at the parametric point `(u,v)`.
     pub fn eval_jacobian(&self, u: T, v: T) -> Matrix2<T> {
-        if !matches!(self, Patch::Regular { .. }) { panic!("Only regular patches are implemented for now!") }
-        
-        let b_du = basis::eval_regular_du(u, v);
-        let b_dv = basis::eval_regular_dv(u, v);
+        // Get patch coordinates
         let c = self.coords();
         
-        Matrix2::from_columns(&[c.clone() * b_du, c * b_dv])
+        // Calculate columns for Jacobian (derivatives d_phi / t_i)
+        let cols = match self {
+            Patch::Regular { .. } => {
+                let b_du = basis::eval_regular_du(u, v);
+                let b_dv = basis::eval_regular_dv(u, v);
+                [c.clone() * b_du, c * b_dv]
+            }
+            Patch::Irregular { .. } => {
+                panic!("Irregular patches are not implemented yet!")
+            }
+            Patch::BoundaryRegular { .. } => {
+                let b_du = basis::eval_boundary_du(u, v, false, true);
+                let b_dv = basis::eval_boundary_dv(u, v, false, true);
+                [c.clone() * b_du, c * b_dv]
+            }
+            Patch::BoundaryRegularCorner { .. } => {
+                let b_du = basis::eval_boundary_du(u, v, true, true);
+                let b_dv = basis::eval_boundary_dv(u, v, true, true);
+                [c.clone() * b_du, c * b_dv]
+            }
+        };
+
+        Matrix2::from_columns(&cols)
     }
 
     /// Numerically calculates the area of this patch using Gaussian quadrature.

@@ -317,7 +317,7 @@ fn quadrature() {
     msh.lin_subd();
     msh.lin_subd();
 
-    let face_id = 2;
+    let face_id = 10;
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 
@@ -333,5 +333,5 @@ fn quadrature() {
     // Compare values
     println!("Parallelogram area = {area_lin}");
     println!("Quadrature area = {area_quad}");
-    println!("Relative error = {}%", (area_quad - area_lin).abs() / area_lin * 100.0);
+    println!("Relative error = {:.3}%", (area_quad - area_lin).abs() / area_lin * 100.0);
 }

@@ -42,6 +42,22 @@ pub fn bspline_interpolating<T: RealField + Copy>(t: T) -> SVector<T, 3> {
     mat * u_pow
 }
 
+
+/// Evaluates the derivatives of the 3 interpolating cubic B-Splines at the parametric point `t`.
+/// The basis interpolates the left boundary `t = 0`.
+pub fn bspline_interpolating_deriv<T: RealField + Copy>(t: T) -> SVector<T, 3> {
+    let mat = matrix![
+        1.0, -2.0;
+        -2.0, 2.0;
+        1.0, 0.0
+    ].cast::<T>() / T::from_i32(2).unwrap();
+
+    let u_pow = vector![t.powi(2), T::one()];
+    mat * u_pow
+}
+
+
+
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
 pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
     let bu = bspline(u);
@@ -80,6 +96,44 @@ pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) 
     let bv = eval(v, v_bnd);
 
     bv.kronecker(&bu)
+}
+
+/// Evaluates the derivative of the interpolating cubic B-Spline basis with respect to `u` at the parametric point `(u,v)`.
+/// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
+pub fn eval_boundary_du<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
+    let eval = |t: T, bnd: bool, deriv: bool| {
+        let b = match (bnd, deriv) { 
+            (false, false) => bspline(t).as_slice().to_vec(), 
+            (true, false) => bspline_interpolating(t).as_slice().to_vec(),
+            (false, true) => bspline_deriv(t).as_slice().to_vec(),
+            (true, true) => bspline_interpolating_deriv(t).as_slice().to_vec(),
+        };
+        DVector::from_vec(b)
+    };
+
+    let bu_du = eval(u, u_bnd, true);
+    let bv = eval(v, v_bnd, false);
+
+    bv.kronecker(&bu_du)
+}
+
+/// Evaluates the derivative of the interpolating cubic B-Spline basis with respect to `v` at the parametric point `(u,v)`.
+/// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
+pub fn eval_boundary_dv<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
+    let eval = |t: T, bnd: bool, deriv: bool| {
+        let b = match (bnd, deriv) { 
+            (false, false) => bspline(t).as_slice().to_vec(), 
+            (true, false) => bspline_interpolating(t).as_slice().to_vec(),
+            (false, true) => bspline_deriv(t).as_slice().to_vec(),
+            (true, true) => bspline_interpolating_deriv(t).as_slice().to_vec(),
+        };
+        DVector::from_vec(b)
+    };
+
+    let bu = eval(u, u_bnd, false);
+    let bv_dv = eval(v, v_bnd, true);
+
+    bv_dv.kronecker(&bu)
 }
 
 /// Evaluates the basis functions of an irregular patch of valence `n` at the parametric point `(u,v)`.
