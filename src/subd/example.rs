@@ -156,14 +156,14 @@ fn patch() {
     // Test if patches are the same
     let same_faces = patch2.faces().iter().sorted().collect_vec() == patch1.faces().iter().sorted().collect_vec();
     let same_center = patch1.center() == patch2.center();
-    let same_nodes = patch1.nodes_regular().iter().sorted().collect_vec() == patch2.nodes_regular().iter().sorted().collect_vec();
+    let same_nodes = patch1.nodes().iter().sorted().collect_vec() == patch2.nodes().iter().sorted().collect_vec();
     if !same_faces || !same_center || !same_nodes {
         eprintln!("Faces, center face or nodes are not the same! \
             faces = {same_faces}, center = {same_center}, nodes = {same_nodes}");
     }
 
     // Plot nodes of patch
-    let nodes_plot = plot_nodes(&msh, patch2.nodes_regular().into_iter());
+    let nodes_plot = plot_nodes(&msh, patch2.nodes().into_iter());
     nodes_plot.show_html("out/patch_nodes.html");
 }
 
@@ -178,7 +178,7 @@ fn boundary() {
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 
-    let nodes_plot = plot_nodes(&msh, patch.nodes_boundary_convex().iter().copied());
+    let nodes_plot = plot_nodes(&msh, patch.nodes().iter().copied());
     nodes_plot.show_html("out/patch_bnd_nodes.html");
 }
 

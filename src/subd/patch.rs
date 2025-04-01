@@ -239,7 +239,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///  |     |     |     |
     ///  0 --- 1 --- 2 --- 3
     /// ```
-    pub fn nodes_regular(&self) -> [Node; 16] {
+    fn nodes_regular(&self) -> [Node; 16] {
         // todo: move this to the creation process of a patch
         // Find uv origin and sort all faces
         let uv_opposite = self.faces()[7].iter().position(|n| self.center().contains(n)).unwrap();
@@ -265,7 +265,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///  |     |  p  |     |
     ///  0 --- 1 --- 2 --- 3
     /// ```
-    pub fn nodes_boundary_planar(&self) -> [Node; 12] {
+    fn nodes_boundary_planar(&self) -> [Node; 12] {
         // Find uv origin and sort all faces
         let n5 = self.faces()[1].iter().find(|n| self.center().contains(n)).unwrap();
         let n1_idx = self.faces()[0].iter().position(|n| self.center().contains(n) && n != n5).unwrap();
@@ -290,7 +290,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///  |  p  |     |
     ///  0 --- 1 --- 2 ---
     /// ```
-    pub fn nodes_boundary_convex(&self) -> [Node; 9] {
+    fn nodes_boundary_convex(&self) -> [Node; 9] {
         // Find uv origin and sort all faces
         let n0 = self.center().into_iter().find(|&n| self.msh().valence(n) == 2).unwrap();
         let sorted = self.sort_faces_boundary_convex(n0);
@@ -319,7 +319,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///   ○ - 8
     /// ```
     /// where `N` is the valence of the irregular node (`0` in the graphic).
-    pub fn nodes_irregular(&self) -> Vec<Node> {
+    fn nodes_irregular(&self) -> Vec<Node> {
         // Get valence of irregular node
         let (node_irr, n) = self.irregular_node().expect("Patch must be irregular!");
 
@@ -350,6 +350,25 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         // Combine both
         inner_nodes.extend_from_slice(&outer_nodes);
         inner_nodes
+    }
+    
+    /// Returns a vector over the nodes of this patch.
+    pub fn nodes(&self) -> Vec<Node> {
+        match self {
+            Patch::Regular { .. } => self.nodes_regular().into_iter().collect(),
+            Patch::Irregular { .. } => self.nodes_irregular().into_iter().collect(),
+            Patch::BoundaryRegular { .. } => self.nodes_boundary_planar().into_iter().collect(),
+            Patch::BoundaryRegularCorner { .. } => self.nodes_boundary_convex().into_iter().collect(),
+        }
+    }
+    
+    /// Returns a matrix `(c1,...,cN)` over the coordinates of control points of this patch.
+    pub fn coords(&self) -> OMatrix<T, U2, Dyn> {
+        let points = self.nodes()
+            .into_iter()
+            .map(|n| self.msh().node(n).coords)
+            .collect_vec();
+        OMatrix::from_columns(&points)
     }
 }
 
