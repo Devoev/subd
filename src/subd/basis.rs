@@ -56,7 +56,20 @@ pub fn bspline_interpolating_deriv<T: RealField + Copy>(t: T) -> SVector<T, 3> {
     mat * u_pow
 }
 
-
+/// Evaluates the B-Spline basis at the parametric point `t`.
+///
+/// # Arguments
+/// - `bnd`: Whether the functions interpolate the boundary.
+/// - `deriv`: Whether the derivative of the functions should be evaluated.
+pub fn eval_bspline<T: RealField + Copy>(t: T, bnd: bool, deriv: bool) -> DVector<T> {
+    let b = match (bnd, deriv) {
+        (false, false) => bspline(t).as_slice().to_vec(),
+        (true, false) => bspline_interpolating(t).as_slice().to_vec(),
+        (false, true) => bspline_deriv(t).as_slice().to_vec(),
+        (true, true) => bspline_interpolating_deriv(t).as_slice().to_vec(),
+    };
+    DVector::from_vec(b)
+}
 
 /// Evaluates the regular cubic B-Spline basis at the parametric point `(u,v)`.
 pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
@@ -84,16 +97,8 @@ pub fn eval_regular_dv<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
 /// Evaluates the interpolating cubic B-Spline basis at the parametric point `(u,v)`.
 /// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
 pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
-    let eval = |t: T, bnd: bool| {
-        if bnd {
-            DVector::from_vec(bspline_interpolating(t).as_slice().to_vec())
-        } else {
-            DVector::from_vec(bspline(t).as_slice().to_vec())
-        }
-    };
-
-    let bu = eval(u, u_bnd);
-    let bv = eval(v, v_bnd);
+    let bu = eval_bspline(u, u_bnd, false);
+    let bv = eval_bspline(v, v_bnd, false);
 
     bv.kronecker(&bu)
 }
@@ -101,18 +106,8 @@ pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) 
 /// Evaluates the derivative of the interpolating cubic B-Spline basis with respect to `u` at the parametric point `(u,v)`.
 /// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
 pub fn eval_boundary_du<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
-    let eval = |t: T, bnd: bool, deriv: bool| {
-        let b = match (bnd, deriv) { 
-            (false, false) => bspline(t).as_slice().to_vec(), 
-            (true, false) => bspline_interpolating(t).as_slice().to_vec(),
-            (false, true) => bspline_deriv(t).as_slice().to_vec(),
-            (true, true) => bspline_interpolating_deriv(t).as_slice().to_vec(),
-        };
-        DVector::from_vec(b)
-    };
-
-    let bu_du = eval(u, u_bnd, true);
-    let bv = eval(v, v_bnd, false);
+    let bu_du = eval_bspline(u, u_bnd, true);
+    let bv = eval_bspline(v, v_bnd, false);
 
     bv.kronecker(&bu_du)
 }
@@ -120,18 +115,8 @@ pub fn eval_boundary_du<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: boo
 /// Evaluates the derivative of the interpolating cubic B-Spline basis with respect to `v` at the parametric point `(u,v)`.
 /// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
 pub fn eval_boundary_dv<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
-    let eval = |t: T, bnd: bool, deriv: bool| {
-        let b = match (bnd, deriv) { 
-            (false, false) => bspline(t).as_slice().to_vec(), 
-            (true, false) => bspline_interpolating(t).as_slice().to_vec(),
-            (false, true) => bspline_deriv(t).as_slice().to_vec(),
-            (true, true) => bspline_interpolating_deriv(t).as_slice().to_vec(),
-        };
-        DVector::from_vec(b)
-    };
-
-    let bu = eval(u, u_bnd, false);
-    let bv_dv = eval(v, v_bnd, true);
+    let bu = eval_bspline(u, u_bnd, false);
+    let bv_dv = eval_bspline(v, v_bnd, true);
 
     bv_dv.kronecker(&bu)
 }
