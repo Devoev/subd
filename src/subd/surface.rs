@@ -4,6 +4,7 @@ use gauss_quad::GaussLegendre;
 use nalgebra::{Matrix2, Point2, RealField};
 use num_traits::ToPrimitive;
 use crate::subd::basis;
+use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
 
 impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
@@ -87,5 +88,13 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
         // Evaluate basis functions and patch
         let b = basis::eval_irregular(u, v, n);
         Point2::from(self.coords() * b)
+    }
+}
+
+impl<T: RealField + Copy + ToPrimitive> QuadMesh<T> {
+
+    /// Numerically calculates the area of this surface using Gaussian quadrature.
+    pub fn calc_area(&self) -> f64 {
+        self.patches().map(|patch| patch.calc_area()).sum()
     }
 }

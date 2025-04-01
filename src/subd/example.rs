@@ -334,4 +334,8 @@ fn quadrature() {
     println!("Parallelogram area = {area_lin}");
     println!("Quadrature area = {area_quad}");
     println!("Relative error = {:.3}%", (area_quad - area_lin).abs() / area_lin * 100.0);
+
+    // Calculate area of surface
+    let area_surf = msh.calc_area();
+    println!("Total area of surface = {area_surf:.3}");
 }
