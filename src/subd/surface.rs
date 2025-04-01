@@ -1,5 +1,6 @@
 //! Functions and methods for evaluating and integrating over subdivision surfaces and patches.
 
+use std::iter::Sum;
 use gauss_quad::GaussLegendre;
 use nalgebra::{Matrix2, Point2, RealField};
 use num_traits::ToPrimitive;
@@ -52,14 +53,24 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
         Matrix2::from_columns(&cols)
     }
 
-    /// Numerically calculates the area of this patch using Gaussian quadrature.
-    pub fn calc_area(&self) -> f64 {
-        let quad = GaussLegendre::new(2).unwrap();
+    /// Numerically integrates the given parametric function `f: (0,1)² ⟶ ℝ` over this patch
+    /// using `num_quad` Gaussian quadrature points per parametric direction.
+    pub fn integrate(&self, f: impl Fn(T, T) -> T, num_quad: usize) -> T {
+        let quad = GaussLegendre::new(num_quad).unwrap();
         let integrand = |u, v| {
-            let d_phi = self.eval_jacobian(T::from_f64(u).unwrap(), T::from_f64(v).unwrap());
-            d_phi.determinant().abs().to_f64().unwrap()
+            let u = T::from_f64(u).unwrap();
+            let v = T::from_f64(v).unwrap();
+            let d_phi = self.eval_jacobian(u, v);
+            (f(u, v) * d_phi.determinant().abs()).to_f64().unwrap()
         };
-        quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
+        T::from_f64(
+            quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
+        ).unwrap()
+    }
+
+    /// Numerically calculates the area of this patch using Gaussian quadrature.
+    pub fn calc_area(&self) -> T {
+        self.integrate(|_, _| T::one(), 2)
     }
 
     /// Evaluates this regular patch at the parametric point `(u,v)`.
@@ -94,10 +105,10 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
     }
 }
 
-impl<T: RealField + Copy + ToPrimitive> QuadMesh<T> {
+impl<T: RealField + Copy + ToPrimitive + Sum> QuadMesh<T> {
 
     /// Numerically calculates the area of this surface using Gaussian quadrature.
-    pub fn calc_area(&self) -> f64 {
+    pub fn calc_area(&self) -> T {
         self.patches().map(|patch| patch.calc_area()).sum()
     }
 }
