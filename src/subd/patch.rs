@@ -351,7 +351,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
         inner_nodes.extend_from_slice(&outer_nodes);
         inner_nodes
     }
-    
+
     /// Returns a vector over the nodes of this patch.
     pub fn nodes(&self) -> Vec<Node> {
         match self {
@@ -361,7 +361,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             Patch::BoundaryRegularCorner { .. } => self.nodes_boundary_convex().into_iter().collect(),
         }
     }
-    
+
     /// Returns a matrix `(c1,...,cN)` over the coordinates of control points of this patch.
     pub fn coords(&self) -> OMatrix<T, U2, Dyn> {
         let points = self.nodes()
@@ -386,44 +386,23 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
 
     /// Evaluates this regular patch at the parametric point `(u,v)`.
     fn eval_regular(&self, u: T, v: T) -> Point2<T> {
-        // Store control points in matrix (c1,...,cN)
-        let points = self.nodes_regular()
-            .into_iter()
-            .map(|n| self.msh().node(n).coords)
-            .collect_vec();
-        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
-
         // Evaluate basis functions and patch
         let b = basis::eval_regular(u, v);
-        Point2::from(c * b)
+        Point2::from(self.coords() * b)
     }
 
     /// Evaluates this planar boundary patch at the parametric point `(u,v)`.
     fn eval_boundary_planar(&self, u: T, v: T) -> Point2<T> {
-        // Store control points in matrix (c1,...,cN)
-        let points = self.nodes_boundary_planar()
-            .into_iter()
-            .map(|n| self.msh().node(n).coords)
-            .collect_vec();
-        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
-
         // Evaluate basis functions and patch
         let b = basis::eval_boundary(u, v, false, true);
-        Point2::from(c * b)
+        Point2::from(self.coords() * b)
     }
 
     /// Evaluates this convex boundary patch at the parametric point `(u,v)`.
     fn eval_boundary_convex(&self, u: T, v: T) -> Point2<T> {
-        // Store control points in matrix (c1,...,cN)
-        let points = self.nodes_boundary_convex()
-            .into_iter()
-            .map(|n| self.msh().node(n).coords)
-            .collect_vec();
-        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
-
         // Evaluate basis functions and patch
         let b = basis::eval_boundary(u, v, true, true);
-        Point2::from(c * b)
+        Point2::from(self.coords() * b)
     }
 
     /// Evaluates this irregular patch at the parametric point `(u,v)`.
@@ -431,16 +410,9 @@ impl <'a, T: RealField + Copy + ToPrimitive> Patch<'a, T> {
         // Get valence of irregular node
         let (_, n) = self.irregular_node().expect("Patch must be irregular!");
 
-        // Store control points in matrix (c1,...,cN)
-        let points = self.nodes_irregular()
-            .into_iter()
-            .map(|n| self.msh().node(n).coords)
-            .collect_vec();
-        let c = OMatrix::<T, U2, Dyn>::from_columns(&points);
-
         // Evaluate basis functions and patch
         let b = basis::eval_irregular(u, v, n);
-        Point2::from(c * b)
+        Point2::from(self.coords() * b)
     }
 }
 
