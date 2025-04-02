@@ -1,12 +1,12 @@
 //! Functions and methods for evaluating and integrating over subdivision surfaces and patches.
 
-use std::iter::Sum;
-use gauss_quad::GaussLegendre;
-use nalgebra::{DVector, Matrix2, Point2, RealField};
-use num_traits::ToPrimitive;
 use crate::subd::basis;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
+use gauss_quad::GaussLegendre;
+use nalgebra::{DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
+use num_traits::ToPrimitive;
+use std::iter::Sum;
 
 impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 
@@ -64,7 +64,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
             quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
         ).unwrap()
     }
-    
+
     /// Numerically integrates the given function `f: S ⟶ ℝ` over this patch in physical domain
     /// using `num_quad` Gaussian quadrature points per parametric direction.
     pub fn integrate(&self, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> T {
@@ -88,6 +88,21 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
             Patch::BoundaryRegularCorner { .. } => basis::eval_boundary(u, v, true, true).as_slice().to_vec(),
         };
         DVector::from_vec(b)
+    }
+
+    /// Evaluates the gradients of the basis functions on this patch at the parametric point `(u,v)`.
+    pub fn eval_basis_grad(&self, u: T, v: T) -> OMatrix<T, Dyn, U2> {
+        let b = match self {
+            Patch::Regular { .. } => basis::eval_regular_grad(u, v).as_slice().to_vec(),
+            Patch::Irregular { .. } => {
+                let (_, n) = self.irregular_node().expect("Patch must be irregular!");
+                basis::eval_irregular_grad(u, v, n).as_slice().to_vec()
+            },
+            Patch::BoundaryRegular { .. } => basis::eval_boundary_grad(u, v, false, true).as_slice().to_vec(),
+            Patch::BoundaryRegularCorner { .. } => basis::eval_boundary_grad(u, v, true, true).as_slice().to_vec(),
+        };
+
+        OMatrix::<T, Dyn, U2>::from_vec(b)
     }
 }
 
