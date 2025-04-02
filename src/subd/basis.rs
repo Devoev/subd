@@ -1,5 +1,5 @@
 use crate::subd::catmull_clark;
-use nalgebra::{matrix, one, vector, DMatrix, DVector, RealField, SVector};
+use nalgebra::{matrix, one, vector, DMatrix, DVector, Dyn, OMatrix, RealField, SMatrix, SVector, U2};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 
@@ -94,6 +94,14 @@ pub fn eval_regular_dv<T: RealField + Copy>(u: T, v: T) -> SVector<T, 16> {
     bv_dv.kronecker(&bu)
 }
 
+/// Evaluates the gradients of the regular cubic B-Spline basis at the parametric point `(u,v)`.
+/// The value of each evaluated gradient is stored as a row in the result matrix.
+pub fn eval_regular_grad<T: RealField + Copy>(u: T, v: T) -> SMatrix<T, 16, 2> {
+    let b_du = eval_regular_du(u, v);
+    let b_dv = eval_regular_dv(u, v);
+    SMatrix::from_columns(&[b_du, b_dv])
+}
+
 /// Evaluates the interpolating cubic B-Spline basis at the parametric point `(u,v)`.
 /// The functions interpolate the boundaries `u = 0` and `v = 0` if `u_bnd` and `v_bnd` are set respectively.
 pub fn eval_boundary<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> DVector<T> {
@@ -120,6 +128,15 @@ pub fn eval_boundary_dv<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: boo
 
     bv_dv.kronecker(&bu)
 }
+
+/// Evaluates the gradients of the interpolating cubic B-Spline basis at the parametric point `(u,v)`.
+/// The value of each evaluated gradient is stored as a row in the result matrix.
+pub fn eval_boundary_grad<T: RealField + Copy>(u: T, v: T, u_bnd: bool, v_bnd: bool) -> OMatrix<T, Dyn, U2> {
+    let b_du = eval_boundary_du(u, v, u_bnd, v_bnd);
+    let b_dv = eval_boundary_dv(u, v, u_bnd, v_bnd);
+    OMatrix::from_columns(&[b_du, b_dv])
+}
+
 
 /// Evaluates the basis functions of an irregular patch of valence `n` at the parametric point `(u,v)`.
 pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> DVector<T> {
@@ -177,6 +194,14 @@ pub fn eval_irregular_dv<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize
 
     // Evaluate irregular basis
     a.pow((nsub - 1) as u32).transpose() * (a_bar.transpose() * b_perm)
+}
+
+/// Evaluates the gradients of the basis functions of an irregular patch of valence `n` at the parametric point `(u,v)`.
+/// The value of each evaluated gradient is stored as a row in the result matrix.
+pub fn eval_irregular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> OMatrix<T, Dyn, U2> {
+    let b_du = eval_irregular_du(u, v, n);
+    let b_dv = eval_irregular_dv(u, v, n);
+    OMatrix::from_columns(&[b_du, b_dv])
 }
 
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.

@@ -1,7 +1,6 @@
 use std::f64::consts::PI;
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
-use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf, plot_surf_fn};
 use crate::subd::{basis, catmull_clark, iga, plot};
 use nalgebra::{center, point, vector, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
@@ -118,10 +117,10 @@ fn msh() {
     msh.lin_subd();
 
     // Plot of mesh
-    let msh_plot = plot_faces(&msh, msh.faces.iter().copied());
+    let msh_plot = plot::plot_faces(&msh, msh.faces.iter().copied());
     msh_plot.show_html("out/msh.html");
 
-    let msh_nodes_plot = plot_nodes(&msh, 0..msh.num_nodes());
+    let msh_nodes_plot = plot::plot_nodes(&msh, 0..msh.num_nodes());
     msh_nodes_plot.show_html("out/msh_nodes.html");
 
     // Plot extended patch
@@ -165,7 +164,7 @@ fn patch() {
     }
 
     // Plot nodes of patch
-    let nodes_plot = plot_nodes(&msh, patch2.nodes().into_iter());
+    let nodes_plot = plot::plot_nodes(&msh, patch2.nodes().into_iter());
     nodes_plot.show_html("out/patch_nodes.html");
 }
 
@@ -180,7 +179,7 @@ fn boundary() {
     let face = msh.faces[face_id];
     let patch = msh.find_patch(face);
 
-    let nodes_plot = plot_nodes(&msh, patch.nodes().iter().copied());
+    let nodes_plot = plot::plot_nodes(&msh, patch.nodes().iter().copied());
     nodes_plot.show_html("out/patch_bnd_nodes.html");
 }
 
@@ -198,10 +197,10 @@ fn surf() {
     // Evaluation
     let num_eval = 10;
 
-    let patch_eval_plot = plot_patch(patch, num_eval);
+    let patch_eval_plot = plot::plot_patch(patch, num_eval);
     patch_eval_plot.show_html("out/patch_eval.html");
 
-    let surf_eval_plot = plot_surf(&msh, num_eval);
+    let surf_eval_plot = plot::plot_surf(&msh, num_eval);
     surf_eval_plot.show_html("out/surf_eval.html");
 }
 
@@ -244,7 +243,7 @@ fn catmull_clark_matrix() {
 fn sub_patch_transform() {
     let u = 0.26;
     let v = 0.24;
-    let sub_patches_plot = plot_sub_patch_hierarchy(u, v);
+    let sub_patches_plot = plot::plot_sub_patch_hierarchy(u, v);
     sub_patches_plot.show_html("out/sub_patches.html");
 }
 
@@ -255,7 +254,7 @@ fn eval_bspline() {
     // Plot B-splines
     let mut bspline_plot = Plot::new();
     for i in 0..4 {
-        let plot = plot_fn(|t| { basis::bspline(t)[i] }, num);
+        let plot = plot::plot_fn(|t| { basis::bspline(t)[i] }, num);
         bspline_plot.add_traces(plot.data().iter().cloned().collect());
     }
     bspline_plot.show_html("out/bspline.html".to_string());
@@ -263,7 +262,7 @@ fn eval_bspline() {
     // Plot derivative
     let mut bspline_deriv_plot = Plot::new();
     for i in 0..4 {
-        let plot = plot_fn(|t| { basis::bspline_deriv(t)[i] }, num);
+        let plot = plot::plot_fn(|t| { basis::bspline_deriv(t)[i] }, num);
         bspline_deriv_plot.add_traces(plot.data().iter().cloned().collect());
     }
     bspline_deriv_plot.show_html("out/bspline_deriv.html".to_string());
@@ -271,7 +270,7 @@ fn eval_bspline() {
     // Plot boundary B-splines
     let mut bspline_bnd_plot = Plot::new();
     for i in 0..3 {
-        let plot = plot_fn(|t| { basis::bspline_interpolating(t)[i] }, num);
+        let plot = plot::plot_fn(|t| { basis::bspline_interpolating(t)[i] }, num);
         bspline_bnd_plot.add_traces(plot.data().iter().cloned().collect());
     }
     bspline_bnd_plot.show_html("out/bspline_bnd.html".to_string());
@@ -377,8 +376,8 @@ fn iga_fn() {
     println!("Relative L2 error ||f - fh||_2 / ||f||_2 = {:.3}%", err_l2/ norm_l2 * 100.0);
 
     // Plot functions
-    let f_plot = plot_surf_fn(f_eval, num);
-    let fh_plot = plot_surf_fn(fh_eval, num);
+    let f_plot = plot::plot_surf_fn(f_eval, num);
+    let fh_plot = plot::plot_surf_fn(fh_eval, num);
     // f_plot.show_html("out/iga_f.html");
     // fh_plot.show_html("out/iga_fh.html");
 }
@@ -392,10 +391,10 @@ pub fn iga_matrices() {
 
     // Define rhs function
     let f = |p: Point2<f64>| p.x * p.y;
-    
+
     // Build load vector
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
-    
+
     println!("{fi}")
 }
