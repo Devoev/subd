@@ -352,29 +352,33 @@ fn iga_fn() {
 
     // Define function on patch
     let patch = msh.patches().next().unwrap();
-    let f = |p: Point2<f64>| p.coords.norm().powi(2);
+    let f = |p: Point2<f64>| p.x * p.y;
     let fh = IgaFn::from_fn(&msh, f);
 
-    // Calculate L2 (?) error on patch
+    // Calculate L2 error on patch
     let f_eval = |u: f64, v: f64| f(patch.eval(u, v));
     let fh_eval = |u: f64, v: f64| fh.eval_pullback(&patch, u, v);
 
     let num = 20;
     let uv_range = lin_space(1e-5..=1.0, num);
-    let err_l2 = uv_range.clone().cartesian_product(uv_range.clone())
+    let err = uv_range.clone().cartesian_product(uv_range.clone())
         .map(|(u,v)| (f_eval(u,v) - fh_eval(u,v)).powi(2))
         .sum::<f64>()
         .sqrt();
-    let norm_l2 = uv_range.clone().cartesian_product(uv_range.clone())
+    let norm = uv_range.clone().cartesian_product(uv_range.clone())
         .map(|(u,v)| f_eval(u,v).powi(2))
         .sum::<f64>()
         .sqrt();
-    
-    println!("Relative L2 error ||f - fh||_2 / ||f||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
+
+    let err_l2 = patch.integrate_pullback(|u, v| (f_eval(u, v) - fh_eval(u, v)).powi(2), num).sqrt();
+    let norm_l2 = patch.integrate_pullback(|u, v| f_eval(u, v).powi(2), num).sqrt();
+
+    println!("Relative mesh error |f - fh|_M / |f|_M = {:.3}%", err / norm * 100.0);
+    println!("Relative L2 error ||f - fh||_2 / ||f||_2 = {:.3}%", err_l2/ norm_l2 * 100.0);
 
     // Plot functions
     let f_plot = plot_surf_fn(f_eval, num);
     let fh_plot = plot_surf_fn(fh_eval, num);
-    f_plot.show_html("out/iga_f.html");
-    fh_plot.show_html("out/iga_fh.html");
+    // f_plot.show_html("out/iga_f.html");
+    // fh_plot.show_html("out/iga_fh.html");
 }
