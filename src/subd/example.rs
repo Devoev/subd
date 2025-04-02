@@ -1,12 +1,14 @@
 use std::f64::consts::PI;
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
-use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf};
+use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf, plot_surf_fn};
 use crate::subd::{basis, catmull_clark, plot};
 use nalgebra::{center, point, vector, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
+use iter_num_tools::lin_space;
 use itertools::Itertools;
 use plotly::Plot;
+use crate::subd::iga::IgaFn;
 use crate::subd::patch::Patch;
 
 /// Vector of coordinates in 2D.
@@ -338,4 +340,41 @@ fn quadrature() {
     // Calculate area of surface
     let area_surf = msh.calc_area();
     println!("Total area of surface = {area_surf:.3}");
+}
+
+#[test]
+fn iga_fn() {
+    // Refine mesh
+    let mut msh = MSH.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    // Define function on patch
+    let patch = msh.patches().next().unwrap();
+    let f = |p: Point2<f64>| p.coords.norm().powi(2);
+    let fh = IgaFn::from_fn(&msh, f);
+
+    // Calculate L2 (?) error on patch
+    let f_eval = |u: f64, v: f64| f(patch.eval(u, v));
+    let fh_eval = |u: f64, v: f64| fh.eval_on_patch(&patch, u, v);
+
+    let num = 20;
+    let uv_range = lin_space(1e-5..=1.0, num);
+    let err_l2 = uv_range.clone().cartesian_product(uv_range.clone())
+        .map(|(u,v)| (f_eval(u,v) - fh_eval(u,v)).powi(2))
+        .sum::<f64>()
+        .sqrt();
+    let norm_l2 = uv_range.clone().cartesian_product(uv_range.clone())
+        .map(|(u,v)| f_eval(u,v).powi(2))
+        .sum::<f64>()
+        .sqrt();
+    
+    println!("Relative L2 error ||f - fh||_2 / ||f||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
+
+    // Plot functions
+    let f_plot = plot_surf_fn(f_eval, num);
+    let fh_plot = plot_surf_fn(fh_eval, num);
+    f_plot.show_html("out/iga_f.html");
+    fh_plot.show_html("out/iga_fh.html");
 }
