@@ -52,7 +52,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 
     /// Numerically integrates the given parametric function `f: (0,1)² ⟶ ℝ` over this patch
     /// using `num_quad` Gaussian quadrature points per parametric direction.
-    pub fn integrate(&self, f: impl Fn(T, T) -> T, num_quad: usize) -> T {
+    pub fn integrate_pullback(&self, f: impl Fn(T, T) -> T, num_quad: usize) -> T {
         let quad = GaussLegendre::new(num_quad).unwrap();
         let integrand = |u, v| {
             let u = T::from_f64(u).unwrap();
@@ -64,10 +64,16 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
             quad.integrate(0.0, 1.0, |v| quad.integrate(0.0, 1.0, |u| integrand(u, v)))
         ).unwrap()
     }
+    
+    /// Numerically integrates the given function `f: S ⟶ ℝ` over this patch in physical domain
+    /// using `num_quad` Gaussian quadrature points per parametric direction.
+    pub fn integrate(&self, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> T {
+        self.integrate_pullback(|u, v| f(self.eval(u, v)), num_quad)
+    }
 
     /// Numerically calculates the area of this patch using Gaussian quadrature.
     pub fn calc_area(&self) -> T {
-        self.integrate(|_, _| T::one(), 2)
+        self.integrate_pullback(|_, _| T::one(), 2)
     }
 
     /// Evaluates the basis functions on this patch at the parametric point `(u,v)`.
@@ -86,6 +92,12 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 }
 
 impl<T: RealField + Copy + ToPrimitive + Sum> QuadMesh<T> {
+
+    /// Numerically integrates the given function `f: S ⟶ ℝ` over this surface
+    /// using `num_quad` Gaussian quadrature points per parametric direction.
+    pub fn integrate(&self, f: impl Fn(Point2<T>) -> T + Clone, num_quad: usize) -> T {
+        self.patches().map(|patch| patch.integrate(f.clone(), num_quad)).sum()
+    }
 
     /// Numerically calculates the area of this surface using Gaussian quadrature.
     pub fn calc_area(&self) -> T {

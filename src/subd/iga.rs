@@ -28,8 +28,9 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
         IgaFn { coeffs, msh }
     }
 
-    /// Evaluates this function on the given `patch` at the parametric point `(u,v)`.
-    pub fn eval_on_patch(&self, patch: &Patch<T>, u: T, v: T) -> T {
+    /// Evaluates the pullback `f(phi)` at the parametric point `(u,v)`,
+    /// where `phi` is the parametrization of the given `patch`.
+    pub fn eval_pullback(&self, patch: &Patch<T>, u: T, v: T) -> T {
         // Get the indices of the control points corresponding to the patch
         let indices = patch.nodes();
         let c = DVector::from_iterator(indices.len(), indices.iter().map(|&i| self.coeffs[i]));

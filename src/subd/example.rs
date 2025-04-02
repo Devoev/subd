@@ -357,7 +357,7 @@ fn iga_fn() {
 
     // Calculate L2 (?) error on patch
     let f_eval = |u: f64, v: f64| f(patch.eval(u, v));
-    let fh_eval = |u: f64, v: f64| fh.eval_on_patch(&patch, u, v);
+    let fh_eval = |u: f64, v: f64| fh.eval_pullback(&patch, u, v);
 
     let num = 20;
     let uv_range = lin_space(1e-5..=1.0, num);
