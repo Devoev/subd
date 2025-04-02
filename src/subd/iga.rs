@@ -1,8 +1,9 @@
 //! Functions for isogeometric analysis on subdivision surfaces.
 
+use itertools::Itertools;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
-use nalgebra::{DVector, Point2, RealField};
+use nalgebra::{DMatrix, DVector, Point2, RealField};
 use num_traits::ToPrimitive;
 
 /// A discrete scalar potential (i.e. a `0`-form) in IGA, represented by coefficients.
@@ -59,4 +60,43 @@ pub fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl
     let num_basis = patch.nodes().len();
     let fi = (0..num_basis).map(|i| patch.integrate_pullback(|u, v| fv_pullback(u, v)[i], num_quad));
     DVector::from_iterator(num_basis, fi)
+}
+
+/// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
+pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> DMatrix<T> {
+    let mut aij = DMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+
+    for patch in msh.patches() {
+        let aij_local = op_gradu_gradv_local(&patch, num_quad);
+        let indices = patch.nodes();
+        // todo: set element aij by iterating over cartesian product of indices
+    }
+
+    aij
+}
+
+/// Builds the local discrete IGA operator `∫ grad u · grad v dx`
+/// of the given `patch` using `num_quad` quadrature points.
+pub fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T> {
+    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
+    let uv_pullback = |u: T, v: T, i: usize, j: usize| {
+        // Get gradients
+        let grad_b = patch.eval_basis_grad(u, v);
+        let grad_bi = grad_b.row(i);
+        let grad_bj = grad_b.row(j);
+
+        // Calculate inverse gram matrix
+        let d_phi = patch.eval_jacobian(u, v);
+        let g = d_phi.transpose() * d_phi;
+        let g_inv = g.try_inverse().unwrap();
+
+        // Calculate integrand
+        (grad_bi * g_inv * grad_bj.transpose()).x
+    };
+
+    let num_basis = patch.nodes().len();
+    let aij = (0..num_basis).cartesian_product(0..num_basis)
+        .map(|(i, j)| patch.integrate_pullback(|u, v| uv_pullback(u, v, i, j), num_quad));
+
+    DMatrix::from_iterator(num_basis, num_basis, aij)
 }
