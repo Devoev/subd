@@ -1,13 +1,10 @@
-use crate::subd::basis;
-use crate::subd::edge::{next_edge, reverse_edge, sort_edge_by_face};
+use crate::subd::edge::{next_edge, reverse_edge};
 use crate::subd::face::{edges_of_face, sort_by_node, sort_by_origin};
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use itertools::{izip, Itertools};
-use nalgebra::{Dyn, Matrix2, OMatrix, Point2, RealField, SMatrix, U2};
-use num_traits::ToPrimitive;
-use std::collections::{HashMap, HashSet};
+use nalgebra::{Dyn, OMatrix, RealField, U2};
+use std::collections::HashSet;
 use std::iter::once;
-use gauss_quad::GaussLegendre;
 
 /// A patch of a quadrilateral mesh.
 /// The faces are sorted in clockwise order, i.e.
