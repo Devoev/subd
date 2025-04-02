@@ -38,3 +38,25 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
         c.dot(&b)
     }
 }
+
+/// Builds the discrete IGA operator `∫ fv dx` using `num_quad` quadrature points.
+pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T + Clone, num_quad: usize) -> DVector<T> {
+    let mut fi = DVector::<T>::zeros(msh.num_nodes());
+    for patch in msh.patches() {
+        let fi_local = op_f_v_local(&patch, f.clone(), num_quad);
+        let indices = patch.nodes();
+        for (idx_local, idx) in indices.into_iter().enumerate() {
+            fi[idx] += fi_local[idx_local];
+        }
+    }
+    fi
+}
+
+/// Builds the local discrete IGA operator `∫ fv dx` of the given `patch` using `num_quad` quadrature points.
+pub fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> DVector<T> {
+    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
+    let fv_pullback = |u: T, v: T| patch.eval_basis(u, v) * f(patch.eval(u, v));
+    let num_basis = patch.nodes().len();
+    let fi = (0..num_basis).map(|i| patch.integrate_pullback(|u, v| fv_pullback(u, v)[i], num_quad));
+    DVector::from_iterator(num_basis, fi)
+}

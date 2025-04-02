@@ -94,7 +94,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 impl<T: RealField + Copy + ToPrimitive + Sum> QuadMesh<T> {
 
     /// Numerically integrates the given function `f: S ⟶ ℝ` over this surface
-    /// using `num_quad` Gaussian quadrature points per parametric direction.
+    /// using `num_quad` Gaussian quadrature points per parametric direction per patch.
     pub fn integrate(&self, f: impl Fn(Point2<T>) -> T + Clone, num_quad: usize) -> T {
         self.patches().map(|patch| patch.integrate(f.clone(), num_quad)).sum()
     }

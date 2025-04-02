@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
 use crate::subd::plot::{plot_faces, plot_fn, plot_nodes, plot_patch, plot_sub_patch_hierarchy, plot_surf, plot_surf_fn};
-use crate::subd::{basis, catmull_clark, plot};
+use crate::subd::{basis, catmull_clark, iga, plot};
 use nalgebra::{center, point, vector, Matrix, Point2, SMatrix};
 use std::sync::LazyLock;
 use iter_num_tools::lin_space;
@@ -381,4 +381,21 @@ fn iga_fn() {
     let fh_plot = plot_surf_fn(fh_eval, num);
     // f_plot.show_html("out/iga_f.html");
     // fh_plot.show_html("out/iga_fh.html");
+}
+
+#[test]
+pub fn iga_matrices() {
+    // Refine mesh
+    let mut msh = MSH.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    // Define rhs function
+    let f = |p: Point2<f64>| p.x * p.y;
+    
+    // Build load vector
+    let num_quad = 2;
+    let fi = iga::op_f_v(&msh, f, num_quad);
+    
+    println!("{fi}")
 }
