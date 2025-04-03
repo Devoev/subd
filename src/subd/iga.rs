@@ -65,11 +65,14 @@ pub fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl
 /// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
 pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> DMatrix<T> {
     let mut aij = DMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+    // todo: use sparse matrix for aij
 
     for patch in msh.patches() {
         let aij_local = op_gradu_gradv_local(&patch, num_quad);
-        let indices = patch.nodes();
-        // todo: set element aij by iterating over cartesian product of indices
+        let indices = patch.nodes().into_iter().enumerate();
+        for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
+            aij[(i, j)] += aij_local[(i_local,j_local)];
+        }
     }
 
     aij

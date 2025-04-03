@@ -395,6 +395,8 @@ pub fn iga_matrices() {
     // Build load vector
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
+    let aij = iga::op_gradu_gradv(&msh, num_quad);
 
-    println!("{fi}")
+    println!("{fi}");
+    println!("{aij}");
 }
