@@ -36,7 +36,7 @@ static MSH_PENTAGON: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
 /// ```
 /// with `Ω=(0,1)²` being the unit square.
 #[test]
-pub fn dr_neu() {
+pub fn dr_neu_square() {
     // Refine mesh
     let mut msh = MSH_SQUARE.clone();
     msh.lin_subd();
@@ -80,4 +80,42 @@ pub fn dr_neu() {
 
     dbg!(norm_l2, err_l2);
     println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
+}
+
+#[test]
+pub fn dr_neu_pentagon() {
+    // Refine mesh
+    let mut msh = MSH_PENTAGON.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    // Define solution
+    // todo: define correct solution function
+    let u = |p: Point2<f64>| (p.x * PI).cos() * (p.y * PI).cos();
+
+    // Define rhs function
+    let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
+    let fh = IgaFn::from_fn(&msh, f);
+
+    // Build load vector and stiffness matrix
+    let num_quad = 2;
+    let fi = iga::op_f_v(&msh, f, num_quad);
+    let mij = iga::op_gradu_gradv(&msh, num_quad);
+    let kij = iga::op_u_v(&msh, num_quad);
+    let aij = mij + kij;
+
+    // Plot rhs
+    let num_plot = 4;
+    let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
+    fh_plot.show_html("out/fh_plot");
+
+    // Solve system
+    let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+    let uh = IgaFn::new(&msh, ui);
+
+    let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
+    uh_plot.show_html("out/uh_plot");
+
+    // todo: calculate l2 error
 }
