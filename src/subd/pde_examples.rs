@@ -40,7 +40,9 @@ pub fn pde_square() {
     // Build load vector and stiffness matrix
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
-    let aij = iga::op_gradu_gradv(&msh, num_quad);
+    let mij = iga::op_gradu_gradv(&msh, num_quad);
+    let kij = iga::op_u_v(&msh, num_quad);
+    let aij = mij + kij;
 
     // Check matrix properties
     assert!((aij.clone() - aij.transpose()).norm() < 1e-10, "Matrix is not symmetric"); // check symmetry

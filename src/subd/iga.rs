@@ -54,7 +54,7 @@ pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(P
 }
 
 /// Builds the local discrete IGA operator `∫ fv dx` of the given `patch` using `num_quad` quadrature points.
-pub fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> DVector<T> {
+fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> DVector<T> {
     // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
     let fv_pullback = |u: T, v: T| patch.eval_basis(u, v) * f(patch.eval(u, v));
     let num_basis = patch.nodes().len();
@@ -80,9 +80,9 @@ pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_
 
 /// Builds the local discrete IGA operator `∫ grad u · grad v dx`
 /// of the given `patch` using `num_quad` quadrature points.
-pub fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T> {
+fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T> {
     // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
-    let uv_pullback = |u: T, v: T, i: usize, j: usize| {
+    let gradu_gradv_pullback = |u: T, v: T, i: usize, j: usize| {
         // Get gradients
         let grad_b = patch.eval_basis_grad(u, v);
         let grad_bi = grad_b.row(i);
@@ -99,7 +99,44 @@ pub fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>,
 
     let num_basis = patch.nodes().len();
     let aij = (0..num_basis).cartesian_product(0..num_basis)
-        .map(|(i, j)| patch.integrate_pullback(|u, v| uv_pullback(u, v, i, j), num_quad));
+        .map(|(i, j)| patch.integrate_pullback(|u, v| gradu_gradv_pullback(u, v, i, j), num_quad));
 
     DMatrix::from_iterator(num_basis, num_basis, aij)
+}
+
+/// Builds the discrete IGA operator `∫ uv dx` using `num_quad` quadrature points.
+pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> DMatrix<T> {
+    let mut bij = DMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+    // todo: use sparse matrix for bij
+
+    for patch in msh.patches() {
+        let bij_local = op_u_v_local(&patch, num_quad);
+        let indices = patch.nodes().into_iter().enumerate();
+        for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
+            bij[(i, j)] += bij_local[(i_local, j_local)];
+        }
+    }
+
+    bij
+}
+
+/// Builds the local discrete IGA operator `∫ uv dx`
+/// of the given `patch` using `num_quad` quadrature points.
+fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T>  {
+    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
+    let uv_pullback = |u: T, v: T, i: usize, j: usize| {
+        // Eval basis
+        let b = patch.eval_basis(u, v);
+        let bi = b[i];
+        let bj = b[j];
+        
+        // Calculate integrand
+        bi * bj
+    };
+
+    let num_basis = patch.nodes().len();
+    let bij = (0..num_basis).cartesian_product(0..num_basis)
+        .map(|(i, j)| patch.integrate_pullback(|u, v| uv_pullback(u, v, i, j), num_quad));
+
+    DMatrix::from_iterator(num_basis, num_basis, bij)
 }
