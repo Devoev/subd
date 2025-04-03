@@ -10,7 +10,7 @@ use num_traits::ToPrimitive;
 #[derive(Clone, Debug)]
 pub struct IgaFn<'a, T: RealField> {
     /// The coefficient vector defining this function.
-    coeffs: DVector<T>,
+    pub coeffs: DVector<T>,
     /// The mesh this function is defined on.
     msh: &'a QuadMesh<T>
 }
@@ -35,7 +35,7 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
         let nodes_bnd = msh.nodes.iter()
             .enumerate()
             .filter_map(|(i, node)| msh.is_boundary_node(i).then_some(node));
-        
+
         let coeffs = nodes_bnd.map(|&p| g(p)).collect_vec();
         IgaFn { coeffs: DVector::from_vec(coeffs), msh }
     }
