@@ -294,19 +294,19 @@ fn eval_basis() {
 
     // Plot derivatives of basis functions
     for i in 0..num_reg {
-        let basis_deriv_plot = plot::plot_surf_fn(|u, v| basis::eval_regular_du(u, v)[i], num_plot);
+        let basis_deriv_plot = plot::plot_patch_fn_pullback(|u, v| basis::eval_regular_du(u, v)[i], num_plot);
         basis_deriv_plot.show_html(format!("out/basis_deriv_{i}.html"));
     }
 
     // Plot all boundary basis functions
     for i in 0..num_bnd {
-        let basis_bnd_plot = plot::plot_surf_fn(|u, v| basis::eval_boundary(u, v, false, false)[i], num_plot);
+        let basis_bnd_plot = plot::plot_patch_fn_pullback(|u, v| basis::eval_boundary(u, v, false, false)[i], num_plot);
         // basis_bnd_plot.show_html(format!("out/basis_bnd_{i}.html"));
     }
 
     // Plot all irregular basis functions
     for i in 0..num_irr {
-        let basis_irr_plot = plot::plot_surf_fn(|u, v| basis::eval_irregular(u, v, valence)[i], num_plot);
+        let basis_irr_plot = plot::plot_patch_fn_pullback(|u, v| basis::eval_irregular(u, v, valence)[i], num_plot);
         // basis_irr_plot.show_html(format!("out/basis_irr_{i}.html"));
     }
 }
@@ -376,8 +376,8 @@ fn iga_fn() {
     println!("Relative L2 error ||f - fh||_2 / ||f||_2 = {:.3}%", err_l2/ norm_l2 * 100.0);
 
     // Plot functions
-    let f_plot = plot::plot_surf_fn(f_eval, num);
-    let fh_plot = plot::plot_surf_fn(fh_eval, num);
+    let f_plot = plot::plot_patch_fn_pullback(f_eval, num);
+    let fh_plot = plot::plot_patch_fn_pullback(fh_eval, num);
     // f_plot.show_html("out/iga_f.html");
     // fh_plot.show_html("out/iga_fh.html");
 }
@@ -392,10 +392,15 @@ pub fn iga_matrices() {
     // Define rhs function
     let f = |p: Point2<f64>| p.x * p.y;
 
-    // Build load vector
+    // Build load vector and stiffness matrix
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
     let aij = iga::op_gradu_gradv(&msh, num_quad);
+
+    let fh = IgaFn::from_fn(&msh, f);
+    let num_plot = 4;
+    let f_plot = plot::plot_surf_fn(&msh, f, num_plot);
+    f_plot.show_html("out/f_plot");
 
     println!("{fi}");
     println!("{aij}");
