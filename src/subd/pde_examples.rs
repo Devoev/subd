@@ -1,6 +1,8 @@
+use std::collections::{BTreeSet, HashSet};
 use std::f64::consts::PI;
 use std::sync::LazyLock;
-use nalgebra::Point2;
+use itertools::{iproduct, Itertools};
+use nalgebra::{DMatrix, DVector, Point2};
 use num_traits::Pow;
 use crate::subd::{iga, plot};
 use crate::subd::examples::{COORDS_PENTAGON, COORDS_QUAD, FACES_PENTAGON, FACES_QUAD};
@@ -53,8 +55,8 @@ pub fn dr_neu_square() {
     // Build load vector and stiffness matrix
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
-    let mij = iga::op_gradu_gradv(&msh, num_quad);
-    let kij = iga::op_u_v(&msh, num_quad);
+    let kij = iga::op_gradu_gradv(&msh, num_quad);
+    let mij = iga::op_u_v(&msh, num_quad);
     let aij = mij + kij;
 
     // Check matrix properties
@@ -82,11 +84,17 @@ pub fn dr_neu_square() {
     println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
 }
 
+/// Test case for the Poisson problem with Dirichlet boundary conditions.
+/// The problem ist defined as
+/// ```text
+/// -div grad u = f   in Ω
+///           u = 0   on ∂Ω
+/// ```
+/// with `Ω` being the pentagon of radius `1`.
 #[test]
-pub fn dr_neu_pentagon() {
+pub fn poisson_dir_pentagon() {
     // Refine mesh
     let mut msh = MSH_PENTAGON.clone();
-    msh.lin_subd();
     msh.lin_subd();
     msh.lin_subd();
 
@@ -98,20 +106,49 @@ pub fn dr_neu_pentagon() {
     let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
     let fh = IgaFn::from_fn(&msh, f);
 
-    // Build load vector and stiffness matrix
-    let num_quad = 2;
-    let fi = iga::op_f_v(&msh, f, num_quad);
-    let mij = iga::op_gradu_gradv(&msh, num_quad);
-    let kij = iga::op_u_v(&msh, num_quad);
-    let aij = mij + kij;
+    // Define boundary condition
+    let g = |p: Point2<f64>| 0.0;
+    let gh = IgaFn::from_bnd_fn(&msh, u);
+    let ui_bc = &gh.coeffs;
 
     // Plot rhs
     let num_plot = 4;
     let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
     fh_plot.show_html("out/fh_plot.html");
 
+    // Build load vector and stiffness matrix
+    let num_quad = 2;
+    let fi = iga::op_f_v(&msh, f, num_quad);
+    let kij = iga::op_gradu_gradv(&msh, num_quad);
+
+    // Deflate system
+    let idx = (0..msh.num_nodes()).collect::<BTreeSet<_>>();
+    let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
+    let idx_dof = idx.difference(&idx_bc).collect::<BTreeSet<_>>();
+
+    let f_dof = DVector::from_iterator(idx_dof.len(), idx_dof.iter().map(|&&i| fi[i]));
+    let k_dof_dof = DMatrix::from_iterator(idx_dof.len(), idx_dof.len(), iproduct!(idx_dof.iter(), idx_dof.iter())
+        .map(|(&&i, &&j)| kij[(i, j)])
+    );
+    let k_dof_bc = DMatrix::from_iterator(idx_dof.len(), idx_bc.len(), iproduct!(idx_dof.iter(), idx_bc.iter())
+        .map(|(&&i, &j)| kij[(i, j)])
+    );
+
+    let fi = f_dof - k_dof_bc * ui_bc; // todo: fix using mass matrix, because splines are not interpolatory
+    let kij = k_dof_dof;
+
     // Solve system
-    let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+    let mut ui = DVector::zeros(msh.num_nodes());
+    let ui_dof = kij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+
+
+    for (i_local, &&i) in idx_dof.iter().enumerate() {
+        ui[i] = ui_dof[i_local];
+    }
+    for (i_local, &i) in idx_bc.iter().enumerate() {
+        ui[i] = ui_bc[i_local];
+    }
+
     let uh = IgaFn::new(&msh, ui);
 
     let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
