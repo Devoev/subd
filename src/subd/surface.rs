@@ -108,10 +108,16 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 
 impl<T: RealField + Copy + ToPrimitive + Sum> QuadMesh<T> {
 
+    /// Numerically integrates the per-patch pullback functions `f_k: (0,1)² ⟶ ℝ` over this surface
+    /// using `num_quad` Gaussian quadrature points per parametric direction.
+    pub fn integrate_pullback(&self, fk: impl Fn(&Patch<T>, T, T) -> T + Clone, num_quad: usize) -> T {
+        self.patches().map(|patch| patch.integrate_pullback(|u, v| fk(&patch, u, v), num_quad)).sum()
+    }
+
     /// Numerically integrates the given function `f: S ⟶ ℝ` over this surface
     /// using `num_quad` Gaussian quadrature points per parametric direction per patch.
     pub fn integrate(&self, f: impl Fn(Point2<T>) -> T + Clone, num_quad: usize) -> T {
-        self.patches().map(|patch| patch.integrate(f.clone(), num_quad)).sum()
+        self.integrate_pullback(|patch, u, v| f(patch.eval(u, v)), num_quad)
     }
 
     /// Numerically calculates the area of this surface using Gaussian quadrature.
