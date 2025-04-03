@@ -22,11 +22,22 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
         IgaFn { coeffs, msh }
     }
 
-    /// Constructs a new [`IgaFn`] by interpolation of the given function `f`.
+    /// Constructs a new [`IgaFn`] by interpolation of the given function `f: Ω ⟶ ℝ`.
     /// The coefficients are calculated by point-wise evaluation at the nodes of the given `msh`.
     pub fn from_fn(msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T) -> IgaFn<T> {
         let coeffs = DVector::from_iterator(msh.num_nodes(), msh.nodes.iter().map(|&p| f(p)));
         IgaFn { coeffs, msh }
+    }
+
+    /// Constructs a new [`IgaFn`] by interpolation of the given boundary function `g: ∂Ω ⟶ ℝ`.
+    /// The coefficients are calculated by point-wise evaluation at the boundary nodes of the given `msh`.
+    pub fn from_bnd_fn(msh: &QuadMesh<T>, g: impl Fn(Point2<T>) -> T) -> IgaFn<T> {
+        let nodes_bnd = msh.nodes.iter()
+            .enumerate()
+            .filter_map(|(i, node)| msh.is_boundary_node(i).then_some(node));
+        
+        let coeffs = nodes_bnd.map(|&p| g(p)).collect_vec();
+        IgaFn { coeffs: DVector::from_vec(coeffs), msh }
     }
 
     /// Evaluates the pullback `f(phi)` at the parametric point `(u,v)`,

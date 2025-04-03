@@ -102,7 +102,7 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 
         // Check the type of patch
         let n = msh.valence(start);
-        if !msh.is_boundary(center) {
+        if !msh.is_boundary_face(center) {
             if n == 4 {
                 Patch::Regular { msh, faces: faces_sorted, center }
             } else {

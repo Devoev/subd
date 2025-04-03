@@ -1,3 +1,4 @@
+use std::iter::Filter;
 use crate::subd::basis::eval_regular;
 use crate::subd::edge::sort_edge;
 use crate::subd::face::{edges_of_face, is_adjacent};
@@ -6,7 +7,7 @@ use itertools::Itertools;
 use nalgebra::{
     Point2, RealField, SMatrix, SVector, Vector2,
 };
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Range};
 
 pub type Node = usize;
 pub type Edge = [Node; 2];
@@ -102,10 +103,21 @@ impl<T: RealField + Copy> QuadMesh<T> {
     }
 
     /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
-    pub fn is_boundary(&self, face: Face) -> bool {
+    pub fn is_boundary_face(&self, face: Face) -> bool {
         self.adjacent_faces(face).count() < 4
     }
 
+    /// Returns whether the given `node` is a boundary node, 
+    /// i.e. all faces containing the node are boundary faces.
+    pub fn is_boundary_node(&self, node: Node) -> bool {
+        self.faces_of_node(node).all(|(_, &f)| self.is_boundary_face(f))
+    }
+    
+    /// Returns an iterator over the indices of all boundary nodes in this mesh.
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = Node> + '_ {
+        (0..self.num_nodes()).filter(|&n| self.is_boundary_node(n))
+    }
+    
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
     pub fn boundary_nodes_of_face(&self, face: Face) -> Vec<Node> {
@@ -161,7 +173,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
     /// Finds the patch of the regular or irregular `face`.
     pub fn find_patch(&self, face: Face) -> Patch<T> {
         // todo: describe how the starting node is selected or change
-        let start = if self.is_boundary(face) {
+        let start = if self.is_boundary_face(face) {
             // Get the irregular (=boundary) node, such that the preceding node is regular
             face.into_iter().enumerate()
                 .find_map(|(idx, node)| {
