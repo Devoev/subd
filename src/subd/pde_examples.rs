@@ -31,15 +31,20 @@ pub fn pde_square() {
     let mut msh = MSH_SQUARE.clone();
     msh.lin_subd();
     msh.lin_subd();
+    msh.lin_subd();
 
     // Define rhs function
-    let f = |p: Point2<f64>| p.x * p.y;
+    let f = |p: Point2<f64>| (p.x * p.y * 10.0).sin();
     let fh = IgaFn::from_fn(&msh, f);
 
     // Build load vector and stiffness matrix
     let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
     let aij = iga::op_gradu_gradv(&msh, num_quad);
+
+    // Check matrix properties
+    assert!((aij.clone() - aij.transpose()).norm() < 1e-10, "Matrix is not symmetric"); // check symmetry
+    assert!(aij.eigenvalues().unwrap().iter().all(|&ev| ev > 1e-8), "Matrix is not spd"); // check spd
 
     // Plot rhs
     let num_plot = 4;
