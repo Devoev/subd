@@ -17,17 +17,17 @@ type Coords = Vec<Point2<f64>>;
 type Faces = Vec<Face>;
 
 /// Rectangle coordinates.
-static COORDS_QUAD: LazyLock<Coords> = LazyLock::new(|| {
+pub static COORDS_QUAD: LazyLock<Coords> = LazyLock::new(|| {
     vec![point![0.0, 0.0], point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]]
 });
 
 /// Rectangle faces.
-static FACES_QUAD: LazyLock<Faces> = LazyLock::new(|| {
+pub static FACES_QUAD: LazyLock<Faces> = LazyLock::new(|| {
     vec![[0, 1, 2, 3]]
 });
 
 /// Fichera coordinates.
-static COORDS_FICHERA: LazyLock<Coords> = LazyLock::new(|| {
+pub static COORDS_FICHERA: LazyLock<Coords> = LazyLock::new(|| {
     vec![
         point![0.0, 0.0], point![0.0, 0.5], point![0.0, 1.0],
         point![0.5, 0.0], point![0.5, 0.5], point![0.5, 1.0],
@@ -36,12 +36,12 @@ static COORDS_FICHERA: LazyLock<Coords> = LazyLock::new(|| {
 });
 
 /// Fichera faces.
-static FACES_FICHERA: LazyLock<Faces> = LazyLock::new(|| {
+pub static FACES_FICHERA: LazyLock<Faces> = LazyLock::new(|| {
     vec![[0, 1, 4, 3], [1, 2, 5, 4], [3, 4, 7, 6]]
 });
 
 /// Star coordinates.
-static COORDS_STAR: LazyLock<Coords> = LazyLock::new(|| {
+pub static COORDS_STAR: LazyLock<Coords> = LazyLock::new(|| {
     vec![
         point![0.0, 0.0],
         point![2.0, -1.0],
@@ -58,7 +58,7 @@ static COORDS_STAR: LazyLock<Coords> = LazyLock::new(|| {
 });
 
 /// Star faces.
-static FACES_STAR: LazyLock<Faces> = LazyLock::new(|| {
+pub static FACES_STAR: LazyLock<Faces> = LazyLock::new(|| {
     vec![
         [0, 1, 2, 3],
         [0, 3, 4, 5],
@@ -69,7 +69,7 @@ static FACES_STAR: LazyLock<Faces> = LazyLock::new(|| {
 });
 
 /// Pentagon coordinates.
-static COORDS_PENTAGON: LazyLock<Coords> = LazyLock::new(|| {
+pub static COORDS_PENTAGON: LazyLock<Coords> = LazyLock::new(|| {
     let r = 1;
     let n = 5;
     let phi = 2.0*PI / n as f64;
@@ -89,7 +89,7 @@ static COORDS_PENTAGON: LazyLock<Coords> = LazyLock::new(|| {
 });
 
 /// Pentagon faces.
-static FACES_PENTAGON: LazyLock<Faces> = LazyLock::new(|| {
+pub static FACES_PENTAGON: LazyLock<Faces> = LazyLock::new(|| {
     vec![
         [0, 10, 1, 2],
         [0, 2, 3, 4],
@@ -380,30 +380,4 @@ fn iga_fn() {
     let fh_plot = plot::plot_patch_fn_parametric(fh_eval, num);
     // f_plot.show_html("out/iga_f.html");
     // fh_plot.show_html("out/iga_fh.html");
-}
-
-#[test]
-pub fn iga_matrices() {
-    // Refine mesh
-    let mut msh = MSH.clone();
-    msh.lin_subd();
-    msh.lin_subd();
-
-    // Define rhs function
-    let f = |p: Point2<f64>| p.x * p.y;
-    let fh = IgaFn::from_fn(&msh, f);
-
-    // Build load vector and stiffness matrix
-    let num_quad = 2;
-    let fi = iga::op_f_v(&msh, f, num_quad);
-    let aij = iga::op_gradu_gradv(&msh, num_quad);
-
-    let num_plot = 4;
-    let f_plot = plot::plot_surf_fn(&msh, f, num_plot);
-    let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
-    f_plot.show_html("out/f_plot");
-    fh_plot.show_html("out/fh_plot");
-
-    println!("{fi}");
-    println!("{aij}");
 }

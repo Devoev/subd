@@ -1,4 +1,4 @@
-pub mod example;
+pub mod examples;
 mod edge;
 mod face;
 mod mesh;
@@ -9,3 +9,4 @@ mod catmull_clark;
 mod basis;
 mod surface;
 mod iga;
+mod pde_examples;
