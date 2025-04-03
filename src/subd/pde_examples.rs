@@ -64,14 +64,14 @@ pub fn dr_neu_square() {
     // Plot rhs
     let num_plot = 4;
     let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
-    // fh_plot.show_html("out/fh_plot");
+    // fh_plot.html.show_html("out/fh_plot.html");
 
     // Solve system
     let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
     let uh = IgaFn::new(&msh, ui);
 
     let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
-    // uh_plot.show_html("out/uh_plot");
+    // uh_plot.html.show_html("out/uh_plot.html");
 
     // Calculate error
     let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
@@ -108,14 +108,14 @@ pub fn dr_neu_pentagon() {
     // Plot rhs
     let num_plot = 4;
     let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
-    fh_plot.show_html("out/fh_plot");
+    fh_plot.show_html("out/fh_plot.html");
 
     // Solve system
     let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
     let uh = IgaFn::new(&msh, ui);
 
     let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
-    uh_plot.show_html("out/uh_plot");
+    uh_plot.show_html("out/uh_plot.html");
 
     // todo: calculate l2 error
 }
