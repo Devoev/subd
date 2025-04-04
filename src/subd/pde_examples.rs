@@ -196,3 +196,49 @@ pub fn poisson_dir_pentagon() {
 
     println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
 }
+
+/// Test case for the projection problem
+/// ```text
+/// u = f   in Ω
+/// ```
+/// with `Ω` being the pentagon of radius `1`.
+#[test]
+pub fn projection_pentagon() {
+    // Refine mesh
+    let mut msh = MSH_PENTAGON.clone();
+    msh.lin_subd();
+    msh.lin_subd();
+    msh.lin_subd();
+
+    // Define solution
+    let u = |p: Point2<f64>| (p.x * PI).cos() * (p.y * PI).cos();
+
+    // Define rhs function
+    let f = u;
+    let fh = IgaFn::from_fn(&msh, f);
+
+    // Plot rhs
+    let num_plot = 4;
+    let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
+    fh_plot.show_html("out/fh_plot.html");
+
+    // Build load vector and stiffness matrix
+    let num_quad = 2;
+    let fi = iga::op_f_v(&msh, f, num_quad);
+    let aij = iga::op_u_v(&msh, num_quad);
+
+    // Solve system
+    let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+    let uh = IgaFn::new(&msh, ui);
+
+    let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
+    uh_plot.show_html("out/uh_plot.html");
+
+    // Calculate error
+    let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
+    let err_l2 = msh.integrate_pullback(err_fn, num_quad).sqrt();
+    let norm_l2 = msh.integrate(|p| u(p).powi(2), num_quad).sqrt();
+
+    dbg!(norm_l2, err_l2);
+    println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
+}
