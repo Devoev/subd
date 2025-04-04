@@ -141,18 +141,18 @@ pub fn poisson_dir_pentagon() {
     let f = |p: Point2<f64>| -u_dxx(p) - u_dyy(p);
     let fh = IgaFn::from_fn(&msh, f);
 
-    // Define boundary condition
-    let g = |_: Point2<f64>| 0.0;
-    let gh = IgaFn::from_bnd_fn(&msh, g);
-    let ui_bc = &gh.coeffs;
-
     // Plot rhs
     let num_plot = 4;
     let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
     fh_plot.show_html("out/fh_plot.html");
 
+    // Define boundary condition
+    let g = |_: Point2<f64>| 0.0;
+    let gh = IgaFn::from_bnd_fn(&msh, g);
+    let ui_bc = &gh.coeffs;
+
     // Build load vector and stiffness matrix
-    let num_quad = 3;
+    let num_quad = 2;
     let fi = iga::op_f_v(&msh, f, num_quad);
     let kij = iga::op_gradu_gradv(&msh, num_quad);
 
