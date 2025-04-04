@@ -97,7 +97,7 @@ pub fn poisson_dir_pentagon() {
     // Refine mesh
     let mut msh = MSH_PENTAGON.clone();
     msh.lin_subd();
-    msh.lin_subd();
+    // msh.lin_subd();
     // msh.lin_subd();
 
     // Calculate coefficients for solution
@@ -109,32 +109,29 @@ pub fn poisson_dir_pentagon() {
     let c = coords.iter().circular_tuple_windows().map(|(pi, pj)| pi.x * pj.y - pj.x * pi.y).collect_vec();
 
     // Define solution
-    let u = |p: Point2<f64>| {
-        izip!(a.iter(), b.iter(), c.iter()).map(|(ai, bi, ci)| ai*p.x + bi*p.y + ci).product::<f64>()
+    let eval_factor = |i: usize, x: f64, y: f64| a[i]*x + b[i]*y + c[i];
+    let eval_product = |k: usize, j: usize, x: f64, y: f64| {
+        (0..5).filter(|&i| i != k && i != j)
+            .map(|i| eval_factor(i, x, y))
+            .product::<f64>()
     };
-    // todo: fix derivatives
+
+    let u = |p: Point2<f64>| {
+        (0..5).map(|i| eval_factor(i, p.x, p.y)).product::<f64>()
+    };
+
     let u_dxx = |p: Point2<f64>| {
-        let mut res = 0.0;
-        for (k, j) in (0..5).cartesian_product(0..5) {
-            let mut tmp = a[k] * a[j];
-            for i in (0..5).filter(|&i| i != k && i != j) {
-                tmp *= a[i]*p.x + b[i]*p.y + c[i]
-            }
-            res += tmp;
-        }
-        res
+        (0..5).cartesian_product(0..5)
+            .filter(|(k, j)| k != j)
+            .map(|(k, j)| eval_product(k, j, p.x, p.y) * a[k] * a[j])
+            .sum::<f64>()
     };
 
     let u_dyy = |p: Point2<f64>| {
-        let mut res = 0.0;
-        for (k, j) in (0..5).cartesian_product(0..5) {
-            let mut tmp = b[k] * b[j];
-            for i in (0..5).filter(|&i| i != k && i != j) {
-                tmp *= a[i]*p.x + b[i]*p.y + c[i]
-            }
-            res += tmp;
-        }
-        res
+        (0..5).cartesian_product(0..5)
+            .filter(|(k, j)| k != j)
+            .map(|(k, j)| eval_product(k, j, p.x, p.y) * b[k] * b[j])
+            .sum::<f64>()
     };
 
     // Define rhs function
@@ -144,7 +141,7 @@ pub fn poisson_dir_pentagon() {
     // Plot rhs
     let num_plot = 4;
     let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
-    fh_plot.show_html("out/fh_plot.html");
+    // fh_plot.show_html("out/fh_plot.html");
 
     // Define boundary condition
     let g = |_: Point2<f64>| 0.0;
@@ -187,7 +184,7 @@ pub fn poisson_dir_pentagon() {
     let uh = IgaFn::new(&msh, ui);
 
     let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
-    uh_plot.show_html("out/uh_plot.html");
+    // uh_plot.show_html("out/uh_plot.html");
 
     // Calculate error
     let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
