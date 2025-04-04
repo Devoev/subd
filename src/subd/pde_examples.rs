@@ -1,7 +1,8 @@
 use std::collections::{BTreeSet, HashSet};
 use std::f64::consts::PI;
+use std::iter::zip;
 use std::sync::LazyLock;
-use itertools::{iproduct, Itertools};
+use itertools::{iproduct, izip, Itertools};
 use nalgebra::{DMatrix, DVector, Point2};
 use num_traits::Pow;
 use crate::subd::{iga, plot};
@@ -97,18 +98,52 @@ pub fn poisson_dir_pentagon() {
     let mut msh = MSH_PENTAGON.clone();
     msh.lin_subd();
     msh.lin_subd();
+    // msh.lin_subd();
+
+    // Calculate coefficients for solution
+    let coords = COORDS_PENTAGON.iter().skip(1).step_by(2).collect_vec();
+    let xs = coords.iter().map(|p| p.x).collect_vec();
+    let ys = coords.iter().map(|p| p.y).collect_vec();
+    let a = ys.iter().circular_tuple_windows().map(|(yi, yj)| yi - yj).collect_vec();
+    let b = xs.iter().circular_tuple_windows().map(|(xi, xj)| xi - xj).collect_vec();
+    let c = coords.iter().circular_tuple_windows().map(|(pi, pj)| pi.x * pj.y - pj.x * pi.y).collect_vec();
 
     // Define solution
-    // todo: define correct solution function
-    let u = |p: Point2<f64>| (p.x * PI).cos() * (p.y * PI).cos();
+    let u = |p: Point2<f64>| {
+        izip!(a.iter(), b.iter(), c.iter()).map(|(ai, bi, ci)| ai*p.x + bi*p.y + ci).product::<f64>()
+    };
+    // todo: fix derivatives
+    let u_dxx = |p: Point2<f64>| {
+        let mut res = 0.0;
+        for (k, j) in (0..5).cartesian_product(0..5) {
+            let mut tmp = a[k] * a[j];
+            for i in (0..5).filter(|&i| i != k && i != j) {
+                tmp *= a[i]*p.x + b[i]*p.y + c[i]
+            }
+            res += tmp;
+        }
+        res
+    };
+
+    let u_dyy = |p: Point2<f64>| {
+        let mut res = 0.0;
+        for (k, j) in (0..5).cartesian_product(0..5) {
+            let mut tmp = b[k] * b[j];
+            for i in (0..5).filter(|&i| i != k && i != j) {
+                tmp *= a[i]*p.x + b[i]*p.y + c[i]
+            }
+            res += tmp;
+        }
+        res
+    };
 
     // Define rhs function
-    let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
+    let f = |p: Point2<f64>| -u_dxx(p) - u_dyy(p);
     let fh = IgaFn::from_fn(&msh, f);
 
     // Define boundary condition
-    let g = |p: Point2<f64>| 0.0;
-    let gh = IgaFn::from_bnd_fn(&msh, u);
+    let g = |_: Point2<f64>| 0.0;
+    let gh = IgaFn::from_bnd_fn(&msh, g);
     let ui_bc = &gh.coeffs;
 
     // Plot rhs
@@ -117,7 +152,7 @@ pub fn poisson_dir_pentagon() {
     fh_plot.show_html("out/fh_plot.html");
 
     // Build load vector and stiffness matrix
-    let num_quad = 2;
+    let num_quad = 3;
     let fi = iga::op_f_v(&msh, f, num_quad);
     let kij = iga::op_gradu_gradv(&msh, num_quad);
 
@@ -154,5 +189,10 @@ pub fn poisson_dir_pentagon() {
     let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
     uh_plot.show_html("out/uh_plot.html");
 
-    // todo: calculate l2 error
+    // Calculate error
+    let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
+    let err_l2 = msh.integrate_pullback(err_fn, num_quad).sqrt();
+    let norm_l2 = msh.integrate(|p| u(p).powi(2), num_quad).sqrt();
+
+    println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.3}%", err_l2 / norm_l2 * 100.0);
 }

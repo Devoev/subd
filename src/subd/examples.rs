@@ -1,14 +1,14 @@
-use std::f64::consts::PI;
 use crate::subd::catmull_clark::{S11, S12, S21, S22};
+use crate::subd::iga::IgaFn;
 use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
-use crate::subd::{basis, catmull_clark, iga, plot};
-use nalgebra::{center, point, vector, Matrix, Point2, SMatrix};
-use std::sync::LazyLock;
+use crate::subd::patch::Patch;
+use crate::subd::{basis, catmull_clark, plot};
 use iter_num_tools::lin_space;
 use itertools::Itertools;
+use nalgebra::{center, point, Matrix, Point2, SMatrix};
 use plotly::Plot;
-use crate::subd::iga::IgaFn;
-use crate::subd::patch::Patch;
+use std::f64::consts::PI;
+use std::sync::LazyLock;
 
 /// Vector of coordinates in 2D.
 type Coords = Vec<Point2<f64>>;
