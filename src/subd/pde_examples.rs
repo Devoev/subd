@@ -115,24 +115,19 @@ pub fn poisson_dir_pentagon() {
             .map(|i| eval_factor(i, x, y))
             .product::<f64>()
     };
+    let eval_deriv = |coeffs: &Vec<f64>, x: f64, y: f64| {
+        (0..5).cartesian_product(0..5)
+            .filter(|(k, j)| k != j)
+            .map(|(k, j)| eval_product(k, j, x, y) * coeffs[k] * coeffs[j])
+            .sum::<f64>()
+    };
 
     let u = |p: Point2<f64>| {
         (0..5).map(|i| eval_factor(i, p.x, p.y)).product::<f64>()
     };
 
-    let u_dxx = |p: Point2<f64>| {
-        (0..5).cartesian_product(0..5)
-            .filter(|(k, j)| k != j)
-            .map(|(k, j)| eval_product(k, j, p.x, p.y) * a[k] * a[j])
-            .sum::<f64>()
-    };
-
-    let u_dyy = |p: Point2<f64>| {
-        (0..5).cartesian_product(0..5)
-            .filter(|(k, j)| k != j)
-            .map(|(k, j)| eval_product(k, j, p.x, p.y) * b[k] * b[j])
-            .sum::<f64>()
-    };
+    let u_dxx = |p: Point2<f64>| eval_deriv(&a, p.x, p.y);
+    let u_dyy = |p: Point2<f64>| eval_deriv(&b, p.x, p.y);
 
     // Define rhs function
     let f = |p: Point2<f64>| -u_dxx(p) - u_dyy(p);
