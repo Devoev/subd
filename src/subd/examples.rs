@@ -194,7 +194,7 @@ pub mod test_ex {
         msh.lin_subd();
         msh.lin_subd();
 
-        let face_id = 2;
+        let face_id = 67;
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
 

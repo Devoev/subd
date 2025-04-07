@@ -99,7 +99,7 @@ mod pde_test {
         // Refine mesh
         let mut msh = MSH_PENTAGON.clone();
         msh.lin_subd();
-        // msh.lin_subd();
+        msh.lin_subd();
         // msh.lin_subd();
 
         // Calculate coefficients for solution
@@ -181,7 +181,7 @@ mod pde_test {
         let uh = IgaFn::new(&msh, ui);
 
         let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
-        // uh_plot.show_html("out/uh_plot.html");
+        uh_plot.show_html("out/uh_plot.html");
 
         // Calculate error
         let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
