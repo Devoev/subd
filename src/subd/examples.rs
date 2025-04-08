@@ -1,12 +1,12 @@
 
 #[cfg(test)]
 pub mod test_ex {
-
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
     use crate::subd::iga::IgaFn;
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
     use crate::subd::{basis, catmull_clark, plot};
+    use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{center, point, Matrix, Point2, SMatrix};
@@ -343,6 +343,22 @@ pub mod test_ex {
         // Calculate area of surface
         let area_surf = msh.calc_area();
         println!("Total area of surface = {area_surf:.3}");
+
+        // Precomputation of basis functions
+        let n = 2;
+        let quad = GaussLegendre::new(n).unwrap();
+        let nodes = quad.nodes()
+            .map(|x| 0.5 * (x + 1.0));
+        let x = quad.weights();
+
+        let uv_coords = nodes.clone().cartesian_product(nodes).collect_vec();
+        let b_per_patch = msh.patches()
+            .map(|patch| {
+                uv_coords.iter().map(|&(u, v)| patch.eval_basis(u, v)).collect_vec()
+            })
+            .collect_vec();
+
+        println!("{b_per_patch:?}")
     }
 
     #[test]
