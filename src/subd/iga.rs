@@ -77,7 +77,6 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(
 /// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
 pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
     let mut aij = CooMatrix::<T>::new(msh.num_nodes(), msh.num_nodes());
-    // todo: use sparse matrix for aij
 
     for patch in msh.patches() {
         let aij_local = op_gradu_gradv_local(&patch, num_quad);
@@ -119,7 +118,6 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num
 /// Builds the discrete IGA operator `∫ uv dx` using `num_quad` quadrature points.
 pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
     let mut bij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
-    // todo: use sparse matrix for bij
 
     for patch in msh.patches() {
         let bij_local = op_u_v_local(&patch, num_quad);
