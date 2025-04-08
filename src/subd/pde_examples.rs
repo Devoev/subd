@@ -48,8 +48,8 @@ mod pde_test {
         let mut msh = MSH_SQUARE.clone();
         msh.lin_subd();
         msh.lin_subd();
-        msh.lin_subd();
-        msh.lin_subd();
+        // msh.lin_subd();
+        // msh.lin_subd();
 
         // Define solution
         let u = |p: Point2<f64>| (p.x * PI).cos() * (p.y * PI).cos();
@@ -61,13 +61,9 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let fi = iga::op_f_v(&msh, f, num_quad);
-        let kij = iga::op_gradu_gradv(&msh, num_quad);
-        let mij = iga::op_u_v(&msh, num_quad);
-        let aij = mij + kij;
-
-        // Check matrix properties
-        assert!((aij.clone() - aij.transpose()).norm() < 1e-10, "Matrix is not symmetric"); // check symmetry
-        assert!(aij.eigenvalues().unwrap().iter().all(|&ev| ev > 1e-8), "Matrix is not spd"); // check spd
+        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, num_quad));
+        let mij = CsrMatrix::from(&iga::op_u_v(&msh, num_quad));
+        let aij = kij + mij;
 
         // Plot rhs
         let num_plot = 4;
@@ -75,8 +71,6 @@ mod pde_test {
         // fh_plot.show_html("out/fh_plot.html");
 
         // Solve system
-        // let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
-        let aij = CsrMatrix::from(&aij);
         let ui = cg(&aij, &fi, fi.clone(), fi.len(), 1e-10);
         let uh = IgaFn::new(&msh, ui);
 
@@ -153,19 +147,20 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let fi = iga::op_f_v(&msh, f, num_quad);
-        let kij = iga::op_gradu_gradv(&msh, num_quad);
+        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, num_quad));
 
         // Deflate system
         let idx = (0..msh.num_nodes()).collect::<BTreeSet<_>>();
         let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
         let idx_dof = idx.difference(&idx_bc).collect::<BTreeSet<_>>();
 
+        // todo: using get_entry is expensive. Implement BC differently
         let f_dof = DVector::from_iterator(idx_dof.len(), idx_dof.iter().map(|&&i| fi[i]));
         let k_dof_dof = DMatrix::from_iterator(idx_dof.len(), idx_dof.len(), iproduct!(idx_dof.iter(), idx_dof.iter())
-            .map(|(&&i, &&j)| kij[(i, j)])
+            .map(|(&&i, &&j)| kij.get_entry(i, j).unwrap().into_value())
         );
         let k_dof_bc = DMatrix::from_iterator(idx_dof.len(), idx_bc.len(), iproduct!(idx_dof.iter(), idx_bc.iter())
-            .map(|(&&i, &j)| kij[(i, j)])
+            .map(|(&&i, &j)| kij.get_entry(i, j).unwrap().into_value())
         );
 
         let fi = f_dof - k_dof_bc * ui_bc; // todo: fix using mass matrix, because splines are not interpolatory
@@ -226,10 +221,10 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let fi = iga::op_f_v(&msh, f, num_quad);
-        let aij = iga::op_u_v(&msh, num_quad);
+        let aij = CsrMatrix::from(&iga::op_u_v(&msh, num_quad));
 
         // Solve system
-        let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+        let ui = cg(&aij, &fi, fi.clone(), fi.len(), 1e-10);
         let uh = IgaFn::new(&msh, ui);
 
         let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);

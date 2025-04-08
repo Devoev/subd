@@ -4,6 +4,7 @@ use itertools::Itertools;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
 use nalgebra::{DMatrix, DVector, Point2, RealField};
+use nalgebra_sparse::CooMatrix;
 use num_traits::ToPrimitive;
 
 /// A discrete scalar potential (i.e. a `0`-form) in IGA, represented by coefficients.
@@ -74,15 +75,15 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(
 }
 
 /// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
-pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> DMatrix<T> {
-    let mut aij = DMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
+    let mut aij = CooMatrix::<T>::new(msh.num_nodes(), msh.num_nodes());
     // todo: use sparse matrix for aij
 
     for patch in msh.patches() {
         let aij_local = op_gradu_gradv_local(&patch, num_quad);
         let indices = patch.nodes().into_iter().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
-            aij[(i, j)] += aij_local[(i_local,j_local)];
+            aij.push(i, j, aij_local[(i_local, j_local)]);
         }
     }
 
@@ -116,15 +117,15 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num
 }
 
 /// Builds the discrete IGA operator `∫ uv dx` using `num_quad` quadrature points.
-pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> DMatrix<T> {
-    let mut bij = DMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
+    let mut bij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
     // todo: use sparse matrix for bij
 
     for patch in msh.patches() {
         let bij_local = op_u_v_local(&patch, num_quad);
         let indices = patch.nodes().into_iter().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
-            bij[(i, j)] += bij_local[(i_local, j_local)];
+            bij.push(i, j, bij_local[(i_local, j_local)]);
         }
     }
 
