@@ -13,6 +13,7 @@ pub mod test_ex {
     use plotly::Plot;
     use std::f64::consts::PI;
     use std::sync::LazyLock;
+    use crate::subd::quad::GaussLegendrePatch;
 
     /// Vector of coordinates in 2D.
     type Coords = Vec<Point2<f64>>;
@@ -346,19 +347,20 @@ pub mod test_ex {
 
         // Precomputation of basis functions
         let n = 2;
-        let quad = GaussLegendre::new(n).unwrap();
-        let nodes = quad.nodes()
-            .map(|x| 0.5 * (x + 1.0));
-        let x = quad.weights();
-
-        let uv_coords = nodes.clone().cartesian_product(nodes).collect_vec();
+        let quad = GaussLegendrePatch::new(n).unwrap();
+        let nodes = quad.nodes();
         let b_per_patch = msh.patches()
             .map(|patch| {
-                uv_coords.iter().map(|&(u, v)| patch.eval_basis(u, v)).collect_vec()
+                nodes.clone().map(|(u, v)| patch.eval_basis(u, v)).collect_vec()
             })
             .collect_vec();
 
-        println!("{b_per_patch:?}")
+        for (i, patch) in msh.patches().enumerate() {
+            let b = &b_per_patch[i];
+            let b1 = &b.iter().map(|bi| bi[0]).collect_vec();
+            let val = quad.integrate(b1.clone());
+            println!("Integral of first basis function over patch = {val}");
+        }
     }
 
     #[test]

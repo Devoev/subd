@@ -26,37 +26,24 @@ impl GaussLegendrePatch {
     }
 
     const SCALE_FACTOR: f64 = 0.5;
-    
+
     /// Returns an iterator over the weights of this quadrature rule, in lexicographical order.
     pub fn weights(&self) -> impl Iterator<Item = (Weight, Weight)> + Clone + '_ {
         let weights = self.node_weight_pairs.iter().map(|&(_, w)| w);
         weights.clone().cartesian_product(weights)
     }
-    
+
     /// Returns an iterator over the nodes of this quadrature rule, in lexicographical order.
     pub fn nodes(&self) -> impl Iterator<Item = (Node, Node)> + Clone + '_ {
         let nodes = self.node_weight_pairs.iter().map(|&(x, _)| x);
+        // todo: scale nodes using transform_uv
         nodes.clone().cartesian_product(nodes)
     }
 
-    /// Perform quadrature integration of given integrand from `a` to `b`.
-    pub fn integrate<F>(&self, integrand: F) -> f64
-    where
-        F: Fn(usize, f64) -> f64,
-    {
-        let result: f64 = self
-            .node_weight_pairs
-            .iter()
-            .enumerate()
-            .map(|(i, &(x, w))| integrand(i, Self::transform_uv(x)) * w)
-            .sum();
-        Self::SCALE_FACTOR * result
-    }
-    
     /// Numerically calculates the integral of `f: (0,1)² ⟶ ℝ`.
-    /// 
+    ///
     /// The values of `f` evaluated at the nodes are given as a vector.
-    pub fn integrate_indexed(&self, f: Vec<f64>) -> f64 {
+    pub fn integrate(&self, f: Vec<f64>) -> f64 {
         zip(f, self.weights())
             .map(|(fij, (wi, wj))| fij * wi * wj)
             .sum::<f64>() / (Self::SCALE_FACTOR * Self::SCALE_FACTOR)
