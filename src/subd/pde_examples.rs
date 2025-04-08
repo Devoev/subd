@@ -6,7 +6,9 @@ mod pde_test {
     use std::sync::LazyLock;
     use itertools::{iproduct, Itertools};
     use nalgebra::{DMatrix, DVector, Point2};
+    use nalgebra_sparse::CsrMatrix;
     use crate::subd::{iga, plot};
+    use crate::subd::cg::cg;
     use crate::subd::examples::test_ex::{COORDS_PENTAGON, COORDS_QUAD, FACES_PENTAGON, FACES_QUAD};
     use crate::subd::iga::IgaFn;
     use crate::subd::mesh::{LogicalMesh, QuadMesh};
@@ -47,6 +49,7 @@ mod pde_test {
         msh.lin_subd();
         msh.lin_subd();
         msh.lin_subd();
+        msh.lin_subd();
 
         // Define solution
         let u = |p: Point2<f64>| (p.x * PI).cos() * (p.y * PI).cos();
@@ -69,14 +72,16 @@ mod pde_test {
         // Plot rhs
         let num_plot = 4;
         let fh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| fh.eval_pullback(patch, u, v), num_plot);
-        fh_plot.show_html("out/fh_plot.html");
+        // fh_plot.show_html("out/fh_plot.html");
 
         // Solve system
-        let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+        // let ui = aij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+        let aij = CsrMatrix::from(&aij);
+        let ui = cg(&aij, &fi, fi.clone(), fi.len(), 1e-10);
         let uh = IgaFn::new(&msh, ui);
 
         let uh_plot = plot::plot_surf_fn_pullback(&msh, |patch, u, v| uh.eval_pullback(patch, u, v), num_plot);
-        uh_plot.show_html("out/uh_plot.html");
+        // uh_plot.show_html("out/uh_plot.html");
 
         // Calculate error
         let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
@@ -100,7 +105,7 @@ mod pde_test {
         let mut msh = MSH_PENTAGON.clone();
         msh.lin_subd();
         msh.lin_subd();
-        // msh.lin_subd();
+        msh.lin_subd();
 
         // Calculate coefficients for solution
         let coords = COORDS_PENTAGON.iter().skip(1).step_by(2).collect_vec();
@@ -168,7 +173,9 @@ mod pde_test {
 
         // Solve system
         let mut ui = DVector::zeros(msh.num_nodes());
-        let ui_dof = kij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
+        let kij = CsrMatrix::from(&kij);
+        let ui_dof = cg(&kij, &fi, fi.clone(), fi.len(), 1e-10);
+        // let ui_dof = kij.lu().solve(&fi).expect("Could not solve linear system. Problem is not well-posed or system is ill-conditioned.");
 
 
         for (i_local, &&i) in idx_dof.iter().enumerate() {
