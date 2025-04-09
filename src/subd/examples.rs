@@ -10,9 +10,10 @@ pub mod test_ex {
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{center, point, Matrix, Point2, SMatrix};
-    use plotly::Plot;
+    use plotly::{Plot, Scatter};
     use std::f64::consts::PI;
     use std::sync::LazyLock;
+    use plotly::common::{Line, Marker, Pattern, PatternShape};
     use crate::subd::quad::GaussLegendrePatch;
 
     /// Vector of coordinates in 2D.
@@ -250,6 +251,41 @@ pub mod test_ex {
         let v = 0.24;
         let sub_patches_plot = plot::plot_sub_patch_hierarchy(u, v);
         sub_patches_plot.show_html("out/sub_patches.html");
+    }
+
+    #[test]
+    fn patch_knots() {
+        // Refine mesh
+        let mut msh = MSH.clone();
+        msh.lin_subd();
+        msh.lin_subd();
+
+        let num_plot = 20;
+        let min = 1e-5;
+        let knots = lin_space(min..=1.0, 4);
+        let knot_lines = knots.map(|u| (u, lin_space(min..=1.0, num_plot)));
+
+        let mut plot = Plot::new();
+        let face_indices = [0, 16, 32, 48, 64, 1, 2, 3];
+        let patches = face_indices.map(|f| msh.find_patch(msh.faces[f]));
+
+        for patch in patches {
+            for (u, vs) in knot_lines.clone() {
+                let pos = vs.clone().map(|v| patch.eval(u, v)).collect_vec();
+                let xs = pos.iter().map(|p| p.x).collect_vec();
+                let ys = pos.iter().map(|p| p.y).collect_vec();
+                let u_line = Scatter::new(xs, ys);
+                plot.add_trace(u_line);
+
+                let pos = vs.map(|v| patch.eval(v, u)).collect_vec();
+                let xs = pos.iter().map(|p| p.x).collect_vec();
+                let ys = pos.iter().map(|p| p.y).collect_vec();
+                let v_line = Scatter::new(xs, ys);
+                plot.add_trace(v_line);
+            }
+        }
+
+        plot.show_html("out/patch_knots.html");
     }
 
     #[test]
