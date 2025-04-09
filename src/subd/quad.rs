@@ -35,8 +35,7 @@ impl GaussLegendrePatch {
 
     /// Returns an iterator over the nodes of this quadrature rule, in lexicographical order.
     pub fn nodes(&self) -> impl Iterator<Item = (Node, Node)> + Clone + '_ {
-        let nodes = self.node_weight_pairs.iter().map(|&(x, _)| x);
-        // todo: scale nodes using transform_uv
+        let nodes = self.node_weight_pairs.iter().map(|&(x, _)| Self::transform_uv(x));
         nodes.clone().cartesian_product(nodes)
     }
 
