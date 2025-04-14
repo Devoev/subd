@@ -2,14 +2,14 @@
 #[cfg(test)]
 pub mod test_ex {
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
-    use crate::subd::iga::IgaFn;
+    use crate::subd::iga::{op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
     use crate::subd::{basis, catmull_clark, plot};
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{center, point, Matrix, Point2, SMatrix};
+    use nalgebra::{center, point, DMatrix, Matrix, Point2, SMatrix};
     use plotly::{Plot, Scatter};
     use std::f64::consts::PI;
     use std::sync::LazyLock;
@@ -441,6 +441,17 @@ pub mod test_ex {
         let fh_plot = plot::plot_patch_fn_parametric(fh_eval, num);
         // f_plot.show_html("out/iga_f.html");
         // fh_plot.show_html("out/iga_fh.html");
+    }
+    
+    #[test]
+    fn iga_mats() {
+        // Refine mesh
+        let mut msh = MSH.clone();
+        msh.lin_subd();
+        // msh.lin_subd();
+        
+        let mij = op_u_v(&msh, 2);
+        println!("{:?}", (mij.ncols(), mij.nrows()));
     }
 
 }
