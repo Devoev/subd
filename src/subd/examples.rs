@@ -382,7 +382,7 @@ pub mod test_ex {
         println!("Total area of surface = {area_surf:.3}");
 
         // Precomputation of basis functions
-        let n = 2;
+        let n = 5;
         let quad = GaussLegendrePatch::new(n).unwrap();
         let nodes = quad.nodes();
         let b_per_patch = msh.patches()
@@ -391,12 +391,15 @@ pub mod test_ex {
             })
             .collect_vec();
 
-        for (i, patch) in msh.patches().enumerate() {
-            let b = &b_per_patch[i];
-            let b1 = &b.iter().map(|bi| bi[0]).collect_vec();
-            let val = quad.integrate(b1.clone());
-            println!("Integral of first basis function over patch = {val}");
-        }
+        println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})", 
+                 b_per_patch.len(), b_per_patch[0].len(), b_per_patch[0][0].len());
+        
+        // for (i, patch) in msh.patches().enumerate() {
+        //     let b = &b_per_patch[i];
+        //     let b1 = &b.iter().map(|bi| bi[0]).collect_vec();
+        //     let val = quad.integrate(b1.clone());
+        //     println!("Integral of first basis function over patch = {val}");
+        // }
     }
 
     #[test]
