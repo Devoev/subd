@@ -45,6 +45,6 @@ impl GaussLegendrePatch {
     pub fn integrate(&self, f: Vec<f64>) -> f64 {
         zip(f, self.weights())
             .map(|(fij, (wi, wj))| fij * wi * wj)
-            .sum::<f64>() / (Self::SCALE_FACTOR * Self::SCALE_FACTOR)
+            .sum::<f64>() * Self::SCALE_FACTOR * Self::SCALE_FACTOR
     }
 }
