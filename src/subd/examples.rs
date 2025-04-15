@@ -14,6 +14,7 @@ pub mod test_ex {
     use plotly::{Plot, Scatter};
     use std::f64::consts::PI;
     use std::sync::LazyLock;
+    use std::time::Instant;
 
     /// Vector of coordinates in 2D.
     type Coords = Vec<Point2<f64>>;
@@ -437,10 +438,15 @@ pub mod test_ex {
         // Refine mesh
         let mut msh = MSH.clone();
         msh.lin_subd();
+        msh.lin_subd();
         // msh.lin_subd();
-        
-        let mij = op_u_v(&msh, 2);
-        println!("{:?}", (mij.ncols(), mij.nrows()));
+
+        let start = Instant::now();
+        let b_eval = BasisEval::from(&msh, GaussLegendrePatch::new(2).unwrap());
+        let mij_fast = op_u_v(&msh, &b_eval);
+        let time_fast = start.elapsed();
+
+        println!("Building mass matrix of size {} took {:?}", mij_fast.nrows(), time_fast);
     }
 
 }

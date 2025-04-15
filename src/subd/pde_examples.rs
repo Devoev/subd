@@ -13,6 +13,8 @@ mod pde_test {
     use crate::subd::iga::IgaFn;
     use crate::subd::mesh::{LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
+    use crate::subd::precompute::BasisEval;
+    use crate::subd::quad::GaussLegendrePatch;
 
     /// Mesh for the regular square geometry.
     static MSH_SQUARE: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
@@ -60,9 +62,10 @@ mod pde_test {
 
         // Build load vector and stiffness matrix
         let num_quad = 2;
+        let basis_eval = BasisEval::from(&msh, GaussLegendrePatch::new(num_quad).unwrap());
         let fi = iga::op_f_v(&msh, f, num_quad);
         let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, num_quad));
-        let mij = CsrMatrix::from(&iga::op_u_v(&msh, num_quad));
+        let mij = CsrMatrix::from(&iga::op_u_v(&msh, &basis_eval));
         let aij = kij + mij;
 
         // Plot rhs
@@ -220,8 +223,9 @@ mod pde_test {
 
         // Build load vector and stiffness matrix
         let num_quad = 2;
+        let basis_eval = BasisEval::from(&msh, GaussLegendrePatch::new(num_quad).unwrap());
         let fi = iga::op_f_v(&msh, f, num_quad);
-        let aij = CsrMatrix::from(&iga::op_u_v(&msh, num_quad));
+        let aij = CsrMatrix::from(&iga::op_u_v(&msh, &basis_eval));
 
         // Solve system
         let ui = cg(&aij, &fi, fi.clone(), fi.len(), 1e-10);

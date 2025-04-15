@@ -1,11 +1,13 @@
 //! Functions for isogeometric analysis on subdivision surfaces.
 
+use std::iter::zip;
 use itertools::Itertools;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
 use nalgebra::{DMatrix, DVector, Point2, RealField};
 use nalgebra_sparse::CooMatrix;
 use num_traits::ToPrimitive;
+use crate::subd::precompute::{BasisEval, BasisEvalPatch};
 
 /// A discrete scalar potential (i.e. a `0`-form) in IGA, represented by coefficients.
 #[derive(Clone, Debug)]
@@ -115,12 +117,12 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num
     DMatrix::from_iterator(num_basis, num_basis, aij)
 }
 
-/// Builds the discrete IGA operator `∫ uv dx` using `num_quad` quadrature points.
-pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
+/// Builds the discrete IGA operator `∫ uv dx` using the precomputed basis functions `basis_eval`.
+pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, basis_eval: &BasisEval<T>) -> CooMatrix<T> {
     let mut bij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
 
-    for patch in msh.patches() {
-        let bij_local = op_u_v_local(&patch, num_quad);
+    for (patch, b_eval) in zip(msh.patches(), &basis_eval.patch_to_eval) {
+        let bij_local = op_u_v_local(&patch, b_eval);
         let indices = patch.nodes().into_iter().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             bij.push(i, j, bij_local[(i_local, j_local)]);
@@ -131,22 +133,20 @@ pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: us
 }
 
 /// Builds the local discrete IGA operator `∫ uv dx`
-/// of the given `patch` using `num_quad` quadrature points.
-fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T>  {
-    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
-    let uv_pullback = |u: T, v: T, i: usize, j: usize| {
+/// of the given `patch` using the precomputed basis functions `basis_eval`.
+fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, basis_eval: &BasisEvalPatch<T>) -> DMatrix<T>  {
+    let uv_pullback = |b: &DVector<T>, i: usize, j: usize| {
         // Eval basis
-        let b = patch.eval_basis(u, v);
         let bi = b[i];
         let bj = b[j];
-        
+
         // Calculate integrand
         bi * bj
     };
 
     let num_basis = patch.nodes().len();
     let bij = (0..num_basis).cartesian_product(0..num_basis)
-        .map(|(i, j)| patch.integrate_pullback(|u, v| uv_pullback(u, v, i, j), num_quad));
+        .map(|(i, j)| basis_eval.integrate_pullback(|b| uv_pullback(b, i, j)));
 
     DMatrix::from_iterator(num_basis, num_basis, bij)
 }

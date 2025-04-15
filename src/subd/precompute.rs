@@ -28,7 +28,7 @@ impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
 pub struct BasisEvalPatch<T: RealField> {
     /// Vector of evaluated basis functions stored in a [`DVector`] for each quadrature point.
     pub quad_to_basis: Vec<DVector<T>>,
-    
+
     /// Quadrature rule used for integration.
     quad: GaussLegendrePatch
 }
