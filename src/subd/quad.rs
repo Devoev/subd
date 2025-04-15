@@ -4,6 +4,9 @@ use std::iter::zip;
 use gauss_quad::{GaussLegendre, Node, Weight};
 use gauss_quad::legendre::GaussLegendreError;
 use itertools::Itertools;
+use nalgebra::{DVector, RealField};
+use num_traits::ToPrimitive;
+use crate::subd::precompute::{BasisEval, JacobianEval};
 
 /// Gauss legendre quadrature for a parametric patch `[0,1]²`.
 #[derive(Debug, Clone, PartialEq)]
@@ -46,5 +49,21 @@ impl GaussLegendrePatch {
         zip(f, self.weights())
             .map(|(fij, (wi, wj))| fij * wi * wj)
             .sum::<f64>() * Self::SCALE_FACTOR * Self::SCALE_FACTOR
+    }
+
+    /// Numerically integrates the function `f`, mapping from the evaluated basis functions, over a patch.
+    pub fn integrate_pullback_patch<T: RealField + Copy + ToPrimitive>(&self, f: impl Fn(&DVector<T>) -> T, basis_eval: &BasisEval<T>, jacobian_eval: &JacobianEval<T>) -> T {
+        // todo:
+        //  - change signature, especially for f. For example, use an IgaFn instead of f
+
+        let b = basis_eval.quad_to_basis.iter().map(f);
+        let det = jacobian_eval.abs_det();
+        let integrand = zip(b, det)
+            .map(|(bi, det_i)| (bi * det_i).to_f64().unwrap())
+            .collect();
+
+        T::from_f64(
+            self.integrate(integrand)
+        ).unwrap()
     }
 }

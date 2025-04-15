@@ -5,7 +5,7 @@ pub mod test_ex {
     use crate::subd::iga::{op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
-    use crate::subd::precompute::BasisEval;
+    use crate::subd::precompute::{BasisEval, JacobianEval};
     use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{basis, catmull_clark, plot};
     use iter_num_tools::lin_space;
@@ -384,18 +384,20 @@ pub mod test_ex {
         // Precomputation of basis functions
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
-        let basis_eval = BasisEval::from(&msh, quad);
+        let basis_eval = BasisEval::from(&patch, quad.clone());
+        let jacobian_eval = JacobianEval::from(&patch, quad.clone());
 
         println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})",
-                 basis_eval.patch_to_eval.len(),
-                 basis_eval.patch_to_eval[0].quad_to_basis.len(),
-                 basis_eval.patch_to_eval[0].quad_to_basis[0].len());
+                 msh.faces.len(),
+                 basis_eval.quad_to_basis.len(),
+                 basis_eval.quad_to_basis[0].len());
 
         // Comparison with quad crate
-        let int1 = basis_eval.patch_to_eval[face_id].integrate_pullback(|b| 1.0);
+        let int1 = quad.integrate_pullback_patch(|b| 1.0, &basis_eval, &jacobian_eval);
         let int2 = patch.integrate_pullback(|u, v| 1.0, num_quad);
         println!("Integral using precomputed patch quadrature = {int1}");
         println!("Integral using quadrature crate = {int2}");
+        println!("Relative integral error = {:.3}%", (int2 - int1).abs() / int2 * 100.0);
     }
 
     #[test]
@@ -448,8 +450,10 @@ pub mod test_ex {
         // msh.lin_subd();
 
         let start = Instant::now();
-        let b_eval = BasisEval::from(&msh, GaussLegendrePatch::new(2).unwrap());
-        let mij_fast = op_u_v(&msh, &b_eval);
+        let quad = GaussLegendrePatch::new(2).unwrap();
+        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
+        let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
+        let mij_fast = op_u_v(&msh, &b_eval, &j_eval);
         let time_fast = start.elapsed();
 
         println!("Building mass matrix of size {} took {:?}", mij_fast.nrows(), time_fast);
