@@ -382,14 +382,20 @@ pub mod test_ex {
         println!("Total area of surface = {area_surf:.3}");
 
         // Precomputation of basis functions
-        let n = 5;
-        let quad = GaussLegendrePatch::new(n).unwrap();
+        let num_quad = 2;
+        let quad = GaussLegendrePatch::new(num_quad).unwrap();
         let basis_eval = BasisEval::from(&msh, quad);
 
         println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})",
                  basis_eval.patch_to_eval.len(),
                  basis_eval.patch_to_eval[0].quad_to_basis.len(),
                  basis_eval.patch_to_eval[0].quad_to_basis[0].len());
+
+        // Comparison with quad crate
+        let int1 = basis_eval.patch_to_eval[face_id].integrate_pullback(|b| 1.0);
+        let int2 = patch.integrate_pullback(|u, v| 1.0, num_quad);
+        println!("Integral using precomputed patch quadrature = {int1}");
+        println!("Integral using quadrature crate = {int2}");
     }
 
     #[test]
