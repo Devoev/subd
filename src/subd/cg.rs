@@ -7,11 +7,10 @@ pub fn cg<T: RealField + Copy>(a: &CsrMatrix<T>, b: &DVector<T>, x0: DVector<T>,
     let mut r = b - a*&x;
     let mut p = r.clone();
 
-    for k in 0..k_max {
+    for _ in 0..k_max {
         // Test for convergence
         let rho = r.norm_squared();
         if rho < tol {
-            dbg!(rho, k, k_max);
             return x;
         }
 
