@@ -5,16 +5,15 @@ pub mod test_ex {
     use crate::subd::iga::{op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
+    use crate::subd::precompute::BasisEval;
+    use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{basis, catmull_clark, plot};
-    use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{center, point, DMatrix, Matrix, Point2, SMatrix};
+    use nalgebra::{center, point, Matrix, Point2, SMatrix};
     use plotly::{Plot, Scatter};
     use std::f64::consts::PI;
     use std::sync::LazyLock;
-    use plotly::common::{Line, Marker, Pattern, PatternShape};
-    use crate::subd::quad::GaussLegendrePatch;
 
     /// Vector of coordinates in 2D.
     type Coords = Vec<Point2<f64>>;
@@ -384,22 +383,12 @@ pub mod test_ex {
         // Precomputation of basis functions
         let n = 5;
         let quad = GaussLegendrePatch::new(n).unwrap();
-        let nodes = quad.nodes();
-        let b_per_patch = msh.patches()
-            .map(|patch| {
-                nodes.clone().map(|(u, v)| patch.eval_basis(u, v)).collect_vec()
-            })
-            .collect_vec();
+        let basis_eval = BasisEval::from(&msh, quad);
 
-        println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})", 
-                 b_per_patch.len(), b_per_patch[0].len(), b_per_patch[0][0].len());
-        
-        // for (i, patch) in msh.patches().enumerate() {
-        //     let b = &b_per_patch[i];
-        //     let b1 = &b.iter().map(|bi| bi[0]).collect_vec();
-        //     let val = quad.integrate(b1.clone());
-        //     println!("Integral of first basis function over patch = {val}");
-        // }
+        println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})",
+                 basis_eval.patch_to_eval.len(),
+                 basis_eval.patch_to_eval[0].quad_to_basis.len(),
+                 basis_eval.patch_to_eval[0].quad_to_basis[0].len());
     }
 
     #[test]

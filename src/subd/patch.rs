@@ -18,17 +18,6 @@ use std::iter::once;
 /// +---+---+---+
 /// ```
 #[derive(Debug, Clone)]
-// pub struct Patch<'a, T: RealField> {
-//     /// The mesh reference.
-//     msh: &'a QuadMesh<T>,
-//
-//     /// The faces of this mesh.
-//     pub faces: Vec<Face>,
-//
-//     /// The center face `f`.
-//     pub center: Face
-// }
-
 pub enum Patch<'a, T: RealField> {
     Regular {
         msh: &'a QuadMesh<T>,

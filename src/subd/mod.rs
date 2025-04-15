@@ -12,3 +12,4 @@ mod iga;
 mod pde_examples;
 mod cg;
 mod quad;
+mod precompute;

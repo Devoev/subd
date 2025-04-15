@@ -1,13 +1,11 @@
-use std::iter::Filter;
-use crate::subd::basis::eval_regular;
 use crate::subd::edge::sort_edge;
 use crate::subd::face::{edges_of_face, is_adjacent};
 use crate::subd::patch::{ExtendedPatch, Patch};
 use itertools::Itertools;
 use nalgebra::{
-    Point2, RealField, SMatrix, SVector, Vector2,
+    Point2, RealField, Vector2,
 };
-use std::ops::{Deref, DerefMut, Range};
+use std::ops::{Deref, DerefMut};
 
 pub type Node = usize;
 pub type Edge = [Node; 2];
