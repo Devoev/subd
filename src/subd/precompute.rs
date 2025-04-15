@@ -27,7 +27,10 @@ impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
 #[derive(Debug, Clone)]
 pub struct BasisEvalPatch<T: RealField> {
     /// Vector of evaluated basis functions stored in a [`DVector`] for each quadrature point.
-    pub quad_to_basis: Vec<DVector<T>>
+    pub quad_to_basis: Vec<DVector<T>>,
+    
+    /// Quadrature rule used for integration.
+    quad: GaussLegendrePatch
 }
 
 impl<T: RealField + Copy + ToPrimitive> BasisEvalPatch<T> {
@@ -42,7 +45,14 @@ impl<T: RealField + Copy + ToPrimitive> BasisEvalPatch<T> {
                     let v = T::from_f64(v).unwrap();
                     patch.eval_basis(u, v)
                 })
-                .collect()
+                .collect(),
+            quad
         }
+    }
+
+    /// Numerically integrates the function `f`, mapping from the evaluated basis functions, over a patch.
+    pub fn integrate_pullback(&self, f: impl Fn(&DVector<T>) -> T) -> T {
+        let bi = self.quad_to_basis.iter().map(|b| f(b).to_f64().unwrap()).collect();
+        T::from_f64(self.quad.integrate(bi)).unwrap()
     }
 }
