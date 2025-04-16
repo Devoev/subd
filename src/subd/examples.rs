@@ -456,7 +456,7 @@ pub mod test_ex {
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
         // let mat = op_u_v(&msh, &b_eval, &j_eval);
         // let mat = op_gradu_gradv(&msh, &grad_b_eval, &j_eval);
-        let mat = op_f_v(&msh, |p| 1.0, 2);
+        let mat = op_f_v(&msh, |p| 1.0, &b_eval, &j_eval);
         let time = start.elapsed();
 
         println!("Building matrix of size {} took {:?}", mat.nrows(), time);

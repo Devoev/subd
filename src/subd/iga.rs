@@ -55,10 +55,10 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
 }
 
 /// Builds the discrete IGA operator `∫ fv dx` using `num_quad` quadrature points.
-pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T + Clone, num_quad: usize) -> DVector<T> {
+pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T + Clone, basis_eval: &Vec<BasisEval<T>>, jacobian_eval: &Vec<JacobianEval<T>>) -> DVector<T> {
     let mut fi = DVector::<T>::zeros(msh.num_nodes());
-    for patch in msh.patches() {
-        let fi_local = op_f_v_local(&patch, f.clone(), num_quad);
+    for (patch, b_eval, j_eval) in izip!(msh.patches(), basis_eval, jacobian_eval) {
+        let fi_local = op_f_v_local(&patch, f.clone(), b_eval, j_eval);
         let indices = patch.nodes();
         for (idx_local, idx) in indices.into_iter().enumerate() {
             fi[idx] += fi_local[idx_local];
@@ -68,12 +68,23 @@ pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(P
 }
 
 /// Builds the local discrete IGA operator `∫ fv dx` of the given `patch` using `num_quad` quadrature points.
-fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, num_quad: usize) -> DVector<T> {
-    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
-    let fv_pullback = |u: T, v: T| patch.eval_basis(u, v) * f(patch.eval(u, v));
+fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, basis_eval: &BasisEval<T>, jacobian_eval: &JacobianEval<T>) -> DVector<T> {
+    let fv_pullback = |b: &DVector<T>, p: Point2<T>, j: usize| b[j] * f(p);
+    // todo: move point_eval to signature
+    let point_eval = jacobian_eval.quad.nodes()
+        .map(|(u, v)| patch.eval(T::from_f64(u).unwrap(), T::from_f64(v).unwrap()))
+        .collect_vec();
+
     let num_basis = patch.nodes().len();
-    let fi = (0..num_basis).map(|i| patch.integrate_pullback(|u, v| fv_pullback(u, v)[i], num_quad));
-    DVector::from_iterator(num_basis, fi)
+    let fj = (0..num_basis).map(|j| {
+        // Calculate integrand f * bj
+        let fj = zip(&basis_eval.quad_to_basis, &point_eval)
+            .map(|(b, &p)| fv_pullback(b, p, j)).collect();
+        
+        // Evaluate integral
+        jacobian_eval.quad.integrate_pullback(fj, jacobian_eval)
+    });
+    DVector::from_iterator(num_basis, fj)
 }
 
 /// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.

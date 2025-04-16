@@ -66,7 +66,7 @@ mod pde_test {
         let b_eval = BasisEval::from_mesh(&msh, quad.clone());
         let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, num_quad);
+        let fi = iga::op_f_v(&msh, f, &b_eval, &j_eval);
         let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &grad_b_eval, &j_eval));
         let mij = CsrMatrix::from(&iga::op_u_v(&msh, &b_eval, &j_eval));
         let aij = kij + mij;
@@ -153,9 +153,10 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
+        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
         let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, num_quad);
+        let fi = iga::op_f_v(&msh, f, &b_eval, &j_eval);
         let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &grad_b_eval, &j_eval));
 
         // Deflate system
@@ -232,7 +233,7 @@ mod pde_test {
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
         let b_eval = BasisEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, num_quad);
+        let fi = iga::op_f_v(&msh, f, &b_eval, &j_eval);
         let aij = CsrMatrix::from(&iga::op_u_v(&msh, &b_eval, &j_eval));
 
         // Solve system
