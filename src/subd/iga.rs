@@ -1,10 +1,11 @@
 //! Functions for isogeometric analysis on subdivision surfaces.
 
+use std::iter::zip;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
-use crate::subd::precompute::{BasisEval, JacobianEval};
+use crate::subd::precompute::{BasisEval, GradEval, JacobianEval};
 use itertools::{izip, Itertools};
-use nalgebra::{DMatrix, DVector, Point2, RealField};
+use nalgebra::{DMatrix, DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
 use nalgebra_sparse::CooMatrix;
 use num_traits::ToPrimitive;
 
@@ -76,59 +77,60 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(
 }
 
 /// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
-pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, num_quad: usize) -> CooMatrix<T> {
-    let mut aij = CooMatrix::<T>::new(msh.num_nodes(), msh.num_nodes());
+pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, grad_eval: &Vec<GradEval<T>>, jacobian_eval: &Vec<JacobianEval<T>>) -> CooMatrix<T> {
+    let mut kij = CooMatrix::<T>::new(msh.num_nodes(), msh.num_nodes());
 
-    for patch in msh.patches() {
-        let aij_local = op_gradu_gradv_local(&patch, num_quad);
+    for (patch, grad_b_eval, j_eval) in izip!(msh.patches(), grad_eval, jacobian_eval) {
+        let kij_local = op_gradu_gradv_local(&patch, grad_b_eval, j_eval);
         let indices = patch.nodes().into_iter().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
-            aij.push(i, j, aij_local[(i_local, j_local)]);
+            kij.push(i, j, kij_local[(i_local, j_local)]);
         }
     }
 
-    aij
+    kij
 }
 
 /// Builds the local discrete IGA operator `∫ grad u · grad v dx`
 /// of the given `patch` using `num_quad` quadrature points.
-fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, num_quad: usize) -> DMatrix<T> {
+fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, grad_eval: &GradEval<T>, jacobian_eval: &JacobianEval<T>) -> DMatrix<T> {
     // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
-    let gradu_gradv_pullback = |u: T, v: T, i: usize, j: usize| {
+    let gradu_gradv_pullback = |grad_b: &OMatrix<T, Dyn, U2>, g_inv: &Matrix2<T>, i: usize, j: usize| {
         // Get gradients
-        let grad_b = patch.eval_basis_grad(u, v);
         let grad_bi = grad_b.row(i);
         let grad_bj = grad_b.row(j);
-
-        // Calculate inverse gram matrix
-        let d_phi = patch.eval_jacobian(u, v);
-        let g = d_phi.transpose() * d_phi;
-        let g_inv = g.try_inverse().unwrap();
 
         // Calculate integrand
         (grad_bi * g_inv * grad_bj.transpose()).x
     };
 
     let num_basis = patch.nodes().len();
-    let aij = (0..num_basis).cartesian_product(0..num_basis)
-        .map(|(i, j)| patch.integrate_pullback(|u, v| gradu_gradv_pullback(u, v, i, j), num_quad));
+    let kij = (0..num_basis).cartesian_product(0..num_basis)
+        .map(|(i, j)| {
+            // Calculate integrand bi * bj
+            let fij = zip(&grad_eval.quad_to_grad, jacobian_eval.gram_inv())
+                .map(|(grad_b, g_inv)| gradu_gradv_pullback(grad_b, &g_inv, i, j)).collect();
 
-    DMatrix::from_iterator(num_basis, num_basis, aij)
+            // Evaluate integral
+            jacobian_eval.quad.integrate_pullback(fij, jacobian_eval)
+        });
+
+    DMatrix::from_iterator(num_basis, num_basis, kij)
 }
 
 /// Builds the discrete IGA operator `∫ uv dx` using the precomputed basis functions `basis_eval`.
 pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, basis_eval: &Vec<BasisEval<T>>, jacobian_eval: &Vec<JacobianEval<T>>) -> CooMatrix<T> {
-    let mut bij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
+    let mut mij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
 
     for (patch, b_eval, j_eval) in izip!(msh.patches(), basis_eval, jacobian_eval) {
-        let bij_local = op_u_v_local(&patch, b_eval, j_eval);
+        let mij_local = op_u_v_local(&patch, b_eval, j_eval);
         let indices = patch.nodes().into_iter().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
-            bij.push(i, j, bij_local[(i_local, j_local)]);
+            mij.push(i, j, mij_local[(i_local, j_local)]);
         }
     }
 
-    bij
+    mij
 }
 
 /// Builds the local discrete IGA operator `∫ uv dx`
@@ -147,10 +149,10 @@ fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, basis_eval:
     let mij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             // Calculate integrand bi * bj
-            let bij = basis_eval.quad_to_basis.iter().map(|b| uv_pullback(b, i, j)).collect();
-            
+            let fij = basis_eval.quad_to_basis.iter().map(|b| uv_pullback(b, i, j)).collect();
+
             // Evaluate integral
-            jacobian_eval.quad.integrate_pullback(bij, jacobian_eval)
+            jacobian_eval.quad.integrate_pullback(fij, jacobian_eval)
         });
     DMatrix::from_iterator(num_basis, num_basis, mij)
 }

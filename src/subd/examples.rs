@@ -5,7 +5,7 @@ pub mod test_ex {
     use crate::subd::iga::{op_gradu_gradv, op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
-    use crate::subd::precompute::{BasisEval, JacobianEval};
+    use crate::subd::precompute::{BasisEval, GradEval, JacobianEval};
     use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{basis, catmull_clark, plot};
     use iter_num_tools::lin_space;
@@ -452,9 +452,10 @@ pub mod test_ex {
         let start = Instant::now();
         let quad = GaussLegendrePatch::new(2).unwrap();
         let b_eval = BasisEval::from_mesh(&msh, quad.clone());
+        let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let mat = op_u_v(&msh, &b_eval, &j_eval);
-        // let mat = op_gradu_gradv(&msh, 2);
+        // let mat = op_u_v(&msh, &b_eval, &j_eval);
+        let mat = op_gradu_gradv(&msh, &grad_b_eval, &j_eval);
         let time = start.elapsed();
 
         println!("Building matrix of size {} took {:?}", mat.nrows(), time);
