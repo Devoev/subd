@@ -94,7 +94,6 @@ pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, grad
 /// Builds the local discrete IGA operator `∫ grad u · grad v dx`
 /// of the given `patch` using `num_quad` quadrature points.
 fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, grad_eval: &GradEval<T>, jacobian_eval: &JacobianEval<T>) -> DMatrix<T> {
-    // fixme: this is really expensive, because the whole basis gets evaluated multiple times. Change that
     let gradu_gradv_pullback = |grad_b: &OMatrix<T, Dyn, U2>, g_inv: &Matrix2<T>, i: usize, j: usize| {
         // Get gradients
         let grad_bi = grad_b.row(i);

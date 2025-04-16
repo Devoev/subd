@@ -2,7 +2,7 @@
 #[cfg(test)]
 pub mod test_ex {
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
-    use crate::subd::iga::{op_gradu_gradv, op_u_v, IgaFn};
+    use crate::subd::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
     use crate::subd::precompute::{BasisEval, GradEval, JacobianEval};
@@ -447,7 +447,7 @@ pub mod test_ex {
         let mut msh = MSH.clone();
         msh.lin_subd();
         msh.lin_subd();
-        // msh.lin_subd();
+        msh.lin_subd();
 
         let start = Instant::now();
         let quad = GaussLegendrePatch::new(2).unwrap();
@@ -455,7 +455,8 @@ pub mod test_ex {
         let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
         // let mat = op_u_v(&msh, &b_eval, &j_eval);
-        let mat = op_gradu_gradv(&msh, &grad_b_eval, &j_eval);
+        // let mat = op_gradu_gradv(&msh, &grad_b_eval, &j_eval);
+        let mat = op_f_v(&msh, |p| 1.0, 2);
         let time = start.elapsed();
 
         println!("Building matrix of size {} took {:?}", mat.nrows(), time);
