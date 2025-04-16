@@ -3,7 +3,7 @@
 use std::iter::zip;
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
-use crate::subd::precompute::{BasisEval, GradEval, JacobianEval};
+use crate::subd::precompute::{BasisEval, GradEval, JacobianEval, PointEval};
 use itertools::{izip, Itertools};
 use nalgebra::{DMatrix, DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
 use nalgebra_sparse::CooMatrix;
@@ -55,10 +55,15 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
 }
 
 /// Builds the discrete IGA operator `∫ fv dx` using `num_quad` quadrature points.
-pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T + Clone, basis_eval: &Vec<BasisEval<T>>, jacobian_eval: &Vec<JacobianEval<T>>) -> DVector<T> {
+pub fn op_f_v<T: RealField + Copy + ToPrimitive>(
+    msh: &QuadMesh<T>, f: impl Fn(Point2<T>) -> T + Clone,
+    basis_eval: &Vec<BasisEval<T>>,
+    point_eval: &Vec<PointEval<T>>,
+    jacobian_eval: &Vec<JacobianEval<T>>
+) -> DVector<T> {
     let mut fi = DVector::<T>::zeros(msh.num_nodes());
-    for (patch, b_eval, j_eval) in izip!(msh.patches(), basis_eval, jacobian_eval) {
-        let fi_local = op_f_v_local(&patch, f.clone(), b_eval, j_eval);
+    for (patch, b_eval, p_eval, j_eval) in izip!(msh.patches(), basis_eval, point_eval, jacobian_eval) {
+        let fi_local = op_f_v_local(&patch, f.clone(), b_eval, p_eval, j_eval);
         let indices = patch.nodes();
         for (idx_local, idx) in indices.into_iter().enumerate() {
             fi[idx] += fi_local[idx_local];
@@ -68,17 +73,19 @@ pub fn op_f_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, f: impl Fn(P
 }
 
 /// Builds the local discrete IGA operator `∫ fv dx` of the given `patch` using `num_quad` quadrature points.
-fn op_f_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, f: impl Fn(Point2<T>) -> T, basis_eval: &BasisEval<T>, jacobian_eval: &JacobianEval<T>) -> DVector<T> {
+fn op_f_v_local<T: RealField + Copy + ToPrimitive>(
+    patch: &Patch<T>, f: impl Fn(Point2<T>) -> T,
+    basis_eval: &BasisEval<T>,
+    point_eval: &PointEval<T>,
+    jacobian_eval: &JacobianEval<T>
+) -> DVector<T> {
+
     let fv_pullback = |b: &DVector<T>, p: Point2<T>, j: usize| b[j] * f(p);
-    // todo: move point_eval to signature
-    let point_eval = jacobian_eval.quad.nodes()
-        .map(|(u, v)| patch.eval(T::from_f64(u).unwrap(), T::from_f64(v).unwrap()))
-        .collect_vec();
 
     let num_basis = patch.nodes().len();
     let fj = (0..num_basis).map(|j| {
         // Calculate integrand f * bj
-        let fj = zip(&basis_eval.quad_to_basis, &point_eval)
+        let fj = zip(&basis_eval.quad_to_basis, &point_eval.quad_to_points)
             .map(|(b, &p)| fv_pullback(b, p, j)).collect();
         
         // Evaluate integral
