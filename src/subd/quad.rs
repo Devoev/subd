@@ -42,24 +42,25 @@ impl GaussLegendrePatch {
         nodes.clone().cartesian_product(nodes)
     }
 
-    /// Numerically calculates the integral of `f: (0,1)² ⟶ ℝ`.
+    /// Numerically integrates the function `f: (0,1)² ⟶ ℝ` on the parametric domain.
     ///
-    /// The values of `f` evaluated at the nodes are given as a vector.
+    /// The values of `f` evaluated at the nodes are given as a flattened vector `fij = f(xi,xj)`.
     pub fn integrate(&self, f: Vec<f64>) -> f64 {
         zip(f, self.weights())
             .map(|(fij, (wi, wj))| fij * wi * wj)
             .sum::<f64>() * Self::SCALE_FACTOR * Self::SCALE_FACTOR
     }
 
-    /// Numerically integrates the function `f`, mapping from the evaluated basis functions, over a patch.
-    pub fn integrate_pullback_patch<T: RealField + Copy + ToPrimitive>(&self, f: impl Fn(&DVector<T>) -> T, basis_eval: &BasisEval<T>, jacobian_eval: &JacobianEval<T>) -> T {
+    /// Numerically integrates the pullback function `f: (0,1)² ⟶ ℝ` on a patch.
+    /// 
+    /// The values of `f` are given as in [`GaussLegendrePatch::integrate`].
+    /// The surface patch is parametrized by the Jacobian matrices `jacobian_eval`.
+    pub fn integrate_pullback<T: RealField + Copy + ToPrimitive>(&self, f: Vec<T>, jacobian_eval: &JacobianEval<T>) -> T {
         // todo:
         //  - change signature, especially for f. For example, use an IgaFn instead of f
 
-        let b = basis_eval.quad_to_basis.iter().map(f);
-        let det = jacobian_eval.abs_det();
-        let integrand = zip(b, det)
-            .map(|(bi, det_i)| (bi * det_i).to_f64().unwrap())
+        let integrand = zip(f, jacobian_eval.abs_det())
+            .map(|(fi, det_i)| (fi * det_i).to_f64().unwrap())
             .collect();
 
         T::from_f64(

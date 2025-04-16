@@ -144,7 +144,13 @@ fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, basis_eval:
     };
 
     let num_basis = patch.nodes().len();
-    let bij = (0..num_basis).cartesian_product(0..num_basis)
-        .map(|(i, j)| basis_eval.quad.integrate_pullback_patch(|b| uv_pullback(b, i, j), basis_eval, jacobian_eval));
-    DMatrix::from_iterator(num_basis, num_basis, bij)
+    let mij = (0..num_basis).cartesian_product(0..num_basis)
+        .map(|(i, j)| {
+            // Calculate integrand bi * bj
+            let bij = basis_eval.quad_to_basis.iter().map(|b| uv_pullback(b, i, j)).collect();
+            
+            // Evaluate integral
+            basis_eval.quad.integrate_pullback(bij, jacobian_eval)
+        });
+    DMatrix::from_iterator(num_basis, num_basis, mij)
 }

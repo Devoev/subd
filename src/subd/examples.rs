@@ -2,7 +2,7 @@
 #[cfg(test)]
 pub mod test_ex {
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
-    use crate::subd::iga::{op_u_v, IgaFn};
+    use crate::subd::iga::{op_gradu_gradv, op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
     use crate::subd::precompute::{BasisEval, JacobianEval};
@@ -393,8 +393,8 @@ pub mod test_ex {
                  basis_eval.quad_to_basis[0].len());
 
         // Comparison with quad crate
-        let int1 = quad.integrate_pullback_patch(|b| 1.0, &basis_eval, &jacobian_eval);
-        let int2 = patch.integrate_pullback(|u, v| 1.0, num_quad);
+        let int1 = quad.integrate_pullback(basis_eval.quad_to_basis.iter().map(|_| 1.0).collect(), &jacobian_eval);
+        let int2 = patch.integrate_pullback(|_, _| 1.0, num_quad);
         println!("Integral using precomputed patch quadrature = {int1}");
         println!("Integral using quadrature crate = {int2}");
         println!("Relative integral error = {:.3}%", (int2 - int1).abs() / int2 * 100.0);
@@ -453,10 +453,11 @@ pub mod test_ex {
         let quad = GaussLegendrePatch::new(2).unwrap();
         let b_eval = BasisEval::from_mesh(&msh, quad.clone());
         let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let mij_fast = op_u_v(&msh, &b_eval, &j_eval);
-        let time_fast = start.elapsed();
+        let mat = op_u_v(&msh, &b_eval, &j_eval);
+        // let mat = op_gradu_gradv(&msh, 2);
+        let time = start.elapsed();
 
-        println!("Building mass matrix of size {} took {:?}", mij_fast.nrows(), time_fast);
+        println!("Building matrix of size {} took {:?}", mat.nrows(), time);
     }
 
 }
