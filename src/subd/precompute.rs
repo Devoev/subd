@@ -12,10 +12,6 @@ use num_traits::ToPrimitive;
 pub struct BasisEval<T: RealField> {
     /// Vector of evaluated basis functions stored in a [`DVector`] for each quadrature point.
     pub quad_to_basis: Vec<DVector<T>>,
-
-    /// Quadrature rule used for integration.
-    pub quad: GaussLegendrePatch
-    // todo: remove this property
 }
 
 impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
@@ -30,8 +26,7 @@ impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
                     let v = T::from_f64(v).unwrap();
                     patch.eval_basis(u, v)
                 })
-                .collect(),
-            quad
+                .collect()
         }
     }
 
@@ -47,7 +42,11 @@ impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
 #[derive(Debug, Clone)]
 pub struct JacobianEval<T: RealField> {
     /// Vector of evaluated Jacobian matrices for each quadrature point.
-    pub quad_to_jacobian: Vec<Matrix2<T>>
+    pub quad_to_jacobian: Vec<Matrix2<T>>,
+    
+    /// Quadrature rule used for integration.
+    pub quad: GaussLegendrePatch
+    // todo: remove this property
 }
 
 impl<T: RealField + Copy + ToPrimitive> JacobianEval<T> {
@@ -62,6 +61,7 @@ impl<T: RealField + Copy + ToPrimitive> JacobianEval<T> {
                     patch.eval_jacobian(u, v)
                 })
                 .collect(),
+            quad
         }
     }
 

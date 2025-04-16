@@ -150,7 +150,7 @@ fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, basis_eval:
             let bij = basis_eval.quad_to_basis.iter().map(|b| uv_pullback(b, i, j)).collect();
             
             // Evaluate integral
-            basis_eval.quad.integrate_pullback(bij, jacobian_eval)
+            jacobian_eval.quad.integrate_pullback(bij, jacobian_eval)
         });
     DMatrix::from_iterator(num_basis, num_basis, mij)
 }
