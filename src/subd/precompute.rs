@@ -1,7 +1,7 @@
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
 use crate::subd::quad::GaussLegendrePatch;
-use nalgebra::{DVector, Matrix2, RealField};
+use nalgebra::{DVector, Dyn, Matrix2, OMatrix, RealField, U2};
 use num_traits::ToPrimitive;
 
 // todo: make generic struct like QuadEval<T>
@@ -75,5 +75,41 @@ impl<T: RealField + Copy + ToPrimitive> JacobianEval<T> {
     /// Returns an iterator over all absolute values of the determinant of the Jacobian matrices.
     pub fn abs_det(&self) -> impl Iterator<Item=T> + '_ {
         self.quad_to_jacobian.iter().map(|d_phi| d_phi.determinant().abs())
+    }
+
+    /// Returns an iterator over the inverse Gram matrices, i.e. `(Jᐪ·J)⁻¹`.
+    // todo: also precompute this
+    pub fn gram_inv(&self) -> impl Iterator<Item=Matrix2<T>> + '_ {
+        self.quad_to_jacobian.iter().map(|d_phi| (d_phi.transpose() * d_phi).try_inverse().unwrap())
+    }
+}
+
+/// Evaluated gradients for each quadrature point of a patch.
+#[derive(Debug, Clone)]
+pub struct GradEval<T: RealField> {
+    /// Vector of evaluated gradients for each quadrature point.
+    pub quad_to_grad: Vec<OMatrix<T, Dyn, U2>>
+}
+
+impl<T: RealField + Copy + ToPrimitive> GradEval<T> {
+    /// Constructs a new [`GradEval`] for the given `patch` using the quadrature rule `quad`,
+    /// by evaluating the gradients of the basis functions at every quadrature point in `quad.nodes()`.
+    pub fn from(patch: &Patch<T>, quad: GaussLegendrePatch) -> GradEval<T> {
+        Self {
+            quad_to_grad: quad.nodes()
+                .map(|(u, v)| {
+                    let u = T::from_f64(u).unwrap();
+                    let v = T::from_f64(v).unwrap();
+                    patch.eval_basis_grad(u, v)
+                })
+                .collect(),
+        }
+    }
+
+    // todo: add docs
+    pub fn from_mesh(msh: &QuadMesh<T>, quad: GaussLegendrePatch) -> Vec<GradEval<T>> {
+        msh.patches()
+            .map(|patch| GradEval::from(&patch, quad.clone()))
+            .collect()
     }
 }
