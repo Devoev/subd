@@ -155,10 +155,13 @@ pub mod test_ex {
         msh.lin_subd();
 
         // Find patches
-        let face_id = 74;
+        let face_id = 31;
         let face = msh.faces[face_id];
         let patch = patch::Nodes::find(&msh, face);
-        println!("{:?}", patch)
+
+        // Plot nodes of patch
+        let nodes_plot = plot::plot_nodes(&msh, patch.as_slice().iter().copied());
+        nodes_plot.show_html("out/patch_nodes.html");
     }
 
     #[test]

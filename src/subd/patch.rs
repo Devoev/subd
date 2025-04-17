@@ -81,7 +81,7 @@ impl Nodes {
         // Sort the center face, depending on the patch type
         let center_sorted = match faces.len() {
             8 => center_face,
-            5 | 3 => {
+            5 | 3 => { // todo: 5 or 4 is not enough to check. Could this also be an interior irregular face?
                 let node_irr = center_face.into_iter().enumerate()
                     .find_map(|(idx, node)| {
                         let next_idx = (idx + 1) % 4;
@@ -102,14 +102,96 @@ impl Nodes {
             }
         };
 
-        dbg!(center_face, center_sorted);
-        let faces_sorted = Self::traverse_faces(center_sorted, faces);
-        println!("{:?}", faces_sorted);
+        if msh.is_regular(center_sorted) || msh.is_boundary_face(center_sorted) {
+            let faces_sorted = Self::traverse_faces_regular(center_sorted, faces);
+            if faces_sorted.len() == 9 {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1), (2, 1),
+                    (0, 3), (0, 2), (1, 2), (2, 2),
+                    (6, 0), (6, 1), (7, 1), (8, 1),
+                    (6, 3), (6, 2), (7, 2), (8, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
+                return Nodes::Regular(nodes);
+            } else if faces_sorted.len() == 6 {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1), (2, 1),
+                    (3, 0), (3, 1), (4, 1), (5, 1),
+                    (3, 3), (3, 2), (4, 2), (5, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
+                return Nodes::Boundary(nodes);
+            } else if faces_sorted.len() == 4 {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1),
+                    (2, 0), (2, 1), (3, 1),
+                    (2, 3), (2, 2), (3, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
+                return Nodes::Corner(nodes);
+            }
+        } else {
+            Self::traverse_faces_irregular(center_sorted, faces);
+            todo!("Pick nodes of sorted faces, as in the nodes_irregular method. \
+                And properly sort faces in traverse function")
+        };
 
         todo!()
     }
 
-    /// Traverses the given `faces` in clockwise order around the already **sorted** `center_face`.
+    /// Traverses the given `faces` of a **regular** patch in lexicographical order around the already **sorted** `center_face`.
+    /// Returns the sorted faces in a vector.
+    /// The traversal order is as follows
+    /// ```text
+    /// +---+---+---+
+    /// | 6 | 7 | 8 |
+    /// +---+---+---+
+    /// | 3 | p | 5 |
+    /// +---+---+---+
+    /// | 0 | 1 | 2 |
+    /// +---+---+---+
+    /// ```
+    /// where `p` is the center face.
+    fn traverse_faces_regular(center_face: Face, faces: Vec<&Face>) -> Vec<Face> {
+        let center_edges = edges_of_face(center_face);
+        let mut faces_sorted: Vec<Option<Face>> = vec![None; 9];
+        faces_sorted[4] = Some(center_face);
+
+        for &face in faces {
+            // Check if faces are connected by an edge
+            let edges = edges_of_face(face);
+            let edge_res = center_edges.iter().find_position(|&&edge| edges.contains(&reverse_edge(edge)));
+            if let Some((i, edge)) = edge_res {
+                match i {
+                    0 => faces_sorted[1] = Some(sort_by_node(face, edge[1], 2)),
+                    1 => faces_sorted[5] = Some(sort_by_node(face, edge[1], 3)),
+                    2 => faces_sorted[7] = Some(sort_by_node(face, edge[1], 0)),
+                    3 => faces_sorted[3] = Some(sort_by_node(face, edge[1], 1)),
+                    _ => unreachable!()
+                }
+                continue
+            }
+
+            // Check if faces are connected by a node
+            let node_res = center_face.iter().find_position(|&&node| face.contains(&node));
+            if let Some((i, &node)) = node_res {
+                match i {
+                    0 => faces_sorted[0] = Some(sort_by_node(face, node, 2)),
+                    1 => faces_sorted[2] = Some(sort_by_node(face, node, 3)),
+                    2 => faces_sorted[8] = Some(sort_by_node(face, node, 0)),
+                    3 => faces_sorted[6] = Some(sort_by_node(face, node, 1)),
+                    _ => unreachable!()
+                }
+                continue
+            }
+
+            panic!("Face {face:?} is not connected to the center face {center_face:?}");
+        }
+
+        faces_sorted.into_iter().flatten().collect()
+    }
+
+    /// Traverses the given `faces` of an **irregular** patch in clockwise order around the already **sorted** `center_face`.
     /// Returns the sorted faces in a vector.
     ///
     /// The traversal order is as follows
@@ -123,7 +205,7 @@ impl Nodes {
     /// +---+---+---+
     /// ```
     /// where `p` is the center face.
-    fn traverse_faces(center_face: Face, mut faces: Vec<&Face>) -> Vec<Face> {
+    fn traverse_faces_irregular(center_face: Face, mut faces: Vec<&Face>) -> Vec<Face> {
         // Find starting point, i.e. face with an edge containing the start node
         let start = center_face[0];
         let (mut idx, mut found_face, mut found_edge) = faces.iter().enumerate()
@@ -403,7 +485,6 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (7, 3), (7, 2), (6, 2), (5, 2),
             (1, 0), (1, 1), (2, 1), (3, 1),
             (1, 3), (1, 2), (2, 2), (3, 2),
-            
         ];
         pick.map(|(face, node)| sorted.faces()[face][node])
     }
@@ -428,7 +509,6 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
             (0, 0), (0, 1), (4, 0), (4, 1),
             (1, 0), (1, 1), (2, 1), (3, 1),
             (1, 3), (1, 2), (2, 2), (3, 2),
-
         ];
         pick.map(|(face, node)| sorted.faces()[face][node])
     }
