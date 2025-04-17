@@ -3,8 +3,19 @@ use nalgebra::{Point2, RealField};
 use crate::subd::mesh::{Edge, Face, Node};
 
 /// Returns whether the two faces are adjacent, i.e. share an edge.
-pub fn is_adjacent(a: &Face, b: &Face) -> bool {
-    a.iter().filter(|n| b.contains(n)).count() >= 2
+pub fn are_adjacent(a: &Face, b: &Face) -> bool {
+    intersection(*a, *b).count() == 2
+}
+
+/// Returns whether the two faces are touching, i.e. share an edge or a node.
+pub fn are_touching(a: &Face, b: &Face) -> bool {
+    let count = intersection(*a, *b).count();
+    count == 2 || count == 1
+}
+
+/// Returns the intersection between the two faces as an iterator of the overlapping nodes.
+pub fn intersection(a: Face, b: Face) -> impl Iterator<Item = Node> {
+    a.into_iter().filter(move |n| b.contains(n))
 }
 
 /// Returns the edges of the given face in the following order

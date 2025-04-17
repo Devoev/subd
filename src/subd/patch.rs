@@ -68,13 +68,13 @@ pub enum Nodes {
 }
 
 impl Nodes {
-    
+
     /// Finds the nodes of the `msh` making up the patch of the `center_face`.
     pub fn find<T: RealField>(msh: &QuadMesh<T>, center_face: Face) -> Nodes {
-        
+
         todo!()
     }
-    
+
     /// Returns a slice containing the nodes.
     pub fn as_slice(&self) -> &[Node] {
         match self {

@@ -1,5 +1,5 @@
 use crate::subd::edge::sort_edge;
-use crate::subd::face::{edges_of_face, is_adjacent};
+use crate::subd::face::{edges_of_face, are_adjacent};
 use crate::subd::patch::{ExtendedPatch, Patch};
 use itertools::Itertools;
 use nalgebra::{
@@ -135,7 +135,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
         self.faces
             .iter()
             .enumerate()
-            .filter(move |(_, f)| is_adjacent(f, &face) && **f != face) // todo: move f != face check to is_adjacent
+            .filter(move |(_, f)| are_adjacent(f, &face))
     }
 
     /// Returns the one-ring around the given `node`.
@@ -146,7 +146,7 @@ impl<T: RealField + Copy> QuadMesh<T> {
             let prev = sorted_faces.last().unwrap();
             let (idx, next) = faces
                 .iter()
-                .find_position(|f| is_adjacent(f, prev))
+                .find_position(|f| are_adjacent(f, prev))
                 .unwrap();
             sorted_faces.push(next);
             faces.remove(idx);
