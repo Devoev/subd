@@ -155,9 +155,9 @@ pub mod test_ex {
         msh.lin_subd();
 
         // Find patches
-        let face_id = 3;
+        let face_id = 74;
         let face = msh.faces[face_id];
-        let patch = patch::Nodes::find(&msh, &face);
+        let patch = patch::Nodes::find(&msh, face);
         println!("{:?}", patch)
     }
 

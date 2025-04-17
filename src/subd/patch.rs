@@ -71,21 +71,93 @@ pub enum Nodes {
 impl Nodes {
 
     /// Finds the nodes of the `msh` making up the patch of the `center_face`.
-    pub fn find<T: RealField>(msh: &QuadMesh<T>, center_face: &Face) -> Nodes {
+    pub fn find<T: RealField + Copy>(msh: &QuadMesh<T>, center_face: Face) -> Nodes {
 
         // Find all faces in the 1-ring neighborhood
-        let mut faces = msh.faces.iter()
-            .filter(|other| are_touching(center_face, other))
+        let faces = msh.faces.iter()
+            .filter(|other| are_touching(&center_face, other))
             .collect_vec();
 
-        match faces.len() {
-            8 => println!("Regular"),
-            5 => println!("Boundary"),
-            3 => println!("Corner"),
-            _ => println!("Irregular")
-        }
+        // Sort the center face, depending on the patch type
+        let center_sorted = match faces.len() {
+            8 => center_face,
+            5 | 3 => {
+                let node_irr = center_face.into_iter().enumerate()
+                    .find_map(|(idx, node)| {
+                        let next_idx = (idx + 1) % 4;
+                        let next_node = center_face[next_idx];
+                        (msh.valence(node) == 4 && msh.valence(next_node) != 4).then_some(next_node)
+                    }).unwrap();
+                sort_by_origin(center_face, node_irr)
+            },
+            // 3 => {
+            //     let node_irr = center_face.into_iter()
+            //         .find(|&n| msh.valence(n) == 2)
+            //         .unwrap();
+            //     sort_by_origin(center_face, node_irr)
+            // },
+            _ => {
+                let node_irr = msh.irregular_node_of_face(center_face).unwrap();
+                sort_by_origin(center_face, node_irr)
+            }
+        };
+
+        dbg!(center_face, center_sorted);
+        let faces_sorted = Self::traverse_faces(center_sorted, faces);
+        println!("{:?}", faces_sorted);
 
         todo!()
+    }
+
+    /// Traverses the given `faces` in clockwise order around the already **sorted** `center_face`.
+    /// Returns the sorted faces in a vector.
+    ///
+    /// The traversal order is as follows
+    /// ```text
+    /// +---+---+---+
+    /// | 1 | 2 | 3 |
+    /// +---+---+---+
+    /// | 0 | p | 4 |
+    /// +---+---+---+
+    /// | 7 | 6 | 5 |
+    /// +---+---+---+
+    /// ```
+    /// where `p` is the center face.
+    fn traverse_faces(center_face: Face, mut faces: Vec<&Face>) -> Vec<Face> {
+        // Find starting point, i.e. face with an edge containing the start node
+        let start = center_face[0];
+        let (mut idx, mut found_face, mut found_edge) = faces.iter().enumerate()
+            .find_map(|(i, other)| {
+                let edges = edges_of_face(**other);
+                // Find edge that is included in face and starts with start
+                let edge_irr = edges.iter().find(|edge| edge[0] == start && center_face.contains(&edge[1]));
+                edge_irr.map(|edge| (i, *other, *edge))
+            }).unwrap();
+
+        let mut faces_sorted = vec![*found_face];
+
+        while faces.len() > 1 {
+            // Remove already visited face
+            faces.swap_remove(idx);
+
+            // Find next face
+            let next_e = next_edge(found_edge, *found_face);
+            let next_next_e = next_edge(next_e, *found_face);
+            let next_inv = reverse_edge(next_e);
+            let next_next_inv = reverse_edge(next_next_e);
+
+            (idx, found_face, found_edge) = faces.iter().enumerate()
+                .find_map(|(i, other)| {
+                    let edges = edges_of_face(**other);
+                    let found = edges.iter().find(|edge| **edge == next_inv || **edge == next_next_inv);
+                    found.map(|edge| (i, *other, *edge))
+                }).unwrap();
+
+            // Save found face
+            faces_sorted.push(*found_face);
+        }
+
+        faces_sorted
     }
 
     /// Returns a slice containing the nodes.
