@@ -6,6 +6,86 @@ use nalgebra::{Dyn, OMatrix, RealField, U2};
 use std::collections::HashSet;
 use std::iter::once;
 
+/// Ordered nodes of a [`Patch`].
+pub enum Nodes {
+    /// The regular interior case of valence `n=4`.
+    /// The nodes are ordered in lexicographical order
+    /// ```text
+    ///  12 -- 13 -- 14 -- 15
+    ///   |     |     |     |
+    ///   8 --- 9 -- 10 -- 11
+    ///   |     |  p  |     |
+    ///   4 --- 5 --- 6 --- 7
+    ///   |     |     |     |
+    ///   0 --- 1 --- 2 --- 3
+    /// ```
+    /// where `p` is the center face of the patch.
+    Regular([Node; 16]),
+
+    /// The regular boundary case of valence `n=3`.
+    /// The nodes are ordered in lexicographical order
+    /// ```text
+    ///  |     |     |     |
+    ///  8 --- 9 -- 10 -- 11
+    ///  |     |     |     |
+    ///  4 --- 5 --- 6 --- 7
+    ///  |     |  p  |     |
+    ///  0 --- 1 --- 2 --- 3
+    /// ```
+    /// where `p` is the center face of the patch.
+    Boundary([Node; 12]),
+
+    /// The regular corner case of valence `n=2`.
+    /// The nodes are ordered in lexicographical order
+    /// ```text
+    ///  |     |     |
+    ///  6 --- 7 --- 8 ---
+    ///  |     |     |
+    ///  3 --- 4 --- 5 ---
+    ///  |  p  |     |
+    ///  0 --- 1 --- 2 ---
+    /// ```
+    /// where `p` is the center face of the patch.
+    Corner([Node; 9]),
+
+    /// The irregular interior case of valence `n≠4`.
+    /// The nodes are ordered in the following order
+    /// ```text
+    /// 2N+7--2N+6--2N+5--2N+1
+    ///   |     |     |     |
+    ///   2 --- 3 --- 4 --2N+2
+    ///   |     |  p  |     |
+    ///   1 --- 0 --- 5 --2N+3
+    ///  ╱    ╱ |     |     |
+    /// 2N   ╱  7 --- 6 --2N+4
+    ///  ╲  ╱  ╱
+    ///   ○ - 8
+    /// ```
+    /// where `p` is the center face of the patch and node `0` is the irregular node.
+    Irregular(Vec<Node>)
+
+    // todo: add IrregularBoundary/Corner case of valence = 4
+}
+
+impl Nodes {
+    
+    /// Finds the nodes of the `msh` making up the patch of the `center_face`.
+    pub fn find<T: RealField>(msh: &QuadMesh<T>, center_face: Face) -> Nodes {
+        
+        todo!()
+    }
+    
+    /// Returns a slice containing the nodes.
+    pub fn as_slice(&self) -> &[Node] {
+        match self {
+            Nodes::Regular(val) => val.as_slice(),
+            Nodes::Boundary(val) => val.as_slice(),
+            Nodes::Corner(val) => val.as_slice(),
+            Nodes::Irregular(val) => val.as_slice(),
+        }
+    }
+}
+
 /// A patch of a quadrilateral mesh.
 /// The faces are sorted in clockwise order, i.e.
 /// ```text
