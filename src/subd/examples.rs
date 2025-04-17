@@ -7,7 +7,7 @@ pub mod test_ex {
     use crate::subd::patch::Patch;
     use crate::subd::precompute::{BasisEval, GradEval, JacobianEval, PointEval};
     use crate::subd::quad::GaussLegendrePatch;
-    use crate::subd::{basis, catmull_clark, plot};
+    use crate::subd::{basis, catmull_clark, patch, plot};
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{center, point, Matrix, Point2, SMatrix};
@@ -145,6 +145,20 @@ pub mod test_ex {
 
         // let patch_ext_plot = plot_nodes(&msh, patch_ext.nodes().into_iter());
         // patch_ext_plot.show_html("patch_ext.html");
+    }
+    
+    #[test]
+    fn find_patch() {
+        // Refine mesh
+        let mut msh = MSH.clone();
+        msh.lin_subd();
+        msh.lin_subd();
+
+        // Find patches
+        let face_id = 3;
+        let face = msh.faces[face_id];
+        let patch = patch::Nodes::find(&msh, &face);
+        println!("{:?}", patch)
     }
 
     #[test]

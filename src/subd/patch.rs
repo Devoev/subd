@@ -1,5 +1,5 @@
 use crate::subd::edge::{next_edge, reverse_edge};
-use crate::subd::face::{edges_of_face, sort_by_node, sort_by_origin};
+use crate::subd::face::{are_touching, edges_of_face, sort_by_node, sort_by_origin};
 use crate::subd::mesh::{Face, Node, QuadMesh};
 use itertools::{izip, Itertools};
 use nalgebra::{Dyn, OMatrix, RealField, U2};
@@ -7,6 +7,7 @@ use std::collections::HashSet;
 use std::iter::once;
 
 /// Ordered nodes of a [`Patch`].
+#[derive(Debug, Clone)]
 pub enum Nodes {
     /// The regular interior case of valence `n=4`.
     /// The nodes are ordered in lexicographical order
@@ -70,7 +71,19 @@ pub enum Nodes {
 impl Nodes {
 
     /// Finds the nodes of the `msh` making up the patch of the `center_face`.
-    pub fn find<T: RealField>(msh: &QuadMesh<T>, center_face: Face) -> Nodes {
+    pub fn find<T: RealField>(msh: &QuadMesh<T>, center_face: &Face) -> Nodes {
+
+        // Find all faces in the 1-ring neighborhood
+        let mut faces = msh.faces.iter()
+            .filter(|other| are_touching(center_face, other))
+            .collect_vec();
+
+        match faces.len() {
+            8 => println!("Regular"),
+            5 => println!("Boundary"),
+            3 => println!("Corner"),
+            _ => println!("Irregular")
+        }
 
         todo!()
     }
