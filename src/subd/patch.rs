@@ -131,12 +131,39 @@ impl Nodes {
                 return Nodes::Corner(nodes);
             }
         } else {
-            Self::traverse_faces_irregular(center_sorted, faces);
-            todo!("Pick nodes of sorted faces, as in the nodes_irregular method. \
-                And properly sort faces in traverse function")
+            let faces_sorted = Self::traverse_faces_irregular(center_sorted, faces);
+            // Get faces at irregular node
+            let node_irr = center_sorted[0];
+            let n = msh.valence(node_irr);
+            let mut inner_faces = vec![faces_sorted[1], faces_sorted[0]];
+            inner_faces.extend_from_slice(&faces_sorted[7..n+5]);
+
+            // Get nodes of inner faces by setting their uv origin to the irregular node
+            let nodes_it = inner_faces.iter().flat_map(|&face| {
+                let sorted = sort_by_origin(face, node_irr);
+                once(sorted[3]).chain(once(sorted[2]))
+            });
+
+            let mut nodes = vec![node_irr];
+            nodes.extend(nodes_it);
+
+            // Get faces away from irregular node
+            let outer_faces = &faces_sorted[2..=6].iter().enumerate().map(|(i, &face)| {
+                sort_by_origin(face, nodes[i + 2])
+            }).collect_vec();
+
+            let pick = [
+                (2, 2), (2, 1), (3, 1), (4, 1),
+                (1, 2), (0, 2), (0, 3)
+            ];
+            let outer_nodes = pick.map(|(face, node)| outer_faces[face][node]);
+
+            // Combine both
+            nodes.extend_from_slice(&outer_nodes);
+            return Nodes::Irregular(nodes)
         };
 
-        todo!()
+        unreachable!()
     }
 
     /// Traverses the given `faces` of a **regular** patch in lexicographical order around the already **sorted** `center_face`.
@@ -197,26 +224,30 @@ impl Nodes {
     /// The traversal order is as follows
     /// ```text
     /// +---+---+---+
-    /// | 1 | 2 | 3 |
+    /// | 2 | 3 | 4 |
     /// +---+---+---+
-    /// | 0 | p | 4 |
+    /// | 1 | p | 5 |
     /// +---+---+---+
-    /// | 7 | 6 | 5 |
+    /// | 8 | 7 | 6 |
     /// +---+---+---+
     /// ```
     /// where `p` is the center face.
+    // todo: update and describe how faces are sorted
     fn traverse_faces_irregular(center_face: Face, mut faces: Vec<&Face>) -> Vec<Face> {
-        // Find starting point, i.e. face with an edge containing the start node
-        let start = center_face[0];
+        // Get node of parametric origin
+        let uv_origin = center_face[0];
+
+        // Find face 1
         let (mut idx, mut found_face, mut found_edge) = faces.iter().enumerate()
             .find_map(|(i, other)| {
                 let edges = edges_of_face(**other);
                 // Find edge that is included in face and starts with start
-                let edge_irr = edges.iter().find(|edge| edge[0] == start && center_face.contains(&edge[1]));
+                let edge_irr = edges.iter().find(|edge| edge[0] == uv_origin && center_face.contains(&edge[1]));
                 edge_irr.map(|edge| (i, *other, *edge))
             }).unwrap();
 
-        let mut faces_sorted = vec![*found_face];
+        let found_sorted = sort_by_node(*found_face, uv_origin, 1);
+        let mut faces_sorted = vec![center_face, found_sorted];
 
         while faces.len() > 1 {
             // Remove already visited face
@@ -236,7 +267,8 @@ impl Nodes {
                 }).unwrap();
 
             // Save found face
-            faces_sorted.push(*found_face);
+            let found_sorted = sort_by_origin(*found_face, found_edge[0]); // todo: update sorting
+            faces_sorted.push(found_sorted);
         }
 
         faces_sorted
