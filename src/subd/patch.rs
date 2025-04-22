@@ -6,9 +6,9 @@ use nalgebra::{Dyn, OMatrix, RealField, U2};
 use std::collections::HashSet;
 use std::iter::once;
 
-/// Ordered nodes of a [`Patch`].
+/// Connectivity of the ordered nodes of a [`Patch`].
 #[derive(Debug, Clone)]
-pub enum Nodes {
+pub enum NodeConnectivity {
     /// The regular interior case of valence `n=4`.
     /// The nodes are ordered in lexicographical order
     /// ```text
@@ -68,10 +68,10 @@ pub enum Nodes {
     // todo: add IrregularBoundary/Corner case of valence = 4
 }
 
-impl Nodes {
+impl NodeConnectivity {
 
     /// Finds the nodes of the `msh` making up the patch of the `center_face`.
-    pub fn find<T: RealField + Copy>(msh: &QuadMesh<T>, center_face: Face) -> Nodes {
+    pub fn find<T: RealField + Copy>(msh: &QuadMesh<T>, center_face: Face) -> NodeConnectivity {
 
         // Find all faces in the 1-ring neighborhood
         let faces = msh.faces.iter()
@@ -81,7 +81,7 @@ impl Nodes {
         // Sort the center face, depending on the patch type
         let center_sorted = match faces.len() {
             8 => center_face,
-            5 | 3 => { // todo: 5 or 4 is not enough to check. Could this also be an interior irregular face?
+            5 => { // todo: 5 is not enough to check. Could this also be an interior irregular face?
                 let node_irr = center_face.into_iter().enumerate()
                     .find_map(|(idx, node)| {
                         let next_idx = (idx + 1) % 4;
@@ -90,12 +90,12 @@ impl Nodes {
                     }).unwrap();
                 sort_by_origin(center_face, node_irr)
             },
-            // 3 => {
-            //     let node_irr = center_face.into_iter()
-            //         .find(|&n| msh.valence(n) == 2)
-            //         .unwrap();
-            //     sort_by_origin(center_face, node_irr)
-            // },
+            3 => { // todo: 3 is maybe also not enough to check
+                let node_irr = center_face.into_iter()
+                    .find(|&n| msh.valence(n) == 2)
+                    .unwrap();
+                sort_by_origin(center_face, node_irr)
+            },
             _ => {
                 let node_irr = msh.irregular_node_of_face(center_face).unwrap();
                 sort_by_origin(center_face, node_irr)
@@ -112,7 +112,7 @@ impl Nodes {
                     (6, 3), (6, 2), (7, 2), (8, 2),
                 ];
                 let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
-                return Nodes::Regular(nodes);
+                return NodeConnectivity::Regular(nodes);
             } else if faces_sorted.len() == 6 {
                 let pick = [
                     (0, 0), (0, 1), (1, 1), (2, 1),
@@ -120,7 +120,7 @@ impl Nodes {
                     (3, 3), (3, 2), (4, 2), (5, 2),
                 ];
                 let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
-                return Nodes::Boundary(nodes);
+                return NodeConnectivity::Boundary(nodes);
             } else if faces_sorted.len() == 4 {
                 let pick = [
                     (0, 0), (0, 1), (1, 1),
@@ -128,7 +128,7 @@ impl Nodes {
                     (2, 3), (2, 2), (3, 2),
                 ];
                 let nodes = pick.map(|(face, node)| faces_sorted[face][node]);
-                return Nodes::Corner(nodes);
+                return NodeConnectivity::Corner(nodes);
             }
         } else {
             let faces_sorted = Self::traverse_faces_irregular(center_sorted, faces);
@@ -160,7 +160,7 @@ impl Nodes {
 
             // Combine both
             nodes.extend_from_slice(&outer_nodes);
-            return Nodes::Irregular(nodes)
+            return NodeConnectivity::Irregular(nodes)
         };
 
         unreachable!()
@@ -277,47 +277,19 @@ impl Nodes {
     /// Returns a slice containing the nodes.
     pub fn as_slice(&self) -> &[Node] {
         match self {
-            Nodes::Regular(val) => val.as_slice(),
-            Nodes::Boundary(val) => val.as_slice(),
-            Nodes::Corner(val) => val.as_slice(),
-            Nodes::Irregular(val) => val.as_slice(),
+            NodeConnectivity::Regular(val) => val.as_slice(),
+            NodeConnectivity::Boundary(val) => val.as_slice(),
+            NodeConnectivity::Corner(val) => val.as_slice(),
+            NodeConnectivity::Irregular(val) => val.as_slice(),
         }
     }
 }
 
 /// A patch of a quadrilateral mesh.
-/// The faces are sorted in clockwise order, i.e.
-/// ```text
-/// +---+---+---+
-/// | 1 | 2 | 3 |
-/// +---+---+---+
-/// | 0 | f | 4 |
-/// +---+---+---+
-/// | 7 | 6 | 5 |
-/// +---+---+---+
-/// ```
 #[derive(Debug, Clone)]
-pub enum Patch<'a, T: RealField> {
-    Regular {
-        msh: &'a QuadMesh<T>,
-        faces: Vec<Face>,
-        center: Face
-    },
-    Irregular {
-        msh: &'a QuadMesh<T>,
-        faces: Vec<Face>,
-        center: Face
-    },
-    BoundaryRegular {
-        msh: &'a QuadMesh<T>,
-        faces: Vec<Face>,
-        center: Face
-    },
-    BoundaryRegularCorner {
-        msh: &'a QuadMesh<T>,
-        faces: Vec<Face>,
-        center: Face
-    }
+pub struct Patch<'a, T: RealField> {
+    pub(crate) nodes: NodeConnectivity,
+    msh: &'a QuadMesh<T>
 }
 
 impl<'a, T: RealField + Copy> Patch<'a, T> {
@@ -325,389 +297,111 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
     ///
     /// The node `start` is the node between the faces `f`, `0`, `7` and `6`,
     /// i.e. the node of the center face closest to the parametric origin.
-    pub fn find(msh: &'a QuadMesh<T>, center: Face, start: Node) -> Self {
-        // todo: update/ optimize this code
-
-        // Find all faces in the 1-ring neighborhood
-        let mut faces_neighborhood = msh.faces.iter().filter(|other| {
-            let other_set = HashSet::from(**other);
-            let face_set = HashSet::from(center);
-            let count = face_set.intersection(&other_set).count();
-            count == 1 || count == 2
-        }).collect_vec();
-
-        // Find starting point, i.e. face with an edge containing the start node
-        let (mut idx, mut found_face, mut found_edge) = faces_neighborhood.iter().enumerate()
-            .find_map(|(i, other)| {
-                let edges = edges_of_face(**other);
-                // Find edge that is included in face and starts with start
-                let edge_irr = edges.iter().find(|edge| edge[0] == start && center.contains(&edge[1]));
-                edge_irr.map(|edge| (i, *other, *edge))
-            }).unwrap();
-
-        let mut faces_sorted = vec![*found_face];
-
-        while faces_neighborhood.len() > 1 {
-            // Remove already visited face
-            faces_neighborhood.swap_remove(idx);
-
-            // Find next face
-            let next_e = next_edge(found_edge, *found_face);
-            let next_next_e = next_edge(next_e, *found_face);
-            let next_inv = reverse_edge(next_e);
-            let next_next_inv = reverse_edge(next_next_e);
-
-            (idx, found_face, found_edge) = faces_neighborhood.iter().enumerate()
-                .find_map(|(i, other)| {
-                    let edges = edges_of_face(**other);
-                    let found = edges.iter().find(|edge| **edge == next_inv || **edge == next_next_inv);
-                    found.map(|edge| (i, *other, *edge))
-                }).unwrap();
-
-            // Save found face
-            faces_sorted.push(*found_face);
-        }
-
-        // Check the type of patch
-        let n = msh.valence(start);
-        if !msh.is_boundary_face(center) {
-            if n == 4 {
-                Patch::Regular { msh, faces: faces_sorted, center }
-            } else {
-                Patch::Irregular { msh, faces: faces_sorted, center }
-            }
-        } else if n == 3 && faces_sorted.len() == 5 {
-            Patch::BoundaryRegular { msh, faces: faces_sorted, center }
-        } else if n == 2 || n == 3 {
-            Patch::BoundaryRegularCorner { msh, faces: faces_sorted, center }
-        } else {
-            panic!("Irregular boundary patches (e.g. concave corners) are not implemented yet!")
-        }
+    pub fn find(msh: &'a QuadMesh<T>, center: Face) -> Self {
+        Patch { nodes: NodeConnectivity::find(msh, center), msh }
     }
 }
 
 impl<'a, T: RealField + Copy> Patch<'a, T> {
 
-    /// Returns the [`QuadMesh`] belonging to this patch.
-    fn msh(&self) -> &'a QuadMesh<T> {
-        match self {
-            Patch::Regular { msh, .. } => msh,
-            Patch::Irregular { msh, .. } => msh,
-            Patch::BoundaryRegular { msh, .. } => msh,
-            Patch::BoundaryRegularCorner { msh, .. } => msh,
-        }
+    // todo: add docs
+    pub fn faces(&self) -> Vec<Face> {
+        todo!("implement function to calculate faces of a patch")
     }
-
-    /// Returns the center [`Face`] of this patch.
-    pub fn center(&self) -> Face {
-        match self {
-            Patch::Regular { msh: _, center, .. } => *center,
-            Patch::Irregular { msh: _, center, .. } => *center,
-            Patch::BoundaryRegular { msh: _, center, .. } => *center,
-            Patch::BoundaryRegularCorner { msh: _, center, .. } => *center
-        }
-    }
-
-    /// Returns the vector of faces of this patch.
-    pub fn faces(&self) -> &Vec<Face> {
-        match self {
-            Patch::Regular { msh: _, center: _, faces } => faces,
-            Patch::Irregular { msh: _, center: _, faces } => faces,
-            Patch::BoundaryRegular { msh: _, center: _, faces } => faces,
-            Patch::BoundaryRegularCorner { msh: _, center: _, faces } => faces,
-        }
-    }
-
     /// Finds and returns the irregular node index and its valence.
     /// Returns `None` if there is no irregular node.
     pub fn irregular_node(&self) -> Option<(usize, usize)> {
-        let node_irr = self.msh().irregular_node_of_face(self.center())?;
-        let n = self.msh().valence(node_irr);
+        let node_irr = match &self.nodes {
+            NodeConnectivity::Irregular(val) => val[0],
+            _ => return None
+        };
+        let n = self.msh.valence(node_irr);
         Some((node_irr, n))
-    }
-
-    /// Sorts the faces of this **regular** patch, such that the origin is given by `uv_origin`.
-    /// This is done by successively applying [`sort_by_origin`] to each patch face.
-    fn sort_faces_regular(&self, uv_origin: Node) -> Self {
-        // fixme: this assumes that face 7 is the lower left one (in uv space) and includes uv_origin.
-        //  Is this always true? Maybe fix this, by ALWAYS sorting in the construction process?
-        // Sort face 7
-        let &last = self.faces().last().unwrap();
-        let f7 = sort_by_origin(last, uv_origin);
-        let n5 = f7[2];
-
-        // Sort center face
-        let sorted_center = sort_by_origin(self.center(), n5);
-        let [_, n6, n10, n9] = sorted_center;
-
-        // Sort other faces
-        let anchor_to_idx = [
-            (n5, 1), (n9, 1), (n10, 1), (n10, 0), (n6, 0), (n6, 3), (n6, 2)
-        ];
-        let sorted_faces = anchor_to_idx.iter().enumerate()
-            .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id], *node, *idx))
-            .chain(once(f7))
-            .collect();
-
-        Patch::Regular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
-    }
-
-    /// Sorts the faces of this **planar boundary** patch, such that the origin is given by `uv_origin`.
-    /// This is done by successively applying [`sort_by_origin`] to each patch face.
-    fn sort_faces_boundary_planar(&self, uv_origin: Node) -> Self {
-        // Sort face 0
-        let &first = self.faces().first().unwrap();
-        let f0 = sort_by_origin(first, uv_origin);
-        let n1 = f0[1];
-        
-        // Sort center face
-        let sorted_center = sort_by_origin(self.center(), n1);
-        let [_, _, n6, n5] = sorted_center;
-
-        // Sort other faces
-        let anchor_to_idx = [
-            (n5, 1), (n6, 1), (n6, 0), (n6, 3)
-        ];
-        let sorted_faces = once(f0).chain(
-            anchor_to_idx.iter().enumerate()
-                .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id + 1], *node, *idx))
-        ).collect();
-        
-        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
-    }
-
-    /// Sorts the faces of this **convex boundary** patch, such that the origin is given by `uv_origin`.
-    /// This is done by successively applying [`sort_by_origin`] to each patch face.
-    fn sort_faces_boundary_convex(&self, uv_origin: Node) -> Self {
-        // Sort center face
-        let sorted_center = sort_by_origin(self.center(), uv_origin);
-        let [_, _, n4, _] = sorted_center;
-
-        // Sort other faces
-        let anchor_to_idx = [
-            (n4, 1), (n4, 0), (n4, 3)
-        ];
-
-        let sorted_faces = anchor_to_idx.iter().enumerate()
-            .map(|(face_id, (node, idx))| sort_by_node(self.faces()[face_id], *node, *idx))
-            .collect();
-
-        Patch::BoundaryRegular { msh: self.msh(), faces: sorted_faces, center: sorted_center }
-    }
-
-    /// Returns the nodes of this regular patch in lexicographical order, i.e.
-    /// ```text
-    /// 12 -- 13 -- 14 -- 15
-    ///  |     |     |     |
-    ///  8 --- 9 -- 10 -- 11
-    ///  |     |     |     |
-    ///  4 --- 5 --- 6 --- 7
-    ///  |     |     |     |
-    ///  0 --- 1 --- 2 --- 3
-    /// ```
-    fn nodes_regular(&self) -> [Node; 16] {
-        // todo: move this to the creation process of a patch
-        // Find uv origin and sort all faces
-        let uv_opposite = self.faces()[7].iter().position(|n| self.center().contains(n)).unwrap();
-        let uv_origin = (uv_opposite + 2) % 4;
-        let sorted = self.sort_faces_regular(self.faces()[7][uv_origin]);
-
-        let pick = [
-            (7, 0), (7, 1), (6, 1), (5, 1),
-            (7, 3), (7, 2), (6, 2), (5, 2),
-            (1, 0), (1, 1), (2, 1), (3, 1),
-            (1, 3), (1, 2), (2, 2), (3, 2),
-        ];
-        pick.map(|(face, node)| sorted.faces()[face][node])
-    }
-
-    /// Returns the nodes of this planar boundary patch in lexicographical order, i.e.
-    /// ```text
-    ///  |     |     |     |
-    ///  8 --- 9 -- 10 -- 11
-    ///  |     |     |     |
-    ///  4 --- 5 --- 6 --- 7
-    ///  |     |  p  |     |
-    ///  0 --- 1 --- 2 --- 3
-    /// ```
-    fn nodes_boundary_planar(&self) -> [Node; 12] {
-        // Find uv origin and sort all faces
-        let n5 = self.faces()[1].iter().find(|n| self.center().contains(n)).unwrap();
-        let n1_idx = self.faces()[0].iter().position(|n| self.center().contains(n) && n != n5).unwrap();
-        let uv_origin = (n1_idx + 3) % 4;
-        let sorted = self.sort_faces_boundary_planar(self.faces()[0][uv_origin]);
-
-        let pick = [
-            (0, 0), (0, 1), (4, 0), (4, 1),
-            (1, 0), (1, 1), (2, 1), (3, 1),
-            (1, 3), (1, 2), (2, 2), (3, 2),
-        ];
-        pick.map(|(face, node)| sorted.faces()[face][node])
-    }
-
-    /// Returns the nodes of this convex corner boundary patch in lexicographical order, i.e.
-    /// ```text
-    ///  |     |     |
-    ///  6 --- 7 --- 8 ---
-    ///  |     |     |
-    ///  3 --- 4 --- 5 ---
-    ///  |  p  |     |
-    ///  0 --- 1 --- 2 ---
-    /// ```
-    fn nodes_boundary_convex(&self) -> [Node; 9] {
-        // Find uv origin and sort all faces
-        let n0 = self.center().into_iter().find(|&n| self.msh().valence(n) == 2).unwrap();
-        let sorted = self.sort_faces_boundary_convex(n0);
-
-        let pick = [
-            (2, 0), (2, 1),
-            (0, 0), (1, 0), (1, 1),
-            (0, 3), (1, 3), (1, 2)
-        ];
-
-        once(n0).chain(
-            pick.into_iter().map(|(face, node)| sorted.faces()[face][node])
-        ).collect_array().unwrap()
-    }
-
-    /// Returns the nodes of this irregular patch in the following order
-    /// ```text
-    /// 2N+7--2N+6--2N+5--2N+1
-    ///   |     |     |     |
-    ///   2 --- 3 --- 4 --2N+2
-    ///   |     |     |     |
-    ///   1 --- 0 --- 5 --2N+3
-    ///  ╱    ╱ |     |     |
-    /// 2N   ╱  7 --- 6 --2N+4
-    ///  ╲  ╱  ╱
-    ///   ○ - 8
-    /// ```
-    /// where `N` is the valence of the irregular node (`0` in the graphic).
-    fn nodes_irregular(&self) -> Vec<Node> {
-        // Get valence of irregular node
-        let (node_irr, n) = self.irregular_node().expect("Patch must be irregular!");
-
-        // Get faces at irregular node
-        let mut inner_faces = vec![self.faces()[0], self.center()];
-        inner_faces.extend_from_slice(&self.faces()[6..n+4]);
-
-        // Get nodes of inner faces by setting their uv origin to the irregular node
-        let nodes_it = inner_faces.iter().flat_map(|&face| {
-            let sorted = sort_by_origin(face, node_irr);
-            once(sorted[3]).chain(once(sorted[2]))
-        });
-
-        let mut inner_nodes = vec![node_irr];
-        inner_nodes.extend(nodes_it);
-
-        // Get faces away from irregular node
-        let outer_faces = &self.faces()[1..=5].iter().enumerate().map(|(i, &face)| {
-           sort_by_origin(face, inner_nodes[i + 2])
-        }).collect_vec();
-
-        let pick = [
-            (2, 2), (2, 1), (3, 1), (4, 1),
-            (1, 2), (0, 2), (0, 3)
-        ];
-        let outer_nodes = pick.map(|(face, node)| outer_faces[face][node]);
-
-        // Combine both
-        inner_nodes.extend_from_slice(&outer_nodes);
-        inner_nodes
-    }
-
-    /// Returns a vector over the nodes of this patch.
-    pub fn nodes(&self) -> Vec<Node> {
-        match self {
-            Patch::Regular { .. } => self.nodes_regular().into_iter().collect(),
-            Patch::Irregular { .. } => self.nodes_irregular().into_iter().collect(),
-            Patch::BoundaryRegular { .. } => self.nodes_boundary_planar().into_iter().collect(),
-            Patch::BoundaryRegularCorner { .. } => self.nodes_boundary_convex().into_iter().collect(),
-        }
     }
 
     /// Returns a matrix `(c1,...,cN)` over the coordinates of control points of this patch.
     pub fn coords(&self) -> OMatrix<T, U2, Dyn> {
-        let points = self.nodes()
-            .into_iter()
-            .map(|n| self.msh().node(n).coords)
+        let points = self.nodes
+            .as_slice()
+            .iter()
+            .map(|&n| self.msh.node(n).coords)
             .collect_vec();
         OMatrix::from_columns(&points)
     }
 }
 
-/// An extended patch of a quadrilateral mesh.
-/// Consist of 3 regular patches and one irregular patch.
-pub struct ExtendedPatch<'a, T: RealField> {
-    /// The irregular patch.
-    patch_irr: Patch<'a, T>,
-    /// The 3 regular patches surrounding the irregular one.
-    patches_reg: [Patch<'a, T>; 3]
-}
-
-impl <'a, T: RealField + Copy> ExtendedPatch<'a, T> {
-
-    /// Finds the extended patch with the center `face`.
-    pub fn find(msh: &'a QuadMesh<T>, face: Face) -> Self {
-        // Find the irregular node
-        let node_irr = msh.irregular_node_of_face(face).expect("Face must be irregular!");
-
-        let [_, a, b, c] = sort_by_origin(face, node_irr);
-        let mut patch_faces = [Face::default(); 3];
-
-        for face in &msh.faces {
-            if face.contains(&a) && face.contains(&b) { patch_faces[0] = *face }
-            else if face.contains(&b) && face.contains(&c) { patch_faces[2] = *face }
-            else if face.contains(&b) { patch_faces[1] = *face }
-        }
-
-        // Create irregular patch and find nodes
-        let patch_irr = Patch::find(msh, face, node_irr);
-        let nodes_irr = patch_irr.nodes_irregular();
-
-        // Node indices for the orientation of regular patches
-        let starts = [5, 4, 3];
-        let origins = [7, 0, 1];
-
-        // Create and sort regular patches
-        let patches_reg = izip!(patch_faces, starts, origins)
-            .map(|(face, start_idx, origin_idx)| {
-                let patch = Patch::find(msh, face, nodes_irr[start_idx]);
-                patch.sort_faces_regular(nodes_irr[origin_idx])
-            })
-            .collect_array().unwrap();
-
-        ExtendedPatch {
-            patch_irr,
-            patches_reg
-        }
-    }
-
-    /// Returns the nodes of this extended patch in the following order
-    /// ```text
-    /// 2N+16-2N+15-2N+14-2N+13-2N+8
-    ///   |     |     |     |     |
-    /// 2N+7--2N+6--2N+5--2N+1--2N+9
-    ///   |     |     |     |     |
-    ///   2 --- 3 --- 4 --2N+2-2N+10
-    ///   |     |     |     |     |
-    ///   1 --- 0 --- 5 --2N+3-2N+11
-    ///  ╱    ╱ |     |     |     |
-    /// 2N   ╱  7 --- 6 --2N+4-2N+12
-    ///  ╲  ╱  ╱
-    ///   ○ - 8
-    /// ```
-    /// where `N` is the valence of the irregular node (`0` in the graphic).
-    pub fn nodes(&self) -> Vec<Node> {
-        let mut nodes = self.patch_irr.nodes_irregular();
-        let nodes1 = &self.patches_reg[0].nodes_regular();
-        let nodes2 = &self.patches_reg[1].nodes_regular();
-        let nodes3 = &self.patches_reg[2].nodes_regular();
-
-        nodes.extend_from_slice(&[nodes2[15], nodes2[11], nodes2[7], nodes2[3]]);
-        nodes.push(nodes1[3]);
-        nodes.extend_from_slice(&[nodes3[15], nodes3[14], nodes3[13], nodes3[12]]);
-
-        nodes
-    }
-}
+// /// An extended patch of a quadrilateral mesh.
+// /// Consist of 3 regular patches and one irregular patch.
+// pub struct ExtendedPatch<'a, T: RealField> {
+//     /// The irregular patch.
+//     patch_irr: Patch<'a, T>,
+//     /// The 3 regular patches surrounding the irregular one.
+//     patches_reg: [Patch<'a, T>; 3]
+// }
+//
+// impl <'a, T: RealField + Copy> ExtendedPatch<'a, T> {
+//
+//     /// Finds the extended patch with the center `face`.
+//     pub fn find(msh: &'a QuadMesh<T>, face: Face) -> Self {
+//         // Find the irregular node
+//         let node_irr = msh.irregular_node_of_face(face).expect("Face must be irregular!");
+//
+//         let [_, a, b, c] = sort_by_origin(face, node_irr);
+//         let mut patch_faces = [Face::default(); 3];
+//
+//         for face in &msh.faces {
+//             if face.contains(&a) && face.contains(&b) { patch_faces[0] = *face }
+//             else if face.contains(&b) && face.contains(&c) { patch_faces[2] = *face }
+//             else if face.contains(&b) { patch_faces[1] = *face }
+//         }
+//
+//         // Create irregular patch and find nodes
+//         let patch_irr = Patch::find(msh, face, node_irr);
+//         let nodes_irr = patch_irr.nodes_irregular();
+//
+//         // Node indices for the orientation of regular patches
+//         let starts = [5, 4, 3];
+//         let origins = [7, 0, 1];
+//
+//         // Create and sort regular patches
+//         let patches_reg = izip!(patch_faces, starts, origins)
+//             .map(|(face, start_idx, origin_idx)| {
+//                 let patch = Patch::find(msh, face, nodes_irr[start_idx]);
+//                 patch.sort_faces_regular(nodes_irr[origin_idx])
+//             })
+//             .collect_array().unwrap();
+//
+//         ExtendedPatch {
+//             patch_irr,
+//             patches_reg
+//         }
+//     }
+//
+//     /// Returns the nodes of this extended patch in the following order
+//     /// ```text
+//     /// 2N+16-2N+15-2N+14-2N+13-2N+8
+//     ///   |     |     |     |     |
+//     /// 2N+7--2N+6--2N+5--2N+1--2N+9
+//     ///   |     |     |     |     |
+//     ///   2 --- 3 --- 4 --2N+2-2N+10
+//     ///   |     |     |     |     |
+//     ///   1 --- 0 --- 5 --2N+3-2N+11
+//     ///  ╱    ╱ |     |     |     |
+//     /// 2N   ╱  7 --- 6 --2N+4-2N+12
+//     ///  ╲  ╱  ╱
+//     ///   ○ - 8
+//     /// ```
+//     /// where `N` is the valence of the irregular node (`0` in the graphic).
+//     pub fn nodes(&self) -> Vec<Node> {
+//         let mut nodes = self.patch_irr.nodes_irregular();
+//         let nodes1 = &self.patches_reg[0].nodes_regular();
+//         let nodes2 = &self.patches_reg[1].nodes_regular();
+//         let nodes3 = &self.patches_reg[2].nodes_regular();
+//
+//         nodes.extend_from_slice(&[nodes2[15], nodes2[11], nodes2[7], nodes2[3]]);
+//         nodes.push(nodes1[3]);
+//         nodes.extend_from_slice(&[nodes3[15], nodes3[14], nodes3[13], nodes3[12]]);
+//
+//         nodes
+//     }
+// }

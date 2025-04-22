@@ -4,7 +4,7 @@ pub mod test_ex {
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
     use crate::subd::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
-    use crate::subd::patch::Patch;
+    use crate::subd::patch::{NodeConnectivity, Patch};
     use crate::subd::precompute::{BasisEval, GradEval, JacobianEval, PointEval};
     use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{basis, catmull_clark, patch, plot};
@@ -155,9 +155,9 @@ pub mod test_ex {
         msh.lin_subd();
 
         // Find patches
-        let face_id = 0;
+        let face_id = 42;
         let face = msh.faces[face_id];
-        let patch = patch::Nodes::find(&msh, face);
+        let patch = patch::NodeConnectivity::find(&msh, face);
 
         // Plot nodes of patch
         let nodes_plot = plot::plot_nodes(&msh, patch.as_slice().iter().copied());
@@ -172,23 +172,23 @@ pub mod test_ex {
         msh.lin_subd();
 
         // Find patches
-        let face_id = 2;
-        let face = msh.faces[face_id];
-        let patch1 = Patch::find(&msh, face, face[0]);
-        let patch2 = Patch::find(&msh, face, face[1]);
-
-        // Test if patches are the same
-        let same_faces = patch2.faces().iter().sorted().collect_vec() == patch1.faces().iter().sorted().collect_vec();
-        let same_center = patch1.center() == patch2.center();
-        let same_nodes = patch1.nodes().iter().sorted().collect_vec() == patch2.nodes().iter().sorted().collect_vec();
-        if !same_faces || !same_center || !same_nodes {
-            eprintln!("Faces, center face or nodes are not the same! \
-                faces = {same_faces}, center = {same_center}, nodes = {same_nodes}");
+        let mut regular = vec![];
+        let mut boundary = vec![];
+        let mut corner = vec![];
+        let mut irregular = vec![];
+        for (face, patch) in msh.patches().enumerate() {
+            match patch.nodes {
+                NodeConnectivity::Regular(_) => regular.push(face),
+                NodeConnectivity::Boundary(_) => boundary.push(face),
+                NodeConnectivity::Corner(_) => corner.push(face),
+                NodeConnectivity::Irregular(_) => irregular.push(face),
+            }
         }
 
-        // Plot nodes of patch
-        let nodes_plot = plot::plot_nodes(&msh, patch2.nodes().into_iter());
-        nodes_plot.show_html("out/patch_nodes.html");
+        println!("Regular patches {:?}", regular);
+        println!("Boundary patches {:?}", boundary);
+        println!("Corner patches {:?}", corner);
+        println!("Irregular patches {:?}", irregular);
     }
 
     #[test]
@@ -198,11 +198,11 @@ pub mod test_ex {
         msh.lin_subd();
         msh.lin_subd();
 
-        let face_id = 48;
+        let face_id = 10;
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
 
-        let nodes_plot = plot::plot_nodes(&msh, patch.nodes().iter().copied());
+        let nodes_plot = plot::plot_nodes(&msh, patch.nodes.as_slice().iter().copied());
         nodes_plot.show_html("out/patch_bnd_nodes.html");
     }
 
@@ -213,9 +213,10 @@ pub mod test_ex {
         msh.lin_subd();
         msh.lin_subd();
 
-        let face_id = 67;
+        let face_id = 10;
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
+        println!("{:?}", patch.nodes);
 
         // Evaluation
         let num_eval = 10;
@@ -376,7 +377,7 @@ pub mod test_ex {
         msh.lin_subd();
         msh.lin_subd();
 
-        let face_id = 0;
+        let face_id = 25;
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
 

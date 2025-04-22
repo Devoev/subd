@@ -1,6 +1,6 @@
 use crate::subd::edge::sort_edge;
 use crate::subd::face::{edges_of_face, are_adjacent};
-use crate::subd::patch::{ExtendedPatch, Patch};
+use crate::subd::patch::{Patch};
 use itertools::Itertools;
 use nalgebra::{
     Point2, RealField, Vector2,
@@ -170,33 +170,11 @@ impl<T: RealField + Copy> QuadMesh<T> {
 
     /// Finds the patch of the regular or irregular `face`.
     pub fn find_patch(&self, face: Face) -> Patch<T> {
-        // todo: describe how the starting node is selected or change
-        let start = if self.is_boundary_face(face) {
-            // Get the irregular (=boundary) node, such that the preceding node is regular
-            face.into_iter().enumerate()
-                .find_map(|(idx, node)| {
-                    let next_idx = (idx + 1) % 4;
-                    let next_node = face[next_idx];
-                    (self.valence(node) == 4 && self.valence(next_node) != 4).then_some(next_node)
-                }).unwrap()
-        } else if !self.is_regular(face) {
-            // Get irregular node, if face is irregular
-            self.irregular_node_of_face(face).unwrap()
-        } else {
-            // Get arbitrary node, if face is regular
-            face[0]
-        };
-
-        Patch::find(self, face, start)
+        Patch::find(self, face)
     }
     
     /// Returns an iterator over all patches in this mesh.
     pub fn patches(&self) -> impl Iterator<Item = Patch<T>> {
         self.faces.iter().map(|&face| self.find_patch(face))
-    }
-
-    /// Finds an extended patch of the irregular `face`.
-    pub fn find_patch_ext(&self, face: Face) -> ExtendedPatch<T> {
-        ExtendedPatch::find(self, face)
     }
 }
