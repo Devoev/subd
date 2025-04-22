@@ -47,7 +47,7 @@ pub fn plot_nodes(msh: &QuadMesh<f64>, nodes: impl Iterator<Item=Node>) -> Plot 
             .text(num.to_string())
             .show_arrow(false)
             .x(pos.x)
-            .y(pos.y + 0.2);
+            .y(pos.y + 0.05);
         layout.add_annotation(text);
     }
 
