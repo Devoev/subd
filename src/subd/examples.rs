@@ -155,7 +155,7 @@ pub mod test_ex {
         msh.lin_subd();
 
         // Find patches
-        let face_id = 42;
+        let face_id = 0;
         let face = msh.faces[face_id];
         let patch = patch::NodeConnectivity::find(&msh, face);
 
