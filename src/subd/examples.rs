@@ -181,7 +181,7 @@ pub mod test_ex {
                 NodeConnectivity::Regular(_) => regular.push(face),
                 NodeConnectivity::Boundary(_) => boundary.push(face),
                 NodeConnectivity::Corner(_) => corner.push(face),
-                NodeConnectivity::Irregular(_) => irregular.push(face),
+                NodeConnectivity::Irregular(_, _) => irregular.push(face),
             }
         }
 

@@ -22,17 +22,6 @@ impl<'a, T: RealField + Copy> Patch<'a, T> {
 }
 
 impl<'a, T: RealField + Copy> Patch<'a, T> {
-    /// Finds and returns the irregular node index and its valence.
-    /// Returns `None` if there is no irregular node.
-    pub fn irregular_node(&self) -> Option<(usize, usize)> {
-        let node_irr = match &self.connectivity {
-            NodeConnectivity::Irregular(val) => val[0],
-            _ => return None
-        };
-        let n = self.msh.valence(node_irr);
-        Some((node_irr, n))
-    }
-
     /// Returns a matrix `(c1,...,cN)` over the coordinates of control points of this patch.
     pub fn coords(&self) -> OMatrix<T, U2, Dyn> {
         let points = self.connectivity
@@ -101,7 +90,7 @@ pub enum NodeConnectivity {
     ///   ○ - 8
     /// ```
     /// where `p` is the center face of the patch and node `0` is the irregular node.
-    Irregular(Vec<Node>)
+    Irregular(Vec<Node>, usize)
 
     // todo: add IrregularBoundary/Corner case of valence = 4
 }
@@ -168,7 +157,7 @@ impl NodeConnectivity {
 
                 // Combine both
                 nodes.extend_from_slice(&outer_nodes);
-                NodeConnectivity::Irregular(nodes)
+                NodeConnectivity::Irregular(nodes, n)
             }
         }
     }
@@ -179,7 +168,18 @@ impl NodeConnectivity {
             NodeConnectivity::Regular(val) => val.as_slice(),
             NodeConnectivity::Boundary(val) => val.as_slice(),
             NodeConnectivity::Corner(val) => val.as_slice(),
-            NodeConnectivity::Irregular(val) => val.as_slice(),
+            NodeConnectivity::Irregular(val, _) => val.as_slice(),
+        }
+    }
+
+    /// Returns the valence of the (possibly) irregular node.
+    /// For the regular case, the valence is 4.
+    pub fn valence(&self) -> usize {
+        match self {
+            NodeConnectivity::Regular(_) => 4,
+            NodeConnectivity::Boundary(_) => 3,
+            NodeConnectivity::Corner(_) => 2,
+            NodeConnectivity::Irregular(_, valence) => *valence
         }
     }
 }

@@ -13,10 +13,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
     pub fn eval_basis(&self, u: T, v: T) -> DVector<T> {
         let b = match self.connectivity {
             NodeConnectivity::Regular { .. } => basis::eval_regular(u, v).as_slice().to_vec(),
-            NodeConnectivity::Irregular { .. } => {
-                let (_, n) = self.irregular_node().expect("Patch must be irregular!");
-                basis::eval_irregular(u, v, n).as_slice().to_vec()
-            },
+            NodeConnectivity::Irregular (_, n) => basis::eval_irregular(u, v, n).as_slice().to_vec(),
             NodeConnectivity::Boundary { .. } => basis::eval_boundary(u, v, false, true).as_slice().to_vec(),
             NodeConnectivity::Corner { .. } => basis::eval_boundary(u, v, true, true).as_slice().to_vec(),
         };
@@ -27,10 +24,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
     pub fn eval_basis_grad(&self, u: T, v: T) -> OMatrix<T, Dyn, U2> {
         let b = match self.connectivity {
             NodeConnectivity::Regular { .. } => basis::eval_regular_grad(u, v).as_slice().to_vec(),
-            NodeConnectivity::Irregular { .. } => {
-                let (_, n) = self.irregular_node().expect("Patch must be irregular!");
-                basis::eval_irregular_grad(u, v, n).as_slice().to_vec()
-            },
+            NodeConnectivity::Irregular (_, n) => basis::eval_irregular_grad(u, v, n).as_slice().to_vec(),
             NodeConnectivity::Boundary { .. } => basis::eval_boundary_grad(u, v, false, true).as_slice().to_vec(),
             NodeConnectivity::Corner { .. } => basis::eval_boundary_grad(u, v, true, true).as_slice().to_vec(),
         };
@@ -57,8 +51,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
                 let b_dv = basis::eval_regular_dv(u, v);
                 [c.clone() * b_du, c * b_dv]
             }
-            NodeConnectivity::Irregular { .. } => {
-                let (_, n) = self.irregular_node().expect("Patch must be irregular!");
+            NodeConnectivity::Irregular (_, n) => {
                 let b_du = basis::eval_irregular_du(u, v, n);
                 let b_dv = basis::eval_irregular_dv(u, v, n);
                 [c.clone() * b_du, c * b_dv]
