@@ -129,6 +129,8 @@ impl NodeConnectivity {
                 NodeConnectivity::Corner(nodes)
             }
             FaceConnectivity::Irregular(faces) => {
+                // todo: this code can massively be reduced, 
+                //  if faces are already sorted in FaceConnectivity
                 // Get faces at irregular node
                 let node_irr = faces[0][0];
                 let n = msh.valence(node_irr);
