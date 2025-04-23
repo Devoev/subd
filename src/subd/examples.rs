@@ -171,6 +171,14 @@ pub mod test_ex {
         msh.lin_subd();
         msh.lin_subd();
 
+        // Check face connectivity
+        let face_id = 0;
+        let face = msh.faces[face_id];
+        let faces = patch::FaceConnectivity::find(&msh, face);
+        for face in faces.as_slice() {
+            println!("{:?}", face);
+        }
+
         // Find patches
         let mut regular = vec![];
         let mut boundary = vec![];

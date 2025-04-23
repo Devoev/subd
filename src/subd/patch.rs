@@ -129,7 +129,7 @@ impl NodeConnectivity {
                 NodeConnectivity::Corner(nodes)
             }
             FaceConnectivity::Irregular(faces) => {
-                // todo: this code can massively be reduced, 
+                // todo: this code can massively be reduced,
                 //  if faces are already sorted in FaceConnectivity
                 // Get faces at irregular node
                 let node_irr = faces[0][0];
@@ -187,7 +187,7 @@ impl NodeConnectivity {
 }
 
 /// Connectivity of the ordered faces of a [`Patch`].
-enum FaceConnectivity {
+pub enum FaceConnectivity {
     /// The regular interior case of valence `n=4`.
     /// The faces are ordered in lexicographical order
     /// ```text
@@ -377,4 +377,13 @@ impl FaceConnectivity {
         faces_sorted
     }
 
+    /// Returns a slice containing the faces.
+    pub fn as_slice(&self) -> &[Face] {
+        match self {
+            FaceConnectivity::Regular(val) => val.as_slice(),
+            FaceConnectivity::Boundary(val) => val.as_slice(),
+            FaceConnectivity::Corner(val) => val.as_slice(),
+            FaceConnectivity::Irregular(val) => val.as_slice(),
+        }
+    }
 }
