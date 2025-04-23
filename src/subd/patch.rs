@@ -140,21 +140,18 @@ impl NodeConnectivity {
                 // Get nodes of inner faces by setting their uv origin to the irregular node
                 let nodes_it = inner_faces.iter().flat_map(|&face| {
                     let sorted = sort_by_origin(face, node_irr);
-                    once(sorted[3]).chain(once(sorted[2]))
+                    sorted[2..=3].iter().rev()
                 });
 
                 let mut nodes = vec![node_irr];
                 nodes.extend(nodes_it);
 
                 // Get faces away from irregular node
-                let outer_faces = &faces[2..=6].iter().enumerate().map(|(i, &face)| {
-                    sort_by_origin(face, nodes[i + 2])
-                }).collect_vec();
-
                 let pick = [
                     (2, 2), (2, 1), (3, 1), (4, 1),
                     (1, 2), (0, 2), (0, 3)
                 ];
+                let outer_faces = &faces[2..=6];
                 let outer_nodes = pick.map(|(face, node)| outer_faces[face][node]);
 
                 // Combine both
@@ -244,7 +241,7 @@ pub enum FaceConnectivity {
     ///  \   / /
     ///   ○---+
     /// ```
-    /// where `p` is the center face of the patch. The orientation of each face is as 
+    /// where `p` is the center face of the patch. The orientation of each face is as
     /// - Face `p`: Sorted such that the irregular node is the lower left one.
     /// - Faces `1..7`: Sorted such that the first node is the lower left one.
     /// - Faces `8..2n-1`: Sorted such that the first node is the irregular one.
