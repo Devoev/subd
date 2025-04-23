@@ -11,7 +11,7 @@ use std::iter::Sum;
 impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
     /// Evaluates the basis functions on this patch at the parametric point `(u,v)`.
     pub fn eval_basis(&self, u: T, v: T) -> DVector<T> {
-        let b = match self.nodes {
+        let b = match self.connectivity {
             NodeConnectivity::Regular { .. } => basis::eval_regular(u, v).as_slice().to_vec(),
             NodeConnectivity::Irregular { .. } => {
                 let (_, n) = self.irregular_node().expect("Patch must be irregular!");
@@ -25,7 +25,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
 
     /// Evaluates the gradients of the basis functions on this patch at the parametric point `(u,v)`.
     pub fn eval_basis_grad(&self, u: T, v: T) -> OMatrix<T, Dyn, U2> {
-        let b = match self.nodes {
+        let b = match self.connectivity {
             NodeConnectivity::Regular { .. } => basis::eval_regular_grad(u, v).as_slice().to_vec(),
             NodeConnectivity::Irregular { .. } => {
                 let (_, n) = self.irregular_node().expect("Patch must be irregular!");
@@ -51,7 +51,7 @@ impl <T: RealField + Copy + ToPrimitive> Patch<'_, T> {
         let c = self.coords();
 
         // Calculate columns for Jacobian (derivatives d_phi / t_i)
-        let cols = match self.nodes {
+        let cols = match self.connectivity {
             NodeConnectivity::Regular { .. } => {
                 let b_du = basis::eval_regular_du(u, v);
                 let b_dv = basis::eval_regular_dv(u, v);

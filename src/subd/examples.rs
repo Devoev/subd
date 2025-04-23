@@ -177,7 +177,7 @@ pub mod test_ex {
         let mut corner = vec![];
         let mut irregular = vec![];
         for (face, patch) in msh.patches().enumerate() {
-            match patch.nodes {
+            match patch.connectivity {
                 NodeConnectivity::Regular(_) => regular.push(face),
                 NodeConnectivity::Boundary(_) => boundary.push(face),
                 NodeConnectivity::Corner(_) => corner.push(face),
@@ -202,7 +202,7 @@ pub mod test_ex {
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
 
-        let nodes_plot = plot::plot_nodes(&msh, patch.nodes.as_slice().iter().copied());
+        let nodes_plot = plot::plot_nodes(&msh, patch.connectivity.as_slice().iter().copied());
         nodes_plot.show_html("out/patch_bnd_nodes.html");
     }
 
@@ -216,7 +216,7 @@ pub mod test_ex {
         let face_id = 10;
         let face = msh.faces[face_id];
         let patch = msh.find_patch(face);
-        println!("{:?}", patch.nodes);
+        println!("{:?}", patch.connectivity);
 
         // Evaluation
         let num_eval = 10;

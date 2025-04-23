@@ -47,7 +47,7 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
     /// where `phi` is the parametrization of the given `patch`.
     pub fn eval_pullback(&self, patch: &Patch<T>, u: T, v: T) -> T {
         // Get the indices of the control points corresponding to the patch
-        let indices = patch.nodes.as_slice();
+        let indices = patch.connectivity.as_slice();
         let c = DVector::from_iterator(indices.len(), indices.iter().map(|&i| self.coeffs[i]));
         let b = patch.eval_basis(u, v);
         c.dot(&b)
@@ -64,7 +64,7 @@ pub fn op_f_v<T: RealField + Copy + ToPrimitive>(
     let mut fi = DVector::<T>::zeros(msh.num_nodes());
     for (patch, b_eval, p_eval, j_eval) in izip!(msh.patches(), basis_eval, point_eval, jacobian_eval) {
         let fi_local = op_f_v_local(&patch, f.clone(), b_eval, p_eval, j_eval);
-        let indices = patch.nodes.as_slice();
+        let indices = patch.connectivity.as_slice();
         for (idx_local, &idx) in indices.iter().enumerate() {
             fi[idx] += fi_local[idx_local];
         }
@@ -82,7 +82,7 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(
 
     let fv_pullback = |b: &DVector<T>, p: Point2<T>, j: usize| b[j] * f(p);
 
-    let num_basis = patch.nodes.as_slice().len();
+    let num_basis = patch.connectivity.as_slice().len();
     let fj = (0..num_basis).map(|j| {
         // Calculate integrand f * bj
         let fj = zip(&basis_eval.quad_to_basis, &point_eval.quad_to_points)
@@ -100,7 +100,7 @@ pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, grad
 
     for (patch, grad_b_eval, j_eval) in izip!(msh.patches(), grad_eval, jacobian_eval) {
         let kij_local = op_gradu_gradv_local(&patch, grad_b_eval, j_eval);
-        let indices = patch.nodes.as_slice().iter().enumerate();
+        let indices = patch.connectivity.as_slice().iter().enumerate();
         for ((i_local, &i), (j_local, &j)) in indices.clone().cartesian_product(indices) {
             kij.push(i, j, kij_local[(i_local, j_local)]);
         }
@@ -121,7 +121,7 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, gra
         (grad_bi * g_inv * grad_bj.transpose()).x
     };
 
-    let num_basis = patch.nodes.as_slice().len();
+    let num_basis = patch.connectivity.as_slice().len();
     let kij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             // Calculate integrand bi * bj
@@ -141,7 +141,7 @@ pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, basis_eval: 
 
     for (patch, b_eval, j_eval) in izip!(msh.patches(), basis_eval, jacobian_eval) {
         let mij_local = op_u_v_local(&patch, b_eval, j_eval);
-        let indices = patch.nodes.as_slice().iter().enumerate();
+        let indices = patch.connectivity.as_slice().iter().enumerate();
         for ((i_local, &i), (j_local, &j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);
         }
@@ -162,7 +162,7 @@ fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch: &Patch<T>, basis_eval:
         bi * bj
     };
 
-    let num_basis = patch.nodes.as_slice().len();
+    let num_basis = patch.connectivity.as_slice().len();
     let mij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             // Calculate integrand bi * bj
