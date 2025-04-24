@@ -15,6 +15,7 @@ mod pde_test {
     use std::collections::BTreeSet;
     use std::f64::consts::PI;
     use std::sync::LazyLock;
+    use crate::subd::surface::ParametricMap;
 
     /// Mesh for the regular square geometry.
     static MSH_SQUARE: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
@@ -85,7 +86,7 @@ mod pde_test {
         uh_plot.show_html("out/uh_plot.html");
 
         // Calculate error
-        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
+        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.parametrization().eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
         let err_l2 = msh.integrate_pullback(err_fn, num_quad).sqrt();
         let norm_l2 = msh.integrate(|p| u(p).powi(2), num_quad).sqrt();
 
@@ -198,7 +199,7 @@ mod pde_test {
         uh_plot.show_html("out/uh_plot.html");
 
         // Calculate error
-        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
+        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.parametrization().eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
         let err_l2 = msh.integrate_pullback(err_fn, num_quad).sqrt();
         let norm_l2 = msh.integrate(|p| u(p).powi(2), num_quad).sqrt();
 
@@ -247,7 +248,7 @@ mod pde_test {
         uh_plot.show_html("out/uh_plot.html");
 
         // Calculate error
-        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
+        let err_fn = |patch: &Patch<f64>, t1, t2| (u(patch.parametrization().eval(t1, t2)) - uh.eval_pullback(patch, t1, t2)).powi(2);
         let err_l2 = msh.integrate_pullback(err_fn, num_quad).sqrt();
         let norm_l2 = msh.integrate(|p| u(p).powi(2), num_quad).sqrt();
 

@@ -15,6 +15,7 @@ pub mod test_ex {
     use std::f64::consts::PI;
     use std::sync::LazyLock;
     use std::time::Instant;
+    use crate::subd::surface::ParametricMap;
 
     /// Vector of coordinates in 2D.
     type Coords = Vec<Point2<f64>>;
@@ -297,13 +298,14 @@ pub mod test_ex {
 
         for patch in patches {
             for (u, vs) in knot_lines.clone() {
-                let pos = vs.clone().map(|v| patch.eval(u, v)).collect_vec();
+                let phi = patch.parametrization();
+                let pos = vs.clone().map(|v| phi.eval(u, v)).collect_vec();
                 let xs = pos.iter().map(|p| p.x).collect_vec();
                 let ys = pos.iter().map(|p| p.y).collect_vec();
                 let u_line = Scatter::new(xs, ys);
                 plot.add_trace(u_line);
 
-                let pos = vs.map(|v| patch.eval(v, u)).collect_vec();
+                let pos = vs.map(|v| phi.eval(v, u)).collect_vec();
                 let xs = pos.iter().map(|p| p.x).collect_vec();
                 let ys = pos.iter().map(|p| p.y).collect_vec();
                 let v_line = Scatter::new(xs, ys);
@@ -440,7 +442,7 @@ pub mod test_ex {
         let fh = IgaFn::from_fn(&msh, f);
 
         // Calculate L2 error on patch
-        let f_eval = |u: f64, v: f64| f(patch.eval(u, v));
+        let f_eval = |u: f64, v: f64| f(patch.parametrization().eval(u, v));
         let fh_eval = |u: f64, v: f64| fh.eval_pullback(&patch, u, v);
 
         let num = 20;

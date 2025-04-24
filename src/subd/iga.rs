@@ -8,6 +8,7 @@ use itertools::{izip, Itertools};
 use nalgebra::{DMatrix, DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
 use nalgebra_sparse::CooMatrix;
 use num_traits::ToPrimitive;
+use crate::subd::surface::ParametricMap;
 
 /// A discrete scalar potential (i.e. a `0`-form) in IGA, represented by coefficients.
 #[derive(Clone, Debug)]
@@ -49,7 +50,7 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
         // Get the indices of the control points corresponding to the patch
         let indices = patch.connectivity.as_slice();
         let c = DVector::from_iterator(indices.len(), indices.iter().map(|&i| self.coeffs[i]));
-        let b = patch.eval_basis(u, v);
+        let b = patch.basis().eval(u, v);
         c.dot(&b)
     }
 }

@@ -3,7 +3,7 @@ use crate::subd::patch::Patch;
 use crate::subd::quad::GaussLegendrePatch;
 use nalgebra::{DVector, Dyn, Matrix2, OMatrix, OPoint, Point2, RealField, U2};
 use num_traits::ToPrimitive;
-
+use crate::subd::surface::ParametricMap;
 // todo: make generic struct like QuadEval<T>
 //  and maybe differentiate between patch eval and global eval
 
@@ -24,7 +24,7 @@ impl<T: RealField + Copy + ToPrimitive> BasisEval<T> {
                 .map(|(u, v)| {
                     let u = T::from_f64(u).unwrap();
                     let v = T::from_f64(v).unwrap();
-                    patch.eval_basis(u, v)
+                    patch.basis().eval(u, v)
                 })
                 .collect()
         }
@@ -54,7 +54,7 @@ impl<T: RealField + Copy + ToPrimitive> GradEval<T> {
                 .map(|(u, v)| {
                     let u = T::from_f64(u).unwrap();
                     let v = T::from_f64(v).unwrap();
-                    patch.eval_basis_grad(u, v)
+                    patch.basis_grad().eval(u, v)
                 })
                 .collect(),
         }
@@ -88,7 +88,7 @@ impl<T: RealField + Copy + ToPrimitive> JacobianEval<T> {
                 .map(|(u, v)| {
                     let u = T::from_f64(u).unwrap();
                     let v = T::from_f64(v).unwrap();
-                    patch.eval_jacobian(u, v)
+                    patch.jacobian().eval(u, v)
                 })
                 .collect(),
             quad
@@ -131,7 +131,7 @@ impl<T: RealField + Copy + ToPrimitive> PointEval<T> {
                 .map(|(u, v)| {
                     let u = T::from_f64(u).unwrap();
                     let v = T::from_f64(v).unwrap();
-                    patch.eval(u, v)
+                    patch.parametrization().eval(u, v)
                 })
                 .collect()
         }
