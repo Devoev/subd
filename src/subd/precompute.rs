@@ -3,9 +3,73 @@ use crate::subd::patch::Patch;
 use crate::subd::quad::GaussLegendrePatch;
 use nalgebra::{DVector, Dyn, Matrix2, OMatrix, OPoint, Point2, RealField, U2};
 use num_traits::ToPrimitive;
-use crate::subd::surface::ParametricMap;
-// todo: make generic struct like QuadEval<T>
-//  and maybe differentiate between patch eval and global eval
+use crate::subd::surface::{Basis, BasisGrad, Jacobian, ParametricMap, Parametrization};
+
+/// Evaluated parametric maps at each quadrature point.
+pub struct QuadEval<T, F: ParametricMap<T>>(pub Vec<F::Eval>);
+
+impl<T: RealField, F: ParametricMap<T>> QuadEval<T, F> {
+    /// Constructs a new [`QuadEval`] using the quadrature rule `quad`,
+    /// by evaluating the given `map` at every quadrature point in `quad.nodes()`.
+    pub fn from(map: F, quad: &GaussLegendrePatch) -> QuadEval<T, F> {
+        Self(
+            quad.nodes()
+                .map(|(u, v)| {
+                    let u = T::from_f64(u).unwrap();
+                    let v = T::from_f64(v).unwrap();
+                    map.eval(u, v)
+                })
+                .collect()
+        )
+    }
+
+    /// Constructs a vector of [`QuadEval`] for each map in the given iterator.
+    pub fn from_iterator(maps: impl Iterator<Item=F>, quad: &GaussLegendrePatch) -> Vec<QuadEval<T, F>> {
+        maps.map(|f| QuadEval::from(f, quad)).collect()
+    }
+}
+
+/// Evaluated quantities on a single [`Patch`] at each parametric point.
+pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
+    pub patch: Patch<'a, T>,
+    /// Evaluated basis functions.
+    pub basis: QuadEval<T, Basis<'a, T>>,
+
+    /// Evaluated gradients of basis functions.
+    pub basis_grad: QuadEval<T, BasisGrad<'a, T>>,
+
+    /// Evaluated parametrization.
+    pub points: QuadEval<T, Parametrization<'a, T>>,
+
+    /// Evaluated Jacobian.
+    pub jacobian: QuadEval<T, Jacobian<'a, T>>,
+}
+
+impl<'a, T: RealField + Copy + ToPrimitive> PatchEval<'a, T> {
+    /// Constructs a new [`PatchEval`] on `patch` using the given quadrature rule `quad`.
+    pub fn from(patch: Patch<T>, quad: &GaussLegendrePatch) -> Self {
+        todo!("Fix reference stuff");
+        PatchEval {
+            patch: patch.clone(),
+            basis: QuadEval::from(patch.basis(), quad),
+            basis_grad: QuadEval::from(patch.basis_grad(), quad),
+            points: QuadEval::from(patch.parametrization(), quad),
+            jacobian: QuadEval::from(patch.jacobian(), quad),
+        }
+    }
+}
+
+/// Evaluated quantities on all patches of a [`QuadMesh`].
+pub struct MeshEval<'a, T: RealField + Copy + ToPrimitive>(Vec<PatchEval<'a, T>>);
+
+impl<'a, T: RealField + Copy + ToPrimitive> MeshEval<'a, T> {
+    /// Constructs a new [`MeshEval`] on `msh` using the given quadrature rule `quad`.
+    pub fn from(msh: &'a QuadMesh<T>, quad: &GaussLegendrePatch) -> Self {
+        MeshEval(
+            msh.patches().map(|patch| PatchEval::from(patch, quad)).collect(),
+        )
+    }
+}
 
 /// Evaluated basis functions for each quadrature point of a patch.
 #[derive(Debug, Clone)]
