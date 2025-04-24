@@ -179,6 +179,7 @@ impl NodeConnectivity {
 }
 
 /// Connectivity of the ordered faces of a [`Patch`].
+#[derive(Debug, Clone)]
 pub enum FaceConnectivity {
     /// The regular interior case of valence `n=4`.
     /// The faces are ordered in lexicographical order
