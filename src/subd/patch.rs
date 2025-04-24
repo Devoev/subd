@@ -129,33 +129,28 @@ impl NodeConnectivity {
                 NodeConnectivity::Corner(nodes)
             }
             FaceConnectivity::Irregular(faces) => {
-                // todo: this code can massively be reduced,
-                //  if faces are already sorted in FaceConnectivity
                 // Get faces at irregular node
                 let node_irr = faces[0][0];
-                let n = msh.valence(node_irr);
-                let mut inner_faces = vec![faces[1], faces[0]];
-                inner_faces.extend_from_slice(&faces[7..n+5]);
-
-                // Get nodes of inner faces by setting their uv origin to the irregular node
-                let nodes_it = inner_faces.iter().flat_map(|&face| {
-                    let sorted = sort_by_origin(face, node_irr);
-                    sorted[2..=3].iter().rev()
-                });
-
                 let mut nodes = vec![node_irr];
-                nodes.extend(nodes_it);
+
+                let n = faces.len() - 5;
+                let faces_irr = &faces[..n];
+                let faces_reg = &faces[n..];
+
+                // Get nodes around irregular faces
+                let nodes_irr = faces_irr.iter()
+                    .flat_map(|&face| [face[3], face[2]]);
+                nodes.extend(nodes_irr);
 
                 // Get faces away from irregular node
                 let pick = [
-                    (2, 2), (2, 1), (3, 1), (4, 1),
-                    (1, 2), (0, 2), (0, 3)
+                    (0, 2), (0, 1), (1, 1), (2, 1),
+                    (3, 2), (4, 2), (4, 3)
                 ];
-                let outer_faces = &faces[2..=6];
-                let outer_nodes = pick.map(|(face, node)| outer_faces[face][node]);
+                let nodes_reg = pick.map(|(face, node)| faces_reg[face][node]);
 
                 // Combine both
-                nodes.extend_from_slice(&outer_nodes);
+                nodes.extend_from_slice(&nodes_reg);
                 NodeConnectivity::Irregular(nodes, n)
             }
         }
@@ -229,22 +224,22 @@ pub enum FaceConnectivity {
     Corner([Face; 4]),
 
     /// The irregular interior case of valence `n≠4`.
-    /// The faces are ordered in the clockwise order
+    /// The faces are ordered in the following order
     /// ```text
     ///   +-----+-----+-----+
-    ///   |  2  |  3  |  4  |
+    ///   | n+4 | n+3 |  n  |
     ///   +-----+-----+-----+
-    ///   |  1  |  p  |  5  |
+    ///   |  0  |  p  | n+1 |
     ///   +-----+-----+-----+
-    ///  /     /|  7  |  6  |
-    /// + 2n-1/ +-----+-----+
+    ///  /     /|  2  | n+2 |
+    /// + n-1 / +-----+-----+
     ///  \   / /
     ///   ○---+
     /// ```
     /// where `p` is the center face of the patch. The orientation of each face is as
     /// - Face `p`: Sorted such that the irregular node is the lower left one.
-    /// - Faces `1..7`: Sorted such that the first node is the lower left one.
-    /// - Faces `8..2n-1`: Sorted such that the first node is the irregular one.
+    /// - Faces `0..n-1`: Sorted such that the first node is the irregular one.
+    /// - Faces `n..n+4`: Sorted such that the first node is the lower left one.
     Irregular(Vec<Face>)
 }
 
@@ -335,60 +330,63 @@ impl FaceConnectivity {
         faces_sorted.into_iter().flatten().collect()
     }
 
-    /// Traverses the given `faces` of an **irregular** patch in clockwise order around the already **sorted** `center_face`
+    /// Traverses the given `faces` of an **irregular** patch around the already **sorted** `center_face`
     /// and returns them in a vector.
     ///
     /// The traversal order is compatible with [`FaceConnectivity::Irregular`].
     fn traverse_faces_irregular(center_face: Face, mut faces: Vec<&Face>) -> Vec<Face> {
 
-        let mut faces_sorted = vec![Face::default(); 8];
-        faces_sorted[0] = center_face;
+        // Find irregular faces 0..n-1
+        let mut faces_irregular = vec![center_face];
+        let node_irr = center_face[0];
 
-        // Find faces connected to an edge
-        for (edge_dix, &edge) in edges_of_face(center_face).iter().enumerate() {
+        let mut found_face = center_face;
+        while faces.len() > 5 {
+            // Find next face
+            let next_edge = edges_of_face(found_face)[0];
+            let face_idx = faces.iter()
+                .position(|&&face| edges_of_face(face).contains(&reverse_edge(next_edge)))
+                .expect("No face contains given edge. Check faces argument.");
+
+            found_face = sort_by_origin(*faces.swap_remove(face_idx), node_irr);
+            faces_irregular.push(found_face);
+        }
+
+        faces_irregular.rotate_right(1);
+
+        // Find regular faces n..n+4
+        let mut faces_regular = vec![Face::default(); 5];
+
+        // Find faces connected to edges 1 and 2
+        for (edge_dix, &edge) in edges_of_face(center_face)[1..=2].iter().enumerate() {
             let face_idx = faces.iter()
                 .position(|&&face| edges_of_face(face).contains(&reverse_edge(edge)))
                 .expect("No face contains given edge. Check faces argument.");
             let face = *faces.swap_remove(face_idx);
             match edge_dix {
-                0 => faces_sorted[7] = sort_by_node(face, edge[0], 3),
-                1 => faces_sorted[5] = sort_by_node(face, edge[0], 0),
-                2 => faces_sorted[3] = sort_by_node(face, edge[0], 1),
-                3 => faces_sorted[1] = sort_by_node(face, edge[0], 2),
-                _ => unreachable!("A face has only 4 edges!")
+                0 => faces_regular[1] = sort_by_node(face, edge[0], 0),
+                1 => faces_regular[3] = sort_by_node(face, edge[0], 1),
+                _ => unreachable!("Iterating over only 2 edges!")
             };
         }
 
-        // Find faces connected to a node
+        // Find faces connected to nodes 1, 2, 3
         for (node_idx, node) in center_face[1..=3].iter().enumerate() {
             let face_idx = faces.iter()
                 .position(|&&face| face.contains(node))
                 .expect("No face contains given node. Check faces argument.");
             let face = *faces.swap_remove(face_idx);
             match node_idx {
-                0 => faces_sorted[6] = sort_by_node(face, *node, 3),
-                1 => faces_sorted[4] = sort_by_node(face, *node, 0),
-                2 => faces_sorted[2] = sort_by_node(face, *node, 1),
-                _ => {}
+                0 => faces_regular[2] = sort_by_node(face, *node, 3),
+                1 => faces_regular[0] = sort_by_node(face, *node, 0),
+                2 => faces_regular[4] = sort_by_node(face, *node, 1),
+                _ => unreachable!("Iterating over only 3 nodes!")
             }
         }
 
-        // Find remaining irregular faces
-        let node_irr = center_face[0];
-        let mut found_face = *faces_sorted.last().unwrap();
-        let mut next_edge = edges_of_face(found_face)[3];
-        while !faces.is_empty() {
-            // Find next face
-            let face_idx = faces.iter()
-                .position(|&&face| edges_of_face(face).contains(&reverse_edge(next_edge)))
-                .expect("No face contains given edge. Check faces argument.");
-
-            found_face = sort_by_origin(*faces.swap_remove(face_idx), node_irr);
-            next_edge = edges_of_face(found_face)[0];
-            faces_sorted.push(found_face);
-        }
-
-        faces_sorted
+        // Combine faces
+        faces_irregular.extend_from_slice(&faces_regular);
+        faces_irregular
     }
 
     /// Returns a slice containing the faces.
