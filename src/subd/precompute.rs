@@ -4,6 +4,7 @@ use crate::subd::surface::{Basis, BasisGrad, Jacobian, ParametricMap, Parametriz
 use nalgebra::{Matrix2, RealField};
 use num_traits::ToPrimitive;
 use std::slice::Iter;
+use std::vec::IntoIter;
 
 /// Evaluated parametric maps at each quadrature point.
 pub struct QuadEval<T, F: ParametricMap<T>>(pub Vec<F::Eval>);
@@ -26,6 +27,29 @@ impl<T: RealField, F: ParametricMap<T>> QuadEval<T, F> {
     /// Constructs a vector of [`QuadEval`] for each map in the given iterator.
     pub fn from_iterator(maps: impl Iterator<Item=F>, quad: &GaussLegendrePatch) -> Vec<QuadEval<T, F>> {
         maps.map(|f| QuadEval::from(f, quad)).collect()
+    }
+
+    /// Iterates over the evaluated values.
+    pub fn iter(&self) -> Iter<'_, F::Eval> {
+        self.0.iter()
+    }
+}
+
+impl<T, F: ParametricMap<T>> IntoIterator for QuadEval<T, F> {
+    type Item = F::Eval;
+    type IntoIter = IntoIter<F::Eval>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, T, F: ParametricMap<T>> IntoIterator for &'a QuadEval<T, F> {
+    type Item = &'a F::Eval;
+    type IntoIter = Iter<'a, F::Eval>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
     }
 }
 

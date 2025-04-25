@@ -55,7 +55,7 @@ impl<T: RealField + Copy + ToPrimitive> IgaFn<'_, T> {
     }
 }
 
-/// Builds the discrete IGA operator `∫ fv dx` using `num_quad` quadrature points.
+/// Builds the discrete IGA operator `∫ fv dx` on `msh` using the precomputed values `msh_eval`.
 pub fn op_f_v<T: RealField + Copy + ToPrimitive>(
     msh: &QuadMesh<T>,
     msh_eval: &MeshEval<T>,
@@ -72,7 +72,7 @@ pub fn op_f_v<T: RealField + Copy + ToPrimitive>(
     fi
 }
 
-/// Builds the local discrete IGA operator `∫ fv dx` of the given `patch` using `num_quad` quadrature points.
+/// Builds the local discrete IGA operator `∫ fv dx` using the precomputed values `patch_eval`.
 fn op_f_v_local<T: RealField + Copy + ToPrimitive>(
     patch_eval: &PatchEval<T>, f: impl Fn(Point2<T>) -> T,
 ) -> DVector<T> {
@@ -82,7 +82,7 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(
     let num_basis = patch_eval.patch.connectivity.as_slice().len();
     let fj = (0..num_basis).map(|j| {
         // Calculate integrand f * bj
-        let fj = zip(&patch_eval.basis.0, &patch_eval.points.0)
+        let fj = zip(&patch_eval.basis, &patch_eval.points)
             .map(|(b, &p)| fv_pullback(b, p, j)).collect();
         
         // Evaluate integral
@@ -91,7 +91,7 @@ fn op_f_v_local<T: RealField + Copy + ToPrimitive>(
     DVector::from_iterator(num_basis, fj)
 }
 
-/// Builds the discrete IGA operator `∫ grad u · grad v dx` using `num_quad` quadrature points.
+/// Builds the discrete IGA operator `∫ grad u · grad v dx` on `msh` using the precomputed values `msh_eval`.
 pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, msh_eval: &MeshEval<T>) -> CooMatrix<T> {
     let mut kij = CooMatrix::<T>::new(msh.num_nodes(), msh.num_nodes());
 
@@ -107,7 +107,7 @@ pub fn op_gradu_gradv<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, msh_
 }
 
 /// Builds the local discrete IGA operator `∫ grad u · grad v dx`
-/// of the given `patch` using `num_quad` quadrature points.
+/// using the precomputed values `patch_eval`.
 fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch_eval: &PatchEval<T>) -> DMatrix<T> {
     let gradu_gradv_pullback = |grad_b: &OMatrix<T, Dyn, U2>, g_inv: &Matrix2<T>, i: usize, j: usize| {
         // Get gradients
@@ -122,7 +122,7 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch_eval: &PatchEva
     let kij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             // Calculate integrand bi * bj
-            let fij = zip(&patch_eval.basis_grad.0, patch_eval.jacobian.gram_inv())
+            let fij = zip(&patch_eval.basis_grad, patch_eval.jacobian.gram_inv())
                 .map(|(grad_b, g_inv)| gradu_gradv_pullback(grad_b, &g_inv, i, j)).collect();
 
             // Evaluate integral
@@ -132,7 +132,7 @@ fn op_gradu_gradv_local<T: RealField + Copy + ToPrimitive>(patch_eval: &PatchEva
     DMatrix::from_iterator(num_basis, num_basis, kij)
 }
 
-/// Builds the discrete IGA operator `∫ uv dx` using the precomputed basis functions `basis_eval`.
+/// Builds the discrete IGA operator `∫ uv dx` on `msh` using the precomputed values `msh_eval`.
 pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, msh_eval: &MeshEval<T>) -> CooMatrix<T> {
     let mut mij = CooMatrix::<T>::zeros(msh.num_nodes(), msh.num_nodes());
 
@@ -148,7 +148,7 @@ pub fn op_u_v<T: RealField + Copy + ToPrimitive>(msh: &QuadMesh<T>, msh_eval: &M
 }
 
 /// Builds the local discrete IGA operator `∫ uv dx`
-/// of the given `patch` using the precomputed basis functions `basis_eval`.
+/// using the precomputed values `patch_eval`.
 fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch_eval: &PatchEval<T>) -> DMatrix<T>  {
     let uv_pullback = |b: &DVector<T>, i: usize, j: usize| {
         // Eval basis
@@ -163,7 +163,7 @@ fn op_u_v_local<T: RealField + Copy + ToPrimitive>(patch_eval: &PatchEval<T>) ->
     let mij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             // Calculate integrand bi * bj
-            let fij = patch_eval.basis.0.iter().map(|b| uv_pullback(b, i, j)).collect();
+            let fij = patch_eval.basis.iter().map(|b| uv_pullback(b, i, j)).collect();
 
             // Evaluate integral
             patch_eval.quad.integrate_pullback(fij, &patch_eval.jacobian)
