@@ -5,7 +5,7 @@ pub mod test_ex {
     use crate::subd::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
     use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
     use crate::subd::patch::{NodeConnectivity, Patch};
-    use crate::subd::precompute::{BasisEval, GradEval, JacobianEval, PointEval};
+    use crate::subd::precompute::{MeshEval, PatchEval};
     use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{basis, catmull_clark, patch, plot};
     use iter_num_tools::lin_space;
@@ -412,16 +412,15 @@ pub mod test_ex {
         // Precomputation of basis functions
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
-        let basis_eval = BasisEval::from(&patch, quad.clone());
-        let jacobian_eval = JacobianEval::from(&patch, quad.clone());
+        let patch_eval = PatchEval::from(&patch, quad.clone());
 
         println!("Shape of precomputed basis functions: (num_patch, num_quad, num_basis) = ({}, {}, {})",
                  msh.faces.len(),
-                 basis_eval.quad_to_basis.len(),
-                 basis_eval.quad_to_basis[0].len());
+                 patch_eval.basis.0.len(),
+                 patch_eval.basis.0[0].len());
 
         // Comparison with quad crate
-        let int1 = quad.integrate_pullback(basis_eval.quad_to_basis.iter().map(|_| 1.0).collect(), &jacobian_eval);
+        let int1 = quad.integrate_pullback(patch_eval.basis.0.iter().map(|_| 1.0).collect(), &patch_eval.jacobian);
         let int2 = patch.integrate_pullback(|_, _| 1.0, num_quad);
         println!("Integral using precomputed patch quadrature = {int1}");
         println!("Integral using quadrature crate = {int2}");
@@ -479,13 +478,11 @@ pub mod test_ex {
 
         let start = Instant::now();
         let quad = GaussLegendrePatch::new(2).unwrap();
-        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
-        let p_eval = PointEval::from_mesh(&msh, quad.clone());
-        let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
-        let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        // let mat = op_u_v(&msh, &b_eval, &j_eval);
-        // let mat = op_gradu_gradv(&msh, &grad_b_eval, &j_eval);
-        let mat = op_f_v(&msh, |p| 1.0, &b_eval, &p_eval, &j_eval);
+        let patches = msh.patches().collect_vec();
+        let msh_eval = MeshEval::from(&patches, &quad);
+        let mat = op_u_v(&msh, &msh_eval);
+        // let mat = op_gradu_gradv(&msh, &msh_eval);
+        // let mat = op_f_v(&msh, &msh_eval, |p| 1.0);
         let time = start.elapsed();
 
         println!("Building matrix of size {} took {:?}", mat.nrows(), time);

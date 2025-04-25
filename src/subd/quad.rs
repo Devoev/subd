@@ -1,12 +1,13 @@
 //! Custom quadrature rules and extensions to the gauss_quad crate.
 
-use std::iter::zip;
-use gauss_quad::{GaussLegendre, Node, Weight};
+use crate::subd::precompute::{QuadEval};
+use crate::subd::surface::Jacobian;
 use gauss_quad::legendre::GaussLegendreError;
+use gauss_quad::{GaussLegendre, Node, Weight};
 use itertools::Itertools;
-use nalgebra::{DVector, RealField};
+use nalgebra::RealField;
 use num_traits::ToPrimitive;
-use crate::subd::precompute::{BasisEval, JacobianEval};
+use std::iter::zip;
 
 /// Gauss legendre quadrature for a parametric patch `[0,1]²`.
 #[derive(Debug, Clone, PartialEq)]
@@ -55,7 +56,7 @@ impl GaussLegendrePatch {
     /// 
     /// The values of `f` are given as in [`GaussLegendrePatch::integrate`].
     /// The surface patch is parametrized by the Jacobian matrices `jacobian_eval`.
-    pub fn integrate_pullback<T: RealField + Copy + ToPrimitive>(&self, f: Vec<T>, jacobian_eval: &JacobianEval<T>) -> T {
+    pub fn integrate_pullback<T: RealField + Copy + ToPrimitive>(&self, f: Vec<T>, jacobian_eval: &QuadEval<T, Jacobian<T>>) -> T {
         // todo:
         //  - change signature, especially for f. For example, use an IgaFn instead of f
 

@@ -6,7 +6,7 @@ mod pde_test {
     use crate::subd::iga::IgaFn;
     use crate::subd::mesh::{LogicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
-    use crate::subd::precompute::{BasisEval, GradEval, JacobianEval, PointEval};
+    use crate::subd::precompute::{MeshEval};
     use crate::subd::quad::GaussLegendrePatch;
     use crate::subd::{iga, plot};
     use itertools::{iproduct, Itertools};
@@ -64,13 +64,11 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
-        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
-        let p_eval = PointEval::from_mesh(&msh, quad.clone());
-        let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
-        let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, &b_eval, &p_eval, &j_eval);
-        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &grad_b_eval, &j_eval));
-        let mij = CsrMatrix::from(&iga::op_u_v(&msh, &b_eval, &j_eval));
+        let patches = msh.patches().collect_vec();
+        let msh_eval = MeshEval::from(&patches, &quad);
+        let fi = iga::op_f_v(&msh, &msh_eval, f);
+        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &msh_eval));
+        let mij = CsrMatrix::from(&iga::op_u_v(&msh, &msh_eval));
         let aij = kij + mij;
 
         // Plot rhs
@@ -155,12 +153,10 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
-        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
-        let p_eval = PointEval::from_mesh(&msh, quad.clone());
-        let grad_b_eval = GradEval::from_mesh(&msh, quad.clone());
-        let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, &b_eval, &p_eval, &j_eval);
-        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &grad_b_eval, &j_eval));
+        let patches = msh.patches().collect_vec();
+        let msh_eval = MeshEval::from(&patches, &quad);
+        let fi = iga::op_f_v(&msh, &msh_eval, f);
+        let kij = CsrMatrix::from(&iga::op_gradu_gradv(&msh, &msh_eval));
 
         // Deflate system
         let idx = (0..msh.num_nodes()).collect::<BTreeSet<_>>();
@@ -234,11 +230,10 @@ mod pde_test {
         // Build load vector and stiffness matrix
         let num_quad = 2;
         let quad = GaussLegendrePatch::new(num_quad).unwrap();
-        let b_eval = BasisEval::from_mesh(&msh, quad.clone());
-        let p_eval = PointEval::from_mesh(&msh, quad.clone());
-        let j_eval = JacobianEval::from_mesh(&msh, quad.clone());
-        let fi = iga::op_f_v(&msh, f, &b_eval, &p_eval, &j_eval);
-        let aij = CsrMatrix::from(&iga::op_u_v(&msh, &b_eval, &j_eval));
+        let patches = msh.patches().collect_vec();
+        let msh_eval = MeshEval::from(&patches, &quad);
+        let fi = iga::op_f_v(&msh, &msh_eval, f);
+        let aij = CsrMatrix::from(&iga::op_u_v(&msh, &msh_eval));
 
         // Solve system
         let ui = cg(&aij, &fi, fi.clone(), fi.len(), 1e-10);
