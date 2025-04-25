@@ -1,9 +1,10 @@
 use crate::subd::mesh::QuadMesh;
 use crate::subd::patch::Patch;
 use crate::subd::quad::GaussLegendrePatch;
-use nalgebra::{DVector, Dyn, Matrix2, OMatrix, OPoint, Point2, RealField, U2};
-use num_traits::ToPrimitive;
 use crate::subd::surface::{Basis, BasisGrad, Jacobian, ParametricMap, Parametrization};
+use nalgebra::{DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
+use num_traits::ToPrimitive;
+use std::slice::Iter;
 
 /// Evaluated parametric maps at each quadrature point.
 pub struct QuadEval<T, F: ParametricMap<T>>(pub Vec<F::Eval>);
@@ -31,7 +32,6 @@ impl<T: RealField, F: ParametricMap<T>> QuadEval<T, F> {
 
 /// Evaluated quantities on a single [`Patch`] at each parametric point.
 pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
-    pub patch: Patch<'a, T>,
     /// Evaluated basis functions.
     pub basis: QuadEval<T, Basis<'a, T>>,
 
@@ -47,10 +47,8 @@ pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
 
 impl<'a, T: RealField + Copy + ToPrimitive> PatchEval<'a, T> {
     /// Constructs a new [`PatchEval`] on `patch` using the given quadrature rule `quad`.
-    pub fn from(patch: Patch<T>, quad: &GaussLegendrePatch) -> Self {
-        todo!("Fix reference stuff");
+    pub fn from(patch: &'a Patch<T>, quad: &GaussLegendrePatch) -> Self {
         PatchEval {
-            patch: patch.clone(),
             basis: QuadEval::from(patch.basis(), quad),
             basis_grad: QuadEval::from(patch.basis_grad(), quad),
             points: QuadEval::from(patch.parametrization(), quad),
@@ -63,11 +61,17 @@ impl<'a, T: RealField + Copy + ToPrimitive> PatchEval<'a, T> {
 pub struct MeshEval<'a, T: RealField + Copy + ToPrimitive>(Vec<PatchEval<'a, T>>);
 
 impl<'a, T: RealField + Copy + ToPrimitive> MeshEval<'a, T> {
-    /// Constructs a new [`MeshEval`] on `msh` using the given quadrature rule `quad`.
-    pub fn from(msh: &'a QuadMesh<T>, quad: &GaussLegendrePatch) -> Self {
+    /// Constructs a new [`MeshEval`] on the `patches` using the given quadrature rule `quad`.
+    pub fn from(patches: &'a Vec<Patch<T>>, quad: &GaussLegendrePatch) -> Self {
+        // todo: add a PatchMesh struct or else
         MeshEval(
-            msh.patches().map(|patch| PatchEval::from(patch, quad)).collect(),
+            patches.iter().map(|patch| PatchEval::from(patch, quad)).collect(),
         )
+    }
+
+    /// Iterates through the evaluated patches.
+    pub fn patch_iter(&self) -> Iter<PatchEval<'a, T>> {
+        self.0.iter()
     }
 }
 
