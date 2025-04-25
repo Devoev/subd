@@ -30,8 +30,11 @@ impl<T: RealField, F: ParametricMap<T>> QuadEval<T, F> {
     }
 }
 
-/// Evaluated quantities on a single [`Patch`] at each parametric point.
+/// Evaluated quantities on a single [`Patch`] at each quadrature point.
 pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
+    /// Quadrature rule on the patch.
+    pub quad: GaussLegendrePatch,
+
     /// Evaluated basis functions.
     pub basis: QuadEval<T, Basis<'a, T>>,
 
@@ -47,12 +50,13 @@ pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
 
 impl<'a, T: RealField + Copy + ToPrimitive> PatchEval<'a, T> {
     /// Constructs a new [`PatchEval`] on `patch` using the given quadrature rule `quad`.
-    pub fn from(patch: &'a Patch<T>, quad: &GaussLegendrePatch) -> Self {
+    pub fn from(patch: &'a Patch<T>, quad: GaussLegendrePatch) -> Self {
         PatchEval {
-            basis: QuadEval::from(patch.basis(), quad),
-            basis_grad: QuadEval::from(patch.basis_grad(), quad),
-            points: QuadEval::from(patch.parametrization(), quad),
-            jacobian: QuadEval::from(patch.jacobian(), quad),
+            basis: QuadEval::from(patch.basis(), &quad),
+            basis_grad: QuadEval::from(patch.basis_grad(), &quad),
+            points: QuadEval::from(patch.parametrization(), &quad),
+            jacobian: QuadEval::from(patch.jacobian(), &quad),
+            quad
         }
     }
 }
@@ -63,9 +67,9 @@ pub struct MeshEval<'a, T: RealField + Copy + ToPrimitive>(Vec<PatchEval<'a, T>>
 impl<'a, T: RealField + Copy + ToPrimitive> MeshEval<'a, T> {
     /// Constructs a new [`MeshEval`] on the `patches` using the given quadrature rule `quad`.
     pub fn from(patches: &'a Vec<Patch<T>>, quad: &GaussLegendrePatch) -> Self {
-        // todo: add a PatchMesh struct or else
+        // todo: add a PatchMesh struct or else as replacement for patches vec
         MeshEval(
-            patches.iter().map(|patch| PatchEval::from(patch, quad)).collect(),
+            patches.iter().map(|patch| PatchEval::from(patch, quad.clone())).collect(),
         )
     }
 
