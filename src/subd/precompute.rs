@@ -30,6 +30,20 @@ impl<T: RealField, F: ParametricMap<T>> QuadEval<T, F> {
     }
 }
 
+// todo: move these functions to Jacobian struct or elsewhere
+impl<T: RealField + Copy + ToPrimitive> QuadEval<T, Jacobian<'_, T>> {
+    /// Returns an iterator over all absolute values of the determinant of the Jacobian matrices.
+    pub fn abs_det(&self) -> impl Iterator<Item=T> + '_ {
+        self.0.iter().map(|d_phi| d_phi.determinant().abs())
+    }
+
+    /// Returns an iterator over the inverse Gram matrices, i.e. `(Jᐪ·J)⁻¹`.
+    // todo: also precompute this
+    pub fn gram_inv(&self) -> impl Iterator<Item=Matrix2<T>> + '_ {
+        self.0.iter().map(|d_phi| (d_phi.transpose() * d_phi).try_inverse().unwrap())
+    }
+}
+
 /// Evaluated quantities on a single [`Patch`] at each quadrature point.
 pub struct PatchEval<'a, T: RealField + Copy + ToPrimitive> {
     /// Quadrature rule on the patch.
