@@ -4,7 +4,7 @@ mod pde_test {
     use crate::subd::cg::cg;
     use crate::subd::examples::test_ex::{COORDS_PENTAGON, COORDS_QUAD, FACES_PENTAGON, FACES_QUAD};
     use crate::subd::iga::IgaFn;
-    use crate::subd::mesh::{LogicalMesh, QuadMesh};
+    use crate::subd::mesh::{TopologicalMesh, QuadMesh};
     use crate::subd::patch::Patch;
     use crate::subd::precompute::{MeshEval};
     use crate::subd::quad::GaussLegendrePatch;
@@ -21,7 +21,7 @@ mod pde_test {
     static MSH_SQUARE: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
         QuadMesh {
             nodes: COORDS_QUAD.clone(),
-            logical_mesh: LogicalMesh {
+            connectivity: TopologicalMesh {
                 faces: FACES_QUAD.clone()
             }
         }
@@ -31,7 +31,7 @@ mod pde_test {
     static MSH_PENTAGON: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
         QuadMesh {
             nodes: COORDS_PENTAGON.clone(),
-            logical_mesh: LogicalMesh {
+            connectivity: TopologicalMesh {
                 faces: FACES_PENTAGON.clone()
             }
         }

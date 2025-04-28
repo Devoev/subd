@@ -11,47 +11,14 @@ pub type Node = usize;
 pub type Edge = [Node; 2];
 pub type Face = [Node; 4];
 
+/// Topological mesh of quadrilateral elements.
 #[derive(Debug, Clone, Default)]
-pub struct LogicalMesh {
+pub struct TopologicalMesh {
+    /// Face connectivity vector.
     pub faces: Vec<Face>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct QuadMesh<T: RealField> {
-    pub nodes: Vec<Point2<T>>,
-
-    pub logical_mesh: LogicalMesh,
-}
-
-impl<T: RealField> Deref for QuadMesh<T> {
-    type Target = LogicalMesh;
-
-    fn deref(&self) -> &Self::Target {
-        &self.logical_mesh
-    }
-}
-
-impl<T: RealField> DerefMut for QuadMesh<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.logical_mesh
-    }
-}
-
-impl<T: RealField + Copy> QuadMesh<T> {
-    /// Returns the point of the given `node` index.
-    pub fn node(&self, node: Node) -> Point2<T> {
-        self.nodes[node]
-    }
-
-    /// Returns the number of nodes.
-    pub fn num_nodes(&self) -> usize {
-        self.nodes.len()
-    }
-
-    /// Finds the index of the given face.
-    pub fn face_idx(&self, face: Face) -> usize {
-        self.faces.iter().position(|f| f == &face).unwrap()
-    }
+impl TopologicalMesh {
 
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = Edge> + '_ {
@@ -59,24 +26,6 @@ impl<T: RealField + Copy> QuadMesh<T> {
             .flat_map(|&face| edges_of_face(face))
             .map(sort_edge)
             .unique()
-    }
-
-    /// Returns the nodes of the given `edge`.
-    pub fn nodes_of_edge(&self, edge: &Edge) -> [Point2<T>; 2] {
-        edge.map(|n| self.node(n))
-    }
-
-    /// Returns the nodes of the given `face`.
-    pub fn nodes_of_face(&self, face: Face) -> [Point2<T>; 4] {
-        face.map(|node| self.node(node))
-    }
-
-    /// Returns all `(index,face)`-pairs of faces who have the given `node` as a vertex.
-    pub fn faces_of_node(&self, node: Node) -> impl Iterator<Item = (usize, &Face)> {
-        self.faces
-            .iter()
-            .enumerate()
-            .filter(move |(_, face)| face.contains(&node))
     }
 
     /// Returns all edges connected to the given `node`.
@@ -87,6 +36,14 @@ impl<T: RealField + Copy> QuadMesh<T> {
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: Node) -> usize {
         self.edges_of_node(node).count()
+    }
+
+    /// Returns all `(index,face)`-pairs of faces who have the given `node` as a vertex.
+    pub fn faces_of_node(&self, node: Node) -> impl Iterator<Item = (usize, &Face)> {
+        self.faces
+            .iter()
+            .enumerate()
+            .filter(move |(_, face)| face.contains(&node))
     }
 
     /// Returns `true` if the face is regular.
@@ -100,26 +57,75 @@ impl<T: RealField + Copy> QuadMesh<T> {
             .find(|&v| self.valence(v) != 4)
     }
 
+    /// Returns all adjacent faces to `face`.
+    pub fn adjacent_faces(&self, face: Face) -> impl Iterator<Item = (usize, &Face)> {
+        self.faces
+            .iter()
+            .enumerate()
+            .filter(move |(_, f)| are_adjacent(f, &face))
+    }
+
     /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
     pub fn is_boundary_face(&self, face: Face) -> bool {
         self.adjacent_faces(face).count() < 4
     }
 
-    /// Returns whether the given `node` is a boundary node, 
+    /// Returns whether the given `node` is a boundary node,
     /// i.e. all faces containing the node are boundary faces.
     pub fn is_boundary_node(&self, node: Node) -> bool {
         self.faces_of_node(node).all(|(_, &f)| self.is_boundary_face(f))
     }
-    
-    /// Returns an iterator over the indices of all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item = Node> + '_ {
-        (0..self.num_nodes()).filter(|&n| self.is_boundary_node(n))
-    }
-    
+
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
     pub fn boundary_nodes_of_face(&self, face: Face) -> Vec<Node> {
         face.into_iter().filter(|&v| self.valence(v) != 4).collect()
+    }
+}
+
+/// Geometric mesh of quadrilateral elements.
+#[derive(Debug, Clone, Default)]
+pub struct QuadMesh<T: RealField> {
+    /// Coordinates of the meshes vertices.
+    pub nodes: Vec<Point2<T>>,
+    /// Connectivity of this mesh, i.e. the topological mesh.
+    pub connectivity: TopologicalMesh,
+}
+
+impl<T: RealField> Deref for QuadMesh<T> {
+    type Target = TopologicalMesh;
+
+    fn deref(&self) -> &Self::Target {
+        &self.connectivity
+    }
+}
+
+impl<T: RealField> DerefMut for QuadMesh<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.connectivity
+    }
+}
+
+impl<T: RealField + Copy> QuadMesh<T> {
+    /// Returns the point of the given `node` index.
+    pub fn node(&self, node: Node) -> Point2<T> {
+        self.nodes[node]
+    }
+
+    // todo: possibly move this method to TopologicalMesh
+    /// Returns the number of nodes.
+    pub fn num_nodes(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns the nodes of the given `edge`.
+    pub fn nodes_of_edge(&self, edge: &Edge) -> [Point2<T>; 2] {
+        edge.map(|n| self.node(n))
+    }
+
+    /// Returns the nodes of the given `face`.
+    pub fn nodes_of_face(&self, face: Face) -> [Point2<T>; 4] {
+        face.map(|node| self.node(node))
     }
 
     /// Computes the centroid of the given `face`.
@@ -130,42 +136,10 @@ impl<T: RealField + Copy> QuadMesh<T> {
         Point2::from(centroid)
     }
 
-    /// Returns all adjacent faces to `face`.
-    pub fn adjacent_faces(&self, face: Face) -> impl Iterator<Item = (usize, &Face)> {
-        self.faces
-            .iter()
-            .enumerate()
-            .filter(move |(_, f)| are_adjacent(f, &face))
-    }
-
-    /// Returns the one-ring around the given `node`.
-    pub fn face_ring(&self, node: Node) -> Vec<&Face> {
-        let mut faces = self.faces_of_node(node).map(|(_, f)| f).collect_vec();
-        let mut sorted_faces = vec![faces.pop().unwrap()];
-        while !faces.is_empty() {
-            let prev = sorted_faces.last().unwrap();
-            let (idx, next) = faces
-                .iter()
-                .find_position(|f| are_adjacent(f, prev))
-                .unwrap();
-            sorted_faces.push(next);
-            faces.remove(idx);
-        }
-        sorted_faces
-    }
-
-    /// Returns the one-ring of nodes around the given `node`.
-    pub fn node_ring(&self, node: Node) -> Vec<Node> {
-        let mut faces = self.face_ring(node).into_iter().cloned().collect_vec();
-
-        faces
-            .iter_mut()
-            .flat_map(|face| {
-                let idx = face.iter().position(|v| *v == node).unwrap();
-                face.rotate_left(idx);
-                face[1..=2].iter().copied()
-            })
-            .collect_vec()
+    // todo: possibly move this method to TopologicalMesh
+    /// Returns an iterator over the indices of all boundary nodes in this mesh.
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = Node> + '_ {
+        (0..self.num_nodes()).filter(|&n| self.is_boundary_node(n))
     }
 
     /// Finds the patch of the regular or irregular `face`.

@@ -3,7 +3,7 @@
 pub mod test_ex {
     use crate::subd::catmull_clark::{S11, S12, S21, S22};
     use crate::subd::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
-    use crate::subd::mesh::{Face, LogicalMesh, QuadMesh};
+    use crate::subd::mesh::{Face, TopologicalMesh, QuadMesh};
     use crate::subd::patch::{NodeConnectivity, Patch};
     use crate::subd::precompute::{MeshEval, PatchEval};
     use crate::subd::quad::GaussLegendrePatch;
@@ -110,7 +110,7 @@ pub mod test_ex {
     static MSH: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
         QuadMesh {
             nodes: COORDS_PENTAGON.clone(),
-            logical_mesh: LogicalMesh {
+            connectivity: TopologicalMesh {
                 faces: FACES_PENTAGON.clone()
             }
         }

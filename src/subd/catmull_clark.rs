@@ -196,18 +196,19 @@ impl <T: RealField + Copy> QuadMesh<T> {
 
     /// Performs one subdivision of the given `node`.
     fn catmull_clark_step(&self, node: Node) -> MatrixXx2<T> {
-        let n = self.valence(node);
-        let ring = self.node_ring(node);
-        let edge_nodes = [ring[0], ring[2], ring[4], ring[6], ring[8]];
-        let face_nodes = [ring[1], ring[3], ring[5], ring[7], ring[9]];
-
-        let rows = chain!(face_nodes, edge_nodes, once(node))
-            .map(|idx| self.node(idx).coords.transpose())
-            .collect_vec();
-
-        let coords = MatrixXx2::from_rows(&rows);
-        let s = build_mat::<T>(n);
-        s * coords
+        todo!("Implement catmull_clark subdivision")
+        // let n = self.valence(node);
+        // let ring = self.node_ring(node);
+        // let edge_nodes = [ring[0], ring[2], ring[4], ring[6], ring[8]];
+        // let face_nodes = [ring[1], ring[3], ring[5], ring[7], ring[9]];
+        //
+        // let rows = chain!(face_nodes, edge_nodes, once(node))
+        //     .map(|idx| self.node(idx).coords.transpose())
+        //     .collect_vec();
+        //
+        // let coords = MatrixXx2::from_rows(&rows);
+        // let s = build_mat::<T>(n);
+        // s * coords
     }
 
 }
