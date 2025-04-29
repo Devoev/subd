@@ -5,6 +5,7 @@ extern crate core;
 mod knots;
 mod bspline;
 mod subd;
+mod mesh;
 
 #[cfg(test)]
 mod tests {
