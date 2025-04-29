@@ -49,7 +49,7 @@ impl EdgeTopo {
         EdgeTopo([self.end(), self.start()])
     }
 
-    /// Reversed the orientation of this edge by calling [`EdgeTopo::reversed`].
+    /// Reverses the orientation of this edge by calling [`EdgeTopo::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
     }
