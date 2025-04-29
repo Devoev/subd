@@ -2,7 +2,7 @@ pub mod examples;
 mod edge;
 mod face;
 mod mesh;
-mod patch;
+pub(crate) mod patch;
 mod plot;
 mod repeated_averaging;
 mod catmull_clark;
