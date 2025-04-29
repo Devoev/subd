@@ -284,12 +284,12 @@ impl<T: RealField> QuadMesh2d<T> {
         self.coords.len()
     }
 
-    /// Returns and iterator over all unique and sorted edges in this mesh.
+    /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item=Edge<T>> {
         self.topology.edges().map(|edge_top| Edge::new(edge_top, self))
     }
 
-    /// Returns and iterator over all faces in this mesh.
+    /// Returns an iterator over all faces in this mesh.
     pub fn faces(&self) -> impl Iterator<Item=Quad2d<T>> {
         self.topology.faces.iter().map(|face| Quad2d::new(*face, self))
     }
