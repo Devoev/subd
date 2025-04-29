@@ -217,6 +217,53 @@ impl QuadMeshTopo2d {
     }
 }
 
+/// An edge of topology [`EdgeTopo`].
+pub struct Edge<'a, T: RealField> {
+    pub topology: EdgeTopo,
+    msh: &'a QuadMesh2d<T>
+}
+
+impl<'a, T: RealField> Edge<'a, T> {
+
+    /// Constructs a new [`Edge`] from the given `topology` and `msh`.
+    pub fn new(topology: EdgeTopo, msh: &'a QuadMesh2d<T>) -> Self {
+        Edge { topology, msh }
+    }
+
+    /// Returns the coordinates of this edges start and end node.
+    pub fn coords(&self) -> [&Point2<T>; 2]  {
+        self.topology.0.map(|n| self.msh.coords(n))
+    }
+}
+
+/// A 2d quadrilateral element of topology [`QuadTopo2d`].
+pub struct Quad2d<'a, T: RealField> {
+    pub topology: QuadTopo2d,
+    msh: &'a QuadMesh2d<T>
+}
+
+impl<'a, T: RealField> Quad2d<'a, T> {
+
+    /// Constructs a new [`Quad2d`] from the given `topology` and `msh`.
+    pub fn new(topology: QuadTopo2d, msh: &'a QuadMesh2d<T>) -> Self {
+        Quad2d { topology, msh }
+    }
+
+    /// Returns the coordinates of these faces vertices.
+    pub fn coords(&self) -> [&Point2<T>; 4]  {
+        self.topology.0.map(|n| self.msh.coords(n))
+    }
+
+    /// Computes the centroid of this face.
+    pub fn centroid(&self) -> Point2<T> {
+        let centroid = self.coords()
+            .iter()
+            .map(|p| &p.coords)
+            .sum::<Vector2<T>>() / T::from_f64(4.0).unwrap();
+        Point2::from(centroid)
+    }
+}
+
 /// A 2D quadrilateral face-vertex mesh with geometric data of the coordinates of each vertex.
 pub struct QuadMesh2d<T: RealField> {
     /// Coordinates of the meshes vertices.
@@ -237,26 +284,16 @@ impl<T: RealField> QuadMesh2d<T> {
         self.coords.len()
     }
 
-    /// Returns the nodes of the given edge topology `edge_top`.
-    pub fn coords_of_edge(&self, edge_top: EdgeTopo) -> [&Point2<T>; 2] {
-        edge_top.0.map(|n| self.coords(n))
+    /// Returns and iterator over all unique and sorted edges in this mesh.
+    pub fn edges(&self) -> impl Iterator<Item=Edge<T>> {
+        self.topology.edges().map(|edge_top| Edge::new(edge_top, self))
     }
 
-    /// Returns the nodes of the given face topology `face_top`.
-    pub fn coords_of_face(&self, face_top: QuadTopo2d) -> [&Point2<T>; 4] {
-        face_top.0.map(|node| self.coords(node))
+    /// Returns and iterator over all faces in this mesh.
+    pub fn faces(&self) -> impl Iterator<Item=Quad2d<T>> {
+        self.topology.faces.iter().map(|face| Quad2d::new(*face, self))
     }
-
-    /// Computes the centroid of the given face topology `face_top`.
-    pub fn centroid(&self, face_top: QuadTopo2d) -> Point2<T> {
-        let corners = self.coords_of_face(face_top);
-        let centroid = corners
-            .iter()
-            .map(|p| &p.coords)
-            .sum::<Vector2<T>>() / T::from_f64(4.0).unwrap();
-        Point2::from(centroid)
-    }
-
+    
     // todo: possibly move this method to topology
     /// Returns an iterator over the indices of all boundary nodes in this mesh.
     pub fn boundary_nodes(&self) -> impl Iterator<Item = NodeIdx> + '_ {
