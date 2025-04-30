@@ -8,16 +8,16 @@ use crate::subd::patch::Patch;
 /// Index of a node in the mesh.
 pub type NodeIdx = usize;
 
-/// Topology of an edge. The topology is defined as
+/// Topology of a line segment, i.e. a straight line bounded by 2 points. The topology is defined as
 /// ```text
 ///    0 --- 1
 /// -+---> u
 /// ```
 /// where `0` is the start and `1` the end node.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct EdgeTopo(pub [NodeIdx; 2]);
+pub struct LineSegmentTopo(pub [NodeIdx; 2]);
 
-impl EdgeTopo {
+impl LineSegmentTopo {
 
     /// Returns the start node of this edge.
     pub fn start(&self) -> NodeIdx {
@@ -35,34 +35,34 @@ impl EdgeTopo {
     }
 
     /// Returns a sorted copy of this edge such that `self.start() < self.end()`.
-    pub fn sorted(&self) -> EdgeTopo {
-        EdgeTopo(minmax(self.start(), self.end()))
+    pub fn sorted(&self) -> LineSegmentTopo {
+        LineSegmentTopo(minmax(self.start(), self.end()))
     }
     
-    /// Changes the orientation of this edge by calling [`EdgeTopo::sorted`] on self.
+    /// Changes the orientation of this edge by calling [`LineSegmentTopo::sorted`] on self.
     pub fn sort(&mut self) {
         *self = self.sorted();
     }
 
     /// Returns a copy of this edge with reversed orientation.
-    pub fn reversed(&self) -> EdgeTopo {
-        EdgeTopo([self.end(), self.start()])
+    pub fn reversed(&self) -> LineSegmentTopo {
+        LineSegmentTopo([self.end(), self.start()])
     }
 
-    /// Reverses the orientation of this edge by calling [`EdgeTopo::reversed`].
+    /// Reverses the orientation of this edge by calling [`LineSegmentTopo::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
     }
 }
 
-/// Topology of a 2D quadrilateral face. The topology is defined as
+/// Topology of a 2D quadrilateral. The topology is defined as
 /// ```text
 /// v 3 --- 2
 /// ^ |     |
 /// | 0 --- 1
 /// +---> u
 /// ```
-/// where `0,1,2,3` are the corner nodes of the face.
+/// where `0,1,2,3` are the corner nodes of the quadrilateral.
 #[derive(Debug, Clone, Copy)]
 pub struct QuadTopo2d([NodeIdx; 4]);
 
@@ -82,9 +82,9 @@ impl QuadTopo2d {
     /// | + -- 0 -- +
     /// +---> u
     /// ```
-    pub fn edges(&self) -> [EdgeTopo; 4] {
+    pub fn edges(&self) -> [LineSegmentTopo; 4] {
         let [a, b, c, d] = self.0;
-        [EdgeTopo([a, b]), EdgeTopo([b, c]), EdgeTopo([c, d]), EdgeTopo([d, a])]
+        [LineSegmentTopo([a, b]), LineSegmentTopo([b, c]), LineSegmentTopo([c, d]), LineSegmentTopo([d, a])]
     }
 
     // todo: return an intersection result (possibly an enum)
@@ -154,7 +154,7 @@ pub struct QuadMeshTopo2d {
 
 impl QuadMeshTopo2d {
     /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&self) -> impl Iterator<Item = EdgeTopo> + '_ {
+    pub fn edges(&self) -> impl Iterator<Item =LineSegmentTopo> + '_ {
         self.faces.iter()
             .flat_map(|&face| face.edges())
             .map(|edge| edge.sorted())
@@ -162,7 +162,7 @@ impl QuadMeshTopo2d {
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = EdgeTopo> + '_ {
+    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item =LineSegmentTopo> + '_ {
         self.edges().filter(move |edge| edge.0.contains(&node))
     }
 
@@ -217,17 +217,17 @@ impl QuadMeshTopo2d {
     }
 }
 
-/// An edge of topology [`EdgeTopo`].
-pub struct Edge<'a, T: RealField> {
-    pub topology: EdgeTopo,
+/// A line segment of topology [`LineSegmentTopo`].
+pub struct LineSegment<'a, T: RealField> {
+    pub topology: LineSegmentTopo,
     msh: &'a QuadMesh2d<T>
 }
 
-impl<'a, T: RealField> Edge<'a, T> {
+impl<'a, T: RealField> LineSegment<'a, T> {
 
-    /// Constructs a new [`Edge`] from the given `topology` and `msh`.
-    pub fn new(topology: EdgeTopo, msh: &'a QuadMesh2d<T>) -> Self {
-        Edge { topology, msh }
+    /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
+    pub fn new(topology: LineSegmentTopo, msh: &'a QuadMesh2d<T>) -> Self {
+        LineSegment { topology, msh }
     }
 
     /// Returns the coordinates of this edges start and end node.
@@ -285,8 +285,8 @@ impl<T: RealField> QuadMesh2d<T> {
     }
 
     /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&self) -> impl Iterator<Item=Edge<T>> {
-        self.topology.edges().map(|edge_top| Edge::new(edge_top, self))
+    pub fn edges(&self) -> impl Iterator<Item=LineSegment<T>> {
+        self.topology.edges().map(|edge_top| LineSegment::new(edge_top, self))
     }
 
     /// Returns an iterator over all faces in this mesh.
