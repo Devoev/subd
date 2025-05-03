@@ -1,6 +1,7 @@
-use std::cmp::minmax;
-use nalgebra::{Point2, RealField};
+use crate::mesh::cell::CellTopo;
 use crate::mesh::face_vertex::{NodeIdx, QuadVertexMesh};
+use nalgebra::{DimName, Point2, RealField, U0, U1};
+use std::cmp::minmax;
 
 /// A line segment of topology [`LineSegmentTopo`].
 pub struct LineSegment<T: RealField> {
@@ -64,5 +65,17 @@ impl LineSegmentTopo {
     /// Reverses the orientation of this edge by calling [`LineSegmentTopo::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
+    }
+}
+
+impl CellTopo<U1> for LineSegmentTopo {
+    type Boundary<L: DimName> = [NodeIdx; 2];
+
+    fn boundary(&self) -> Self::Boundary<U0> {
+        self.0
+    }
+
+    fn nodes(&self) -> &[NodeIdx] {
+        &self.0
     }
 }

@@ -128,4 +128,8 @@ impl CellTopo<U2> for QuadTopo2d {
     fn boundary(&self) -> Self::Boundary<U1> {
         self.edges()
     }
+
+    fn nodes(&self) -> &[NodeIdx] {
+        &self.0
+    }
 }

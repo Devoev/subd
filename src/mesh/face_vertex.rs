@@ -20,8 +20,32 @@ pub struct ElementVertexTopo<K: DimName + DimNameSub<U1>, C: CellTopo<K>> {
     _phantoms: PhantomData<K>,
 }
 
+impl <K: DimName + DimNameSub<U1>, C: CellTopo<K>> ElementVertexTopo<K, C> {
+    
+    /// Constructs a new [`ElementVertexTopo`] from the given `elems` topology vector.
+    pub fn new(elems: Vec<C>) -> Self {
+        ElementVertexTopo { elems, _phantoms: PhantomData }
+    }
+
+    /// Finds all elements which contain the given `node` and returns them as an iterator.
+    pub fn elems_of_node(&self, node: NodeIdx) -> impl Iterator<Item = &C> {
+        self.elems
+            .iter()
+            .filter(move |elem| elem.contains_node(node))
+    }
+    
+    // todo: move methods for adjacency computation here
+    
+    // todo: move methods for boundary computation here (add chains for that)
+}
+
 /// A face-vertex mesh topology with `2`-dimensional faces [`C`].
 type FaceVertexTopo<C> = ElementVertexTopo<U2, C>;
+
+impl <C: CellTopo<U2>> FaceVertexTopo<C> {
+    
+    // todo: move edges and valence methods here
+}
 
 /// A face-vertex mesh topology of quadrilateral faces.
 type QuadVertexTopo = FaceVertexTopo<QuadTopo2d>;
@@ -43,14 +67,6 @@ impl QuadVertexTopo {
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: NodeIdx) -> usize {
         self.edges_of_node(node).count()
-    }
-
-    /// Returns all `(index,face)`-pairs of faces who have the given `node` as a vertex.
-    pub fn faces_of_node(&self, node: NodeIdx) -> impl Iterator<Item = (usize, &QuadTopo2d)> {
-        self.elems
-            .iter()
-            .enumerate()
-            .filter(move |(_, face)| face.nodes().contains(&node))
     }
 
     /// Returns `true` if the face is regular.
@@ -81,7 +97,7 @@ impl QuadVertexTopo {
     /// Returns whether the given `node` is a boundary node,
     /// i.e. all faces containing the node are boundary faces.
     pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
-        self.faces_of_node(node).all(|(_, &f)| self.is_boundary_face(f))
+        self.elems_of_node(node).all(|&f| self.is_boundary_face(f))
     }
 
     /// Finds all boundary nodes of the given `face`,
