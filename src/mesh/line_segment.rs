@@ -1,8 +1,9 @@
 use crate::mesh::cell::CellTopo;
-use crate::mesh::face_vertex::{NodeIdx, QuadVertexMesh};
-use nalgebra::{DimName, DimNameDiff, Point2, RealField, U0, U1};
-use std::cmp::minmax;
 use crate::mesh::chain::ChainTopo;
+use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::vertex::VertexTopo;
+use nalgebra::{Point2, RealField, U0, U1};
+use std::cmp::minmax;
 
 /// A line segment of topology [`LineSegmentTopo`].
 pub struct LineSegment<T: RealField> {
@@ -29,23 +30,18 @@ impl<T: RealField> LineSegment<T> {
 /// ```
 /// where `0` is the start and `1` the end node.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct LineSegmentTopo(pub [NodeIdx; 2]);
+pub struct LineSegmentTopo(pub [VertexTopo; 2]);
 
 impl LineSegmentTopo {
 
     /// Returns the start node of this edge.
-    pub fn start(&self) -> NodeIdx {
+    pub fn start(&self) -> VertexTopo {
         self.0[0]
     }
 
     /// Returns the end node of this edge.
-    pub fn end(&self) -> NodeIdx {
+    pub fn end(&self) -> VertexTopo {
         self.0[1]
-    }
-
-    /// Returns the boundary of this edge, i.e. the starting and end nodes.
-    pub fn boundary(&self) -> [NodeIdx; 2] {
-        self.0
     }
 
     /// Returns a sorted copy of this edge such that `self.start() < self.end()`.
@@ -70,17 +66,25 @@ impl LineSegmentTopo {
 }
 
 impl CellTopo<U1> for LineSegmentTopo {
-    type Boundary<L: DimName> = [NodeIdx; 2];
+    type Boundary = LineSegmentBndTopo;
 
-    fn boundary(&self) -> Self::Boundary<U0> {
-        self.0
+    fn boundary(&self) -> Self::Boundary {
+        LineSegmentBndTopo(self.0)
     }
 
-    fn nodes(&self) -> &[NodeIdx] {
+    fn nodes(&self) -> &[VertexTopo] {
         &self.0
     }
 }
 
-pub struct LineSegmentBndTopo(pub [NodeIdx; 2]);
+pub struct LineSegmentBndTopo(pub [VertexTopo; 2]);
 
-// todo: impl ChainTopo
+impl ChainTopo<U0, VertexTopo> for LineSegmentBndTopo {
+    type Boundary = ();
+
+    fn boundary(&self) -> Self::Boundary {}
+
+    fn cells(&self) -> &[VertexTopo] {
+        &self.0
+    }
+}

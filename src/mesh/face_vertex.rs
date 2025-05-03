@@ -7,20 +7,18 @@ use crate::subd::patch::Patch;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2};
 use std::marker::PhantomData;
-
-/// Index of a node in the mesh.
-pub type NodeIdx = usize;
+use crate::mesh::vertex::VertexTopo;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
 /// The elements are `K`-cells of type [`C`].
-pub struct ElementVertexTopo<K: DimName + DimNameSub<U1>, C: CellTopo<K>> {
+pub struct ElementVertexTopo<K: DimName, C: CellTopo<K>> {
     /// Element connectivity vector.
     pub elems: Vec<C>,
 
     _phantoms: PhantomData<K>,
 }
 
-impl <K: DimName + DimNameSub<U1>, C: CellTopo<K>> ElementVertexTopo<K, C> {
+impl <K: DimName, C: CellTopo<K>> ElementVertexTopo<K, C> {
     
     /// Constructs a new [`ElementVertexTopo`] from the given `elems` topology vector.
     pub fn new(elems: Vec<C>) -> Self {
@@ -28,7 +26,7 @@ impl <K: DimName + DimNameSub<U1>, C: CellTopo<K>> ElementVertexTopo<K, C> {
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
-    pub fn elems_of_node(&self, node: NodeIdx) -> impl Iterator<Item = &C> {
+    pub fn elems_of_node(&self, node: VertexTopo) -> impl Iterator<Item = &C> {
         self.elems
             .iter()
             .filter(move |elem| elem.contains_node(node))
@@ -60,12 +58,12 @@ impl QuadVertexTopo {
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = LineSegmentTopo> + '_ {
+    pub fn edges_of_node(&self, node: VertexTopo) -> impl Iterator<Item = LineSegmentTopo> + '_ {
         self.edges().filter(move |edge| edge.0.contains(&node))
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
-    pub fn valence(&self, node: NodeIdx) -> usize {
+    pub fn valence(&self, node: VertexTopo) -> usize {
         self.edges_of_node(node).count()
     }
 
@@ -75,7 +73,7 @@ impl QuadVertexTopo {
     }
 
     /// Finds the irregular node of the given `face`, if any exists.
-    pub fn irregular_node_of_face(&self, face: QuadTopo2d) -> Option<NodeIdx> {
+    pub fn irregular_node_of_face(&self, face: QuadTopo2d) -> Option<VertexTopo> {
         face.nodes()
             .into_iter()
             .find(|&v| self.valence(v) != 4)
@@ -96,13 +94,13 @@ impl QuadVertexTopo {
 
     /// Returns whether the given `node` is a boundary node,
     /// i.e. all faces containing the node are boundary faces.
-    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
+    pub fn is_boundary_node(&self, node: VertexTopo) -> bool {
         self.elems_of_node(node).all(|&f| self.is_boundary_face(f))
     }
 
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
-    pub fn boundary_nodes_of_face(&self, face: QuadTopo2d) -> Vec<NodeIdx> {
+    pub fn boundary_nodes_of_face(&self, face: QuadTopo2d) -> Vec<VertexTopo> {
         face.nodes().into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
 }
@@ -124,8 +122,8 @@ pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo2d>;
 
 impl<T: RealField> QuadVertexMesh<T> {
     /// Returns the [`Point2`] of the given `node` index.
-    pub fn coords(&self, node: NodeIdx) -> &Point2<T> {
-        &self.coords[node]
+    pub fn coords(&self, node: VertexTopo) -> &Point2<T> {
+        &self.coords[node.0]
     }
 
     // todo: possibly move this method to topology
@@ -146,8 +144,10 @@ impl<T: RealField> QuadVertexMesh<T> {
     
     // todo: possibly move this method to topology
     /// Returns an iterator over the indices of all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item = NodeIdx> + '_ {
-        (0..self.num_nodes()).filter(|&n| self.topology.is_boundary_node(n))
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
+        (0..self.num_nodes())
+            .map(VertexTopo)
+            .filter(|&n| self.topology.is_boundary_node(n))
     }
 
     /// Finds the patch of the regular or irregular `face`.
