@@ -1,7 +1,8 @@
 use crate::mesh::cell::CellTopo;
 use crate::mesh::face_vertex::{NodeIdx, QuadVertexMesh};
-use nalgebra::{DimName, Point2, RealField, U0, U1};
+use nalgebra::{DimName, DimNameDiff, Point2, RealField, U0, U1};
 use std::cmp::minmax;
+use crate::mesh::chain::ChainTopo;
 
 /// A line segment of topology [`LineSegmentTopo`].
 pub struct LineSegment<T: RealField> {
@@ -79,3 +80,7 @@ impl CellTopo<U1> for LineSegmentTopo {
         &self.0
     }
 }
+
+pub struct LineSegmentBndTopo(pub [NodeIdx; 2]);
+
+// todo: impl ChainTopo

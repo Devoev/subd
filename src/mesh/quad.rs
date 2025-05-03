@@ -1,5 +1,6 @@
-use nalgebra::{DimName, Point2, RealField, Vector2, U1, U2};
+use nalgebra::{DimName, DimNameDiff, Point2, RealField, Vector2, U0, U1, U2};
 use crate::mesh::cell::CellTopo;
+use crate::mesh::chain::ChainTopo;
 use crate::mesh::face_vertex::{NodeIdx, QuadVertexMesh};
 use crate::mesh::line_segment::LineSegmentTopo;
 
@@ -130,6 +131,18 @@ impl CellTopo<U2> for QuadTopo2d {
     }
 
     fn nodes(&self) -> &[NodeIdx] {
+        &self.0
+    }
+}
+
+pub struct QuadBndTopo2d(pub [LineSegmentTopo; 4]);
+
+impl ChainTopo<U1, LineSegmentTopo> for QuadBndTopo2d {
+    type Boundary<L: DimName> = ();
+
+    fn boundary(&self) -> Self::Boundary<U0> {}
+
+    fn cells(&self) -> &[LineSegmentTopo] {
         &self.0
     }
 }
