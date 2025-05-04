@@ -24,6 +24,19 @@ pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     fn boundary(&self) -> Self::Boundary;
 }
 
+/// A [topological cell](CellTopo) with an ordering of its nodes.
+pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
+    
+    /// Returns a (globally) sorted copy of this cell. 
+    /// 
+    /// The new ordering satisfies
+    /// for cells `c₁` and `c₂` with the same nodes, that
+    /// ```text
+    /// sorted(c₁) = sorted(c₂)
+    /// ```
+    fn sorted(&self) -> Self;
+}
+
 impl <K: DimName> CellTopo<K> for () {
     fn nodes(&self) -> &[VertexTopo] {
         &[]

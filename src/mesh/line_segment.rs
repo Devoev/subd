@@ -1,4 +1,4 @@
-use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
 use crate::mesh::chain::ChainTopo;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::vertex::VertexTopo;
@@ -77,6 +77,12 @@ impl CellBoundaryTopo<U1> for LineSegmentTopo {
 
     fn boundary(&self) -> Self::Boundary {
         LineSegmentBndTopo(self.0)
+    }
+}
+
+impl OrderedCellTopo<U1> for LineSegmentTopo {
+    fn sorted(&self) -> Self {
+        LineSegmentTopo(minmax(self.start(), self.end()))
     }
 }
 

@@ -1,11 +1,12 @@
 //! Data structures for a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
+use std::hash::Hash;
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
 use crate::mesh::line_segment::{LineSegment, LineSegmentTopo};
 use crate::mesh::quad::{Quad, QuadTopo};
 use crate::subd::patch::Patch;
 use itertools::Itertools;
-use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2};
+use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2, U3};
 use std::marker::PhantomData;
 use crate::mesh::chain::ChainTopo;
 use crate::mesh::vertex::VertexTopo;
@@ -38,43 +39,36 @@ impl <K: DimName, C: CellTopo<K>> ElementVertexTopo<K, C> {
     // todo: move methods for boundary computation here (add chains for that)
 }
 
-/// A face-vertex mesh topology with `2`-dimensional faces [`C`].
-type FaceVertexTopo<C> = ElementVertexTopo<U2, C>;
+/// A face-vertex mesh topology with `2`-dimensional faces [`F`].
+type FaceVertexTopo<F> = ElementVertexTopo<U2, F>;
 
-// todo: add sub-traits for edges faces and vertices
-impl <E: CellTopo<U1> + Clone, F: CellBoundaryTopo<U2, BoundaryCell=E>> FaceVertexTopo<F> {
+// todo: add sub-traits for edges faces and vertices or use type alias like this
+type Edge<C> = <C as CellBoundaryTopo<U2>>::BoundaryCell;
 
+impl <'a, E: 'a + OrderedCellTopo<U1> + Clone + Eq + Hash, F: CellBoundaryTopo<U2, BoundaryCell=E>> FaceVertexTopo<F> {
     /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges_(&self) -> impl Iterator<Item = E> + '_ {
+    pub fn edges(&'a self) -> impl Iterator<Item = E> + 'a {
         self.elems.iter()
-            .map(|face| face.boundary().cells()[0].clone())
-    }
-    
-    // todo: move edges and valence methods here
-}
-
-/// A face-vertex mesh topology of quadrilateral faces.
-type QuadVertexTopo = FaceVertexTopo<QuadTopo>;
-
-impl QuadVertexTopo {
-    /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&self) -> impl Iterator<Item = LineSegmentTopo> + '_ {
-        self.elems.iter()
-            .flat_map(|&face| face.edges())
+            .flat_map(|face| face.boundary().cells().to_owned())
             .map(|edge| edge.sorted())
             .unique()
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: VertexTopo) -> impl Iterator<Item = LineSegmentTopo> + '_ {
-        self.edges().filter(move |edge| edge.0.contains(&node))
+    pub fn edges_of_node(&'a self, node: VertexTopo) -> impl Iterator<Item = E> + 'a {
+        self.edges().filter(move |edge| edge.contains_node(node))
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: VertexTopo) -> usize {
         self.edges_of_node(node).count()
     }
+}
 
+/// A face-vertex mesh topology of quadrilateral faces.
+type QuadVertexTopo = FaceVertexTopo<QuadTopo>;
+
+impl QuadVertexTopo {
     /// Returns `true` if the face is regular.
     pub fn is_regular(&self, face: QuadTopo) -> bool {
         face.nodes().iter().all(|node| self.valence(*node) == 4)
