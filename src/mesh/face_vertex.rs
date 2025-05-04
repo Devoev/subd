@@ -1,12 +1,13 @@
 //! Data structures for a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::mesh::cell::CellTopo;
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
 use crate::mesh::line_segment::{LineSegment, LineSegmentTopo};
 use crate::mesh::quad::{Quad, QuadTopo};
 use crate::subd::patch::Patch;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2};
 use std::marker::PhantomData;
+use crate::mesh::chain::ChainTopo;
 use crate::mesh::vertex::VertexTopo;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
@@ -40,7 +41,14 @@ impl <K: DimName, C: CellTopo<K>> ElementVertexTopo<K, C> {
 /// A face-vertex mesh topology with `2`-dimensional faces [`C`].
 type FaceVertexTopo<C> = ElementVertexTopo<U2, C>;
 
-impl <C: CellTopo<U2>> FaceVertexTopo<C> {
+// todo: add sub-traits for edges faces and vertices
+impl <E: CellTopo<U1> + Clone, F: CellBoundaryTopo<U2, BoundaryCell=E>> FaceVertexTopo<F> {
+
+    /// Returns an iterator over all unique and sorted edges in this mesh.
+    pub fn edges_(&self) -> impl Iterator<Item = E> + '_ {
+        self.elems.iter()
+            .map(|face| face.boundary().cells()[0].clone())
+    }
     
     // todo: move edges and valence methods here
 }
