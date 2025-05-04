@@ -6,10 +6,6 @@ use nalgebra::U0;
 pub struct VertexTopo(pub usize);
 
 impl CellTopo<U0> for VertexTopo {
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary { }
-
     fn nodes(&self) -> &[VertexTopo] {
         &[] // todo: return self?
     }

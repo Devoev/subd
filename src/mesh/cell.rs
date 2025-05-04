@@ -1,15 +1,9 @@
 use crate::mesh::vertex::VertexTopo;
-use nalgebra::DimName;
+use nalgebra::{DimName, DimNameDiff, DimNameSub, U1};
+use crate::mesh::chain::ChainTopo;
 
-/// Topology of a `K`-cell inside a mesh.
+/// Topology of a [`K`]-cell inside a mesh.
 pub trait CellTopo<K: DimName> {
-    
-    /// Topology of the `K-1`-dimensional boundary of this cell.
-    type Boundary;
-    
-    /// Returns the [boundary topology](Self::Boundary) of this cell.
-    fn boundary(&self) -> Self::Boundary;
-    
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
     fn nodes(&self) -> &[VertexTopo];
     
@@ -19,11 +13,18 @@ pub trait CellTopo<K: DimName> {
     }
 }
 
+/// A [topological cell](CellTopo) with a boundary.
+pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
+    /// Cell topology of the individual cells of the boundary chain.
+    type BoundaryCell: CellTopo<DimNameDiff<K, U1>>;
+    /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
+    type Boundary: ChainTopo<DimNameDiff<K, U1>, Self::BoundaryCell>;
+
+    /// Returns the [boundary topology](Self::Boundary) of this cell.
+    fn boundary(&self) -> Self::Boundary;
+}
+
 impl <K: DimName> CellTopo<K> for () {
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary {}
-
     fn nodes(&self) -> &[VertexTopo] {
         &[]
     }

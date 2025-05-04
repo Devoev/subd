@@ -2,7 +2,7 @@
 
 use crate::mesh::cell::CellTopo;
 use crate::mesh::line_segment::{LineSegment, LineSegmentTopo};
-use crate::mesh::quad::{Quad2d, QuadTopo2d};
+use crate::mesh::quad::{Quad, QuadTopo};
 use crate::subd::patch::Patch;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2};
@@ -46,7 +46,7 @@ impl <C: CellTopo<U2>> FaceVertexTopo<C> {
 }
 
 /// A face-vertex mesh topology of quadrilateral faces.
-type QuadVertexTopo = FaceVertexTopo<QuadTopo2d>;
+type QuadVertexTopo = FaceVertexTopo<QuadTopo>;
 
 impl QuadVertexTopo {
     /// Returns an iterator over all unique and sorted edges in this mesh.
@@ -68,19 +68,19 @@ impl QuadVertexTopo {
     }
 
     /// Returns `true` if the face is regular.
-    pub fn is_regular(&self, face: QuadTopo2d) -> bool {
+    pub fn is_regular(&self, face: QuadTopo) -> bool {
         face.nodes().iter().all(|node| self.valence(*node) == 4)
     }
 
     /// Finds the irregular node of the given `face`, if any exists.
-    pub fn irregular_node_of_face(&self, face: QuadTopo2d) -> Option<VertexTopo> {
+    pub fn irregular_node_of_face(&self, face: QuadTopo) -> Option<VertexTopo> {
         face.nodes()
             .into_iter()
             .find(|&v| self.valence(v) != 4)
     }
 
     /// Returns all adjacent faces to `face`.
-    pub fn adjacent_faces(&self, face: QuadTopo2d) -> impl Iterator<Item = (usize, &QuadTopo2d)> {
+    pub fn adjacent_faces(&self, face: QuadTopo) -> impl Iterator<Item = (usize, &QuadTopo)> {
         self.elems
             .iter()
             .enumerate()
@@ -88,7 +88,7 @@ impl QuadVertexTopo {
     }
 
     /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
-    pub fn is_boundary_face(&self, face: QuadTopo2d) -> bool {
+    pub fn is_boundary_face(&self, face: QuadTopo) -> bool {
         self.adjacent_faces(face).count() < 4
     }
 
@@ -100,7 +100,7 @@ impl QuadVertexTopo {
 
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
-    pub fn boundary_nodes_of_face(&self, face: QuadTopo2d) -> Vec<VertexTopo> {
+    pub fn boundary_nodes_of_face(&self, face: QuadTopo) -> Vec<VertexTopo> {
         face.nodes().into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
 }
@@ -118,7 +118,7 @@ pub struct ElementVertexMesh<T: RealField, K: DimName + DimNameSub<U1>, C: CellT
 pub type FaceVertexMesh<T, C> = ElementVertexMesh<T, U2, C>;
 
 /// A face-vertex mesh with quadrilateral faces.
-pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo2d>;
+pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo>;
 
 impl<T: RealField> QuadVertexMesh<T> {
     /// Returns the [`Point2`] of the given `node` index.
@@ -138,8 +138,8 @@ impl<T: RealField> QuadVertexMesh<T> {
     }
 
     /// Returns an iterator over all faces in this mesh.
-    pub fn faces(&self) -> impl Iterator<Item=Quad2d<T>> + '_ {
-        self.topology.elems.iter().map(|&face| Quad2d::from_msh(face, self))
+    pub fn faces(&self) -> impl Iterator<Item=Quad<T>> + '_ {
+        self.topology.elems.iter().map(|&face| Quad::from_msh(face, self))
     }
     
     // todo: possibly move this method to topology
@@ -151,7 +151,7 @@ impl<T: RealField> QuadVertexMesh<T> {
     }
 
     /// Finds the patch of the regular or irregular `face`.
-    pub fn find_patch(&self, face: QuadTopo2d) -> Patch<T> {
+    pub fn find_patch(&self, face: QuadTopo) -> Patch<T> {
         todo!()
     }
 

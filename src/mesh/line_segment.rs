@@ -1,4 +1,4 @@
-use crate::mesh::cell::CellTopo;
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
 use crate::mesh::chain::ChainTopo;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::vertex::VertexTopo;
@@ -66,24 +66,23 @@ impl LineSegmentTopo {
 }
 
 impl CellTopo<U1> for LineSegmentTopo {
+    fn nodes(&self) -> &[VertexTopo] {
+        &self.0
+    }
+}
+
+impl CellBoundaryTopo<U1> for LineSegmentTopo {
+    type BoundaryCell = VertexTopo;
     type Boundary = LineSegmentBndTopo;
 
     fn boundary(&self) -> Self::Boundary {
         LineSegmentBndTopo(self.0)
-    }
-
-    fn nodes(&self) -> &[VertexTopo] {
-        &self.0
     }
 }
 
 pub struct LineSegmentBndTopo(pub [VertexTopo; 2]);
 
 impl ChainTopo<U0, VertexTopo> for LineSegmentBndTopo {
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary {}
-
     fn cells(&self) -> &[VertexTopo] {
         &self.0
     }

@@ -1,25 +1,25 @@
-use crate::mesh::cell::CellTopo;
-use crate::mesh::chain::ChainTopo;
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
+use crate::mesh::chain::{ChainBoundaryTopo, ChainTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::line_segment::LineSegmentTopo;
 use crate::mesh::vertex::VertexTopo;
 use nalgebra::{Point2, RealField, Vector2, U1, U2};
 
-/// A 2d quadrilateral element of topology [`QuadTopo2d`].
-pub struct Quad2d<T: RealField> {
+/// A 2d quadrilateral element of topology [`QuadTopo`].
+pub struct Quad<T: RealField> {
     pub vertices: [Point2<T>; 4]
 }
 
-impl<T: RealField> Quad2d<T> {
+impl<T: RealField> Quad<T> {
 
-    /// Constructs a new [`Quad2d`] from the given `vertices`.
+    /// Constructs a new [`Quad`] from the given `vertices`.
     pub fn new(vertices: [Point2<T>; 4]) -> Self {
-        Quad2d { vertices }
+        Quad { vertices }
     }
 
-    /// Constructs a new [`Quad2d`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: QuadTopo2d, msh: &QuadVertexMesh<T>) -> Self {
-        Quad2d::new(topology.0.map(|n| msh.coords(n).clone()))
+    /// Constructs a new [`Quad`] from the given `topology` and `msh`.
+    pub fn from_msh(topology: QuadTopo, msh: &QuadVertexMesh<T>) -> Self {
+        Quad::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 
     /// Computes the centroid of this face.
@@ -42,9 +42,9 @@ impl<T: RealField> Quad2d<T> {
 /// ```
 /// where `0,1,2,3` are the corner nodes of the quadrilateral.
 #[derive(Debug, Clone, Copy)]
-pub struct QuadTopo2d(pub [VertexTopo; 4]);
+pub struct QuadTopo(pub [VertexTopo; 4]);
 
-impl QuadTopo2d {
+impl QuadTopo {
     /// Returns the corner nodes.
     pub fn nodes(&self) -> [VertexTopo; 4] {
         self.0
@@ -67,17 +67,17 @@ impl QuadTopo2d {
 
     // todo: return an intersection result (possibly an enum)
     /// Returns the intersection between `self` and `other` as an iterator of the overlapping nodes.
-    pub fn intersection(&self, other: QuadTopo2d) -> impl Iterator<Item=VertexTopo> {
+    pub fn intersection(&self, other: QuadTopo) -> impl Iterator<Item=VertexTopo> {
         self.nodes().into_iter().filter(move |n| other.nodes().contains(n))
     }
 
     /// Returns whether `self` and `other` are adjacent, i.e. share an edge.
-    pub fn is_adjacent(&self, other: QuadTopo2d) -> bool {
+    pub fn is_adjacent(&self, other: QuadTopo) -> bool {
         self.intersection(other).count() == 2
     }
 
     /// Returns whether `self` and `other` are touching, i.e. share an edge or a node.
-    pub fn is_touching(&self, other: QuadTopo2d) -> bool {
+    pub fn is_touching(&self, other: QuadTopo) -> bool {
         let count = self.intersection(other).count();
         count == 2 || count == 1
     }
@@ -95,7 +95,7 @@ impl QuadTopo2d {
     /// ```
     /// i.e. the given node `n` moves from the original position `1`
     /// to position `local_idx=3`.
-    pub fn sorted_by_node(&self, node: VertexTopo, local_idx: usize) -> QuadTopo2d {
+    pub fn sorted_by_node(&self, node: VertexTopo, local_idx: usize) -> QuadTopo {
         let original_idx = self.nodes().iter().position(|&n| n == node).unwrap();
         let mut nodes = self.nodes();
         if local_idx > original_idx {
@@ -103,7 +103,7 @@ impl QuadTopo2d {
         } else {
             nodes.rotate_left(original_idx - local_idx);
         }
-        QuadTopo2d(nodes)
+        QuadTopo(nodes)
     }
 
     /// Returns a sorted copy of this face, such that the node `uv_origin` is the first node.
@@ -119,31 +119,36 @@ impl QuadTopo2d {
     /// +---> u
     /// ```
     /// where `0` is the `uv_origin`.
-    pub fn sorted_by_origin(&self, uv_origin: VertexTopo) -> QuadTopo2d {
+    pub fn sorted_by_origin(&self, uv_origin: VertexTopo) -> QuadTopo {
         self.sorted_by_node(uv_origin, 0)
     }
 }
 
-impl CellTopo<U2> for QuadTopo2d {
-    type Boundary = QuadBndTopo2d;
-
-    fn boundary(&self) -> Self::Boundary {
-        QuadBndTopo2d(self.edges())
-    }
-
+impl CellTopo<U2> for QuadTopo {
     fn nodes(&self) -> &[VertexTopo] {
         &self.0
     }
 }
 
-pub struct QuadBndTopo2d(pub [LineSegmentTopo; 4]);
+impl CellBoundaryTopo<U2> for QuadTopo {
+    type BoundaryCell = LineSegmentTopo;
+    type Boundary = QuadBndTopo;
 
-impl ChainTopo<U1, LineSegmentTopo> for QuadBndTopo2d {
-    type Boundary = ();
+    fn boundary(&self) -> Self::Boundary {
+        QuadBndTopo(self.edges())
+    }
+}
 
-    fn boundary(&self) -> Self::Boundary {}
+pub struct QuadBndTopo(pub [LineSegmentTopo; 4]);
 
+impl ChainTopo<U1, LineSegmentTopo> for QuadBndTopo {
     fn cells(&self) -> &[LineSegmentTopo] {
         &self.0
     }
+}
+
+impl ChainBoundaryTopo<U1, LineSegmentTopo> for QuadBndTopo {
+    type Boundary = ();
+
+    fn boundary(&self) -> Self::Boundary { }
 }
