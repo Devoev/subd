@@ -2,7 +2,7 @@ use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
 use crate::mesh::chain::ChainTopo;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::vertex::VertexTopo;
-use nalgebra::{Point2, RealField, U0, U1};
+use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, U0, U1};
 use std::cmp::minmax;
 
 /// A line segment of topology [`LineSegmentTopo`].
@@ -68,6 +68,25 @@ impl LineSegmentTopo {
 impl CellTopo<U1> for LineSegmentTopo {
     fn nodes(&self) -> &[VertexTopo] {
         &self.0
+    }
+
+    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    where
+        U1: DimNameSub<Const<M>>
+    {
+        match M {
+            1 => {
+                self.start() == other.start() && self.end() == other.end()
+                || self.start() == other.end() && self.end() == other.start()
+            },
+            0 => {
+                self.start() == other.start()
+                || self.start() == other.end()
+                || self.end() == other.start()
+                || self.end() == other.end()
+            },
+            _ => unreachable!()
+        }
     }
 }
 

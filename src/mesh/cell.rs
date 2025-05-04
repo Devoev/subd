@@ -1,11 +1,16 @@
 use crate::mesh::vertex::VertexTopo;
-use nalgebra::{DimName, DimNameDiff, DimNameSub, U1};
+use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1};
 use crate::mesh::chain::ChainTopo;
 
 /// Topology of a [`K`]-cell inside a mesh.
 pub trait CellTopo<K: DimName> {
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
     fn nodes(&self) -> &[VertexTopo];
+
+    /// Returns `true` if this cell is connected to the `other` cell
+    /// by an [`M`]-dimensional (sub-)cell with `M <= K`.
+    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+        where K: DimNameSub<Const<M>>;
     
     /// Returns `true` if the cell contains the given `node`.
     fn contains_node(&self, node: VertexTopo) -> bool {
@@ -40,5 +45,12 @@ pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
 impl <K: DimName> CellTopo<K> for () {
     fn nodes(&self) -> &[VertexTopo] {
         &[]
+    }
+
+    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    where
+        K: DimNameSub<Const<M>>
+    {
+        false
     }
 }

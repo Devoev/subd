@@ -3,7 +3,7 @@ use crate::mesh::chain::{ChainBoundaryTopo, ChainTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::line_segment::LineSegmentTopo;
 use crate::mesh::vertex::VertexTopo;
-use nalgebra::{Point2, RealField, Vector2, U1, U2};
+use nalgebra::{Const, DimNameSub, Point2, RealField, Vector2, U1, U2};
 
 /// A 2d quadrilateral element of topology [`QuadTopo`].
 pub struct Quad<T: RealField> {
@@ -127,6 +127,13 @@ impl QuadTopo {
 impl CellTopo<U2> for QuadTopo {
     fn nodes(&self) -> &[VertexTopo] {
         &self.0
+    }
+
+    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    where
+        U2: DimNameSub<Const<M>>
+    {
+        todo!("Implement like is_adjacent and is_touching")
     }
 }
 
