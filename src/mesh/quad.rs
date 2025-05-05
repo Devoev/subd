@@ -133,7 +133,17 @@ impl CellTopo<U2> for QuadTopo {
     where
         U2: DimNameSub<Const<M>>
     {
-        todo!("Implement like is_adjacent and is_touching")
+        let num_shared_nodes = self.nodes()
+            .into_iter()
+            .filter(|n| other.nodes().contains(n))
+            .count();
+        
+        match M { 
+            2 => num_shared_nodes == 4, // faces are the same
+            1 => num_shared_nodes == 2, // faces share an edge
+            0 => num_shared_nodes == 1, // faces share a node
+            _ => unreachable!("Dimension `M` (is {M}) should be <= `K` (is 2)"),
+        }
     }
 }
 

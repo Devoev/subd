@@ -12,10 +12,13 @@ mod tests {
     use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
-    use crate::bspline::spline::{Spline, SplineCurve, SplineSurf};
+    use crate::bspline::spline::{SplineCurve, SplineSurf};
     use crate::bspline::spline_basis::SplineBasis;
     use crate::knots::index::{IntoLinear, Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
+    use crate::mesh::cell::CellTopo;
+    use crate::mesh::quad::QuadTopo;
+    use crate::mesh::vertex::VertexTopo;
     use itertools::Itertools;
     use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
@@ -146,5 +149,11 @@ mod tests {
 
         ctx.configure_mesh().draw().unwrap();
         ctx.draw_series(LineSeries::new(data, RED)).unwrap();
+    }
+    
+    #[test]
+    fn mesh() {
+        let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
+        quad.connected_to::<2>(&quad);
     }
 }

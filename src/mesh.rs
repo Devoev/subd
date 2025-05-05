@@ -1,8 +1,8 @@
 //! Mesh data structures.
 
-mod face_vertex;
-mod cell;
-mod quad;
-mod line_segment;
-mod chain;
-mod vertex;
+pub mod face_vertex;
+pub mod cell;
+pub mod quad;
+pub mod line_segment;
+pub mod chain;
+pub mod vertex;

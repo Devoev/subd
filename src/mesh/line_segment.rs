@@ -75,17 +75,17 @@ impl CellTopo<U1> for LineSegmentTopo {
         U1: DimNameSub<Const<M>>
     {
         match M {
-            1 => {
+            1 => { // edges are the same
                 self.start() == other.start() && self.end() == other.end()
                 || self.start() == other.end() && self.end() == other.start()
             },
-            0 => {
+            0 => { // edges share a node
                 self.start() == other.start()
                 || self.start() == other.end()
                 || self.end() == other.start()
                 || self.end() == other.end()
             },
-            _ => unreachable!()
+            _ => unreachable!("Dimension `M` (is {M}) should be <= `K` (is 1)")
         }
     }
 }
