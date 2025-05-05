@@ -63,14 +63,17 @@ pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     fn boundary(&self) -> Self::Boundary;
 }
 
+/// Type of sub-cells the [`K`]`-1`-dimensional boundary of [`C`] is composed.
+pub type SubCell<K, C> = <C as CellBoundaryTopo<K>>::BoundaryCell;
+
 /// Edge of a `2`-dimensional face element [`F`].
-pub type Edge2<F> = <F as CellBoundaryTopo<U2>>::BoundaryCell;
+pub type Edge2<F> = SubCell<U2, F>;
 
 /// Face of a `3`-dimensional cell element [`C`].
-pub type Face3<C> = <C as CellBoundaryTopo<U3>>::BoundaryCell;
+pub type Face3<C> = SubCell<U3, C>;
 
 /// Edge of a `3`-dimensional cell element [`C`].
-pub type Edge3<C> = Edge2<<C as CellBoundaryTopo<U3>>::BoundaryCell>;
+pub type Edge3<C> = SubCell<Face3<C>, C>;
 
 impl <K: DimName> CellTopo<K> for () {
     fn nodes(&self) -> &[VertexTopo] {
