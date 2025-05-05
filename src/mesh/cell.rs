@@ -1,5 +1,5 @@
 use crate::mesh::vertex::VertexTopo;
-use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1};
+use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1, U2, U3, U4};
 use crate::mesh::chain::ChainTopo;
 
 /// Topology of a [`K`]-cell inside a mesh.
@@ -39,6 +39,18 @@ pub trait CellTopo<K: DimName> {
     }
 }
 
+/// A [topological cell](CellTopo) with an ordering of its nodes.
+pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
+    /// Returns a (globally) sorted copy of this cell.
+    ///
+    /// For cells `c₁` and `c₂` with the same nodes,
+    /// the new ordering satisfies
+    /// ```text
+    /// sorted(c₁) = sorted(c₂)
+    /// ```
+    fn sorted(&self) -> Self;
+}
+
 /// A [topological cell](CellTopo) with a boundary.
 pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     /// Cell topology of the individual cells of the boundary chain.
@@ -51,17 +63,14 @@ pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     fn boundary(&self) -> Self::Boundary;
 }
 
-/// A [topological cell](CellTopo) with an ordering of its nodes.
-pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
-    /// Returns a (globally) sorted copy of this cell. 
-    ///
-    /// For cells `c₁` and `c₂` with the same nodes,
-    /// the new ordering satisfies
-    /// ```text
-    /// sorted(c₁) = sorted(c₂)
-    /// ```
-    fn sorted(&self) -> Self;
-}
+/// Edge of a `2`-dimensional face element [`F`].
+pub type Edge2<F> = <F as CellBoundaryTopo<U2>>::BoundaryCell;
+
+/// Face of a `3`-dimensional cell element [`C`].
+pub type Face3<C> = <C as CellBoundaryTopo<U3>>::BoundaryCell;
+
+/// Edge of a `3`-dimensional cell element [`C`].
+pub type Edge3<C> = Edge2<<C as CellBoundaryTopo<U3>>::BoundaryCell>;
 
 impl <K: DimName> CellTopo<K> for () {
     fn nodes(&self) -> &[VertexTopo] {

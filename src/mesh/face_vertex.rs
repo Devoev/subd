@@ -1,6 +1,6 @@
 //! Data structures for a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
+use crate::mesh::cell::{CellBoundaryTopo, CellTopo, Edge2, OrderedCellTopo};
 use crate::mesh::chain::ChainTopo;
 use crate::mesh::line_segment::LineSegment;
 use crate::mesh::quad::{Quad, QuadTopo};
@@ -46,20 +46,19 @@ impl <const K: usize, C: CellTopo<Const<K>>> ElementVertexTopo<K, C> {
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
 type FaceVertexTopo<F> = ElementVertexTopo<2, F>;
 
-// todo: add sub-traits for edges faces and vertices or use type alias like this
-type Edge<C> = <C as CellBoundaryTopo<U2>>::BoundaryCell;
-
-impl <'a, E: 'a + OrderedCellTopo<U1> + Clone + Eq + Hash, F: CellBoundaryTopo<U2, BoundaryCell=E>> FaceVertexTopo<F> {
+impl <F: CellBoundaryTopo<U2>> FaceVertexTopo<F>
+    where Edge2<F>: OrderedCellTopo<U1> + Clone + Eq + Hash
+{
     /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&'a self) -> impl Iterator<Item = E> + 'a {
+    pub fn edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
         self.elems.iter()
             .flat_map(|face| face.boundary().cells().to_owned())
-            .map(|edge| edge.sorted())
+            .map(|edge: Edge2<F> | edge.sorted())
             .unique()
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&'a self, node: VertexTopo) -> impl Iterator<Item = E> + 'a {
+    pub fn edges_of_node(&self, node: VertexTopo) -> impl Iterator<Item = Edge2<F>> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
     }
 
