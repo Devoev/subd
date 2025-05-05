@@ -1,9 +1,9 @@
-use crate::mesh::cell::{CellBoundaryTopo, CellTopo};
-use crate::mesh::chain::{ChainBoundaryTopo, ChainTopo};
-use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::line_segment::LineSegmentTopo;
-use crate::mesh::vertex::VertexTopo;
+use crate::mesh::elem_vertex::QuadVertexMesh;
 use nalgebra::{Const, DimNameSub, Point2, RealField, Vector2, U1, U2};
+use crate::cells::cell::{Cell, CellBoundary};
+use crate::cells::chain::{Chain, ChainBoundary};
+use crate::cells::line_segment::LineSegmentTopo;
+use crate::cells::vertex::VertexTopo;
 
 /// A 2d quadrilateral element of topology [`QuadTopo`].
 pub struct Quad<T: RealField> {
@@ -124,7 +124,7 @@ impl QuadTopo {
     }
 }
 
-impl CellTopo<U2> for QuadTopo {
+impl Cell<U2> for QuadTopo {
     fn nodes(&self) -> &[VertexTopo] {
         &self.0
     }
@@ -147,7 +147,7 @@ impl CellTopo<U2> for QuadTopo {
     }
 }
 
-impl CellBoundaryTopo<U2> for QuadTopo {
+impl CellBoundary<U2> for QuadTopo {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = LineSegmentTopo;
     type Boundary = QuadBndTopo;
@@ -159,13 +159,13 @@ impl CellBoundaryTopo<U2> for QuadTopo {
 
 pub struct QuadBndTopo(pub [LineSegmentTopo; 4]);
 
-impl ChainTopo<U1, LineSegmentTopo> for QuadBndTopo {
+impl Chain<U1, LineSegmentTopo> for QuadBndTopo {
     fn cells(&self) -> &[LineSegmentTopo] {
         &self.0
     }
 }
 
-impl ChainBoundaryTopo<U1, LineSegmentTopo> for QuadBndTopo {
+impl ChainBoundary<U1, LineSegmentTopo> for QuadBndTopo {
     type Boundary = ();
 
     fn boundary(&self) -> Self::Boundary { }

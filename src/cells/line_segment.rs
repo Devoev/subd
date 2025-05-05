@@ -1,9 +1,9 @@
-use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
-use crate::mesh::chain::ChainTopo;
-use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::vertex::VertexTopo;
-use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, U0, U1};
+use crate::mesh::elem_vertex::QuadVertexMesh;
+use nalgebra::{Const, DimNameSub, Point2, RealField, U0, U1};
 use std::cmp::minmax;
+use crate::cells::cell::{Cell, CellBoundary, OrderedCell};
+use crate::cells::chain::Chain;
+use crate::cells::vertex::VertexTopo;
 
 /// A line segment of topology [`LineSegmentTopo`].
 pub struct LineSegment<T: RealField> {
@@ -65,7 +65,7 @@ impl LineSegmentTopo {
     }
 }
 
-impl CellTopo<U1> for LineSegmentTopo {
+impl Cell<U1> for LineSegmentTopo {
     fn nodes(&self) -> &[VertexTopo] {
         &self.0
     }
@@ -90,7 +90,7 @@ impl CellTopo<U1> for LineSegmentTopo {
     }
 }
 
-impl CellBoundaryTopo<U1> for LineSegmentTopo {
+impl CellBoundary<U1> for LineSegmentTopo {
     const NUM_SUB_CELLS: usize = 2;
     type SubCell = VertexTopo;
     type Boundary = LineSegmentBndTopo;
@@ -100,7 +100,7 @@ impl CellBoundaryTopo<U1> for LineSegmentTopo {
     }
 }
 
-impl OrderedCellTopo<U1> for LineSegmentTopo {
+impl OrderedCell<U1> for LineSegmentTopo {
     fn sorted(&self) -> Self {
         LineSegmentTopo(minmax(self.start(), self.end()))
     }
@@ -108,7 +108,7 @@ impl OrderedCellTopo<U1> for LineSegmentTopo {
 
 pub struct LineSegmentBndTopo(pub [VertexTopo; 2]);
 
-impl ChainTopo<U0, VertexTopo> for LineSegmentBndTopo {
+impl Chain<U0, VertexTopo> for LineSegmentBndTopo {
     fn cells(&self) -> &[VertexTopo] {
         &self.0
     }

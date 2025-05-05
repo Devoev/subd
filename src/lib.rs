@@ -6,6 +6,7 @@ mod knots;
 mod bspline;
 mod subd;
 mod mesh;
+mod cells;
 
 #[cfg(test)]
 mod tests {
@@ -16,14 +17,14 @@ mod tests {
     use crate::bspline::spline_basis::SplineBasis;
     use crate::knots::index::{IntoLinear, Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
-    use crate::mesh::cell::CellTopo;
-    use crate::mesh::quad::QuadTopo;
-    use crate::mesh::vertex::VertexTopo;
     use itertools::Itertools;
     use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use crate::cells::cell::Cell;
+    use crate::cells::quad::QuadTopo;
+    use crate::cells::vertex::VertexTopo;
 
     #[test]
     fn knots() {
@@ -150,7 +151,7 @@ mod tests {
         ctx.configure_mesh().draw().unwrap();
         ctx.draw_series(LineSeries::new(data, RED)).unwrap();
     }
-    
+
     #[test]
     fn mesh() {
         let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
