@@ -2,7 +2,7 @@ use crate::mesh::vertex::VertexTopo;
 use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1, U2, U3, U4};
 use crate::mesh::chain::ChainTopo;
 
-/// Topology of a [`K`]-cell inside a mesh.
+/// Topology of a [`K`]-dimensional cell inside a mesh.
 pub trait CellTopo<K: DimName> {
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
     fn nodes(&self) -> &[VertexTopo];
@@ -53,18 +53,21 @@ pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
 
 /// A [topological cell](CellTopo) with a boundary.
 pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
-    /// Cell topology of the individual cells of the boundary chain.
-    type BoundaryCell: CellTopo<DimNameDiff<K, U1>>;
+    /// Number of [`K`]`-1`-dimensional sub-cells in the boundary of this cell.
+    const NUM_SUB_CELLS: usize;
+    
+    /// Cell topology of the individual sub-cells of the boundary chain.
+    type SubCell: CellTopo<DimNameDiff<K, U1>>;
 
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
-    type Boundary: ChainTopo<DimNameDiff<K, U1>, Self::BoundaryCell>;
+    type Boundary: ChainTopo<DimNameDiff<K, U1>, Self::SubCell>;
 
     /// Returns the [boundary topology](Self::Boundary) of this cell.
     fn boundary(&self) -> Self::Boundary;
 }
 
 /// Type of sub-cells the [`K`]`-1`-dimensional boundary of [`C`] is composed.
-pub type SubCell<K, C> = <C as CellBoundaryTopo<K>>::BoundaryCell;
+pub type SubCell<K, C> = <C as CellBoundaryTopo<K>>::SubCell;
 
 /// Edge of a `2`-dimensional face element [`F`].
 pub type Edge2<F> = SubCell<U2, F>;

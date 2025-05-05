@@ -40,7 +40,25 @@ impl <const K: usize, C: CellTopo<Const<K>>> ElementVertexTopo<K, C> {
             .filter(move |e| e.is_connected::<K>(elem))
     }
     
-    // todo: move methods for boundary computation here. Add info about regular/ irregular adjacency
+}
+
+impl <const K: usize, C: CellBoundaryTopo<Const<K>>> ElementVertexTopo<K, C>
+    where Const<K>: DimNameSub<U1> + DimNameSub<Const<K>>
+{
+    /// Returns `true` if given `elem` is at the boundary of the mesh, 
+    /// i.e. it has less than [`C::NUM_SUB_CELLS`] adjacent elements.
+    pub fn is_boundary_elem(&self, elem: &C) -> bool {
+        self.adjacent_elems(elem).count() < C::NUM_SUB_CELLS
+    }
+    
+    // todo: is_boundary_node is inefficient. Update this by not calling is_boundary_elem ?
+    /// Returns `true` if the given `node` is a boundary node,
+    /// i.e. all elements containing the node are boundary elements.
+    pub fn is_boundary_node(&self, node: VertexTopo) -> bool {
+        self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
+    }
+
+    // todo: move other methods for boundary computation here. Add info about regular/ irregular adjacency
 }
 
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
@@ -82,17 +100,6 @@ impl QuadVertexTopo {
         face.nodes()
             .into_iter()
             .find(|&v| self.valence(v) != 4)
-    }
-
-    /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
-    pub fn is_boundary_face(&self, face: QuadTopo) -> bool {
-        self.adjacent_elems(&face).count() < 4
-    }
-
-    /// Returns whether the given `node` is a boundary node,
-    /// i.e. all faces containing the node are boundary faces.
-    pub fn is_boundary_node(&self, node: VertexTopo) -> bool {
-        self.elems_of_node(node).all(|&f| self.is_boundary_face(f))
     }
 
     /// Finds all boundary nodes of the given `face`,

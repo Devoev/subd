@@ -10,7 +10,7 @@ pub trait ChainTopo<K: DimName, C: CellTopo<K>> {
 /// A [topological chain](ChainTopo) with a boundary.
 pub trait ChainBoundaryTopo<K: DimName + DimNameSub<U1>, C: CellBoundaryTopo<K>>: ChainTopo<K, C> {
     /// Topology of the [`K`]`-1`-dimensional boundary of this chain.
-    type Boundary: ChainTopo<DimNameDiff<K, U1>, C::BoundaryCell>;
+    type Boundary: ChainTopo<DimNameDiff<K, U1>, C::SubCell>;
     
     /// Returns the [boundary topology](Self::Boundary) of this chain.
     fn boundary(&self) -> Self::Boundary;

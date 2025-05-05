@@ -148,7 +148,8 @@ impl CellTopo<U2> for QuadTopo {
 }
 
 impl CellBoundaryTopo<U2> for QuadTopo {
-    type BoundaryCell = LineSegmentTopo;
+    const NUM_SUB_CELLS: usize = 4;
+    type SubCell = LineSegmentTopo;
     type Boundary = QuadBndTopo;
 
     fn boundary(&self) -> Self::Boundary {

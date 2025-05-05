@@ -91,7 +91,8 @@ impl CellTopo<U1> for LineSegmentTopo {
 }
 
 impl CellBoundaryTopo<U1> for LineSegmentTopo {
-    type BoundaryCell = VertexTopo;
+    const NUM_SUB_CELLS: usize = 2;
+    type SubCell = VertexTopo;
     type Boundary = LineSegmentBndTopo;
 
     fn boundary(&self) -> Self::Boundary {
