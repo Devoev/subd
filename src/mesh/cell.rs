@@ -30,7 +30,7 @@ pub trait CellTopo<K: DimName> {
     /// ```
     /// are not connected by an edge, but by a node (`M = 0`).
     /// In this case `connected_to<1>` returns `false` but `connected_to<0>` returns `true`.
-    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<const M: usize>(&self, other: &Self) -> bool
         where K: DimNameSub<Const<M>>;
     
     /// Returns `true` if the cell contains the given `node`.
@@ -43,7 +43,7 @@ pub trait CellTopo<K: DimName> {
 pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     /// Cell topology of the individual cells of the boundary chain.
     type BoundaryCell: CellTopo<DimNameDiff<K, U1>>;
-    
+
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
     type Boundary: ChainTopo<DimNameDiff<K, U1>, Self::BoundaryCell>;
 
@@ -68,7 +68,7 @@ impl <K: DimName> CellTopo<K> for () {
         &[]
     }
 
-    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<const M: usize>(&self, other: &Self) -> bool
     where
         K: DimNameSub<Const<M>>
     {

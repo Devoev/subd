@@ -10,7 +10,7 @@ impl CellTopo<U0> for VertexTopo {
         &[] // todo: return self?
     }
 
-    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<const M: usize>(&self, other: &Self) -> bool
     where
         U0: DimNameSub<Const<M>>
     {

@@ -154,6 +154,6 @@ mod tests {
     #[test]
     fn mesh() {
         let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
-        quad.connected_to::<2>(&quad);
+        quad.is_connected::<2>(&quad);
     }
 }

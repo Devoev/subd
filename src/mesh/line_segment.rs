@@ -70,7 +70,7 @@ impl CellTopo<U1> for LineSegmentTopo {
         &self.0
     }
 
-    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<const M: usize>(&self, other: &Self) -> bool
     where
         U1: DimNameSub<Const<M>>
     {

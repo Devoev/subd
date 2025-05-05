@@ -129,7 +129,7 @@ impl CellTopo<U2> for QuadTopo {
         &self.0
     }
 
-    fn connected_to<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<const M: usize>(&self, other: &Self) -> bool
     where
         U2: DimNameSub<Const<M>>
     {
