@@ -1,30 +1,27 @@
 //! Data structures for a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use std::hash::Hash;
 use crate::mesh::cell::{CellBoundaryTopo, CellTopo, OrderedCellTopo};
-use crate::mesh::line_segment::{LineSegment, LineSegmentTopo};
+use crate::mesh::chain::ChainTopo;
+use crate::mesh::line_segment::LineSegment;
 use crate::mesh::quad::{Quad, QuadTopo};
+use crate::mesh::vertex::VertexTopo;
 use crate::subd::patch::Patch;
 use itertools::Itertools;
-use nalgebra::{DimName, DimNameSub, Point2, RealField, U1, U2, U3};
-use std::marker::PhantomData;
-use crate::mesh::chain::ChainTopo;
-use crate::mesh::vertex::VertexTopo;
+use nalgebra::{Const, DimNameSub, Point2, RealField, U1, U2};
+use std::hash::Hash;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
 /// The elements are `K`-cells of type [`C`].
-pub struct ElementVertexTopo<K: DimName, C: CellTopo<K>> {
+pub struct ElementVertexTopo<const K: usize, C: CellTopo<Const<K>>> {
     /// Element connectivity vector.
-    pub elems: Vec<C>,
-
-    _phantoms: PhantomData<K>,
+    pub elems: Vec<C>
 }
 
-impl <K: DimName, C: CellTopo<K>> ElementVertexTopo<K, C> {
+impl <const K: usize, C: CellTopo<Const<K>>> ElementVertexTopo<K, C> {
     
     /// Constructs a new [`ElementVertexTopo`] from the given `elems` topology vector.
     pub fn new(elems: Vec<C>) -> Self {
-        ElementVertexTopo { elems, _phantoms: PhantomData }
+        ElementVertexTopo { elems }
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
@@ -33,14 +30,21 @@ impl <K: DimName, C: CellTopo<K>> ElementVertexTopo<K, C> {
             .iter()
             .filter(move |elem| elem.contains_node(node))
     }
+
+    /// Finds all elements adjacent to the given `elem` and returns them as an iterator.
+    pub fn adjacent_elems<'a>(&'a self, elem: &'a C) -> impl Iterator<Item = &'a C> + 'a
+        where Const<K>: DimNameSub<Const<K>>
+    {
+        self.elems
+            .iter()
+            .filter(move |e| e.is_connected::<K>(elem))
+    }
     
-    // todo: move methods for adjacency computation here
-    
-    // todo: move methods for boundary computation here (add chains for that)
+    // todo: move methods for boundary computation here. Add info about regular/ irregular adjacency
 }
 
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
-type FaceVertexTopo<F> = ElementVertexTopo<U2, F>;
+type FaceVertexTopo<F> = ElementVertexTopo<2, F>;
 
 // todo: add sub-traits for edges faces and vertices or use type alias like this
 type Edge<C> = <C as CellBoundaryTopo<U2>>::BoundaryCell;
@@ -81,17 +85,9 @@ impl QuadVertexTopo {
             .find(|&v| self.valence(v) != 4)
     }
 
-    /// Returns all adjacent faces to `face`.
-    pub fn adjacent_faces(&self, face: QuadTopo) -> impl Iterator<Item = (usize, &QuadTopo)> {
-        self.elems
-            .iter()
-            .enumerate()
-            .filter(move |(_, f)| f.is_adjacent(face))
-    }
-
     /// Returns whether the given `face` is a boundary face, i.e. it has less than `4` adjacent faces.
     pub fn is_boundary_face(&self, face: QuadTopo) -> bool {
-        self.adjacent_faces(face).count() < 4
+        self.adjacent_elems(&face).count() < 4
     }
 
     /// Returns whether the given `node` is a boundary node,
@@ -109,7 +105,7 @@ impl QuadVertexTopo {
 
 /// Element-vertex mesh of topology [`ElementVertexTopo`]
 /// with geometric data of the coordinates of each vertex.
-pub struct ElementVertexMesh<T: RealField, K: DimName + DimNameSub<U1>, C: CellTopo<K>> {
+pub struct ElementVertexMesh<const K: usize, T: RealField, C: CellTopo<Const<K>>> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point2<T>>,
     /// Topological connectivity of the elements.
@@ -117,7 +113,7 @@ pub struct ElementVertexMesh<T: RealField, K: DimName + DimNameSub<U1>, C: CellT
 }
 
 /// A face-vertex mesh with `2`-dimensional faces [`C`].
-pub type FaceVertexMesh<T, C> = ElementVertexMesh<T, U2, C>;
+pub type FaceVertexMesh<T, C> = ElementVertexMesh<2, T, C>;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo>;
