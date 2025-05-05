@@ -43,6 +43,7 @@ pub trait CellTopo<K: DimName> {
 pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
     /// Cell topology of the individual cells of the boundary chain.
     type BoundaryCell: CellTopo<DimNameDiff<K, U1>>;
+    
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
     type Boundary: ChainTopo<DimNameDiff<K, U1>, Self::BoundaryCell>;
 
@@ -52,11 +53,10 @@ pub trait CellBoundaryTopo<K: DimName + DimNameSub<U1>>: CellTopo<K> {
 
 /// A [topological cell](CellTopo) with an ordering of its nodes.
 pub trait OrderedCellTopo<K: DimName>: CellTopo<K> {
-    
     /// Returns a (globally) sorted copy of this cell. 
-    /// 
-    /// The new ordering satisfies
-    /// for cells `c₁` and `c₂` with the same nodes, that
+    ///
+    /// For cells `c₁` and `c₂` with the same nodes,
+    /// the new ordering satisfies
     /// ```text
     /// sorted(c₁) = sorted(c₂)
     /// ```
