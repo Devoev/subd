@@ -19,7 +19,6 @@ pub struct ElementVertex<const K: usize, C: Cell<Const<K>>> {
 }
 
 impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
-
     /// Constructs a new [`ElementVertex`] from the given `elems` topology vector 
     /// and the total number of nodes `num_nodes`.
     pub fn new(elems: Vec<C>, num_nodes: usize) -> Self {
@@ -38,7 +37,7 @@ impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
         ElementVertex::new(elems, num_nodes)
     }
     
-    /// Returns and iterator over all nodes in increasing index order.
+    /// Returns an iterator over all nodes in increasing index order.
     pub fn nodes(&self) -> impl Iterator<Item = VertexTopo> {
         (0..self.num_nodes).map(VertexTopo)
     }

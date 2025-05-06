@@ -1,38 +1,48 @@
 //! Topology of a tensor product mesh.
 
-use crate::knots::index::Strides;
+use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::knots::index::{MultiIndex, Strides};
+use itertools::Itertools;
 
 pub struct TensorProd<const K: usize> {
+    /// Dimensions in all `K` parametric directions.
+    dims: [usize; K], // todo: replace dims with multi index range?
     /// Strides for each parametric direction.
     strides: Strides<usize, K>
 }
 
 impl<const K: usize> TensorProd<K> {
-    /// Constructs a new [`TensorProd`] from the given `strides`.
-    pub fn new(strides: Strides<usize, K>) -> Self {
-        TensorProd { strides }
+    /// Constructs a new [`TensorProd`] from the given `dims` and `strides`.
+    pub fn new(dims: [usize; K], strides: Strides<usize, K>) -> Self {
+        TensorProd { dims, strides }
     }
-    
-    /// The strides of the element indices. One less in each direction compared to the node indices.
-    fn elem_strides(&self) -> Strides<usize, K> {
-        Strides(self.strides.0.map(|nk| nk - 1))
-    }
-    
-    pub fn elems(&self) {
-        todo!("Return an iterator over elems (hyper rectangles)")
-    }
-}
 
-impl TensorProd<3> {
-    /// Constructs a new [`TensorProd`] from the given dimensions `nx`, `ny` and `nz`.
-    pub fn from_dims(nx: usize, ny: usize, nz: usize) -> Self {
-        TensorProd::new(Strides::from_dims([nx, ny, nz]))
+    /// Constructs a new [`TensorProd`] from the given `dims` and computes the strides itself.
+    pub fn from_dims(dims: [usize; K]) -> Self {
+        TensorProd::new(dims, Strides::from_dims(dims))
     }
-}
 
-impl TensorProd<2> {
-    /// Constructs a new [`TensorProd`] from the given dimensions `nx` and `ny`.
-    pub fn from_dims(nx: usize, ny: usize) -> Self {
-        TensorProd::new(Strides::from_dims([nx, ny]))
+    /// Returns an iterator over all multi-indices in this grid.
+    pub fn indices(&self) -> impl Iterator<Item = MultiIndex<usize, K>> {
+        // todo: move this computation to Dims or MuliIndex Range or whatever
+        let ranges = self.dims.map(|n| 0..n);
+        ranges.into_iter()
+            .multi_cartesian_product()
+            .map(|idx| {
+                let multi_idx = idx.into_iter().collect_array().unwrap();
+                MultiIndex(multi_idx)
+            })
+    }
+
+    /// Returns an iterator over all elements in lexicographical order.
+    pub fn elems(&self) -> impl Iterator<Item=HyperRectangle<K>> {
+        // todo: make this computation using the indices method
+        let ranges = self.dims.map(|n| 0..n-1);
+        ranges.into_iter()
+            .multi_cartesian_product()
+            .map(|idx| {
+                let multi_idx = idx.into_iter().collect_array().unwrap();
+                HyperRectangle(MultiIndex(multi_idx))
+            })
     }
 }

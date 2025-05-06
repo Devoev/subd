@@ -6,7 +6,6 @@ use std::iter::{zip, Sum};
 pub struct Strides<I, const D: usize>(pub [I; D]);
 
 impl <I: PrimInt, const D: usize> Strides<I, D> {
-
     /// Calculates [`Strides`] of the given dimensions array `dims`.
     pub fn from_dims(mut dims: [I; D]) -> Self {
         dims.iter_mut().fold(I::one(), |acc, x| {
