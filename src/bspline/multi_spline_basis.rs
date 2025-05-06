@@ -29,18 +29,18 @@ impl<T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<usize, D>> for MultiSplineBasis<T, D> {
+impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<D>> for MultiSplineBasis<T, D> {
     type LinIndices = impl Iterator<Item=usize>;
 
     fn num(&self) -> usize {
         self.n().iter().product()
     }
 
-    fn find_span(&self, t: SVector<T, D>) -> Result<KnotSpan<MultiIndex<usize, D>>, ()> {
+    fn find_span(&self, t: SVector<T, D>) -> Result<KnotSpan<MultiIndex<D>>, ()> {
         MultiKnotSpan::find(self, t)
     }
 
-    fn nonzero(&self, span: &KnotSpan<MultiIndex<usize, D>>) -> Self::LinIndices {
+    fn nonzero(&self, span: &KnotSpan<MultiIndex<D>>) -> Self::LinIndices {
         span.nonzero_indices(self.p()).linearize(self.strides())
     }
 
@@ -65,7 +65,7 @@ impl<T: RealField + Copy, const D : usize> MultiSplineBasis<T, D> {
     }
     
     /// Returns the strides for the multi index ordering of the basis functions.
-    pub fn strides(&self) -> Strides<usize, D> {
+    pub fn strides(&self) -> Strides<D> {
         Strides::from_dims(self.n())
     }
 }

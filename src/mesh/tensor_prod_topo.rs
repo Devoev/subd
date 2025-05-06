@@ -8,12 +8,12 @@ pub struct TensorProd<const K: usize> {
     /// Dimensions in all `K` parametric directions.
     dims: [usize; K], // todo: replace dims with multi index range?
     /// Strides for each parametric direction.
-    strides: Strides<usize, K>
+    strides: Strides<K>
 }
 
 impl<const K: usize> TensorProd<K> {
     /// Constructs a new [`TensorProd`] from the given `dims` and `strides`.
-    pub fn new(dims: [usize; K], strides: Strides<usize, K>) -> Self {
+    pub fn new(dims: [usize; K], strides: Strides<K>) -> Self {
         TensorProd { dims, strides }
     }
 
@@ -23,7 +23,7 @@ impl<const K: usize> TensorProd<K> {
     }
 
     /// Returns an iterator over all multi-indices in this grid.
-    pub fn indices(&self) -> impl Iterator<Item = MultiIndex<usize, K>> {
+    pub fn indices(&self) -> impl Iterator<Item = MultiIndex<K>> {
         // todo: move this computation to Dims or MuliIndex Range or whatever
         let ranges = self.dims.map(|n| 0..n);
         ranges.into_iter()

@@ -31,10 +31,10 @@ where
 pub type SplineCurve<T, const M: usize, N> = Spline<T, T, usize, SplineBasis<T>, M, N>;
 
 /// A spline surface in [`M`] dimensions.
-pub type SplineSurf<T, const M: usize, N> = Spline<T, SVector<T, 2>, MultiIndex<usize, 2>, MultiSplineBasis<T, 2>, M, N>;
+pub type SplineSurf<T, const M: usize, N> = Spline<T, SVector<T, 2>, MultiIndex<2>, MultiSplineBasis<T, 2>, M, N>;
 
 /// A spline volume in [`M`] dimensions.
-pub type SplineVol<T, const M: usize, N> = Spline<T, SVector<T, 3>, MultiIndex<usize, 3>, MultiSplineBasis<T, 3>, M, N>;
+pub type SplineVol<T, const M: usize, N> = Spline<T, SVector<T, 3>, MultiIndex<3>, MultiSplineBasis<T, 3>, M, N>;
 
 impl<T, Knt, Idx, S, const M : usize, N> Spline<T, Knt, Idx, S, M, N>
 where

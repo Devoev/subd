@@ -15,7 +15,7 @@ mod tests {
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::{SplineCurve, SplineSurf};
     use crate::bspline::spline_basis::SplineBasis;
-    use crate::knots::index::{IntoLinear, Linearize, MultiIndex, Strides};
+    use crate::knots::index::{Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
     use itertools::Itertools;
     use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};

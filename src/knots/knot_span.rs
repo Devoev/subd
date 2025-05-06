@@ -15,7 +15,7 @@ use std::ops::RangeInclusive;
 pub struct KnotSpan<Idx>(pub(crate) Idx);
 
 /// A multivariate knot span.
-pub type MultiKnotSpan<const D: usize> = KnotSpan<MultiIndex<usize, D>>;
+pub type MultiKnotSpan<const D: usize> = KnotSpan<MultiIndex<D>>;
 
 /// A univariate knot span.
 pub type KnotSpan1 = KnotSpan<usize>;
@@ -63,7 +63,7 @@ impl<const D: usize> MultiKnotSpan<D> {
 
     /// Returns a range over all indices of basis functions
     /// which are nonzero in this span.
-    pub fn nonzero_indices(&self, p: [usize; D]) -> impl Iterator<Item=MultiIndex<usize, D>> {
+    pub fn nonzero_indices(&self, p: [usize; D]) -> impl Iterator<Item=MultiIndex<D>> {
         zip(&self.0, p)
             .map(|(i, p)| KnotSpan(*i).nonzero_indices(p))
             .multi_cartesian_product()

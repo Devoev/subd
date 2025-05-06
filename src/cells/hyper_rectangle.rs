@@ -8,7 +8,7 @@ use nalgebra::{Const, DimNameSub, U3};
 //  - edges and faces should have 3 ?
 
 #[derive(Debug, Clone, Copy)]
-pub struct HyperRectangle<const K: usize>(pub MultiIndex<usize, K>);
+pub struct HyperRectangle<const K: usize>(pub MultiIndex<K>);
 
 impl <const K: usize> Cell<Const<K>> for HyperRectangle<K> {
     fn nodes(&self) -> &[VertexTopo] {
