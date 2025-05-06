@@ -30,12 +30,6 @@ impl<T: RealField> QuadVertexMesh<T> {
         &self.coords[node.0]
     }
 
-    // todo: possibly move this method to topology
-    /// Returns the number of nodes.
-    pub fn num_nodes(&self) -> usize {
-        self.coords.len()
-    }
-
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item=LineSegment<T>> + '_ {
         self.topology.edges().map(|edge_top| LineSegment::from_msh(edge_top, self))
@@ -44,14 +38,6 @@ impl<T: RealField> QuadVertexMesh<T> {
     /// Returns an iterator over all faces in this mesh.
     pub fn faces(&self) -> impl Iterator<Item=Quad<T>> + '_ {
         self.topology.elems.iter().map(|&face| Quad::from_msh(face, self))
-    }
-    
-    // todo: possibly move this method to topology
-    /// Returns an iterator over the indices of all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
-        (0..self.num_nodes())
-            .map(VertexTopo)
-            .filter(|&n| self.topology.is_boundary_node(n))
     }
 
     /// Finds the patch of the regular or irregular `face`.

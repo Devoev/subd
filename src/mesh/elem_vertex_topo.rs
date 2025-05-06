@@ -12,14 +12,35 @@ use crate::cells::vertex::VertexTopo;
 /// The elements are `K`-cells of type [`C`].
 pub struct ElementVertex<const K: usize, C: Cell<Const<K>>> {
     /// Element connectivity vector.
-    pub elems: Vec<C>
+    pub elems: Vec<C>,
+    
+    /// Total number of nodes.
+    pub num_nodes: usize,
 }
 
 impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
 
+    /// Constructs a new [`ElementVertex`] from the given `elems` topology vector 
+    /// and the total number of nodes `num_nodes`.
+    pub fn new(elems: Vec<C>, num_nodes: usize) -> Self {
+        ElementVertex { elems, num_nodes }
+    }
+    
     /// Constructs a new [`ElementVertex`] from the given `elems` topology vector.
-    pub fn new(elems: Vec<C>) -> Self {
-        ElementVertex { elems }
+    /// The number of nodes is calculated as the maximal node index in `elems`.
+    pub fn from_elems(elems: Vec<C>) -> Self {
+        let num_nodes = elems.iter()
+            .flat_map(C::nodes)
+            .max()
+            .expect("Elements vector `elems` must not be empty.")
+            .0;
+        
+        ElementVertex::new(elems, num_nodes)
+    }
+    
+    /// Returns and iterator over all nodes in increasing index order.
+    pub fn nodes(&self) -> impl Iterator<Item = VertexTopo> {
+        (0..self.num_nodes).map(VertexTopo)
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
@@ -56,7 +77,12 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
         self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
     }
 
-    // todo: move other methods for boundary computation here. Add info about regular/ irregular adjacency
+    /// Returns an iterator over all boundary nodes in this mesh.
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
+        self.nodes().filter(|&n| self.is_boundary_node(n))
+    }
+
+    // todo: add info about regular/ irregular adjacency
 }
 
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
