@@ -3,7 +3,7 @@ use std::iter::{zip, Sum};
 
 /// Strides of a [`D`]-variate [`MultiIndex`].
 #[derive(Debug, Copy, Clone)]
-pub struct Strides<I, const D: usize>([I; D]);
+pub struct Strides<I, const D: usize>(pub [I; D]);
 
 impl <I: PrimInt, const D: usize> Strides<I, D> {
 

@@ -12,6 +12,15 @@ impl<const K: usize> TensorProd<K> {
     pub fn new(strides: Strides<usize, K>) -> Self {
         TensorProd { strides }
     }
+    
+    /// The strides of the element indices. One less in each direction compared to the node indices.
+    fn elem_strides(&self) -> Strides<usize, K> {
+        Strides(self.strides.0.map(|nk| nk - 1))
+    }
+    
+    pub fn elems(&self) {
+        todo!("Return an iterator over elems (hyper rectangles)")
+    }
 }
 
 impl TensorProd<3> {
