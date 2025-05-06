@@ -23,7 +23,7 @@ impl TensorProd<3> {
 
 impl TensorProd<2> {
     /// Constructs a new [`TensorProd`] from the given dimensions `nx` and `ny`.
-    pub fn from_dims(nx: usize, ny: usize, nz: usize) -> Self {
+    pub fn from_dims(nx: usize, ny: usize) -> Self {
         TensorProd::new(Strides::from_dims([nx, ny]))
     }
 }
