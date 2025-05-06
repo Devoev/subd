@@ -18,6 +18,21 @@ pub struct ElementVertexMesh<const K: usize, T: RealField, C: Cell<Const<K>>> {
     pub topology: topo::ElementVertex<K, C>,
 }
 
+impl <const K: usize, T: RealField, C: Cell<Const<K>>> ElementVertexMesh<K, T, C> {
+    // todo: replace panic with result
+    /// Constructs a new [`ElementVertexMesh`] from the given `coords` and `topology`.
+    /// 
+    /// # Panics
+    /// If the number of points in the given `coords` vector 
+    /// does not equal the number of nodes in the `topology`,
+    /// the function will panic.
+    pub fn new(coords: Vec<Point2<T>>, topology: topo::ElementVertex<K, C>) -> Self {
+        assert_eq!(coords.len(), topology.num_nodes, 
+                   "Length of `coords` (is {}) doesn't equal `num_nodes` (is {})", coords.len(), topology.num_nodes);
+        ElementVertexMesh { coords, topology }
+    }
+}
+
 /// A face-vertex mesh with `2`-dimensional faces [`C`].
 pub type FaceVertexMesh<T, C> = ElementVertexMesh<2, T, C>;
 
