@@ -50,7 +50,6 @@ impl QuadTopo {
         self.0
     }
 
-    // todo: add boundary function with return value of connected edges, i.e. a chain topology
     /// Returns all 4 edges of this quadrilateral face in the following order
     /// ```text
     ///   + -- 2 -- +
