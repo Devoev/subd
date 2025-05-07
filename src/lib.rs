@@ -10,6 +10,8 @@ mod cells;
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+    use iter_num_tools::lin_space;
     use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
@@ -25,6 +27,8 @@ mod tests {
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
+    use crate::knots::knot_span::KnotSpan;
+    use crate::subd::basis;
 
     #[test]
     fn knots() {
@@ -156,5 +160,65 @@ mod tests {
     fn mesh() {
         let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
         quad.is_connected::<2>(&quad);
+    }
+
+    #[test]
+    fn benchmark_de_boor_vs_mat_mat() {
+        let num_eval = 2;
+        let grid = lin_space(0.0..=1.0, num_eval);
+        let grid = grid.clone().cartesian_product(grid);
+
+        // de Boor algorithm
+        let start = Instant::now();
+        let basis = MultiSplineBasis::<f64, 2>::open_uniform([4, 4], [3, 3]);
+        for (u, v) in grid.clone() {
+            let t = vector![u, v];
+            // let span = basis.find_span(t).unwrap();
+            let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
+            let eval = basis.eval(t, &span);
+            println!("{}", eval.norm());
+        }
+        let time_de_boor = start.elapsed();
+
+        // matrix-matrix (for catmull clark)
+        let start = Instant::now();
+        for (u, v) in grid.clone() {
+            let eval = basis::eval_regular(u, v);
+            println!("{}", eval.norm());
+        }
+        let time_mat_mat = start.elapsed();
+
+        println!("Took {:?} for {num_eval} basis evaluations (de Boor).", time_de_boor);
+        println!("Took {:?} for {num_eval} basis evaluations (matrix-matrix).", time_mat_mat);
+    }
+
+    #[test]
+    fn benchmark_uni_vs_tp() {
+        let num_eval = 1000;
+        let grid = lin_space(0.0..=1.0, num_eval);
+
+        // univariate algorithm
+        let start = Instant::now();
+        let basis = SplineBasis::open_uniform(4, 3);
+        for t in grid.clone() {
+            let span = basis.find_span(t).unwrap();
+            let eval = basis.eval(t, &span);
+            // println!("{}", eval.norm());
+        }
+        let time_uni = start.elapsed();
+
+        // tensor product algorithm
+        let start = Instant::now();
+        let basis = MultiSplineBasis::open_uniform([4], [3]);
+        for t in grid.clone() {
+            let t = vector![t];
+            let span = basis.find_span(t).unwrap();
+            let eval = basis.eval(t, &span);
+            // println!("{}", eval.norm());
+        }
+        let time_tp = start.elapsed();
+
+        println!("Took {:?} for {num_eval} basis evaluations (de Boor).", time_uni);
+        println!("Took {:?} for {num_eval} basis evaluations (matrix-matrix).", time_tp);
     }
 }
