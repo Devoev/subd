@@ -10,25 +10,24 @@ mod cells;
 
 #[cfg(test)]
 mod tests {
-    use std::time::Instant;
-    use iter_num_tools::lin_space;
     use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::{SplineCurve, SplineSurf};
     use crate::bspline::spline_basis::SplineBasis;
+    use crate::cells::cell::Cell;
+    use crate::cells::quad::QuadTopo;
+    use crate::cells::vertex::VertexTopo;
     use crate::knots::index::{Linearize, MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
+    use crate::subd::basis;
+    use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
-    use crate::cells::cell::Cell;
-    use crate::cells::quad::QuadTopo;
-    use crate::cells::vertex::VertexTopo;
-    use crate::knots::knot_span::KnotSpan;
-    use crate::subd::basis;
+    use std::time::Instant;
 
     #[test]
     fn knots() {
@@ -170,11 +169,16 @@ mod tests {
 
         // de Boor algorithm
         let start = Instant::now();
-        let basis = MultiSplineBasis::<f64, 2>::open_uniform([4, 4], [3, 3]);
+        let xi = KnotVec::uniform(8);
+        let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
+
+        // todo: this code throws errors, because xi is not open!
+        // let basis_uni = SplineBasis::open_uniform(4, 3);
+        let basis = MultiSplineBasis::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
             let t = vector![u, v];
-            // let span = basis.find_span(t).unwrap();
-            let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
+            let span = basis.find_span(t).unwrap();
+            // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
             let eval = basis.eval(t, &span);
             println!("{}", eval.norm());
         }
@@ -190,11 +194,13 @@ mod tests {
 
         println!("Took {:?} for {num_eval} basis evaluations (de Boor).", time_de_boor);
         println!("Took {:?} for {num_eval} basis evaluations (matrix-matrix).", time_mat_mat);
+        println!("De Boors algorithm is {} % faster than matrix-matrix algorithm",
+                 (time_mat_mat.as_secs_f64() - time_de_boor.as_secs_f64()) / time_mat_mat.as_secs_f64() * 100.0)
     }
 
     #[test]
     fn benchmark_uni_vs_tp() {
-        let num_eval = 1000;
+        let num_eval = 10_000_000;
         let grid = lin_space(0.0..=1.0, num_eval);
 
         // univariate algorithm
@@ -202,6 +208,7 @@ mod tests {
         let basis = SplineBasis::open_uniform(4, 3);
         for t in grid.clone() {
             let span = basis.find_span(t).unwrap();
+            // let span = KnotSpan(3);
             let eval = basis.eval(t, &span);
             // println!("{}", eval.norm());
         }
@@ -213,12 +220,15 @@ mod tests {
         for t in grid.clone() {
             let t = vector![t];
             let span = basis.find_span(t).unwrap();
+            // let span = KnotSpan(MultiIndex([3]));
             let eval = basis.eval(t, &span);
             // println!("{}", eval.norm());
         }
         let time_tp = start.elapsed();
 
-        println!("Took {:?} for {num_eval} basis evaluations (de Boor).", time_uni);
-        println!("Took {:?} for {num_eval} basis evaluations (matrix-matrix).", time_tp);
+        println!("Took {:?} for {num_eval} basis evaluations (univariate algorithm).", time_uni);
+        println!("Took {:?} for {num_eval} basis evaluations (tensor product algorithm).", time_tp);
+        println!("Univariate algorithm is {} % faster than tensor product algorithm",
+                 (time_tp.as_secs_f64() - time_uni.as_secs_f64()) / time_tp.as_secs_f64() * 100.0)
     }
 }
