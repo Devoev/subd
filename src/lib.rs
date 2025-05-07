@@ -205,7 +205,7 @@ mod tests {
 
         // univariate algorithm
         let start = Instant::now();
-        let basis = SplineBasis::open_uniform(4, 3);
+        let basis = SplineBasis::open_uniform(30, 3);
         for t in grid.clone() {
             let span = basis.find_span(t).unwrap();
             // let span = KnotSpan(3);
@@ -216,7 +216,7 @@ mod tests {
 
         // tensor product algorithm
         let start = Instant::now();
-        let basis = MultiSplineBasis::open_uniform([4], [3]);
+        let basis = MultiSplineBasis::open_uniform([30], [3]);
         for t in grid.clone() {
             let t = vector![t];
             let span = basis.find_span(t).unwrap();
