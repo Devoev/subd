@@ -1,9 +1,9 @@
-use crate::bspline::basis::Basis;
+use crate::bspline::basis::{Basis, BsplineBasis};
 use crate::bspline::spline_basis::SplineBasis;
 use crate::knots::index::{Linearize, MultiIndex, Strides};
 use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use itertools::{izip, Itertools};
-use nalgebra::{DVector, RealField, SVector};
+use nalgebra::{DVector, Dyn, OVector, RealField, SVector};
 use std::iter::zip;
 
 /// A [`D`]-variate B-spline space. 
@@ -49,6 +49,15 @@ impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<D>
             .map(|(space, ti, i)| space.eval(*ti, &KnotSpan(*i)))
             .reduce(|acc, bi| acc.kronecker(&bi))
             .expect("Dimension D must be greater than 0!")
+    }
+}
+
+impl<T: RealField + Copy, const D: usize> BsplineBasis<T, Dyn, SVector<T, D>> for MultiSplineBasis<T, D> {
+    type NonzeroIndices = impl Iterator<Item=usize>;
+
+    fn eval_nonzero(&self, x: SVector<T, D>) -> (DVector<T>, Self::NonzeroIndices) {
+        let span = self.find_span(x).unwrap();
+        (self.eval(x, &span), self.nonzero(&span))
     }
 }
 

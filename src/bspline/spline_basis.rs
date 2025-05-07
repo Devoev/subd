@@ -1,9 +1,9 @@
 use std::ops::RangeInclusive;
 use crate::knots::knot_span::{KnotSpan, KnotSpan1};
 use crate::knots::knot_vec::KnotVec;
-use crate::bspline::basis::Basis;
+use crate::bspline::basis::{Basis, BsplineBasis};
 use itertools::chain;
-use nalgebra::{DVector, RealField};
+use nalgebra::{DVector, Dyn, OVector, RealField};
 use std::vec;
 
 /// The space of `n` B-spline basis functions of degree `p`, allocated on the `knots`.
@@ -90,5 +90,14 @@ impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
             b[i] = saved;
         }
         b
+    }
+}
+
+impl <T: RealField + Copy> BsplineBasis<T, Dyn, T> for SplineBasis<T> {
+    type NonzeroIndices = RangeInclusive<usize>;
+
+    fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
+        let span = self.find_span(x).unwrap();
+        (self.eval(x, &span), self.nonzero(&span))
     }
 }

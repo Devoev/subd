@@ -1,5 +1,6 @@
 use crate::knots::knot_span::KnotSpan;
-use nalgebra::{DVector, RealField};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DVector, DefaultAllocator, Dim, OVector, RealField};
 
 /// A basis for a spline function space.
 /// 
@@ -22,6 +23,24 @@ pub trait Basis<T: RealField, Knt: Copy, Idx> where Self: Sized {
     
     /// Evaluates the nonzero basis functions in the `span` at the parametric point `t`.
     fn eval(&self, t: Knt, span: &KnotSpan<Idx>) -> DVector<T>;
+}
+
+/// Set of B-Spline basis functions.
+///
+/// The `N` (nonzero) basis can be evaluated at a parametric point
+/// using [`BsplineBasis::eval_nonzero`].
+///
+/// # Type parameters
+/// - [`T`] : Real scalar type.
+/// - [`N`] : Number of nonzero basis functions in each span.
+/// - [`X`] : Type of parametric values in the reference domain.
+pub trait BsplineBasis<T: RealField, N: Dim, X> where DefaultAllocator: Allocator<N> {
+    /// Iterator over (linear) global indices corresponding to nonzero basis functions.
+    type NonzeroIndices: Iterator<Item = usize>;
+
+    /// Evaluates the nonzero basis functions of this basis at the parametric point `x`.
+    /// Returns the evaluated functions as well as the global nonzero indices.
+    fn eval_nonzero(&self, x: X) -> (OVector<T, N>, Self::NonzeroIndices);
 }
 
 /// Conversion into breakpoints.
