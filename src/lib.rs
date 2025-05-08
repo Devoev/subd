@@ -231,4 +231,32 @@ mod tests {
         println!("Univariate algorithm is {} % faster than tensor product algorithm",
                  (time_tp.as_secs_f64() - time_uni.as_secs_f64()) / time_tp.as_secs_f64() * 100.0)
     }
+
+    #[test]
+    fn benchmark_pows() {
+        let num_eval = 10_000_000;
+        let range = lin_space(0f64..=1.0, num_eval);
+
+        // Using powi
+        let start = Instant::now();
+        for x in range {
+            let _ = x.powi(1);
+        }
+        let time_powi = start.elapsed();
+
+        let range = lin_space(0f64..=1.0, num_eval);
+        
+        // Using muls
+        let start = Instant::now();
+        for x in range {
+            let _ = x;
+        }
+        let time_muls = start.elapsed();
+
+
+        println!("Took {:?} for {num_eval} power calculations (using powi).", time_powi);
+        println!("Took {:?} for {num_eval} power calculations (manually optimized).", time_muls);
+        println!("powi is {} % slower than optimized algorithm",
+                 (time_powi.as_secs_f64() - time_muls.as_secs_f64()) / time_muls.as_secs_f64() * 100.0)
+    }
 }
