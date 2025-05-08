@@ -163,24 +163,25 @@ mod tests {
 
     #[test]
     fn benchmark_de_boor_vs_mat_mat() {
-        let num_eval = 2;
+        let num_eval = 1000;
         let grid = lin_space(0.0..=1.0, num_eval);
         let grid = grid.clone().cartesian_product(grid);
 
         // de Boor algorithm
         let start = Instant::now();
-        let xi = KnotVec::uniform(8);
-        let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
+        // todo: using uniform(8) throws errors, because xi is not open!
+        // let xi = KnotVec::uniform(8);
+        // let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
 
-        // todo: this code throws errors, because xi is not open!
-        // let basis_uni = SplineBasis::open_uniform(4, 3);
+        
+        let basis_uni = SplineBasis::open_uniform(4, 3);
         let basis = MultiSplineBasis::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
             let t = vector![u, v];
             let span = basis.find_span(t).unwrap();
             // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
             let eval = basis.eval(t, &span);
-            println!("{}", eval.norm());
+            // println!("{}", eval.norm());
         }
         let time_de_boor = start.elapsed();
 
@@ -188,7 +189,7 @@ mod tests {
         let start = Instant::now();
         for (u, v) in grid.clone() {
             let eval = basis::eval_regular(u, v);
-            println!("{}", eval.norm());
+            // println!("{}", eval.norm());
         }
         let time_mat_mat = start.elapsed();
 
@@ -245,7 +246,7 @@ mod tests {
         let time_powi = start.elapsed();
 
         let range = lin_space(0f64..=1.0, num_eval);
-        
+
         // Using muls
         let start = Instant::now();
         for x in range {
