@@ -13,7 +13,7 @@ mod tests {
     use std::hint::black_box;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
-    use crate::bspline::spline::{SplineCurve, SplineSurf};
+    use crate::bspline::spline_geo::{SplineCurve, SplineSurf};
     use crate::bspline::spline_basis::SplineBasis;
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
@@ -28,6 +28,7 @@ mod tests {
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::time::Instant;
+    use crate::bspline::space::BsplineSpace;
 
     #[test]
     fn knots() {
@@ -101,7 +102,8 @@ mod tests {
     fn spline_curves() {
         let n = 5;
         let p = 2;
-        let space = SplineBasis::<f64>::open_uniform(n, p);
+        let basis = SplineBasis::<f64>::open_uniform(n, p);
+        let space = BsplineSpace::new(basis);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
@@ -119,6 +121,7 @@ mod tests {
 
         let splines_1d = SplineBasis::<f64>::open_uniform(n, p);
         let splines_2d = MultiSplineBasis::new([splines_1d.clone(), splines_1d.clone()]);
+        let space = BsplineSpace::new(splines_2d);
 
         let control_points = ControlPoints::new(matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
@@ -128,7 +131,7 @@ mod tests {
         let coords_rand = SMatrix::<f64, 2, 25>::new_random();
         let control_points_rand = ControlPoints::new(coords_rand);
 
-        let surf = SplineSurf::new(control_points, splines_2d).unwrap();
+        let surf = SplineSurf::new(control_points, space).unwrap();
 
         const N: i32 = 100;
         let mut points: Vec<(f64, f64)> = vec![];
