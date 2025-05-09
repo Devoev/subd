@@ -1,6 +1,5 @@
 use crate::knots::index::MultiIndex;
 use crate::bspline::spline_basis::SplineBasis;
-use crate::bspline::basis::Basis;
 use crate::bspline::multi_spline_basis::MultiSplineBasis;
 use itertools::Itertools;
 use nalgebra::{RealField, SVector};

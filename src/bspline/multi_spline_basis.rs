@@ -1,9 +1,9 @@
-use crate::bspline::basis::{Basis, BsplineBasis};
+use crate::bspline::basis::BsplineBasis;
 use crate::bspline::spline_basis::SplineBasis;
 use crate::knots::index::{Linearize, MultiIndex, Strides};
 use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use itertools::{izip, Itertools};
-use nalgebra::{DVector, Dyn, OVector, RealField, SVector};
+use nalgebra::{DVector, RealField, SVector};
 use std::iter::zip;
 
 /// A [`D`]-variate B-spline space. 
@@ -29,22 +29,16 @@ impl<T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<D>> for MultiSplineBasis<T, D> {
-    type LinIndices = impl Iterator<Item=usize>;
-
-    fn num(&self) -> usize {
-        self.n().iter().product()
-    }
-
-    fn find_span(&self, t: SVector<T, D>) -> Result<KnotSpan<MultiIndex<D>>, ()> {
+impl <T: RealField + Copy, const D: usize> MultiSplineBasis<T, D> {
+    pub(crate) fn find_span(&self, t: SVector<T, D>) -> Result<KnotSpan<MultiIndex<D>>, ()> {
         MultiKnotSpan::find(self, t)
     }
 
-    fn nonzero(&self, span: &KnotSpan<MultiIndex<D>>) -> Self::LinIndices {
+    fn nonzero(&self, span: &KnotSpan<MultiIndex<D>>) -> impl Iterator<Item=usize> {
         span.nonzero_indices(self.p()).linearize(self.strides())
     }
 
-    fn eval(&self, t: SVector<T, D>, span: &MultiKnotSpan<D>) -> DVector<T> {
+    pub(crate) fn eval(&self, t: SVector<T, D>, span: &MultiKnotSpan<D>) -> DVector<T> {
         izip!(&self.0, t.into_iter(), &span.0)
             .map(|(space, ti, i)| space.eval(*ti, &KnotSpan(*i)))
             .reduce(|acc, bi| acc.kronecker(&bi))
@@ -52,8 +46,12 @@ impl <T: RealField + Copy, const D: usize> Basis<T, SVector<T, D>, MultiIndex<D>
     }
 }
 
-impl<T: RealField + Copy, const D: usize> BsplineBasis<T, Dyn, SVector<T, D>> for MultiSplineBasis<T, D> {
+impl<T: RealField + Copy, const D: usize> BsplineBasis<T, SVector<T, D>> for MultiSplineBasis<T, D> {
     type NonzeroIndices = impl Iterator<Item=usize>;
+
+    fn len(&self) -> usize {
+        self.n().iter().product()
+    }
 
     fn eval_nonzero(&self, x: SVector<T, D>) -> (DVector<T>, Self::NonzeroIndices) {
         let span = self.find_span(x).unwrap();

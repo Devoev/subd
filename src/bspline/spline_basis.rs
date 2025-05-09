@@ -1,9 +1,9 @@
-use std::ops::RangeInclusive;
+use crate::bspline::basis::BsplineBasis;
 use crate::knots::knot_span::{KnotSpan, KnotSpan1};
 use crate::knots::knot_vec::KnotVec;
-use crate::bspline::basis::{Basis, BsplineBasis};
 use itertools::chain;
-use nalgebra::{DVector, Dyn, OVector, RealField};
+use nalgebra::{DVector, RealField};
+use std::ops::RangeInclusive;
 use std::vec;
 
 /// The space of `n` B-spline basis functions of degree `p`, allocated on the `knots`.
@@ -55,22 +55,16 @@ impl<T : RealField + Copy> SplineBasis<T> {
     }
 }
 
-impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
-    type LinIndices = RangeInclusive<usize>;
-
-    fn num(&self) -> usize {
-        self.n
-    }
-
-    fn find_span(&self, t: T) -> Result<KnotSpan<usize>, ()> {
+impl<T: RealField + Copy> SplineBasis<T> {
+    pub(crate) fn find_span(&self, t: T) -> Result<KnotSpan<usize>, ()> {
         KnotSpan1::find(self, t)
     }
 
-    fn nonzero(&self, span: &KnotSpan<usize>) -> Self::LinIndices {
+    fn nonzero(&self, span: &KnotSpan<usize>) -> RangeInclusive<usize> {
         span.nonzero_indices(self.p)
     }
 
-    fn eval(&self, t: T, span: &KnotSpan1) -> DVector<T> {
+    pub(crate) fn eval(&self, t: T, span: &KnotSpan1) -> DVector<T> {
         let knots = &self.knots;
         let mut left = vec![T::zero(); self.p + 1];
         let mut right = vec![T::zero(); self.p + 1];
@@ -93,8 +87,12 @@ impl<T: RealField + Copy> Basis<T, T, usize> for SplineBasis<T> {
     }
 }
 
-impl <T: RealField + Copy> BsplineBasis<T, Dyn, T> for SplineBasis<T> {
+impl <T: RealField + Copy> BsplineBasis<T, T> for SplineBasis<T> {
     type NonzeroIndices = RangeInclusive<usize>;
+
+    fn len(&self) -> usize {
+        self.n
+    }
 
     fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
         let span = self.find_span(x).unwrap();

@@ -1,7 +1,7 @@
 //! Spline bases for uniform knot vectors.
 
 use crate::bspline::basis::BsplineBasis;
-use nalgebra::{matrix, vector, Const, RealField, SMatrix, SVector};
+use nalgebra::{matrix, vector, Const, DVector, RealField, SMatrix, SVector};
 use std::ops::Range;
 
 /// B-Spline basis of dimension [`N`],
@@ -24,11 +24,15 @@ impl <T: RealField + Copy, const N: usize, const M: usize> MonomialTransform<T, 
     }
 }
 
-impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, Const<N>, T> for MonomialTransform<T, N, M> {
+impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T> for MonomialTransform<T, N, M> {
     type NonzeroIndices = Range<usize>;
 
-    fn eval_nonzero(&self, x: T) -> (SVector<T, N>, Self::NonzeroIndices) {
-        (self.eval(x), 0..N)
+    fn len(&self) -> usize {
+        N
+    }
+
+    fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
+        (DVector::from_column_slice(self.eval(x).as_slice()), 0..N)
     }
 }
 

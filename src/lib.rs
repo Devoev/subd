@@ -11,7 +11,6 @@ mod cells;
 #[cfg(test)]
 mod tests {
     use std::hint::black_box;
-    use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
     use crate::bspline::spline::{SplineCurve, SplineSurf};

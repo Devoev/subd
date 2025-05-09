@@ -1,57 +1,52 @@
-use crate::bspline::basis::Basis;
+use crate::bspline::basis::BsplineBasis;
 use crate::bspline::control_points::OControlPoints;
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Point, RealField, SVector};
-use std::marker::PhantomData;
 use crate::bspline::multi_spline_basis::MultiSplineBasis;
 use crate::bspline::spline_basis::SplineBasis;
-use crate::knots::index::MultiIndex;
+use nalgebra::allocator::Allocator;
+use nalgebra::{Const, DefaultAllocator, Dim, Dyn, Point, RealField, SVector};
+use std::marker::PhantomData;
 
 /// A [`D`]-dimensional B-spline manifold embedded [`M`]-dimensional euclidian space.
 #[derive(Debug, Clone)]
-pub struct Spline<T, Knt, Idx, S, const M: usize, N>
+pub struct Spline<T, X, const M: usize, S, Nc = Dyn>
 where
     T: RealField,
-    Knt: Copy,
-    S: Basis<T, Knt, Idx>,
-    N: Dim,
-    DefaultAllocator: Allocator<Const<M>, N>
+    Nc: Dim,
+    S: BsplineBasis<T, X>,
+    DefaultAllocator: Allocator<Const<M>, Nc>
 {
 
     /// Control points for each parametric direction.
-    pub control_points: OControlPoints<T, M, N>,
+    pub control_points: OControlPoints<T, M, Nc>,
 
     /// B-spline basis functions for the parametrization.
     pub space: S,
 
-    phantoms: PhantomData<(Knt, Idx)>
+    phantoms: PhantomData<X>
 }
 
 /// A spline curve in [`M`] dimensions.
-pub type SplineCurve<T, const M: usize, N> = Spline<T, T, usize, SplineBasis<T>, M, N>;
+pub type SplineCurve<T, const M: usize, N> = Spline<T, T, M, SplineBasis<T>, N>;
 
 /// A spline surface in [`M`] dimensions.
-pub type SplineSurf<T, const M: usize, N> = Spline<T, SVector<T, 2>, MultiIndex<2>, MultiSplineBasis<T, 2>, M, N>;
+pub type SplineSurf<T, const M: usize, N> = Spline<T, SVector<T, 2>, M, MultiSplineBasis<T, 2>, N>;
 
 /// A spline volume in [`M`] dimensions.
-pub type SplineVol<T, const M: usize, N> = Spline<T, SVector<T, 3>, MultiIndex<3>, MultiSplineBasis<T, 3>, M, N>;
+pub type SplineVol<T, const M: usize, N> = Spline<T, SVector<T, 3>, M, MultiSplineBasis<T, 3>, N>;
 
-impl<T, Knt, Idx, S, const M : usize, N> Spline<T, Knt, Idx, S, M, N>
+impl<T, X, const M: usize, S, Nc> Spline<T, X, M, S, Nc>
 where
     T: RealField,
-    Knt: Copy,
-    S: Basis<T, Knt, Idx>,
-    N: Dim,
-    DefaultAllocator: Allocator<Const<M>, N>
+    Nc: Dim,
+    S: BsplineBasis<T, X>,
+    DefaultAllocator: Allocator<Const<M>, Nc>,
 {
-    pub fn new(control_points: OControlPoints<T, M, N>, basis: S) -> Option<Self> {
-        (basis.num() == control_points.num()).then_some(Spline { control_points, space: basis, phantoms: Default::default() })
+    pub fn new(control_points: OControlPoints<T, M, Nc>, basis: S) -> Option<Self> {
+        (basis.len() == control_points.num()).then_some(Spline { control_points, space: basis, phantoms: Default::default() })
     }
 
-    pub fn eval(&self, t: Knt) -> Point<T, M> {
-        let span = self.space.find_span(t).unwrap();
-        let idx = self.space.nonzero(&span);
-        let b = self.space.eval(t, &span);
+    pub fn eval(&self, x: X) -> Point<T, M> {
+        let (b, idx) = self.space.eval_nonzero(x);
         let c = self.control_points.get_nonzero(idx);
         Point::from(c.coords * b)
     }
