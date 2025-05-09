@@ -10,6 +10,7 @@ mod cells;
 
 #[cfg(test)]
 mod tests {
+    use std::hint::black_box;
     use crate::bspline::basis::Basis;
     use crate::bspline::control_points::ControlPoints;
     use crate::bspline::multi_spline_basis::MultiSplineBasis;
@@ -23,7 +24,7 @@ mod tests {
     use crate::subd::basis;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, Const, OMatrix, SMatrix};
+    use nalgebra::{matrix, vector, Const, DMatrix, DVector, OMatrix, SMatrix, SVector};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -210,7 +211,7 @@ mod tests {
         for t in grid.clone() {
             let span = basis.find_span(t).unwrap();
             // let span = KnotSpan(3);
-            let eval = basis.eval(t, &span);
+            let eval = black_box(basis.eval(t, &span));
             // println!("{}", eval.norm());
         }
         let time_uni = start.elapsed();
@@ -222,7 +223,7 @@ mod tests {
             let t = vector![t];
             let span = basis.find_span(t).unwrap();
             // let span = KnotSpan(MultiIndex([3]));
-            let eval = basis.eval(t, &span);
+            let eval = black_box(basis.eval(t, &span));
             // println!("{}", eval.norm());
         }
         let time_tp = start.elapsed();
@@ -241,7 +242,7 @@ mod tests {
         // Using powi
         let start = Instant::now();
         for x in range {
-            let _ = x.powi(1);
+            black_box(x.powi(1));
         }
         let time_powi = start.elapsed();
 
@@ -250,7 +251,7 @@ mod tests {
         // Using muls
         let start = Instant::now();
         for x in range {
-            let _ = x;
+            black_box(x);
         }
         let time_muls = start.elapsed();
 
@@ -259,5 +260,33 @@ mod tests {
         println!("Took {:?} for {num_eval} power calculations (manually optimized).", time_muls);
         println!("powi is {} % slower than optimized algorithm",
                  (time_powi.as_secs_f64() - time_muls.as_secs_f64()) / time_muls.as_secs_f64() * 100.0)
+    }
+
+    #[test]
+    fn benchmark_dyn_vs_static() {
+        let num_eval = 1_000_000;
+        const N: usize = 20;
+
+        let start = Instant::now();
+        let coords = DMatrix::<f64>::new_random(N, N);
+        let vec = DVector::<f64>::new_random(N);
+        for _ in 0..num_eval {
+            black_box(&coords * &vec);
+        }
+        let time_dyn = start.elapsed();
+
+        let start = Instant::now();
+        let coords = SMatrix::<f64, N, N>::new_random();
+        let vec = SVector::<f64, N>::new_random();
+        for _ in 0..num_eval {
+            black_box(coords * vec);
+        }
+        let time_static = start.elapsed();
+
+
+        println!("Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (dynamic storage).", time_dyn);
+        println!("Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (static storage).", time_static);
+        println!("dynamic is {} % slower than static storage",
+                 (time_dyn.as_secs_f64() - time_static.as_secs_f64()) / time_static.as_secs_f64() * 100.0)
     }
 }
