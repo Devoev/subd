@@ -7,6 +7,7 @@ mod bspline;
 mod subd;
 mod mesh;
 mod cells;
+mod index;
 
 #[cfg(test)]
 mod tests {
