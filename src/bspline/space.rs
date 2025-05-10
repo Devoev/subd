@@ -1,6 +1,6 @@
 use crate::bspline::basis::BsplineBasis;
-use crate::bspline::control_points::OControlPoints;
-use nalgebra::{Dyn, RealField, SVector};
+use crate::bspline::control_points::{ControlPoints, OControlPoints};
+use nalgebra::{Const, Dim, Dyn, RealField, SVector, Storage};
 use std::marker::PhantomData;
 use itertools::Itertools;
 
@@ -26,7 +26,10 @@ impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
 
     /// Evaluates the B-Spline function `f = ∑ cⁱ bᵢ` represented by the coefficients `c`
     /// at the parametric point `x`.
-    pub fn eval_coeffs<const D: usize>(&self, c: OControlPoints<T, D, Dyn>, x: X) -> SVector<T, D> {
+    pub fn eval_coeffs<const D: usize, Nc, S>(&self, c: &ControlPoints<T, D, Nc, S>, x: X) -> SVector<T, D>
+        where Nc: Dim,
+            S: Storage<T, Const<D>, Nc>
+    {
         let (b, idx) = self.basis.eval_nonzero(x);
         let c = c.get_nonzero(idx.collect_vec().iter());
         c.coords * b

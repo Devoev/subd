@@ -7,6 +7,8 @@ use crate::bspline::spline_basis::SplineBasis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Dyn, Point, RealField, SVector};
 
+// todo: replace this by BsplineFn or smth
+
 /// A [`D`]-dimensional B-spline geometry embedded [`M`]-dimensional Euclidean space.
 #[derive(Debug, Clone)]
 pub struct SplineGeo<T, X, const M: usize, B, Nc = Dyn>
@@ -45,8 +47,6 @@ where
     }
 
     pub fn eval(&self, x: X) -> Point<T, M> {
-        let (b, idx) = self.space.basis.eval_nonzero(x);
-        let c = self.control_points.get_nonzero(idx.collect_vec().iter());
-        Point::from(c.coords * b)
+        self.space.eval_coeffs(&self.control_points, x).into()
     }
 }
