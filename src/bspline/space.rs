@@ -1,8 +1,8 @@
 use crate::bspline::basis::BsplineBasis;
-use crate::bspline::control_points::{ControlPoints, OControlPoints};
-use nalgebra::{Const, Dim, Dyn, RealField, SVector, Storage};
-use std::marker::PhantomData;
+use crate::bspline::control_points::ControlPoints;
 use itertools::Itertools;
+use nalgebra::{Const, Dim, RealField, SVector, Storage};
+use std::marker::PhantomData;
 
 /// Function space spanned by the B-Spline basis functions.
 #[derive(Debug, Clone)]
