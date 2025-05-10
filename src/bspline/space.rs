@@ -2,6 +2,7 @@ use crate::bspline::basis::BsplineBasis;
 use crate::bspline::control_points::OControlPoints;
 use nalgebra::{Dyn, RealField, SVector};
 use std::marker::PhantomData;
+use itertools::Itertools;
 
 /// Function space spanned by the B-Spline basis functions.
 #[derive(Debug, Clone)]
@@ -27,7 +28,7 @@ impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
     /// at the parametric point `x`.
     pub fn eval_coeffs<const D: usize>(&self, c: OControlPoints<T, D, Dyn>, x: X) -> SVector<T, D> {
         let (b, idx) = self.basis.eval_nonzero(x);
-        let c = c.get_nonzero(idx);
+        let c = c.get_nonzero(idx.collect_vec().iter());
         c.coords * b
     }
 }

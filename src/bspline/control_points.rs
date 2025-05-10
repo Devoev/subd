@@ -37,10 +37,9 @@ impl<T: RealField, const M: usize, N: Dim, S: Storage<T, Const<M>, N>> ControlPo
 
     /// Returns all control points belonging to nonzero basis functions, 
     /// determined by the `nonzero_indices`.
-    pub fn get_nonzero(&self, nonzero_indices: impl Iterator<Item=usize>) -> OControlPoints<T, M, Dyn> {
-        let columns = nonzero_indices.map(|i| self.coords.column(i)).collect_vec();
-        let coords = OMatrix::<T, Const<M>, Dyn>::from_columns(&columns);
-        ControlPoints::new(coords)
+    pub fn get_nonzero<'a>(&self, nonzero_indices: impl ExactSizeIterator<Item=&'a usize>) -> OControlPoints<T, M, Dyn> {
+        let columns = self.coords.select_columns(nonzero_indices);
+        ControlPoints::new(columns)
     }
 
     /// Iterates through the control points as matrix views.

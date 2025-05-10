@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use crate::bspline::basis::BsplineBasis;
 use crate::bspline::control_points::OControlPoints;
 use crate::bspline::multi_spline_basis::MultiSplineBasis;
@@ -45,7 +46,7 @@ where
 
     pub fn eval(&self, x: X) -> Point<T, M> {
         let (b, idx) = self.space.basis.eval_nonzero(x);
-        let c = self.control_points.get_nonzero(idx);
+        let c = self.control_points.get_nonzero(idx.collect_vec().iter());
         Point::from(c.coords * b)
     }
 }
