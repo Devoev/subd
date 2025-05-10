@@ -23,7 +23,7 @@ impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
         self.basis.len()
     }
 
-    /// Evaluates the B-Spline function of this space represented by the coefficients `c`
+    /// Evaluates the B-Spline function `f = ∑ cⁱ bᵢ` represented by the coefficients `c`
     /// at the parametric point `x`.
     pub fn eval_coeffs<const D: usize>(&self, c: OControlPoints<T, D, Dyn>, x: X) -> SVector<T, D> {
         let (b, idx) = self.basis.eval_nonzero(x);
