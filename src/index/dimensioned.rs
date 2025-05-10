@@ -1,8 +1,16 @@
+use nalgebra::SVector;
+
 /// Types composed of [`D`] elements of type [`T`],
 /// i.e. a type isomorphic to the fixed-sized array `[T; D]`.
 pub trait Dimensioned<const D: usize, T> {
     /// Converts this type to an array of the underlying elements.
     fn into_arr(self) -> [T; D];
+}
+
+impl<const D: usize, T: Clone> Dimensioned<D, T> for SVector<T, D> {
+    fn into_arr(self) -> [T; D] {
+        self.data.0[0].clone()
+    }
 }
 
 /// Shape of a [`D`]-variate array.
