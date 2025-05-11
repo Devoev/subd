@@ -1,20 +1,36 @@
 use crate::bspline::basis::BsplineBasis;
-use crate::bspline::control_points::ControlPoints;
-use itertools::Itertools;
-use nalgebra::{Const, Dim, RealField, SVector, Storage};
+use crate::bspline::multi_spline_basis::MultiSplineBasis;
+use crate::bspline::spline_basis::SplineBasis;
+use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, Dyn, OMatrix, RealField, SVector};
 use std::marker::PhantomData;
+use nalgebra::allocator::Allocator;
+use crate::bspline::spline::Spline;
 
 /// Function space spanned by the B-Spline basis functions.
+/// 
+/// # Type parameters
+/// - [`T`]: Scalar type for coefficients.
+/// - [`X`]: Type of parametric values in the reference domain.
+/// - [`B`]: B-Spline basis.
 #[derive(Debug, Clone)]
-pub struct BsplineSpace<T: RealField, X, B: BsplineBasis<T, X>> {
+pub struct SplineSpace<T: ComplexField, X, B: BsplineBasis<T::RealField, X>> {
     /// Set of basis functions spanning this function space.
     pub basis: B,
     
     phantom_data: PhantomData<(T, X)>
 }
 
-impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
-    /// Constructs a new [`BsplineSpace`] from the given `basis`.
+/// Space of univariate B-Splines.
+pub type Splines1<T> = SplineSpace<T, T, SplineBasis<T>>;
+
+/// Space of bivariate B-Splines.
+pub type Splines2<T> = SplineSpace<T, SVector<T, 2>, MultiSplineBasis<T, 2>>;
+
+/// Space of trivariate B-Splines.
+pub type Splines3<T> = SplineSpace<T, SVector<T, 3>, MultiSplineBasis<T, 3>>;
+
+impl <T: RealField, X, B: BsplineBasis<T, X>> SplineSpace<T, X, B> {
+    /// Constructs a new [`SplineSpace`] from the given `basis`.
     pub fn new(basis: B) -> Self {
         Self { basis, phantom_data: PhantomData }
     }
@@ -24,15 +40,12 @@ impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
         self.basis.len()
     }
 
-    /// Evaluates the B-Spline function `f = ∑ cⁱ bᵢ` 
-    /// represented by the coefficients `cⁱ ∈ ℝᵈ`
-    /// at the parametric point `x`.
-    pub fn eval_coeffs<const D: usize, Nc, S>(&self, c: &ControlPoints<T, D, Nc, S>, x: X) -> SVector<T, D>
-        where Nc: Dim,
-            S: Storage<T, Const<D>, Nc>
+    /// Calculates the linear combination of the given `coeffs` with the basis function of this space,
+    /// and returns the resulting [`Spline`] function.
+    pub fn linear_combination<const M: usize, N>(&self, coeffs: OMatrix<T, Const<M>, N>) -> Spline<T, X, B, M, N> 
+        where N: Dim, 
+              DefaultAllocator: Allocator<Const<M>, N>
     {
-        let (b, idx) = self.basis.eval_nonzero(x);
-        let c = c.get_nonzero(idx.collect_vec().iter());
-        c.coords * b
+        Spline::new(coeffs, self)
     }
 }

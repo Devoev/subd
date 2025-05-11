@@ -2,6 +2,7 @@ use nalgebra::{DVector, RealField};
 
 // todo: possibly add number of nonzero basis functions as generic parameter
 //  and make NonzeroIndices also of the SAME size
+// todo: add support for vector basis functions
 
 /// Set of B-Spline basis functions.
 ///
