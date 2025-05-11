@@ -24,7 +24,8 @@ impl <T: RealField, X, B: BsplineBasis<T, X>> BsplineSpace<T, X, B> {
         self.basis.len()
     }
 
-    /// Evaluates the B-Spline function `f = ∑ cⁱ bᵢ` represented by the coefficients `c`
+    /// Evaluates the B-Spline function `f = ∑ cⁱ bᵢ` 
+    /// represented by the coefficients `cⁱ ∈ ℝᵈ`
     /// at the parametric point `x`.
     pub fn eval_coeffs<const D: usize, Nc, S>(&self, c: &ControlPoints<T, D, Nc, S>, x: X) -> SVector<T, D>
         where Nc: Dim,
