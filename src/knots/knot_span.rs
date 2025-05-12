@@ -51,7 +51,7 @@ impl KnotSpan1 {
 impl<const D: usize> MultiKnotSpan<D> {
     /// Finds the [`KnotSpan`] containing the parametric value `t`.
     pub fn find<T: RealField + Copy>(space: &MultiSplineBasis<T, D>, t: SVector<T, D>) -> Result<Self, ()> {
-        let index = zip(&space.0, t.iter())
+        let index = zip(&space.bases, t.iter())
             .flat_map(|(space, ti)| space.find_span(*ti))
             .map(|span| span.0)
             .collect_array()

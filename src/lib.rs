@@ -28,6 +28,9 @@ mod tests {
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
+    use crate::bspline::basis::BsplineBasis;
+    use crate::index::dimensioned::Dimensioned;
+    use crate::knots::knot_span::MultiKnotSpan;
 
     #[test]
     fn knots() {
@@ -46,10 +49,10 @@ mod tests {
 
         let t = 0.6;
         let span1 = xi2.find_span(t).unwrap();
-        let span2 = xi4.find_span(vector![t, t]).unwrap();
+        let span2 = MultiKnotSpan::find(&xi4, vector![t, t]).unwrap();
         
         println!("Span for univariate knot vec {:?}", span1.nonzero_indices(xi2.p).collect_vec());
-        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices(xi4.p()).collect_vec());
+        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices(xi4.degrees()).collect_vec());
     }
 
     #[test]
@@ -65,13 +68,13 @@ mod tests {
         println!("{:?}", multi_idx.into_lin(strides));
 
         let space = MultiSplineBasis::<f64, 2>::open_uniform([N, N], [p, p]);
-        let strides = Strides::from_dims(space.n());
-        let span = space.find_span(vector![t, t]).unwrap();
-        let idx = span.nonzero_indices(space.p()).collect_vec();
+        let strides = Strides::from_dims(space.num_basis().into_arr());
+        let span = MultiKnotSpan::find(&space, vector![t, t]).unwrap();
+        let idx = span.nonzero_indices(space.degrees()).collect_vec();
         let lin_idx = idx.clone().into_iter()
             .map(|i| i.into_lin(strides))
             .collect_vec();
-        let lin_idx_2 = span.nonzero_indices(space.p()).linearize(strides).collect_vec();
+        let lin_idx_2 = span.nonzero_indices(space.degrees()).linearize(strides).collect_vec();
         let mat_idx = lin_idx.iter()
             .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
             .collect_vec();
@@ -93,8 +96,8 @@ mod tests {
 
         let t = 0.6;
         println!("{}", splines.eval(t, &splines.find_span(t).unwrap()));
-        println!("{}", splines_2d.eval(vector![t, t], &splines_2d.find_span(vector![t, t]).unwrap()));
-        println!("{}", splines_3d.eval(vector![t, t, t], &splines_3d.find_span(vector![t, t, t]).unwrap()));
+        println!("{}", splines_2d.eval_nonzero([t, t]).0);
+        println!("{}", splines_3d.eval_nonzero([t, t, t]).0);
     }
 
     #[test]
@@ -137,7 +140,7 @@ mod tests {
             for j in 0..N {
                 let tx = i as f64 / N as f64;
                 let ty = j as f64 / N as f64;
-                let p = surf.eval(vector![tx, ty]);
+                let p = surf.eval([tx, ty]);
                 points.push((p.x, p.y));
             }
         }
@@ -177,10 +180,8 @@ mod tests {
         let basis_uni = SplineBasis::open_uniform(4, 3);
         let basis = MultiSplineBasis::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
-            let t = vector![u, v];
-            let span = basis.find_span(t).unwrap();
             // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
-            let eval = basis.eval(t, &span);
+            let eval = basis.eval_nonzero([u, v]);
             // println!("{}", eval.norm());
         }
         let time_de_boor = start.elapsed();
@@ -219,10 +220,9 @@ mod tests {
         let start = Instant::now();
         let basis = MultiSplineBasis::open_uniform([30], [3]);
         for t in grid.clone() {
-            let t = vector![t];
-            let span = basis.find_span(t).unwrap();
+            // let t = vector![t];
             // let span = KnotSpan(MultiIndex([3]));
-            let eval = black_box(basis.eval(t, &span));
+            let eval = black_box(basis.eval_nonzero([t]));
             // println!("{}", eval.norm());
         }
         let time_tp = start.elapsed();
