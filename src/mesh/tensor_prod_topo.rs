@@ -1,47 +1,35 @@
 //! Topology of a tensor product mesh.
 
 use crate::cells::hyper_rectangle::HyperRectangle;
-use itertools::Itertools;
 use crate::index::dimensioned::{DimShape, Strides};
 
-pub struct TensorProd<const K: usize> {
+pub struct TensorProd<const D: usize> {
     /// Shape of the parametric directions.
-    dim_shape: DimShape<K>,
+    dim_shape: DimShape<D>,
     /// Strides for each parametric direction.
-    strides: Strides<K>
+    strides: Strides<D>
 }
 
-impl<const K: usize> TensorProd<K> {
-    /// Constructs a new [`TensorProd`] from the given `dims` and `strides`.
-    pub fn new(dims: DimShape<K>, strides: Strides<K>) -> Self {
-        TensorProd { dim_shape: dims, strides }
+impl<const D: usize> TensorProd<D> {
+    /// Constructs a new [`TensorProd`] from the given `dim_shape` and `strides`.
+    pub fn new(dim_shape: DimShape<D>, strides: Strides<D>) -> Self {
+        TensorProd { dim_shape, strides }
     }
 
-    /// Constructs a new [`TensorProd`] from the given `dims` and computes the strides itself.
-    pub fn from_dims(dims: DimShape<K>) -> Self {
-        TensorProd::new(dims, Strides::from(dims))
+    /// Constructs a new [`TensorProd`] from the given `dim_shape` and computes the strides itself.
+    pub fn from_dims(dim_shape: DimShape<D>) -> Self {
+        TensorProd::new(dim_shape, Strides::from(dim_shape))
     }
 
     /// Returns an iterator over all multi-indices in this grid.
-    pub fn indices(&self) -> impl Iterator<Item = [usize; K]> {
-        // todo: move this computation to Dims or MuliIndex Range or whatever
-        let ranges = self.dim_shape.0.map(|n| 0..n);
-        ranges.into_iter()
-            .multi_cartesian_product()
-            .map(|idx| {
-                idx.into_iter().collect_array().unwrap()
-            })
+    pub fn indices(&self) -> impl Iterator<Item = [usize; D]> {
+        self.dim_shape.range()
     }
 
     /// Returns an iterator over all elements in lexicographical order.
-    pub fn elems(&self) -> impl Iterator<Item=HyperRectangle<K>> {
-        // todo: make this computation using the indices method
-        let ranges = self.dim_shape.0.map(|n| 0..n-1);
-        ranges.into_iter()
-            .multi_cartesian_product()
-            .map(|idx| {
-                let multi_idx = idx.into_iter().collect_array().unwrap();
-                HyperRectangle(multi_idx)
-            })
+    pub fn elems(&self) -> impl Iterator<Item=HyperRectangle<D>> {
+        let mut dim_shape_elems = self.dim_shape;
+        dim_shape_elems.shrink(1);
+        dim_shape_elems.range().map(|i: [usize; D]| HyperRectangle(i))
     }
 }

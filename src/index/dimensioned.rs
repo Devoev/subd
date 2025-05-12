@@ -1,3 +1,5 @@
+use crate::index::multi_index::MultiIndex;
+use itertools::Itertools;
 use nalgebra::SVector;
 
 /// Types composed of [`D`] elements of type [`T`],
@@ -21,6 +23,22 @@ impl<const D: usize> DimShape<D> {
     /// Returns the total length of this shape, i.e. the product of all dimensions.
     pub fn len(&self) -> usize {
         self.0.iter().product()
+    }
+
+    /// Returns an iterator over multi indices of type `I` in range of this shape.
+    pub fn range<I: MultiIndex<D, usize> + From<[usize; D]>>(&self) -> impl Iterator<Item = I> {
+        let ranges = self.0.map(|n| 0..n);
+        
+        ranges.into_iter()
+            .multi_cartesian_product()
+            .map(|idx| {
+                idx.into_iter().collect_array().unwrap().into()
+            })
+    }
+    
+    /// Reduces the size of every dimension in `self` by `num`.
+    pub fn shrink(&mut self, num: usize) {
+        self.0.iter_mut().for_each(|n| *n -= num);
     }
 }
 
