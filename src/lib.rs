@@ -222,7 +222,7 @@ mod tests {
         for t in grid.clone() {
             // let t = vector![t];
             // let span = KnotSpan(MultiIndex([3]));
-            let eval = black_box(basis.eval_nonzero([t]));
+            let eval = black_box(basis.eval_nonzero(t));
             // println!("{}", eval.norm());
         }
         let time_tp = start.elapsed();

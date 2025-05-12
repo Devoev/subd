@@ -13,14 +13,16 @@ use std::marker::PhantomData;
 /// bᵢ: X×...×X ⟶ ℝ   x ↦ bᵢ[1](x[1]) ... bᵢ[d](x[d])
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct MultiProd<T: RealField, X, B: BsplineBasis<T, X>, const D: usize> {
+pub struct MultiProd<T: RealField, B: BsplineBasis<T, T>, const D: usize> {
     /// The bases for each parametric direction.
     pub bases: [B; D],
 
-    _phantom_data: PhantomData<(T, X)>,
+    _phantom_data: PhantomData<T>,
 }
 
-impl<T: RealField, X, B: BsplineBasis<T, X>, const D: usize> MultiProd<T, X, B, D> {
+impl<T: RealField, B: BsplineBasis<T, T>, const D: usize> MultiProd<T, B, D>
+    where B::NonzeroIndices: Clone
+{
     /// Constructs a new [`MultiProd`] from the given array `bases` of `D` univariate bases.
     pub fn new(bases: [B; D]) -> Self {
         MultiProd { bases, _phantom_data: Default::default() }
@@ -38,18 +40,9 @@ impl<T: RealField, X, B: BsplineBasis<T, X>, const D: usize> MultiProd<T, X, B, 
     pub fn strides(&self) -> Strides<D> {
         Strides::from(self.num_basis())
     }
-}
 
-impl <T: RealField, X, B: BsplineBasis<T, X>, const D: usize> BsplineBasis<T, [X; D]> for MultiProd<T, X, B, D>
-    where B::NonzeroIndices: Clone
-{
-    type NonzeroIndices = impl Iterator<Item = usize>;
-
-    fn len(&self) -> usize {
-        self.num_basis().len()
-    }
-
-    fn eval_nonzero(&self, x: [X; D]) -> (DVector<T>, Self::NonzeroIndices) {
+    /// Evaluates the nonzero basis functions using a tensor product algorithm.
+    fn eval_tensor_prod(&self, x: [T; D]) -> (DVector<T>, impl Iterator<Item = usize>) {
         let (b, idx): (Vec<_>, Vec<_>) = zip(&self.bases, x)
             .map(|(space, xi)| space.eval_nonzero(xi))
             .unzip();
@@ -65,6 +58,48 @@ impl <T: RealField, X, B: BsplineBasis<T, X>, const D: usize> BsplineBasis<T, [X
             .map(move |i| i.into_lin(strides));
 
         (b, idx)
+    }
+}
+
+impl <T: RealField, B: BsplineBasis<T, T>> BsplineBasis<T, T> for MultiProd<T, B, 1>
+    where B::NonzeroIndices: Clone
+{
+    type NonzeroIndices = impl Iterator<Item = usize>;
+
+    fn len(&self) -> usize {
+        self.num_basis().len()
+    }
+
+    fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
+        self.eval_tensor_prod([x])
+    }
+}
+
+impl <T: RealField, B: BsplineBasis<T, T>> BsplineBasis<T, (T, T)> for MultiProd<T, B, 2>
+    where B::NonzeroIndices: Clone
+{
+    type NonzeroIndices = impl Iterator<Item = usize>;
+
+    fn len(&self) -> usize {
+        self.num_basis().len()
+    }
+
+    fn eval_nonzero(&self, x: (T, T)) -> (DVector<T>, Self::NonzeroIndices) {
+        self.eval_tensor_prod([x.0, x.1])
+    }
+}
+
+impl <T: RealField, B: BsplineBasis<T, T>, const D: usize> BsplineBasis<T, [T; D]> for MultiProd<T, B, D>
+    where B::NonzeroIndices: Clone
+{
+    type NonzeroIndices = impl Iterator<Item = usize>;
+
+    fn len(&self) -> usize {
+        self.num_basis().len()
+    }
+
+    fn eval_nonzero(&self, x: [T; D]) -> (DVector<T>, Self::NonzeroIndices) {
+        self.eval_tensor_prod(x)
     }
 }
 
