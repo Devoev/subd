@@ -3,11 +3,12 @@
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::index::dimensioned::{DimShape, Strides};
 
+/// Topology of a [`K`]-dimensional tensor product (cartesian) mesh.
 pub struct TensorProd<const D: usize> {
     /// Shape of the parametric directions.
-    dim_shape: DimShape<D>,
+    pub dim_shape: DimShape<D>,
     /// Strides for each parametric direction.
-    strides: Strides<D>
+    pub strides: Strides<D>
 }
 
 impl<const D: usize> TensorProd<D> {
