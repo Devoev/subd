@@ -18,8 +18,7 @@ mod tests {
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
-    use crate::index::dimensioned::Dimensioned;
-    use crate::knots::index::{MultiIndex, Strides};
+    use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
     use crate::knots::knot_vec::KnotVec;
     use crate::subd::basis;
     use iter_num_tools::lin_space;
@@ -30,6 +29,7 @@ mod tests {
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
+    use crate::index::multi_index::MultiIndex;
 
     #[test]
     fn knots() {
@@ -53,14 +53,14 @@ mod tests {
         let p = 2;
         let t = 0.5;
         
-        let dims = [3, 3, 3];
-        let strides = Strides::from_dims(dims);
-        let multi_idx = MultiIndex([2, 2, 2]);
+        let dims = DimShape([3, 3, 3]);
+        let strides = Strides::from(dims);
+        let multi_idx = [2, 2, 2];
         println!("{:?}", multi_idx);
         println!("{:?}", multi_idx.into_lin(strides));
 
         let space = MultiDeBoor::<f64, 2>::open_uniform([N, N], [p, p]);
-        let strides = Strides::from_dims(space.num_basis().into_arr());
+        let strides = Strides::from(space.num_basis());
     }
 
     #[test]
