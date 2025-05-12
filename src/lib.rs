@@ -18,7 +18,8 @@ mod tests {
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
-    use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
+    use crate::index::dimensioned::{DimShape, Strides};
+    use crate::index::multi_index::MultiIndex;
     use crate::knots::knot_vec::KnotVec;
     use crate::subd::basis;
     use iter_num_tools::lin_space;
@@ -29,7 +30,7 @@ mod tests {
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
-    use crate::index::multi_index::MultiIndex;
+    use crate::mesh::cartesian::CartMesh;
 
     #[test]
     fn knots() {
@@ -139,6 +140,17 @@ mod tests {
     fn mesh() {
         let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
         quad.is_connected::<2>(&quad);
+    }
+
+    #[test]
+    fn cart_mesh() {
+        let msh = CartMesh::from_breaks(
+            [vec![0.0, 1.0, 2.0, 3.0], vec![0.0, 1.0, 2.0, 3.0]]
+        );
+
+        for elem in msh.elems() {
+            println!("{:?}", elem);
+        }
     }
 
     #[test]

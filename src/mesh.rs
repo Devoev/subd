@@ -3,4 +3,4 @@
 pub mod elem_vertex;
 mod elem_vertex_topo;
 mod tensor_prod_topo;
-mod cartesian;
+pub mod cartesian;
