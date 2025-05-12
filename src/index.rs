@@ -1,2 +1,2 @@
 pub mod multi_index;
-mod dimensioned;
+pub mod dimensioned;

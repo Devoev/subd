@@ -5,3 +5,4 @@ pub mod basis;
 pub mod uniform;
 pub mod space;
 mod spline;
+mod tensor_prod;

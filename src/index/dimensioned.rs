@@ -17,6 +17,13 @@ impl<const D: usize, T: Clone> Dimensioned<D, T> for SVector<T, D> {
 #[derive(Debug, Copy, Clone)]
 pub struct DimShape<const D: usize>(pub [usize; D]);
 
+impl<const D: usize> DimShape<D> {
+    /// Returns the total length of this shape, i.e. the product of all dimensions.
+    pub fn len(&self) -> usize {
+        self.0.iter().product()
+    }
+}
+
 impl<const D: usize> Dimensioned<D, usize> for DimShape<D> {
     fn into_arr(self) -> [usize; D] {
         self.0
