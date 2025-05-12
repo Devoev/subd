@@ -11,34 +11,33 @@ mod index;
 
 #[cfg(test)]
 mod tests {
-    use crate::bspline::multi_spline_basis::MultiSplineBasis;
+    use crate::bspline::basis::BsplineBasis;
+    use crate::bspline::de_boor::DeBoor;
+    use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_basis::SplineBasis;
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
-    use crate::knots::index::{Linearize, MultiIndex, Strides};
+    use crate::index::dimensioned::Dimensioned;
+    use crate::knots::index::{MultiIndex, Strides};
     use crate::knots::knot_vec::KnotVec;
     use crate::subd::basis;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, Const, DMatrix, DVector, OMatrix, SMatrix, SVector};
+    use nalgebra::{matrix, DMatrix, DVector, SMatrix, SVector};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
-    use crate::bspline::basis::BsplineBasis;
-    use crate::index::dimensioned::Dimensioned;
-    use crate::knots::knot_span::MultiKnotSpan;
 
     #[test]
     fn knots() {
-        let xi1 = SplineBasis::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
-        let xi2 = SplineBasis::<f64>::open_uniform(6, 2);
+        let xi1 = DeBoor::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
+        let xi2 = DeBoor::<f64>::open_uniform(6, 2);
         let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity().unzip();
-        let xi3 = MultiSplineBasis::new([xi1.clone(), xi2.clone()]);
-        let xi4 = MultiSplineBasis::<f64, 2>::open_uniform([5, 3], [1, 2]);
+        let xi3 = MultiDeBoor::new([xi1.clone(), xi2.clone()]);
+        let xi4 = MultiDeBoor::<f64, 2>::open_uniform([5, 3], [1, 2]);
         
         println!("Z: {:?}", z);
         println!("m: {:?}", m);
@@ -46,13 +45,6 @@ mod tests {
         println!("{:?}", xi2);
         println!("{:?}", xi3);
         println!("{:?}", xi4);
-
-        let t = 0.6;
-        let span1 = xi2.find_span(t).unwrap();
-        let span2 = MultiKnotSpan::find(&xi4, vector![t, t]).unwrap();
-        
-        println!("Span for univariate knot vec {:?}", span1.nonzero_indices(xi2.p).collect_vec());
-        println!("Span for multivariate knot vec {:?}", span2.nonzero_indices(xi4.degrees()).collect_vec());
     }
 
     #[test]
@@ -67,35 +59,20 @@ mod tests {
         println!("{:?}", multi_idx);
         println!("{:?}", multi_idx.into_lin(strides));
 
-        let space = MultiSplineBasis::<f64, 2>::open_uniform([N, N], [p, p]);
+        let space = MultiDeBoor::<f64, 2>::open_uniform([N, N], [p, p]);
         let strides = Strides::from_dims(space.num_basis().into_arr());
-        let span = MultiKnotSpan::find(&space, vector![t, t]).unwrap();
-        let idx = span.nonzero_indices(space.degrees()).collect_vec();
-        let lin_idx = idx.clone().into_iter()
-            .map(|i| i.into_lin(strides))
-            .collect_vec();
-        let lin_idx_2 = span.nonzero_indices(space.degrees()).linearize(strides).collect_vec();
-        let mat_idx = lin_idx.iter()
-            .map(|i| OMatrix::<f64, Const<N>, Const<N>>::zeros().vector_to_matrix_index(*i))
-            .collect_vec();
-
-        println!("{:?}", space);
-        println!("{:?}", idx);
-        println!("{:?}", lin_idx);
-        println!("{:?}", lin_idx_2);
-        println!("{:?}", mat_idx);
     }
 
     #[test]
     fn splines() {
         let n = 4;
         let p = 2;
-        let splines = SplineBasis::<f64>::open_uniform(n, p);
-        let splines_2d = MultiSplineBasis::<f64, 2>::open_uniform([5, 5], [1, 1]);
-        let splines_3d = MultiSplineBasis::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
+        let splines = DeBoor::<f64>::open_uniform(n, p);
+        let splines_2d = MultiDeBoor::<f64, 2>::open_uniform([5, 5], [1, 1]);
+        let splines_3d = MultiDeBoor::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
-        println!("{}", splines.eval(t, &splines.find_span(t).unwrap()));
+        println!("{}", splines.eval_nonzero(t).0);
         println!("{}", splines_2d.eval_nonzero([t, t]).0);
         println!("{}", splines_3d.eval_nonzero([t, t, t]).0);
     }
@@ -104,7 +81,7 @@ mod tests {
     fn spline_curves() {
         let n = 5;
         let p = 2;
-        let basis = SplineBasis::<f64>::open_uniform(n, p);
+        let basis = DeBoor::<f64>::open_uniform(n, p);
         let space = SplineSpace::new(basis);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
@@ -120,8 +97,8 @@ mod tests {
         let n = 3;
         let p = 2;
 
-        let splines_1d = SplineBasis::<f64>::open_uniform(n, p);
-        let splines_2d = MultiSplineBasis::new([splines_1d.clone(), splines_1d.clone()]);
+        let splines_1d = DeBoor::<f64>::open_uniform(n, p);
+        let splines_2d = MultiDeBoor::new([splines_1d.clone(), splines_1d.clone()]);
         let space = SplineSpace::new(splines_2d);
 
         let control_points = matrix![
@@ -177,8 +154,8 @@ mod tests {
         // let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
 
         
-        let basis_uni = SplineBasis::open_uniform(4, 3);
-        let basis = MultiSplineBasis::<f64, 2>::new([basis_uni.clone(), basis_uni]);
+        let basis_uni = DeBoor::open_uniform(4, 3);
+        let basis = MultiDeBoor::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
             // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
             let eval = basis.eval_nonzero([u, v]);
@@ -207,21 +184,17 @@ mod tests {
 
         // univariate algorithm
         let start = Instant::now();
-        let basis = SplineBasis::open_uniform(30, 3);
+        let basis = DeBoor::open_uniform(30, 3);
         for t in grid.clone() {
-            let span = basis.find_span(t).unwrap();
-            // let span = KnotSpan(3);
-            let eval = black_box(basis.eval(t, &span));
+            let eval = black_box(basis.eval_nonzero(t));
             // println!("{}", eval.norm());
         }
         let time_uni = start.elapsed();
 
         // tensor product algorithm
         let start = Instant::now();
-        let basis = MultiSplineBasis::open_uniform([30], [3]);
+        let basis = MultiDeBoor::open_uniform([30], [3]);
         for t in grid.clone() {
-            // let t = vector![t];
-            // let span = KnotSpan(MultiIndex([3]));
             let eval = black_box(basis.eval_nonzero(t));
             // println!("{}", eval.norm());
         }

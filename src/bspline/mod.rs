@@ -1,8 +1,7 @@
-pub mod spline_basis;
+pub mod de_boor;
 pub mod spline_geo;
-pub mod multi_spline_basis;
 pub mod basis;
 pub mod uniform;
 pub mod space;
-mod spline;
-mod tensor_prod;
+pub mod spline;
+pub mod tensor_prod;
