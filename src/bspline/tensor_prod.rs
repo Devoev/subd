@@ -55,7 +55,7 @@ impl<T: RealField, B: BsplineBasis<T, T>, const D: usize> MultiProd<T, B, D>
         let idx = idx.into_iter()
             .multi_cartesian_product()
             .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
-            .map(move |i| i.into_lin(strides));
+            .map(move |i| i.into_lin(&strides));
 
         (b, idx)
     }
@@ -150,7 +150,7 @@ impl <T: RealField, X: Copy, B1: BsplineBasis<T, X>, B2: BsplineBasis<T, X>> Bsp
 
         let strides = self.strides();
         let idx = idx1.cartesian_product(idx2)
-            .map(move |i| i.into_lin(strides));
+            .map(move |i| i.into_lin(&strides));
 
         (b, idx)
     }

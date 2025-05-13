@@ -1,7 +1,9 @@
 //! Topology of a tensor product mesh.
 
 use crate::cells::hyper_rectangle::HyperRectangleTopo;
+use crate::cells::vertex::VertexTopo;
 use crate::index::dimensioned::{DimShape, Strides};
+use crate::index::multi_index::MultiIndex;
 
 /// Topology of a [`K`]-dimensional tensor product (cartesian) mesh.
 /// The topological structure is a regular grid, that can in 2D be schematically visualized as
@@ -37,11 +39,15 @@ impl<const D: usize> TensorProd<D> {
     pub fn from_dims(dim_shape: DimShape<D>) -> Self {
         TensorProd::new(dim_shape, Strides::from(dim_shape))
     }
-
-    // todo: change this to nodes and return VertexTopo?
+    
     /// Returns an iterator over all multi-indices in this grid.
     pub fn indices(&self) -> impl Iterator<Item = [usize; D]> {
         self.dim_shape.range()
+    }
+    
+    /// Returns an iterator over all nodes with linear indices in increasing index order.
+    pub fn nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
+        self.indices().map(|idx| VertexTopo(idx.into_lin(&self.strides)))
     }
 
     /// Returns an iterator over all elements in lexicographical order.

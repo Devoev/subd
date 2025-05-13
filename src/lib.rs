@@ -59,7 +59,7 @@ mod tests {
         let strides = Strides::from(dims);
         let multi_idx = [2, 2, 2];
         println!("{:?}", multi_idx);
-        println!("{:?}", multi_idx.into_lin(strides));
+        println!("{:?}", multi_idx.into_lin(&strides));
 
         let space = MultiDeBoor::<f64, 2>::open_uniform([N, N], [p, p]);
         let strides = Strides::from(space.num_basis());
