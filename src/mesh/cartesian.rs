@@ -1,8 +1,9 @@
-use std::iter::zip;
+use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::index::dimensioned::DimShape;
 use crate::mesh::tensor_prod_topo::TensorProd;
-use itertools::{repeat_n, Itertools};
+use itertools::Itertools;
 use nalgebra::{Point, RealField};
+use std::iter::zip;
 
 /// Cartesian mesh with [tensor product topology](TensorProd)
 pub struct CartMesh<T: RealField, const K: usize> {
@@ -34,21 +35,26 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
         let shape = breaks.iter().map(|b| b.len()).collect_array().unwrap();
         CartMesh { breaks, topology: TensorProd::from_dims(DimShape(shape)) }
     }
+    
+    /// Constructs the vertex point at the given multi-index position `idx`.
+    pub fn vertex(&self, idx: [usize; K]) -> Point<T, K> {
+        zip(idx, &self.breaks)
+            .map(|(i, breaks)| breaks[i])
+            .collect_array::<K>()
+            .unwrap()
+            .into()
+    }
 
     // todo: change impl and signature of CartMesh::elems
     /// Returns an iterator over all elements in this mesh.
-    pub fn elems(&self) -> impl Iterator<Item = Vec<Point<T, K>>> + '_ {
-        let offsets = repeat_n(0..=1, K)
-            .multi_cartesian_product()
-            .collect_vec();
-        
+    pub fn elems(&self) -> impl Iterator<Item = HyperRectangle<T, K>> + '_ {
         self.topology.elems()
             .map(move |e| {
-                offsets.iter().map(move |offset| {
-                    let indices = zip(offset, e.0).map(|(di, i)| i + di);
-                    let coords = zip(indices, &self.breaks).map(|(i, breaks)| breaks[i]).collect_array::<K>().unwrap();
-                    Point::from(coords)
-                }).collect_vec()
+                let idx_a = e.0;
+                let idx_b = idx_a.map(|i| i + 1);
+                let a = self.vertex(idx_a);
+                let b = self.vertex(idx_b);
+                HyperRectangle { a: a.coords, b: b.coords }
             })
     }
 }

@@ -150,15 +150,8 @@ mod tests {
         );
 
         for elem in msh.elems() {
-            println!("{:?}", elem);
-        }
-        
-        let elem = HyperRectangle { a: vector![0.0, 0.0], b: vector![1.0, 1.5] };
-        for point in elem.points() {
-            println!("{:?}", point);
-        }
-        for range in elem.ranges() {
-            println!("{:?}", range);
+            println!("Nodes of rectangle {:?}", elem.points().collect_vec());
+            println!("Ranges of rectangle {:?}", elem.ranges());
         }
     }
 
