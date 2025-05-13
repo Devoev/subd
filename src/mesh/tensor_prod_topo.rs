@@ -4,6 +4,22 @@ use crate::cells::hyper_rectangle::HyperRectangleTopo;
 use crate::index::dimensioned::{DimShape, Strides};
 
 /// Topology of a [`K`]-dimensional tensor product (cartesian) mesh.
+/// The topological structure is a regular grid, that can in 2D be schematically visualized as
+/// ```text
+///    ^ 
+///    | 
+/// ny---   +---+---+---+
+///    |    |   |   |   |
+///    |    +---+---+---+
+///    |    |   |   |   |
+///    |    +---+---+---+
+///    |    |   |   |   |
+///  0---   +---+---+---+
+///    |
+///    +----|-----------|--->
+///         0           nx
+/// ```
+/// with `nx` and `ny` being the shapes in `x` and `y` direction respectively.
 pub struct TensorProd<const D: usize> {
     /// Shape of the parametric directions.
     pub dim_shape: DimShape<D>,
