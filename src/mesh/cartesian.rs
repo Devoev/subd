@@ -64,13 +64,8 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
     // todo: change signature of CartMesh::elems
     /// Returns an iterator over all elements in this mesh.
     pub fn elems(&self) -> impl Iterator<Item = HyperRectangle<T, K>> + '_ {
-        self.topology.elems()
-            .map(move |e| {
-                let idx_a = e.0;
-                let idx_b = idx_a.map(|i| i + 1);
-                let a = self.vertex(idx_a);
-                let b = self.vertex(idx_b);
-                HyperRectangle { a: a.coords, b: b.coords }
-            })
+        self.topology
+            .elems()
+            .map(|elem_topo| HyperRectangle::from_topo(elem_topo, self))
     }
 }

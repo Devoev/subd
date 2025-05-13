@@ -1,14 +1,15 @@
-use std::iter::zip;
-use std::ops::RangeInclusive;
-use itertools::{repeat_n, Itertools};
 use crate::cells::cell::{Cell, CellBoundary};
 use crate::cells::vertex::VertexTopo;
+use crate::mesh::cartesian::CartMesh;
+use itertools::{repeat_n, Itertools};
 use nalgebra::{Const, DimNameSub, Point, RealField, SVector, U3};
+use std::iter::zip;
+use std::ops::RangeInclusive;
 
 /// A [`K`]-dimensional hyperrectangle.
-/// For vectors, `a` and `b` of length `K` it is defined as the set of all points
+/// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
 /// ```text
-/// { x : a[i] <= x[i] <= b[] }
+/// { x : a[i] <= x[i] <= b[i] }
 /// ```
 /// which is equal to the cartesian product
 /// ```text
@@ -26,6 +27,21 @@ pub struct HyperRectangle<T: RealField, const K: usize> {
 
 // todo: update points and ranges methods
 impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
+    /// Constructs a new [`HyperRectangle`] from the given coordinate vectors `a` and `b`.
+    pub fn new(a: SVector<T, K>, b: SVector<T, K>) -> Self {
+        HyperRectangle { a, b }
+    }
+    
+    /// Constructs a new [`HyperRectangle`] from the given topology `topo`
+    /// and mesh `msh`.
+    pub fn from_topo(topo: HyperRectangleTopo<K>, msh: &CartMesh<T, K>) -> Self {
+        let idx_a = topo.0;
+        let idx_b = idx_a.map(|i| i + 1);
+        let a = msh.vertex(idx_a);
+        let b = msh.vertex(idx_b);
+        HyperRectangle::new(a.coords, b.coords)
+    }
+    
     /// Returns an iterator over the corner points of this hyperrectangle.
     pub fn points(&self) -> impl Iterator<Item=Point<T, K>> + '_ {
         repeat_n([&self.a, &self.b], K)
