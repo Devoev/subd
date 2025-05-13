@@ -2,7 +2,7 @@ use std::iter::zip;
 use crate::index::dimensioned::DimShape;
 use crate::mesh::tensor_prod_topo::TensorProd;
 use itertools::{repeat_n, Itertools};
-use nalgebra::RealField;
+use nalgebra::{Point, RealField};
 
 /// Cartesian mesh with [tensor product topology](TensorProd)
 pub struct CartMesh<T: RealField, const K: usize> {
@@ -13,7 +13,7 @@ pub struct CartMesh<T: RealField, const K: usize> {
     pub topology: TensorProd<K>
 }
 
-impl<T: RealField, const K: usize> CartMesh<T, K> {
+impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
     /// Constructs a new [`CartMesh`] from the given `breaks` and `topology`.
     ///
     /// # Panics
@@ -37,7 +37,7 @@ impl<T: RealField, const K: usize> CartMesh<T, K> {
 
     // todo: change impl and signature of CartMesh::elems
     /// Returns an iterator over all elements in this mesh.
-    pub fn elems(&self) -> impl Iterator<Item = Vec<[usize; K]>> {
+    pub fn elems(&self) -> impl Iterator<Item = Vec<Point<T, K>>> + '_ {
         let offsets = repeat_n(0..=1, K)
             .multi_cartesian_product()
             .collect_vec();
@@ -45,7 +45,9 @@ impl<T: RealField, const K: usize> CartMesh<T, K> {
         self.topology.elems()
             .map(move |e| {
                 offsets.iter().map(move |offset| {
-                    zip(offset, e.0).map(|(di, i)| i + di).collect_array::<K>().unwrap()
+                    let indices = zip(offset, e.0).map(|(di, i)| i + di);
+                    let coords = zip(indices, &self.breaks).map(|(i, breaks)| breaks[i]).collect_array::<K>().unwrap();
+                    Point::from(coords)
                 }).collect_vec()
             })
     }

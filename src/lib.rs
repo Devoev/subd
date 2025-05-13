@@ -24,12 +24,13 @@ mod tests {
     use crate::subd::basis;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, DMatrix, DVector, SMatrix, SVector};
+    use nalgebra::{matrix, vector, DMatrix, DVector, SMatrix, SVector};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
+    use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::mesh::cartesian::CartMesh;
 
     #[test]
@@ -150,6 +151,14 @@ mod tests {
 
         for elem in msh.elems() {
             println!("{:?}", elem);
+        }
+        
+        let elem = HyperRectangle { a: vector![0.0, 0.0], b: vector![1.0, 1.5] };
+        for point in elem.points() {
+            println!("{:?}", point);
+        }
+        for range in elem.ranges() {
+            println!("{:?}", range);
         }
     }
 
