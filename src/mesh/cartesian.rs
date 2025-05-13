@@ -5,7 +5,23 @@ use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::iter::zip;
 
-/// Cartesian mesh with [tensor product topology](TensorProd)
+/// Cartesian mesh with [tensor product topology](TensorProd).
+/// The grid formed by the mesh nodes can in 2D be schematically visualized as
+/// ```text
+///        ^
+///        |
+/// by[ny]---   +---+---+---+
+///        |    |   |   |   |
+///        |    +---+---+---+
+///        |    |   |   |   |
+///        |    +---+---+---+
+///        |    |   |   |   |
+///  by[0]---   +---+---+---+
+///        |
+///        +----|-----------|--->
+///           bx[0]       bx[nx]
+/// ```
+/// where `bx` and `by` are the breakpoints for the `x` and `y` direction respectively.
 pub struct CartMesh<T: RealField, const K: usize> {
     /// Breakpoints for each parametric direction.
     pub breaks: [Vec<T>; K],
@@ -45,7 +61,7 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
             .into()
     }
 
-    // todo: change impl and signature of CartMesh::elems
+    // todo: change signature of CartMesh::elems
     /// Returns an iterator over all elements in this mesh.
     pub fn elems(&self) -> impl Iterator<Item = HyperRectangle<T, K>> + '_ {
         self.topology.elems()

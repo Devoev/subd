@@ -6,8 +6,8 @@ use crate::index::dimensioned::{DimShape, Strides};
 /// Topology of a [`K`]-dimensional tensor product (cartesian) mesh.
 /// The topological structure is a regular grid, that can in 2D be schematically visualized as
 /// ```text
-///    ^ 
-///    | 
+///    ^
+///    |
 /// ny---   +---+---+---+
 ///    |    |   |   |   |
 ///    |    +---+---+---+
@@ -38,6 +38,7 @@ impl<const D: usize> TensorProd<D> {
         TensorProd::new(dim_shape, Strides::from(dim_shape))
     }
 
+    // todo: change this to nodes and return VertexTopo?
     /// Returns an iterator over all multi-indices in this grid.
     pub fn indices(&self) -> impl Iterator<Item = [usize; D]> {
         self.dim_shape.range()
@@ -47,6 +48,6 @@ impl<const D: usize> TensorProd<D> {
     pub fn elems(&self) -> impl Iterator<Item=HyperRectangleTopo<D>> {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
-        dim_shape_elems.range().map(|i: [usize; D]| HyperRectangleTopo(i))
+        dim_shape_elems.range().map(HyperRectangleTopo)
     }
 }
