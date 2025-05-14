@@ -30,6 +30,7 @@ mod tests {
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
+    use crate::bspline::{cart_prod, tensor_prod};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::mesh::cartesian::CartMesh;
 
@@ -92,6 +93,19 @@ mod tests {
 
         let curve = space.linear_combination(coords);
         dbg!(curve.eval(0.0));
+    }
+
+    #[test]
+    fn vector_basis() {
+        let n = 20;
+        let p = 3;
+        let basis_p = DeBoor::<f64>::open_uniform(n, p);
+        let basis_q = DeBoor::<f64>::open_uniform(n, p - 1);
+        let basis_x = tensor_prod::Prod::new(basis_p.clone(), basis_q.clone());
+        let basis_y = tensor_prod::Prod::new(basis_q, basis_p);
+        
+        let sp_vec = cart_prod::Prod::new(basis_x, basis_y);
+        println!("{}", sp_vec.eval_nonzero([0.5, 0.2]));
     }
 
     #[test]
