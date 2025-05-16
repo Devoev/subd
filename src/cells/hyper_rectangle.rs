@@ -1,4 +1,4 @@
-use crate::cells::cell::{Cell, CellBoundary};
+use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::vertex::VertexTopo;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};

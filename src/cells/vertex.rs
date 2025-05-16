@@ -1,5 +1,5 @@
 use nalgebra::{Const, DimNameSub, U0};
-use crate::cells::cell::Cell;
+use crate::cells::topo::Cell;
 
 /// Topology of a vertex in a mesh. Represented by a global index.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]

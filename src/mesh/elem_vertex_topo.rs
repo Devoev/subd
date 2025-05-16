@@ -3,7 +3,7 @@
 use std::hash::Hash;
 use itertools::Itertools;
 use nalgebra::{Const, DimNameSub, U1, U2};
-use crate::cells::cell::{Cell, CellBoundary, Edge2, OrderedCell};
+use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::quad::QuadTopo;
 use crate::cells::vertex::VertexTopo;

@@ -1,6 +1,6 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
 use nalgebra::{Const, DimNameSub, Point2, RealField, Vector2, U1, U2};
-use crate::cells::cell::{Cell, CellBoundary};
+use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::line_segment::LineSegmentTopo;
 use crate::cells::vertex::VertexTopo;

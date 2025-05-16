@@ -1,5 +1,5 @@
 use nalgebra::{DimName, DimNameDiff, DimNameSub, U1};
-use crate::cells::cell::{Cell, CellBoundary};
+use crate::cells::topo::{Cell, CellBoundary};
 
 /// Topology of a [`K`]-chain inside a mesh.
 pub trait Chain<K: DimName, C: Cell<K>> {

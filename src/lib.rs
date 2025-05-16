@@ -17,7 +17,7 @@ mod tests {
     use crate::bspline::space::SplineSpace;
     use crate::bspline::spline_geo::SplineCurve;
     use crate::bspline::{cart_prod, tensor_prod};
-    use crate::cells::cell::Cell;
+    use crate::cells::topo::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
     use crate::index::dimensioned::{DimShape, Strides};

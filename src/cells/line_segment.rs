@@ -1,7 +1,7 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
 use nalgebra::{Const, DimNameSub, Point2, RealField, U0, U1};
 use std::cmp::minmax;
-use crate::cells::cell::{Cell, CellBoundary, OrderedCell};
+use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::vertex::VertexTopo;
 

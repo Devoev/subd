@@ -1,7 +1,7 @@
 //! Data structures for an element-to-vertex mesh.
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::cells::cell::Cell;
+use crate::cells::topo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::vertex::VertexTopo;
