@@ -1,5 +1,5 @@
 use crate::bspline::basis::BsplineBasis;
-use crate::bspline::de_boor::{DeBoor, MultiDeBoor};
+use crate::bspline::de_boor::{DeBoor, DeBoorMulti};
 use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, Dyn, OMatrix, RealField, SVector};
 use std::marker::PhantomData;
 use nalgebra::allocator::Allocator;
@@ -26,10 +26,10 @@ pub struct SplineSpace<T: ComplexField, X, const N: usize, B: BsplineBasis<T::Re
 pub type Splines1<T> = SplineSpace<T, T, 1, DeBoor<T>>;
 
 /// Space of bivariate B-Splines.
-pub type Splines2<T> = SplineSpace<T, SVector<T, 2>, 1, MultiDeBoor<T, 2>>;
+pub type Splines2<T> = SplineSpace<T, SVector<T, 2>, 1, DeBoorMulti<T, 2>>;
 
 /// Space of trivariate B-Splines.
-pub type Splines3<T> = SplineSpace<T, SVector<T, 3>, 1, MultiDeBoor<T, 3>>;
+pub type Splines3<T> = SplineSpace<T, SVector<T, 3>, 1, DeBoorMulti<T, 3>>;
 
 impl <T: RealField, X, const N: usize, B: BsplineBasis<T, X, N>> SplineSpace<T, X, N, B> {
     /// Constructs a new [`SplineSpace`] from the given `basis`.

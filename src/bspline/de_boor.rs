@@ -6,7 +6,7 @@ use itertools::{chain, Itertools};
 use nalgebra::{DVector, RealField};
 use std::ops::RangeInclusive;
 use std::vec;
-use crate::bspline::tensor_prod::MultiProd;
+use crate::bspline::tensor_prod::{MultiProd, Prod};
 
 /// De-Boor algorithm for the computation of the B-Spline basis
 /// of dimension `n` and degree `p`.
@@ -21,6 +21,14 @@ pub struct DeBoor<T: RealField> {
     /// Degree of basis functions.
     pub p: usize
 }
+
+
+/// Tensor product generalization of [de Boors algorithm](DeBoor) for the
+/// computation of a [`D`]-variate B-Spline basis.
+pub type DeBoorMulti<T, const D: usize> = MultiProd<T, DeBoor<T>, D>;
+
+/// Bivariate tensor product [de Boor algorithm](DeBoor).
+pub type DeBoorBi<T> = Prod<T, DeBoor<T>>;
 
 impl<T : RealField + Copy> DeBoor<T> {
 
@@ -94,12 +102,8 @@ impl <T: RealField + Copy> BsplineBasis<T, T, 1> for DeBoor<T> {
     }
 }
 
-/// Tensor product generalization of [de Boors algorithm](DeBoor) for the
-/// computation of a [`D`]-variate B-Spline basis.
-pub type MultiDeBoor<T, const D: usize> = MultiProd<T, DeBoor<T>, D>;
-
-impl<T: RealField + Copy, const D: usize> MultiDeBoor<T, D> {
-    /// Constructs an open [`MultiDeBoor`] with `n[i] + p[i] + 1` for each direction.
+impl<T: RealField + Copy, const D: usize> DeBoorMulti<T, D> {
+    /// Constructs an open [`DeBoorMulti`] with `n[i] + p[i] + 1` for each direction.
     pub fn open_uniform(n: [usize; D], p: [usize; D]) -> Self {
         let arr: [DeBoor<T>; D] = zip(n, p)
             .map(|(n, p)| DeBoor::open_uniform(n, p))
@@ -107,11 +111,11 @@ impl<T: RealField + Copy, const D: usize> MultiDeBoor<T, D> {
             .try_into()
             .unwrap();
 
-        MultiDeBoor::new(arr)
+        DeBoorMulti::new(arr)
     }
 }
 
-impl<T: RealField + Copy, const D : usize> MultiDeBoor<T, D> {
+impl<T: RealField + Copy, const D : usize> DeBoorMulti<T, D> {
     /// Return the degrees of basis functions per parametric direction.
     pub fn degrees(&self) -> [usize; D] {
         self.bases.iter().map(|b| b.p).collect_array().unwrap()

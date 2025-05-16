@@ -12,8 +12,8 @@ mod index;
 #[cfg(test)]
 mod tests {
     use crate::bspline::basis::BsplineBasis;
-    use crate::bspline::de_boor::DeBoor;
-    use crate::bspline::de_boor::MultiDeBoor;
+    use crate::bspline::de_boor::{DeBoor, DeBoorBi};
+    use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::space::SplineSpace;
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
@@ -41,8 +41,8 @@ mod tests {
         let xi1 = DeBoor::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
         let xi2 = DeBoor::<f64>::open_uniform(6, 2);
         let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity().unzip();
-        let xi3 = MultiDeBoor::new([xi1.clone(), xi2.clone()]);
-        let xi4 = MultiDeBoor::<f64, 2>::open_uniform([5, 3], [1, 2]);
+        let xi3 = DeBoorMulti::new([xi1.clone(), xi2.clone()]);
+        let xi4 = DeBoorMulti::<f64, 2>::open_uniform([5, 3], [1, 2]);
         
         println!("Z: {:?}", z);
         println!("m: {:?}", m);
@@ -64,7 +64,7 @@ mod tests {
         println!("{:?}", multi_idx);
         println!("{:?}", multi_idx.into_lin(&strides));
 
-        let space = MultiDeBoor::<f64, 2>::open_uniform([N, N], [p, p]);
+        let space = DeBoorMulti::<f64, 2>::open_uniform([N, N], [p, p]);
         let strides = Strides::from(space.num_basis());
     }
 
@@ -73,8 +73,8 @@ mod tests {
         let n = 4;
         let p = 2;
         let splines = DeBoor::<f64>::open_uniform(n, p);
-        let splines_2d = MultiDeBoor::<f64, 2>::open_uniform([5, 5], [1, 1]);
-        let splines_3d = MultiDeBoor::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
+        let splines_2d = DeBoorMulti::<f64, 2>::open_uniform([5, 5], [1, 1]);
+        let splines_3d = DeBoorMulti::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
 
         let t = 0.6;
         println!("{}", splines.eval_nonzero(t).0);
@@ -103,7 +103,7 @@ mod tests {
         let p = 3;
         let basis_p = DeBoor::<f64>::open_uniform(n, p);
         let basis_q = DeBoor::<f64>::open_uniform(n, p - 1);
-        let basis_x = tensor_prod::Prod::new(basis_p.clone(), basis_q.clone());
+        let basis_x = DeBoorBi::new(basis_p.clone(), basis_q.clone());
         let basis_y = tensor_prod::Prod::new(basis_q, basis_p);
         
         let sp_vec = cart_prod::Prod::new(basis_x, basis_y);
@@ -116,7 +116,7 @@ mod tests {
         let p = 2;
 
         let splines_1d = DeBoor::<f64>::open_uniform(n, p);
-        let splines_2d = MultiDeBoor::new([splines_1d.clone(), splines_1d.clone()]);
+        let splines_2d = DeBoorMulti::new([splines_1d.clone(), splines_1d.clone()]);
         let space = SplineSpace::new(splines_2d);
 
         let control_points = matrix![
@@ -185,7 +185,7 @@ mod tests {
 
         
         let basis_uni = DeBoor::open_uniform(4, 3);
-        let basis = MultiDeBoor::<f64, 2>::new([basis_uni.clone(), basis_uni]);
+        let basis = DeBoorMulti::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
             // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
             let eval = basis.eval_nonzero([u, v]);
@@ -216,17 +216,15 @@ mod tests {
         let start = Instant::now();
         let basis = DeBoor::open_uniform(30, 3);
         for t in grid.clone() {
-            let eval = black_box(basis.eval_nonzero(t));
-            // println!("{}", eval.norm());
+            let _  = black_box(basis.eval_nonzero(t));
         }
         let time_uni = start.elapsed();
 
         // tensor product algorithm
         let start = Instant::now();
-        let basis = MultiDeBoor::open_uniform([30], [3]);
+        let basis = DeBoorMulti::open_uniform([30], [3]);
         for t in grid.clone() {
-            let eval = black_box(basis.eval_nonzero(t));
-            // println!("{}", eval.norm());
+            let _  = black_box(basis.eval_nonzero(t));
         }
         let time_tp = start.elapsed();
 
