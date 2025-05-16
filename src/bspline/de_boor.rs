@@ -81,7 +81,7 @@ impl<T : RealField + Copy> DeBoor<T> {
     }
 }
 
-impl <T: RealField + Copy> BsplineBasis<T, T> for DeBoor<T> {
+impl <T: RealField + Copy> BsplineBasis<T, T, 1> for DeBoor<T> {
     type NonzeroIndices = RangeInclusive<usize>;
 
     fn len(&self) -> usize {

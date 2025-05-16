@@ -24,7 +24,7 @@ impl <T: RealField + Copy, const N: usize, const M: usize> MonomialTransform<T, 
     }
 }
 
-impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T> for MonomialTransform<T, N, M> {
+impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1> for MonomialTransform<T, N, M> {
     type NonzeroIndices = Range<usize>;
 
     fn len(&self) -> usize {

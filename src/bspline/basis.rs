@@ -1,8 +1,8 @@
-use nalgebra::{DVector, RealField};
+use nalgebra::{Const, Dyn, OMatrix, RealField};
 
 // todo: possibly add number of nonzero basis functions as generic parameter
 //  and make NonzeroIndices also of the SAME size
-// todo: add support for vector basis functions
+// todo: possibly transpose return value of eval_nonzero
 
 /// Set of B-Spline basis functions.
 ///
@@ -12,7 +12,10 @@ use nalgebra::{DVector, RealField};
 /// # Type parameters
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
-pub trait BsplineBasis<T: RealField, X> {
+/// - [`N`] : Number of components of the basis functions.
+/// For scalar valued functions (e.g. B-Splines) equal to `1`,
+/// for vector valued functions equal to the dimension of the embedding space.
+pub trait BsplineBasis<T: RealField, X, const N: usize> {
     /// Iterator over (linear) global indices corresponding to nonzero basis functions.
     type NonzeroIndices: Iterator<Item = usize>;
     
@@ -21,7 +24,7 @@ pub trait BsplineBasis<T: RealField, X> {
 
     /// Evaluates the nonzero basis functions of this basis at the parametric point `x`.
     /// Returns the evaluated functions as well as the global nonzero indices.
-    fn eval_nonzero(&self, x: X) -> (DVector<T>, Self::NonzeroIndices);
+    fn eval_nonzero(&self, x: X) -> (OMatrix<T, Dyn, Const<N>>, Self::NonzeroIndices);
 }
 
 /// Conversion into breakpoints.

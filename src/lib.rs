@@ -31,6 +31,8 @@ mod tests {
     use std::hint::black_box;
     use std::time::Instant;
     use crate::bspline::{cart_prod, tensor_prod};
+    use crate::bspline::spline_geo::SplineCurve;
+    use crate::bspline::uniform::MonomialTransform;
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::mesh::cartesian::CartMesh;
 
@@ -91,7 +93,7 @@ mod tests {
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
 
-        let curve = space.linear_combination(coords);
+        let curve = SplineCurve::new(coords, &space);
         dbg!(curve.eval(0.0));
     }
 
