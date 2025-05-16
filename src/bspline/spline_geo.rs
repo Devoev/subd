@@ -5,9 +5,13 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{Dyn, SVector};
 use nalgebra::{ComplexField, Const, DefaultAllocator, Dim};
 
-// todo: change to type alias instead of newtype when vector valued splines are implemented
+// todo: possibly change back to newtype or seperate type alltogether?
 
-/// A [`D`]-dimensional B-spline geometry embedded [`M`]-dimensional Euclidean space.
+/// A B-spline geometry embedded [`M`]-dimensional Euclidean space.
+/// Each spline geometry is a regular [Spline] where each of the [`M`] components is represented
+/// by the same basis [`B`].
+/// This is equivalent to using points of size [`M`] for each coefficient 
+/// and a single scalar valued basis.
 pub type SplineGeo<'a, T, X, B, const M: usize, Nc = Dyn> = Spline<'a, T, X, B, M, 1, Nc>;
 
 /// A spline curve in [`M`] dimensions.
