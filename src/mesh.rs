@@ -5,3 +5,4 @@ mod elem_vertex_topo;
 mod tensor_prod_topo;
 pub mod cartesian;
 mod bezier;
+mod geo;

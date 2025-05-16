@@ -18,6 +18,12 @@ pub struct ElementVertexMesh<const K: usize, T: RealField, C: Cell<Const<K>>> {
     pub topology: topo::ElementVertex<K, C>,
 }
 
+/// A face-vertex mesh with `2`-dimensional faces [`C`].
+pub type FaceVertexMesh<T, C> = ElementVertexMesh<2, T, C>;
+
+/// A face-vertex mesh with quadrilateral faces.
+pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo>;
+
 impl <const K: usize, T: RealField, C: Cell<Const<K>>> ElementVertexMesh<K, T, C> {
     // todo: replace panic with result
     /// Constructs a new [`ElementVertexMesh`] from the given `coords` and `topology`.
@@ -32,12 +38,6 @@ impl <const K: usize, T: RealField, C: Cell<Const<K>>> ElementVertexMesh<K, T, C
         ElementVertexMesh { coords, topology }
     }
 }
-
-/// A face-vertex mesh with `2`-dimensional faces [`C`].
-pub type FaceVertexMesh<T, C> = ElementVertexMesh<2, T, C>;
-
-/// A face-vertex mesh with quadrilateral faces.
-pub type QuadVertexMesh<T> = FaceVertexMesh<T, QuadTopo>;
 
 impl<T: RealField> QuadVertexMesh<T> {
     /// Returns the [`Point2`] of the given `node` index.
