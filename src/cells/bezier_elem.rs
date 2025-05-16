@@ -6,7 +6,7 @@ use crate::cells::hyper_rectangle::HyperRectangle;
 // todo: is BezierElem even needed somewhere?
 
 /// A Bezier element embedded in [`M`]-dimensional Euclidean space.
-/// It is the image of a reference [HyperRectangle] through the geometric mapping.
+/// It is the image of a [`D`]-dimensional reference [HyperRectangle] through the geometric mapping.
 pub struct BezierElem<'a, T: RealField + Copy, const D: usize, const M: usize> {
     /// The reference element in a cartesian mesh.
     pub ref_elem: HyperRectangle<T, D>,
