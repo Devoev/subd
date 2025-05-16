@@ -1,7 +1,8 @@
-// todo: implement geometric Cell trait and make C: Cell
+use nalgebra::Const;
+use crate::cells::geo;
 
 /// Mesh consisting of cells of type [`C`], also called *elements*.
-pub trait Mesh<const K: usize, C> {
+pub trait Mesh<const K: usize, C: geo::Cell<Const<K>>> {
     /// Element iterator.
     type Elems: Iterator<Item = C>;
     
