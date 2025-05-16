@@ -12,29 +12,27 @@ mod index;
 #[cfg(test)]
 mod tests {
     use crate::bspline::basis::BsplineBasis;
-    use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::de_boor::DeBoorMulti;
+    use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::space::SplineSpace;
+    use crate::bspline::spline_geo::SplineCurve;
+    use crate::bspline::{cart_prod, tensor_prod};
     use crate::cells::cell::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::cells::vertex::VertexTopo;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
     use crate::knots::knot_vec::KnotVec;
+    use crate::mesh::cartesian::CartMesh;
     use crate::subd::basis;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, SMatrix, SVector};
+    use nalgebra::{matrix, DMatrix, DVector, SMatrix, SVector};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
-    use crate::bspline::{cart_prod, tensor_prod};
-    use crate::bspline::spline_geo::SplineCurve;
-    use crate::bspline::uniform::MonomialTransform;
-    use crate::cells::hyper_rectangle::HyperRectangle;
-    use crate::mesh::cartesian::CartMesh;
 
     #[test]
     fn knots() {
@@ -106,8 +104,10 @@ mod tests {
         let basis_x = DeBoorBi::new(basis_p.clone(), basis_q.clone());
         let basis_y = tensor_prod::Prod::new(basis_q, basis_p);
         
-        let sp_vec = cart_prod::Prod::new(basis_x, basis_y);
-        println!("{}", sp_vec.eval_nonzero([0.5, 0.2]));
+        let sp_vec_2d = cart_prod::Prod::new(basis_x.clone(), basis_y);
+        let sp_vec_3d = cart_prod::TriProd::new(basis_x.clone(), basis_x.clone(), basis_x.clone());
+        println!("{}", sp_vec_2d.eval_nonzero([0.5, 0.2]).0);
+        println!("{}", sp_vec_3d.eval_nonzero([0.5, 0.2]).0);
     }
 
     #[test]
