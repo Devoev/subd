@@ -1,9 +1,6 @@
-use crate::bspline::basis::BsplineBasis;
-use crate::bspline::spline::Spline;
 use crate::bspline::de_boor::{DeBoor, DeBoorMulti};
-use nalgebra::allocator::Allocator;
+use crate::bspline::spline::Spline;
 use nalgebra::{Dyn, SVector};
-use nalgebra::{ComplexField, Const, DefaultAllocator, Dim};
 
 // todo: possibly change back to newtype or seperate type alltogether?
 

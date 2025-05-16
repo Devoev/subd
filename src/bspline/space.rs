@@ -1,11 +1,12 @@
 use crate::bspline::basis::BsplineBasis;
 use crate::bspline::de_boor::{DeBoor, DeBoorMulti};
-use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, Dyn, OMatrix, RealField, SVector};
-use std::marker::PhantomData;
-use nalgebra::allocator::Allocator;
 use crate::bspline::spline::Spline;
+use nalgebra::allocator::Allocator;
+use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, OMatrix, RealField, SVector};
+use std::marker::PhantomData;
 
-/// Function space spanned by the B-Spline basis functions.
+/// Function space spanned by the B-Spline basis functions 
+/// as `V = span{b[1],...,b[n]}`.
 /// 
 /// # Type parameters
 /// - [`T`]: Scalar type for coefficients.
