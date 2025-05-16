@@ -5,9 +5,9 @@ use nalgebra::{matrix, vector, Const, DVector, RealField, SMatrix, SVector};
 use std::ops::Range;
 
 /// B-Spline basis of dimension [`N`],
-/// evaluated by transformation of [`M`] monomial basis `{xᵐ}` functions
+/// evaluated by transformation of [`M`] monomial basis functions `{xᵐ}`
 /// using a basis transformation matrix.
-pub struct MonomialTransform<T, const N: usize, const M: usize> {
+pub struct BasisTransform<T, const N: usize, const M: usize> {
     /// The `N✕M` basis transformation matrix.
     basis_mat: SMatrix<T, N, M>,
 
@@ -15,8 +15,7 @@ pub struct MonomialTransform<T, const N: usize, const M: usize> {
     monomial_pows: SVector<i32, M>
 }
 
-impl <T: RealField + Copy, const N: usize, const M: usize> MonomialTransform<T, N, M> {
-
+impl <T: RealField + Copy, const N: usize, const M: usize> BasisTransform<T, N, M> {
     /// Evaluates the basis functions of this basis at the parametric point `x`.
     pub fn eval(&self, x: T) -> SVector<T, N> {
         let x_pow = self.monomial_pows.map(|p| x.powi(p));
@@ -24,7 +23,7 @@ impl <T: RealField + Copy, const N: usize, const M: usize> MonomialTransform<T, 
     }
 }
 
-impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1> for MonomialTransform<T, N, M> {
+impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1> for BasisTransform<T, N, M> {
     type NonzeroIndices = Range<usize>;
 
     fn len(&self) -> usize {
@@ -41,7 +40,7 @@ impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1>
 ///
 /// The basis evaluation is represented by the basis transformation matrix,
 /// mapping the monomial basis `{x³,x²,x,1}` to the B-Spline basis.
-pub type Uniform3<T> = MonomialTransform<T, 4, 4>;
+pub type Uniform3<T> = BasisTransform<T, 4, 4>;
 
 impl <T: RealField + Copy> Uniform3<T> {
     /// Constructs a new [`Uniform3`].
@@ -58,7 +57,7 @@ impl <T: RealField + Copy> Uniform3<T> {
 }
 
 /// Derivatives of the cubic B-Splines [`Uniform3`].
-pub type Uniform3Deriv<T> = MonomialTransform<T, 4, 3>;
+pub type Uniform3Deriv<T> = BasisTransform<T, 4, 3>;
 
 impl <T: RealField + Copy> Uniform3Deriv<T> {
     /// Constructs a new [`Uniform3Deriv`].
@@ -75,7 +74,7 @@ impl <T: RealField + Copy> Uniform3Deriv<T> {
 }
 
 /// Cubic B-Splines on the uniform knot vector which are interpolating at the left boundary `x = 0`.
-pub type Uniform3Interp<T> = MonomialTransform<T, 3, 3>;
+pub type Uniform3Interp<T> = BasisTransform<T, 3, 3>;
 
 impl <T: RealField + Copy> Uniform3Interp<T> {
     /// Constructs a new [`Uniform3Interp`].
@@ -91,7 +90,7 @@ impl <T: RealField + Copy> Uniform3Interp<T> {
 }
 
 /// Derivatives of the interpolating cubic B-Splines [`Uniform3Interp`].
-pub type Uniform3InterpDeriv<T> = MonomialTransform<T, 3, 2>;
+pub type Uniform3InterpDeriv<T> = BasisTransform<T, 3, 2>;
 
 impl <T: RealField + Copy> Uniform3InterpDeriv<T> {
     /// Constructs a new [`Uniform3InterpDeriv`].
