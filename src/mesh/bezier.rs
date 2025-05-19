@@ -45,7 +45,7 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Mesh<'a, D, BezierElem<'a, T, D, M>> for BezierMesh<'a, T, D, M> {
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Mesh<'a, T, [T; D], D, M, BezierElem<'a, T, D, M>> for BezierMesh<'a, T, D, M> {
     type Elems = impl Iterator<Item=BezierElem<'a, T, D, M>>;
 
     fn elems(&'a self) -> Self::Elems {

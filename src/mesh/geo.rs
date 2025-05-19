@@ -1,8 +1,8 @@
-use nalgebra::Const;
+use nalgebra::{Const, RealField};
 use crate::cells::geo;
 
 /// Mesh consisting of cells of type [`C`], also called *elements*.
-pub trait Mesh<'a, const K: usize, C: geo::Cell<Const<K>>> {
+pub trait Mesh<'a, T: RealField, X, const K: usize, const M: usize, C: geo::Cell<T, X, Const<K>, M>> {
     /// Element iterator.
     type Elems: Iterator<Item = C>;
 

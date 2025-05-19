@@ -24,10 +24,10 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<Const<D>> for BezierElem<'a, T, D, M> {
-    type Parametrization = &'a SplineGeo<'a, T, [T; D], DeBoorMulti<T, D>, M, Dyn>;
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T, [T; D], Const<D>, M> for BezierElem<'a, T, D, M> {
+    type GeoMap = &'a SplineGeo<'a, T, [T; D], DeBoorMulti<T, D>, M, Dyn>;
 
-    fn parametrization(&self) -> Self::Parametrization {
+    fn geo_map(&self) -> Self::GeoMap {
         self.geo_map
     }
 }

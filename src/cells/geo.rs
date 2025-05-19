@@ -1,12 +1,12 @@
-use nalgebra::DimName;
+use nalgebra::{DimName, RealField};
+use crate::cells::chart::Chart;
 
 /// A [`K`]-dimensional cell with geometric information.
-pub trait Cell<K: DimName> {
+pub trait Cell<T: RealField, X, K: DimName, const M: usize> {
     /// Parametrization of this cell.
-    type Parametrization;
+    type GeoMap: Chart<T, X, M>;
     /// Returns the parametrization of this cell.
-    fn parametrization(&self) -> Self::Parametrization;
+    fn geo_map(&self) -> Self::GeoMap;
     
-    // todo: change return type of parametrization
-    //  maybe add methods for jacobian? 
+    // todo: maybe add methods for jacobian?
 }
