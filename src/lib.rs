@@ -33,6 +33,7 @@ mod tests {
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::time::Instant;
+    use crate::knots::knot_span::KnotSpan;
 
     #[test]
     fn knots() {
@@ -288,5 +289,31 @@ mod tests {
         println!("Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (static storage).", time_static);
         println!("dynamic is {} % slower than static storage",
                  (time_dyn.as_secs_f64() - time_static.as_secs_f64()) / time_static.as_secs_f64() * 100.0)
+    }
+
+    #[test]
+    fn benchmark_derivs() {
+        let num_eval = 10;
+        let grid = lin_space(0.0..=1.0, num_eval);
+        let basis = DeBoor::<f64>::open_uniform(200, 3);
+        
+        // Algorithm from the nurbs package
+        let start = Instant::now();
+        for t in grid.clone() {
+            let span = KnotSpan::find(&basis.knots, basis.n, t).unwrap();
+            let _  = black_box(basis.eval_derivs_with_span::<5>(t, span));
+        }
+        let time_algo_1 = start.elapsed();
+        
+        // Implement algorithm using Curry-Schoenberg basis
+        let start = Instant::now();
+        for t in grid.clone() {
+            // let span = KnotSpan::find(&basis.knots, basis.n, t).unwrap();
+            // let _  = black_box(basis.eval_deriv_2(t, span));
+        }
+        let time_algo_2 = start.elapsed();
+
+        println!("Took {:?} for {num_eval:e} derivative evaluations (algorithm #1).", time_algo_1);
+        println!("Took {:?} for {num_eval:e} derivative evaluations (algorithm #2).", time_algo_2);
     }
 }

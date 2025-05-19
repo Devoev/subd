@@ -1,12 +1,12 @@
-use std::iter::zip;
 use crate::bspline::basis::BsplineBasis;
+use crate::bspline::tensor_prod::{MultiProd, Prod};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use itertools::{chain, Itertools};
-use nalgebra::{DVector, RealField};
+use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
+use std::iter::zip;
 use std::ops::RangeInclusive;
 use std::vec;
-use crate::bspline::tensor_prod::{MultiProd, Prod};
 
 /// De-Boor algorithm for the computation of the B-Spline basis
 /// of dimension `n` and degree `p`.
@@ -86,6 +86,97 @@ impl<T : RealField + Copy> DeBoor<T> {
             b[i] = saved;
         }
         b
+    }
+
+    /// Evaluates the [`K`] derivatives of the basis functions
+    /// inside the given `span` at the parametric point `t`.
+    pub(crate) fn eval_derivs_with_span<const K: usize>(&self, t: T, span: KnotSpan) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
+        where Const<K>: DimNameAdd<U1>
+    {
+        let knots = &self.knots;
+        let mut ndu = vec![vec![T::zero(); self.p + 1]; self.p + 1];
+        let mut left = vec![T::zero(); self.p + 1];
+        let mut right = vec![T::zero(); self.p + 1];
+
+        ndu[0][0] = T::one();
+
+        for j in 1..=self.p {
+            left[j] = t - knots[span.0 + 1 - j];
+            right[j] = knots[span.0 + j] - t;
+
+            let mut saved = T::zero();
+            for r in 0..j {
+                // lower triangle
+                ndu[j][r] = right[r + 1] + left[j - r];
+                let temp = ndu[r][j - 1] / ndu[j][r];
+
+                // upper triangle
+                ndu[r][j] = saved + right[r + 1] * temp;
+                saved = left[j - r] * temp;
+            }
+            ndu[j][j] = saved;
+        }
+
+        let mut ders = OMatrix::<T, DimNameSum<Const<K>, U1>, Dyn>::zeros(self.p + 1);
+        let mut a = vec![vec![T::zero(); self.p + 1]; 2];
+
+        // load the basis functions
+        for j in 0..=self.p {
+            ders[(0,j)] = ndu[j][self.p];
+        }
+
+        let idegree = self.p as isize;
+        let n = K as isize;
+
+        // compute the derivatives
+        for r in 0..=idegree {
+            // alternate rows in array a
+            let mut s1 = 0;
+            let mut s2 = 1;
+            a[0][0] = T::one();
+
+            // loop to compute the kth derivative
+            for k in 1..=n {
+                let mut d = T::zero();
+                let rk = r - k;
+                let pk = idegree - k;
+
+                if r >= k {
+                    a[s2][0] = a[s1][0] / ndu[(pk + 1) as usize][rk as usize];
+                    d = a[s2][0] * ndu[rk as usize][pk as usize];
+                }
+
+                let j1 = if rk >= -1 { 1 } else { -rk };
+                let j2 = if r - 1 <= pk { k - 1 } else { idegree - r };
+
+                for j in j1..=j2 {
+                    a[s2][j as usize] = (a[s1][j as usize] - a[s1][j as usize - 1])
+                        / ndu[(pk + 1) as usize][(rk + j) as usize];
+                    d += a[s2][j as usize] * ndu[(rk + j) as usize][pk as usize];
+                }
+
+                let uk = k as usize;
+                let ur = r as usize;
+                if r <= pk {
+                    a[s2][uk] = -a[s1][(k - 1) as usize] / ndu[(pk + 1) as usize][ur];
+                    d += a[s2][uk] * ndu[ur][pk as usize];
+                }
+
+                ders[(uk,ur)] = d;
+
+                // switch rows
+                std::mem::swap(&mut s1, &mut s2);
+            }
+        }
+
+        let mut acc = idegree;
+        for k in 1..=n {
+            for j in 0..=idegree {
+                ders[(k as usize, j as usize)] *= T::from_isize(acc).unwrap();
+            }
+            acc *= idegree - k;
+        }
+        ders
     }
 }
 
