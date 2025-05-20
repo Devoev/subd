@@ -256,6 +256,37 @@ mod tests {
     }
 
     #[test]
+    fn benchmark_bi_vs_tp() {
+        let num_eval = 5_000;
+        let n = 100;
+        let p = 3;
+        let grid = lin_space(0.0..=1.0, num_eval);
+        let grid = grid.clone().cartesian_product(grid);
+
+        // univariate algorithm
+        let start = Instant::now();
+        let basis = DeBoor::open_uniform(n, p);
+        let basis = DeBoorBi::new(basis.clone(), basis);
+        for (u, v) in grid.clone() {
+            let _  = black_box(basis.eval_nonzero([u, v]));
+        }
+        let time_bi = start.elapsed();
+
+        // tensor product algorithm
+        let start = Instant::now();
+        let basis = DeBoorMulti::open_uniform([n, n], [p, p]);
+        for t in grid.clone() {
+            let _  = black_box(basis.eval_nonzero(t));
+        }
+        let time_tp = start.elapsed();
+
+        println!("Took {:?} for {num_eval} basis evaluations (bivariate algorithm).", time_bi);
+        println!("Took {:?} for {num_eval} basis evaluations (tensor product algorithm).", time_tp);
+        println!("Bivariate algorithm is {} % faster than tensor product algorithm",
+                 (time_tp.as_secs_f64() - time_bi.as_secs_f64()) / time_tp.as_secs_f64() * 100.0)
+    }
+
+    #[test]
     fn benchmark_pows() {
         let num_eval = 10_000_000;
         let range = lin_space(0f64..=1.0, num_eval);
