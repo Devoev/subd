@@ -40,7 +40,7 @@ pub struct Spline<'a, T, X, B, const M: usize, const N: usize, Nc = Dyn>
     pub coeffs: OMatrix<T, Const<M>, Nc>,
 
     /// The spline space this spline belongs to.
-    space: &'a SplineSpace<T::RealField, X, N, B>,
+    pub space: &'a SplineSpace<T::RealField, X, N, B>,
 }
 
 /// A vector valued [`Spline`] function of [`N`] components.

@@ -107,10 +107,10 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> BsplineBasis<T, [T
 #[derive(Debug, Clone, Copy)]
 pub struct Prod<T: RealField, B1: BsplineBasis<T, T, 1>, B2: BsplineBasis<T, T, 1> = B1> {
     /// First basis.
-    b1: B1,
+    pub b1: B1,
 
     /// Second basis.
-    b2: B2,
+    pub b2: B2,
 
     _phantom_data: PhantomData<T>,
 }

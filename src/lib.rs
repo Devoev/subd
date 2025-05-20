@@ -15,7 +15,7 @@ mod tests {
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_geo::SplineCurve;
+    use crate::bspline::spline_geo::{Jacobian, SplineCurve};
     use crate::bspline::{cart_prod, tensor_prod};
     use crate::cells::topo::Cell;
     use crate::cells::quad::QuadTopo;
@@ -152,6 +152,26 @@ mod tests {
 
         ctx.configure_mesh().draw().unwrap();
         ctx.draw_series(LineSeries::new(data, RED)).unwrap();
+    }
+    
+    #[test]
+    fn spline_derivs() {
+        let n = 3;
+        let p = 2;
+
+        let de_boor = DeBoor::<f64>::open_uniform(n, p);
+        let splines_2d = DeBoorBi::new(de_boor.clone(), de_boor.clone());
+        let space = SplineSpace::new(splines_2d);
+        
+        let control_points = matrix![
+            0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
+            0.1, 0.2, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.8
+        ];
+        
+        let surf = space.linear_combination(control_points);
+        let d_phi = Jacobian { geo_map: &surf };
+        let j = d_phi.eval([0.0, 0.2]);
+        println!("{j}");
     }
 
     #[test]
