@@ -70,7 +70,7 @@ impl <'a, T, const M: usize, Nc> Jacobian<'a, T, [T; 2], DeBoorBi<T>, M, Nc>
         let b2 = &b.b2;
         let span1 = KnotSpan::find(&b1.knots, b1.n, x[0]).unwrap();
         let span2 = KnotSpan::find(&b2.knots, b2.n, x[1]).unwrap();
-
+        
         // Evaluate bases and derivatives in both parametric directions
         let b1_eval = b1.eval_derivs_with_span::<1>(x[0], span1);
         let b2_eval = b2.eval_derivs_with_span::<1>(x[1], span2);
@@ -84,7 +84,8 @@ impl <'a, T, const M: usize, Nc> Jacobian<'a, T, [T; 2], DeBoorBi<T>, M, Nc>
         // Calculate partial derivatives of bivariate basis
         let b_du = b2.kronecker(&b1_du).transpose();
         let b_dv = b2_dv.kronecker(&b1).transpose();
-
+        
+        // todo: this should generally fail, because only the nonzero coefficients should be taken
         let c = &self.geo_map.coeffs;
         let cols = &[c.clone() * b_du, c.clone() * b_dv];
         Matrix::from_columns(cols)
