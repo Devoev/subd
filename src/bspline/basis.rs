@@ -1,4 +1,4 @@
-use nalgebra::{Const, Dyn, OMatrix, RealField};
+use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
 
 // todo: possibly add number of nonzero basis functions as generic parameter
 //  and make NonzeroIndices also of the SAME size
@@ -13,8 +13,8 @@ use nalgebra::{Const, Dyn, OMatrix, RealField};
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
 /// - [`N`] : Number of components of the basis functions.
-/// For scalar valued functions (e.g. B-Splines) equal to `1`,
-/// for vector valued functions equal to the dimension of the embedding space.
+///   For scalar valued functions (e.g. B-Splines) equal to `1`,
+///   for vector valued functions equal to the dimension of the embedding space.
 pub trait BsplineBasis<T: RealField, X, const N: usize> {
     /// Iterator over (linear) global indices corresponding to nonzero basis functions.
     type NonzeroIndices: Iterator<Item = usize>;
@@ -27,17 +27,21 @@ pub trait BsplineBasis<T: RealField, X, const N: usize> {
     fn eval_nonzero(&self, x: X) -> (OMatrix<T, Dyn, Const<N>>, Self::NonzeroIndices);
 }
 
-/// Conversion into breakpoints.
-pub trait IntoBreaks<'a> {
-    /// An iterator that yields the knot breakpoints.
-    type Breaks: Iterator;
-
-    /// An iterator that yields the breakpoints with multiplicity.
-    type BreaksWithMultiplicity: Iterator;
-
-    /// Returns an iterator over the breaks, i.e. unique knot values.
-    fn breaks(&'a self) -> Self::Breaks;
-
-    /// Returns an iterator over `(multiplicity, break)` pairs.
-    fn breaks_with_multiplicity(&'a self) -> Self::BreaksWithMultiplicity;
+/// Set of scalar valued B-Spline basis functions.
+///
+/// The nonzero basis functions can be evaluated at a parametric point
+/// using [`BsplineBasis::eval_nonzero`].
+/// The derivatives of nonzero basis functions
+/// can be evaluated using [`ScalarBasis::eval_derivs_nonzero`].
+///
+/// # Type parameters
+/// - [`T`] : Real scalar type.
+/// - [`X`] : Type of parametric values in the reference domain.
+pub trait ScalarBasis<T: RealField, X>: BsplineBasis<T, X, 1> {
+    /// Evaluates the first [`K`] derivatives and functions values of nonzero basis functions
+    /// of this scalar basis at the parametric point `x`.
+    /// Returns a matrix where each row corresponds to the `i`-th derivative of the basis functions
+    /// as well as the global nonzero indices.
+    fn eval_derivs_nonzero<const K: usize>(&self, x: X) -> (OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>, Self::NonzeroIndices)
+        where Const<K>: DimNameAdd<U1>;
 }

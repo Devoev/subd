@@ -1,4 +1,4 @@
-use crate::bspline::basis::BsplineBasis;
+use crate::bspline::basis::{BsplineBasis, ScalarBasis};
 use crate::bspline::tensor_prod::{MultiProd, Prod};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
@@ -190,6 +190,16 @@ impl <T: RealField + Copy> BsplineBasis<T, T, 1> for DeBoor<T> {
     fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
         let span = KnotSpan::find(&self.knots, self.n, x).unwrap();
         (self.eval_with_span(x, span), span.nonzero_indices(self.p))
+    }
+}
+
+impl <T: RealField + Copy> ScalarBasis<T, T> for DeBoor<T> {
+    fn eval_derivs_nonzero<const K: usize>(&self, x: T) -> (OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>, Self::NonzeroIndices)
+    where
+        Const<K>: DimNameAdd<U1>
+    {
+        let span = KnotSpan::find(&self.knots, self.n, x).unwrap();
+        (self.eval_derivs_with_span(x, span), span.nonzero_indices(self.p))
     }
 }
 
