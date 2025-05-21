@@ -157,23 +157,20 @@ mod tests {
     #[test]
     fn spline_derivs() {
         let n = 3;
-        let p = 2;
+        let p = 1;
 
         let de_boor = DeBoor::<f64>::open_uniform(n, p);
-        let splines_2d = DeBoorBi::new(de_boor.clone(), de_boor.clone());
+        let splines_2d = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
         let space = SplineSpace::new(splines_2d);
 
-        println!("{}", de_boor.eval_derivs_nonzero::<3>(0.8).0);
+        println!("Derivatives of basis: {}", de_boor.eval_derivs_nonzero::<3>(0.8).0);
         
-        let control_points = matrix![
-            0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
-            0.1, 0.2, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.8
-        ];
+        let control_points = SMatrix::<f64, 3, 27>::new_random();
         
         let surf = space.linear_combination(control_points);
         let d_phi = Jacobian { geo_map: &surf };
-        let j = d_phi.eval([0.0, 0.2]);
-        println!("{j}");
+        let j = d_phi.eval([0.0, 0.2, 0.5]);
+        println!("Jacobian matrix: {j}");
     }
 
     #[test]

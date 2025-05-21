@@ -2,7 +2,7 @@ use crate::bspline::basis::{BsplineBasis, ScalarBasis};
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
+use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, Matrix, OMatrix, RealField, U1};
 use std::iter::zip;
 use std::marker::PhantomData;
 
@@ -41,12 +41,13 @@ impl<T: RealField, B: ScalarBasis<T, T>, const D: usize> MultiProd<T, B, D>
         Strides::from(self.num_basis())
     }
 
-    /// Evaluates the nonzero basis functions using a tensor product algorithm.
-    fn eval_tensor_prod(&self, x: [T; D]) -> (DVector<T>, impl Iterator<Item = usize>) {
-        let (b, idx): (Vec<_>, Vec<_>) = zip(&self.bases, x)
-            .map(|(space, xi)| space.eval_nonzero(xi))
-            .unzip();
-
+    /// Computes the evaluated tensor product basis using [`Matrix::kronecker`],
+    /// given a vector `b` of univariate basis functions for each parametric direction.
+    ///
+    /// # Arguments
+    /// - `b`: Vector of evaluated basis functions for each parametric direction.
+    /// - `idx`: Vector of nonzero indices for each parametric direction.
+    fn compute_multi_prod(&self, b: Vec<DVector<T>>, idx: Vec<B::NonzeroIndices>) -> (DVector<T>, impl Iterator<Item = usize>) {
         let b = b.into_iter()
             .reduce(|acc, bi| acc.kronecker(&bi))
             .expect("Dimension D must be greater than 0!");
@@ -59,27 +60,33 @@ impl<T: RealField, B: ScalarBasis<T, T>, const D: usize> MultiProd<T, B, D>
 
         (b, idx)
     }
-    
-    // todo: is such a method really useful? normally only the gradient is required (du, dv), 
-    //  and not du * dv
-    fn eval_derivs_multi_prod<const K: usize>(&self, x: [T; D]) -> (OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>, impl Iterator<Item = usize>)
-        where Const<K>: DimNameAdd<U1>
-    {
+
+    /// Evaluates the nonzero basis functions at the parametric point `x`.
+    fn eval_multi_prod(&self, x: [T; D]) -> (DVector<T>, impl Iterator<Item = usize>) {
         let (b, idx): (Vec<_>, Vec<_>) = zip(&self.bases, x)
-            .map(|(space, xi)| space.eval_derivs_nonzero::<K>(xi))
+            .map(|(space, xi)| space.eval_nonzero(xi))
             .unzip();
 
-        // let b = b.into_iter()
-        //     .reduce(|acc, bi| acc.kronecker(&bi))
-        //     .expect("Dimension D must be greater than 0!");
+        self.compute_multi_prod(b, idx)
+    }
 
-        let strides = self.strides();
-        let idx = idx.into_iter()
-            .multi_cartesian_product()
-            .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
-            .map(move |i| i.into_lin(&strides));
+    /// Evaluates the derivative of the tensor product basis
+    /// with respect to a single parametric direction `du`
+    /// at the parametric point `x`.
+    pub fn eval_deriv_multi_prod(&self, x: [T; D], du: usize) -> (DVector<T>, impl Iterator<Item = usize>) {
+        let (b, idx): (Vec<_>, Vec<_>) = zip(&self.bases, x)
+            .enumerate()
+            .map(|(i, (space, xi))| {
+                if i == du {
+                    let (b, idx) = space.eval_derivs_nonzero::<1>(xi);
+                    (b.row(1).transpose(), idx)
+                } else {
+                    space.eval_nonzero(xi)
+                }
+            })
+            .unzip();
 
-        (todo!(), idx)
+        self.compute_multi_prod(b, idx)
     }
 }
 
@@ -93,7 +100,7 @@ impl <T: RealField, B: ScalarBasis<T, T>> BsplineBasis<T, T, 1> for MultiProd<T,
     }
 
     fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
-        self.eval_tensor_prod([x])
+        self.eval_multi_prod([x])
     }
 }
 
@@ -107,7 +114,7 @@ impl <T: RealField, B: ScalarBasis<T, T>> BsplineBasis<T, (T, T), 1> for MultiPr
     }
 
     fn eval_nonzero(&self, x: (T, T)) -> (DVector<T>, Self::NonzeroIndices) {
-        self.eval_tensor_prod([x.0, x.1])
+        self.eval_multi_prod([x.0, x.1])
     }
 }
 
@@ -121,7 +128,7 @@ impl <T: RealField, B: ScalarBasis<T, T>, const D: usize> BsplineBasis<T, [T; D]
     }
 
     fn eval_nonzero(&self, x: [T; D]) -> (DVector<T>, Self::NonzeroIndices) {
-        self.eval_tensor_prod(x)
+        self.eval_multi_prod(x)
     }
 }
 
