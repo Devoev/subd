@@ -31,7 +31,7 @@ impl<T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> MultiProd<T, B, D>
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn num_basis(&self) -> DimShape<D> {
         let arr = self.bases.iter()
-            .map(|base| base.len())
+            .map(|base| base.num_basis())
             .collect_array();
         DimShape(arr.unwrap())
     }
@@ -66,7 +66,7 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, T, 1> for MultiPro
 {
     type NonzeroIndices = impl Iterator<Item = usize>;
 
-    fn len(&self) -> usize {
+    fn num_basis(&self) -> usize {
         self.num_basis().len()
     }
 
@@ -80,7 +80,7 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, (T, T), 1> for Mul
 {
     type NonzeroIndices = impl Iterator<Item = usize>;
 
-    fn len(&self) -> usize {
+    fn num_basis(&self) -> usize {
         self.num_basis().len()
     }
 
@@ -94,7 +94,7 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> BsplineBasis<T, [T
 {
     type NonzeroIndices = impl Iterator<Item = usize>;
 
-    fn len(&self) -> usize {
+    fn num_basis(&self) -> usize {
         self.num_basis().len()
     }
 
@@ -123,7 +123,7 @@ impl<T: RealField, B1: BsplineBasis<T, T, 1>, B2: BsplineBasis<T, T, 1>> Prod<T,
 
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn num_basis(&self) -> DimShape<2> {
-        DimShape([self.b1.len(), self.b2.len()])
+        DimShape([self.b1.num_basis(), self.b2.num_basis()])
     }
 
     /// Returns the [`Strides`] for the basis functions.
@@ -138,7 +138,7 @@ impl <T: RealField + Copy, B1: BsplineBasis<T, T, 1>, B2: BsplineBasis<T, T, 1>>
 
     type NonzeroIndices = impl Iterator<Item = usize>;
 
-    fn len(&self) -> usize {
+    fn num_basis(&self) -> usize {
         self.num_basis().len()
     }
 

@@ -26,7 +26,7 @@ impl <T: RealField + Copy, const N: usize, const M: usize> BasisTransform<T, N, 
 impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1> for BasisTransform<T, N, M> {
     type NonzeroIndices = Range<usize>;
 
-    fn len(&self) -> usize {
+    fn num_basis(&self) -> usize {
         N
     }
 

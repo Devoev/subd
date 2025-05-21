@@ -40,7 +40,7 @@ impl <T: RealField, X, const N: usize, B: BsplineBasis<T, X, N>> SplineSpace<T, 
     
     /// Returns the dimension of this space, i.e. the number of basis functions in its basis.
     pub fn dim(&self) -> usize {
-        self.basis.len()
+        self.basis.num_basis()
     }
 
     /// Calculates the linear combination of the given `coeffs` with the basis function of this space,

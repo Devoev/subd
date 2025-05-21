@@ -31,8 +31,8 @@ impl<T, X, B1, B2> BsplineBasis<T, X, 2> for Prod<T, X, B1, B2>
 {
     type NonzeroIndices = impl Iterator<Item=usize>;
 
-    fn len(&self) -> usize {
-        self.b1.len() + self.b2.len()
+    fn num_basis(&self) -> usize {
+        self.b1.num_basis() + self.b2.num_basis()
     }
 
     fn eval_nonzero(&self, x: X) -> (MatrixXx2<T>, Self::NonzeroIndices) {
@@ -84,8 +84,8 @@ impl<T, X, B1, B2, B3> BsplineBasis<T, X, 3> for TriProd<T, X, B1, B2, B3>
 {
     type NonzeroIndices = impl Iterator<Item=usize>;
 
-    fn len(&self) -> usize {
-        self.b1.len() + self.b2.len() + self.b3.len()
+    fn num_basis(&self) -> usize {
+        self.b1.num_basis() + self.b2.num_basis() + self.b3.num_basis()
     }
 
     fn eval_nonzero(&self, x: X) -> (MatrixXx3<T>, Self::NonzeroIndices) {

@@ -19,8 +19,8 @@ pub trait BsplineBasis<T: RealField, X, const N: usize> {
     /// Iterator over (linear) global indices corresponding to nonzero basis functions.
     type NonzeroIndices: Iterator<Item = usize>;
     
-    /// Returns the length of this set, i.e. the number of basis functions.
-    fn len(&self) -> usize;
+    /// Returns the number of basis functions in this set.
+    fn num_basis(&self) -> usize;
 
     /// Evaluates the nonzero basis functions of this basis at the parametric point `x`.
     /// Returns the evaluated functions as well as the global nonzero indices.
