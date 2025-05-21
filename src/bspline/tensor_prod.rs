@@ -2,7 +2,7 @@ use crate::bspline::basis::{BsplineBasis, ScalarBasis};
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, Matrix, OMatrix, RealField, U1};
+use nalgebra::{DVector, Matrix, RealField};
 use std::iter::zip;
 use std::marker::PhantomData;
 

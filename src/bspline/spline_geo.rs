@@ -1,12 +1,11 @@
-use itertools::Itertools;
-use crate::bspline::de_boor::{DeBoor, DeBoorBi, DeBoorMulti};
-use crate::bspline::spline::Spline;
-use nalgebra::{ArrayStorage, Const, DefaultAllocator, Dim, DimName, Dyn, Matrix, Point, RealField, SMatrix, SVector, U1, U2};
-use nalgebra::allocator::Allocator;
-use nalgebra::constraint::{AreMultipliable, DimEq, ShapeConstraint};
 use crate::bspline::basis::BsplineBasis;
+use crate::bspline::de_boor::{DeBoor, DeBoorMulti};
+use crate::bspline::spline::Spline;
 use crate::cells::chart::Chart;
-use crate::knots::knot_span::KnotSpan;
+use itertools::Itertools;
+use nalgebra::allocator::Allocator;
+use nalgebra::constraint::{AreMultipliable, ShapeConstraint};
+use nalgebra::{ArrayStorage, Const, DefaultAllocator, Dim, Dyn, Matrix, Point, RealField, SMatrix, SVector, U1};
 // todo: possibly change back to newtype or seperate type alltogether?
 
 /// A B-spline geometry embedded [`M`]-dimensional Euclidean space.
@@ -64,7 +63,7 @@ impl <'a, T, const D: usize, const M: usize, Nc> Jacobian<'a, T, [T; D], DeBoorM
           DefaultAllocator: Allocator<Const<M>, Nc>,
           DefaultAllocator: Allocator<Const<M>, Const<D>, Buffer<T> = ArrayStorage<T, M, D>>
 {
-    /// todo: add docs
+    /// Evaluates the Jacobian at the parametric point `x`.
     pub fn eval(&self, x: [T; D]) -> SMatrix<T, M, D> {
         let b = &self.geo_map.space.basis;
 
