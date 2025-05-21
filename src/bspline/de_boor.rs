@@ -65,6 +65,11 @@ impl<T : RealField + Copy> DeBoor<T> {
         DeBoor { knots: KnotVec(knots), n, p }
     }
 
+    /// Finds the knot span for the parametric value `t` using [`KnotSpan::find`].
+    pub(crate) fn find_span(&self, t: T) -> Result<KnotSpan, ()> {
+        KnotSpan::find(&self.knots, self.n, t)
+    }
+
     /// Evaluates the basis functions inside the given `span` at the parametric point `t`.
     pub(crate) fn eval_with_span(&self, t: T, span: KnotSpan) -> DVector<T> {
         let knots = &self.knots;
@@ -188,7 +193,7 @@ impl <T: RealField + Copy> BsplineBasis<T, T, 1> for DeBoor<T> {
     }
 
     fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
-        let span = KnotSpan::find(&self.knots, self.n, x).unwrap();
+        let span = self.find_span(x).unwrap();
         (self.eval_with_span(x, span), span.nonzero_indices(self.p))
     }
 }
@@ -198,7 +203,7 @@ impl <T: RealField + Copy> ScalarBasis<T, T> for DeBoor<T> {
     where
         Const<K>: DimNameAdd<U1>
     {
-        let span = KnotSpan::find(&self.knots, self.n, x).unwrap();
+        let span = self.find_span(x).unwrap();
         (self.eval_derivs_with_span(x, span), span.nonzero_indices(self.p))
     }
 }

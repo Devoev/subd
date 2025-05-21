@@ -12,6 +12,18 @@ pub struct KnotSpan(pub(crate) usize);
 
 impl KnotSpan {
     /// Finds the [`KnotSpan`] containing the given parametric value `t`.
+    ///
+    /// # Errors
+    /// Will return an error if the parametric value lies outside the given `knots`.
+    ///
+    /// # Examples
+    /// ```
+    /// use subd::knots::knot_span::KnotSpan;
+    /// use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let xi = KnotVec::uniform(10);
+    /// let span = KnotSpan::find(&xi, 4, 0.5);
+    /// ```
     pub fn find<T: RealField + Copy>(knots: &KnotVec<T>, n: usize, t: T) -> Result<Self, ()> {
         if !knots.range().contains(&t) { return Err(()) }
 

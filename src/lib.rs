@@ -2,12 +2,12 @@
 #![feature(cmp_minmax)]
 extern crate core;
 
-mod knots;
-mod bspline;
-mod subd;
-mod mesh;
-mod cells;
-mod index;
+pub mod knots;
+pub mod bspline;
+pub mod subd;
+pub mod mesh;
+pub mod cells;
+pub mod index;
 
 #[cfg(test)]
 mod tests {
