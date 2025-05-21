@@ -1,8 +1,8 @@
-use crate::bspline::basis::BsplineBasis;
+use crate::bspline::basis::{BsplineBasis, ScalarBasis};
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::{DVector, RealField};
+use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
 use std::iter::zip;
 use std::marker::PhantomData;
 
@@ -13,14 +13,14 @@ use std::marker::PhantomData;
 /// bᵢ: X×...×X ⟶ ℝ   x ↦ bᵢ[1](x[1]) ... bᵢ[d](x[d])
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct MultiProd<T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> {
+pub struct MultiProd<T: RealField, B: ScalarBasis<T, T>, const D: usize> {
     /// The bases for each parametric direction.
     pub bases: [B; D],
 
     _phantom_data: PhantomData<T>,
 }
 
-impl<T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> MultiProd<T, B, D>
+impl<T: RealField, B: ScalarBasis<T, T>, const D: usize> MultiProd<T, B, D>
     where B::NonzeroIndices: Clone
 {
     /// Constructs a new [`MultiProd`] from the given array `bases` of `D` univariate bases.
@@ -59,9 +59,31 @@ impl<T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> MultiProd<T, B, D>
 
         (b, idx)
     }
+    
+    // todo: is such a method really useful? normally only the gradient is required (du, dv), 
+    //  and not du * dv
+    fn eval_derivs_multi_prod<const K: usize>(&self, x: [T; D]) -> (OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>, impl Iterator<Item = usize>)
+        where Const<K>: DimNameAdd<U1>
+    {
+        let (b, idx): (Vec<_>, Vec<_>) = zip(&self.bases, x)
+            .map(|(space, xi)| space.eval_derivs_nonzero::<K>(xi))
+            .unzip();
+
+        // let b = b.into_iter()
+        //     .reduce(|acc, bi| acc.kronecker(&bi))
+        //     .expect("Dimension D must be greater than 0!");
+
+        let strides = self.strides();
+        let idx = idx.into_iter()
+            .multi_cartesian_product()
+            .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
+            .map(move |i| i.into_lin(&strides));
+
+        (todo!(), idx)
+    }
 }
 
-impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, T, 1> for MultiProd<T, B, 1>
+impl <T: RealField, B: ScalarBasis<T, T>> BsplineBasis<T, T, 1> for MultiProd<T, B, 1>
     where B::NonzeroIndices: Clone
 {
     type NonzeroIndices = impl Iterator<Item = usize>;
@@ -75,7 +97,7 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, T, 1> for MultiPro
     }
 }
 
-impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, (T, T), 1> for MultiProd<T, B, 2>
+impl <T: RealField, B: ScalarBasis<T, T>> BsplineBasis<T, (T, T), 1> for MultiProd<T, B, 2>
     where B::NonzeroIndices: Clone
 {
     type NonzeroIndices = impl Iterator<Item = usize>;
@@ -89,7 +111,7 @@ impl <T: RealField, B: BsplineBasis<T, T, 1>> BsplineBasis<T, (T, T), 1> for Mul
     }
 }
 
-impl <T: RealField, B: BsplineBasis<T, T, 1>, const D: usize> BsplineBasis<T, [T; D], 1> for MultiProd<T, B, D>
+impl <T: RealField, B: ScalarBasis<T, T>, const D: usize> BsplineBasis<T, [T; D], 1> for MultiProd<T, B, D>
     where B::NonzeroIndices: Clone
 {
     type NonzeroIndices = impl Iterator<Item = usize>;

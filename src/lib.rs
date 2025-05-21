@@ -11,7 +11,7 @@ pub mod index;
 
 #[cfg(test)]
 mod tests {
-    use crate::bspline::basis::BsplineBasis;
+    use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::space::SplineSpace;
@@ -162,6 +162,8 @@ mod tests {
         let de_boor = DeBoor::<f64>::open_uniform(n, p);
         let splines_2d = DeBoorBi::new(de_boor.clone(), de_boor.clone());
         let space = SplineSpace::new(splines_2d);
+
+        println!("{}", de_boor.eval_derivs_nonzero::<3>(0.8).0);
         
         let control_points = matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
