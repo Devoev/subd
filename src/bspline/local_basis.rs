@@ -8,7 +8,7 @@ use std::ops::RangeInclusive;
 #[derive(Debug, Clone)]
 pub struct LocalBsplineBasis<'a, T: RealField> {
     /// Global B-Spline basis.
-    pub global_basis: &'a DeBoor<T>,
+    pub global_basis: &'a DeBoor<T>, // todo: possibly replace with local knot vector view and degree?
 
     /// Knot span of the local basis.
     span: KnotSpan,
