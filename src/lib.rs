@@ -8,6 +8,7 @@ pub mod subd;
 pub mod mesh;
 pub mod cells;
 pub mod index;
+pub mod basis;
 
 #[cfg(test)]
 mod tests {
