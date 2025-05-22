@@ -5,6 +5,8 @@ use crate::cells::geo;
 use crate::cells::hyper_rectangle::HyperRectangle;
 
 // todo: is BezierElem even needed somewhere?
+//  bezier elem should provide access to a local basis. 
+//  It needs information about knot spans, such that local evaluations are possible
 
 /// A Bezier element embedded in [`M`]-dimensional Euclidean space.
 /// It is the image of a [`D`]-dimensional reference [HyperRectangle] through the geometric mapping.
