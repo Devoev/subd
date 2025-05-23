@@ -7,6 +7,7 @@ use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::quad::QuadTopo;
 use crate::cells::vertex::VertexTopo;
+use crate::mesh::topo;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
 /// The elements are `K`-cells of type [`C`].
@@ -82,6 +83,29 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
     }
 
     // todo: add info about regular/ irregular adjacency
+}
+
+impl <'a, const K: usize, C: Cell<Const<K>>> topo::Mesh<'a, K, &'a C> for ElementVertex<K, C>
+    where &'a C: Cell<Const<K>>
+{
+    type Nodes = impl Iterator<Item = VertexTopo>;
+    type Elems = std::slice::Iter<'a, C>;
+
+    fn num_nodes(&self) -> usize {
+        self.num_nodes
+    }
+
+    fn num_elems(&self) -> usize {
+        self.elems.len()
+    }
+
+    fn nodes(&'a self) -> Self::Nodes {
+        self.nodes()
+    }
+
+    fn elems(&'a self) -> Self::Elems {
+        self.elems.iter()
+    }
 }
 
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
