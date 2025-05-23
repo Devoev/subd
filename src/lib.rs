@@ -9,7 +9,8 @@ pub mod mesh;
 pub mod cells;
 pub mod index;
 pub mod basis;
-mod operator;
+pub mod operator;
+pub mod quadrature;
 
 #[cfg(test)]
 mod tests {
