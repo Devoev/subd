@@ -1,8 +1,9 @@
 //! Mesh data structures.
 
 pub mod elem_vertex;
-mod elem_vertex_topo;
-mod tensor_prod_topo;
+pub mod elem_vertex_topo;
+pub mod tensor_prod_topo;
 pub mod cartesian;
-mod bezier;
-mod geo;
+pub mod bezier;
+pub mod geo;
+pub mod topo;

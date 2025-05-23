@@ -9,6 +9,7 @@ pub mod mesh;
 pub mod cells;
 pub mod index;
 pub mod basis;
+mod operator;
 
 #[cfg(test)]
 mod tests {
