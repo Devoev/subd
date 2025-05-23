@@ -17,17 +17,20 @@ mod tests {
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
+    use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
     use crate::bspline::spline_geo::{Jacobian, SplineCurve};
     use crate::bspline::{cart_prod, tensor_prod};
-    use crate::cells::topo::Cell;
     use crate::cells::quad::QuadTopo;
+    use crate::cells::topo::Cell;
     use crate::cells::vertex::VertexTopo;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
+    use crate::knots::knot_span::KnotSpan;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::cartesian::CartMesh;
     use crate::subd::basis;
+    use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{matrix, DMatrix, DVector, SMatrix, SVector};
@@ -35,10 +38,8 @@ mod tests {
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
-    use std::marker::PhantomData;
+    use std::iter::zip;
     use std::time::Instant;
-    use crate::bspline::grad::BasisGrad;
-    use crate::knots::knot_span::KnotSpan;
 
     #[test]
     fn knots() {
@@ -184,6 +185,25 @@ mod tests {
         // Gradients
         let grad_b = BasisGrad::new(de_boor_multi);
         println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]))
+    }
+
+    #[test]
+    fn bezier_elems() {
+        let basis = DeBoor::<f64>::open_uniform(12, 5);
+        let quad = GaussLegendre::new(5).unwrap();
+        let knots = &basis.knots;
+
+        println!("Knot vector = {:?}", knots);
+
+        let ref_mesh = CartMesh::from_breaks([
+            knots.breaks().copied().collect_vec()
+        ]);
+
+        for (elem, topo) in zip(ref_mesh.elems(), ref_mesh.topology.elems()) {
+            let span = basis.find_span(elem.a.x).unwrap();
+            println!("Bezier element = [{:.3}, {:.3}] (index = {})", elem.a.x, elem.b.x, topo.0[0]);
+            println!("Knot span = [{:.3}, {:.3}] (index = {})", knots[span.0], knots[span.0 + 1], span.0);
+        }
     }
 
     #[test]
