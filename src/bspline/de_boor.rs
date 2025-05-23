@@ -7,6 +7,7 @@ use nalgebra::{Const, DVector, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, 
 use std::iter::zip;
 use std::ops::RangeInclusive;
 use std::vec;
+use crate::knots::error::OutsideKnotRangeError;
 
 /// De-Boor algorithm for the computation of the B-Spline basis
 /// of dimension `n` and degree `p`.
@@ -66,7 +67,7 @@ impl<T : RealField + Copy> DeBoor<T> {
     }
 
     /// Finds the knot span for the parametric value `t` using [`KnotSpan::find`].
-    pub(crate) fn find_span(&self, t: T) -> Result<KnotSpan, ()> {
+    pub(crate) fn find_span(&self, t: T) -> Result<KnotSpan, OutsideKnotRangeError> {
         KnotSpan::find(&self.knots, self.n, t)
     }
 

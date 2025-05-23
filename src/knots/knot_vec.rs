@@ -6,6 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Index, RangeInclusive};
 use std::slice::Iter;
 use std::vec;
+use crate::knots::error::UnsortedKnotsError;
 
 /// A vector of increasing knot values of type [`T`], backed by a [`Vec<T>`].
 #[derive(Debug, Clone)]
@@ -15,8 +16,11 @@ impl<T: RealField + Copy> KnotVec<T> {
 
     /// Constructs a new [`KnotVec<T>`].
     /// If the `knots` are not sorted, [`None`] is returned.
-    pub fn new(knots: Vec<T>) -> Option<KnotVec<T>> {
-        knots.is_sorted().then_some(KnotVec(knots))
+    pub fn new(knots: Vec<T>) -> Result<KnotVec<T>, UnsortedKnotsError> {
+        match knots.is_sorted() {
+            true => Ok(KnotVec(knots)),
+            false => Err(UnsortedKnotsError),
+        }
     }
 
     /// Constructs a uniform [`KnotVec<T>`] with `num` knots.

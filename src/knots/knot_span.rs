@@ -1,6 +1,7 @@
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::RealField;
 use std::ops::RangeInclusive;
+use crate::knots::error::OutsideKnotRangeError;
 
 /// A knot span represented by a knot index `i`, 
 /// such that `xi[i] <= i < xi[i+1]`, where
@@ -24,8 +25,8 @@ impl KnotSpan {
     /// let xi = KnotVec::uniform(10);
     /// let span = KnotSpan::find(&xi, 4, 0.5);
     /// ```
-    pub fn find<T: RealField + Copy>(knots: &KnotVec<T>, n: usize, t: T) -> Result<Self, ()> {
-        if !knots.range().contains(&t) { return Err(()) }
+    pub fn find<T: RealField + Copy>(knots: &KnotVec<T>, n: usize, t: T) -> Result<Self, OutsideKnotRangeError> {
+        if !knots.range().contains(&t) { return Err(OutsideKnotRangeError) }
 
         // todo: update the usage of n in this algorithm and DEBUG in general
         if t == knots[n + 1] {
