@@ -6,6 +6,9 @@ use num_traits::FromPrimitive;
 use std::iter::{zip, Product, Sum};
 use std::vec::IntoIter;
 
+// todo: this currently only works on [0,1].
+//  Must be adjusted to arbitrary intervals! Important for Bezier Elements
+
 /// Tensor product Gauss-Legendre quadrature rule.
 pub struct TensorProdGaussLegendre<T> {
     /// Quadrature nodes for a parametric direction.

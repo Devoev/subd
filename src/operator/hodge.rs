@@ -24,7 +24,8 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const M: usize>
     let mut mij = CooMatrix::<T>::zeros(topo.num_nodes(), topo.num_nodes());
 
     for elem in msh.elems() {
-        let span = KnotSpan::find(knots, n, T::zero()).unwrap(); // todo
+        // todo: find the span corresponding to elem
+        let span = KnotSpan::find(knots, n, T::zero()).unwrap();
         let sp_local = LocalBsplineBasis::new(knots, p, span);
         let mij_local: DMatrix<T> = assemble_hodge_local(&sp_local, &quad);
         let indices = sp_local.global_indices().enumerate();
@@ -35,6 +36,8 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const M: usize>
 
     mij
 }
+
+// todo: adjust integration by providing the elements bounds and not use [0,1]
 
 /// Assembles the local discrete Hodge operator.
 pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
