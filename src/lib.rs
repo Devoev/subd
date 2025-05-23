@@ -19,7 +19,7 @@ mod tests {
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_geo::{Jacobian, SplineCurve};
+    use crate::bspline::spline_geo::{Jacobian, SplineCurve, SplineGeo};
     use crate::bspline::{cart_prod, global_basis, tensor_prod};
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
@@ -33,13 +33,16 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, DMatrix, DVector, SMatrix, SVector};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U1};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::mesh::bezier::BezierMesh;
+    use crate::operator::hodge::assemble_hodge;
+    use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
 
     #[test]
     fn knots() {
@@ -222,6 +225,26 @@ mod tests {
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
+    }
+    
+    #[test]
+    fn iga_assembly() {
+        let n = 30;
+        let p = 3;
+        let knots = DeBoor::<f64>::open_uniform(n, p).knots;
+        
+        let basis = DeBoorMulti::<f64, 1>::open_uniform([2], [1]);
+        let geo_space = SplineSpace::new(basis);
+        let c = OMatrix::<f64, U1, Dyn>::from(vec![0.0, 1.0]);
+        let geo_map = SplineGeo::new(c, &geo_space);
+        
+        let cart_mesh = CartMesh::from_breaks([knots.breaks().copied().collect_vec()]);
+        let msh = BezierMesh::new(cart_mesh, geo_map);
+        let space = global_basis::BsplineBasis::new(knots, n, p);
+        
+        let quad = TensorProdGaussLegendre::new(3).unwrap();
+        let mat = assemble_hodge(&msh, &space, quad);
+        println!("{:?}", mat);
     }
 
     #[test]

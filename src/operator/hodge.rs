@@ -1,7 +1,6 @@
 use crate::basis::local::LocalBasis;
+use crate::bspline::global_basis::BsplineBasis;
 use crate::bspline::local_basis::LocalBsplineBasis;
-use crate::knots::knot_span::KnotSpan;
-use crate::knots::knot_vec::KnotVec;
 use crate::mesh::bezier::BezierMesh;
 use crate::mesh::topo::Mesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
@@ -9,24 +8,22 @@ use itertools::Itertools;
 use nalgebra::{DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
+
 // todo: this function is only a temporary implementation for just 1D bezier meshes.
 //  make this generic over the space and mesh type!
 
 /// Assembles the discrete hodge operator (mass matrix).
-pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const M: usize>(
-    msh: &BezierMesh<T, 1, M>,
-    knots: &KnotVec<T>,
-    n: usize,
-    p: usize,
+pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
+    msh: &BezierMesh<T, 1, 1>,
+    space: &BsplineBasis<T>,
     quad: TensorProdGaussLegendre<T>
 ) -> CooMatrix<T> {
     let topo = &msh.ref_mesh.topology;
     let mut mij = CooMatrix::<T>::zeros(topo.num_nodes(), topo.num_nodes());
 
     for elem in msh.elems() {
-        // todo: find the span corresponding to elem
-        let span = KnotSpan::find(knots, n, T::zero()).unwrap();
-        let sp_local = LocalBsplineBasis::new(knots, p, span);
+        // fixme: for some reason spans outside of num_nodes range get found eventually
+        let sp_local = space.local_basis(elem);
         let mij_local: DMatrix<T> = assemble_hodge_local(&sp_local, &quad);
         let indices = sp_local.global_indices().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
