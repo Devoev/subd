@@ -20,7 +20,7 @@ mod tests {
     use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
     use crate::bspline::spline_geo::{Jacobian, SplineCurve};
-    use crate::bspline::{cart_prod, tensor_prod};
+    use crate::bspline::{cart_prod, global_basis, tensor_prod};
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
     use crate::cells::vertex::VertexTopo;
@@ -189,11 +189,11 @@ mod tests {
 
     #[test]
     fn bezier_elems() {
-        let basis = DeBoor::<f64>::open_uniform(12, 5);
-        let quad = GaussLegendre::new(5).unwrap();
-        let knots = &basis.knots;
-
-        println!("Knot vector = {:?}", knots);
+        let knots = KnotVec::new(
+            vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]
+        ).unwrap();
+        let basis = DeBoor::new(knots.clone(), 7, 3).unwrap();
+        // let quad = GaussLegendre::new(5).unwrap();
 
         let ref_mesh = CartMesh::from_breaks([
             knots.breaks().copied().collect_vec()
