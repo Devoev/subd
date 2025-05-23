@@ -10,12 +10,26 @@ use crate::knots::error::UnsortedKnotsError;
 
 /// A vector of increasing knot values of type [`T`], backed by a [`Vec<T>`].
 #[derive(Debug, Clone)]
-pub struct KnotVec<T>(pub(crate) Vec<T>);
+pub struct KnotVec<T>(pub Vec<T>);
 
 impl<T: RealField + Copy> KnotVec<T> {
 
-    /// Constructs a new [`KnotVec<T>`].
-    /// If the `knots` are not sorted, [`None`] is returned.
+    /// Constructs a new [`KnotVec<T>`] from the given `knots`.
+    ///
+    /// # Errors
+    /// Will return an error if the knot values are not sorted.
+    ///
+    /// # Examples
+    /// ```
+    /// use subd::knots::error::UnsortedKnotsError;
+    /// use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let knots_sorted = vec![0.0, 0.0, 0.5, 1.0, 1.0];
+    /// assert!(KnotVec::new(knots_sorted).is_ok());
+    ///
+    /// let knots_unsorted = vec![0.0, 1.0, 0.5];
+    /// assert_eq!(KnotVec::new(knots_unsorted), Err(UnsortedKnotsError));
+    /// ```
     pub fn new(knots: Vec<T>) -> Result<KnotVec<T>, UnsortedKnotsError> {
         match knots.is_sorted() {
             true => Ok(KnotVec(knots)),
@@ -23,7 +37,15 @@ impl<T: RealField + Copy> KnotVec<T> {
         }
     }
 
-    /// Constructs a uniform [`KnotVec<T>`] with `num` knots.
+    /// Constructs a uniform [`KnotVec<T>`] from `0` to `1` with `num` knots.
+    ///
+    /// # Examples
+    /// ```
+    /// use subd::knots::knot_vec::KnotVec;
+    /// 
+    /// let knots = KnotVec::<f64>::uniform(5);
+    /// assert_eq!(knots.0, vec![0.0, 0.25, 0.5, 0.75, 1.0]);
+    /// ```
     pub fn uniform(num: usize) -> Self {
         KnotVec(lin_space(T::zero()..=T::one(), num).collect_vec())
     }
