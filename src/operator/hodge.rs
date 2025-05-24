@@ -2,7 +2,6 @@ use crate::basis::local::LocalBasis;
 use crate::bspline::global_basis::BsplineBasis;
 use crate::bspline::local_basis::LocalBsplineBasis;
 use crate::mesh::bezier::BezierMesh;
-use crate::mesh::topo::Mesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
 use itertools::Itertools;
 use nalgebra::{DMatrix, RealField, RowDVector};
@@ -18,13 +17,11 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
     space: &BsplineBasis<T>,
     quad: TensorProdGaussLegendre<T>
 ) -> CooMatrix<T> {
-    let topo = &msh.ref_mesh.topology;
-    let mut mij = CooMatrix::<T>::zeros(topo.num_nodes(), topo.num_nodes());
+    let mut mij = CooMatrix::<T>::zeros(space.num_basis, space.num_basis);
 
     for elem in msh.elems() {
-        // fixme: for some reason spans outside of num_nodes range get found eventually
         let sp_local = space.local_basis(elem);
-        let mij_local: DMatrix<T> = assemble_hodge_local(&sp_local, &quad);
+        let mij_local = assemble_hodge_local(&sp_local, &quad);
         let indices = sp_local.global_indices().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);

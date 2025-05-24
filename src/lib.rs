@@ -40,7 +40,9 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use nalgebra_sparse::CsrMatrix;
     use crate::mesh::bezier::BezierMesh;
+    use crate::mesh::topo::Mesh;
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
 
@@ -229,7 +231,7 @@ mod tests {
     
     #[test]
     fn iga_assembly() {
-        let n = 30;
+        let n = 15;
         let p = 3;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
         
@@ -241,10 +243,16 @@ mod tests {
         let cart_mesh = CartMesh::from_breaks([knots.breaks().copied().collect_vec()]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let space = global_basis::BsplineBasis::new(knots, n, p);
-        
+
         let quad = TensorProdGaussLegendre::new(3).unwrap();
         let mat = assemble_hodge(&msh, &space, quad);
-        println!("{:?}", mat);
+        
+        // Print
+        let mut dense = DMatrix::<f64>::zeros(n, n);
+        for (i, j, &v) in mat.triplet_iter() {
+            dense[(i, j)] = v;
+        }
+        println!("{}", dense);
     }
 
     #[test]
