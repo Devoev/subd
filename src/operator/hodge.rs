@@ -31,8 +31,6 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
     mij
 }
 
-// todo: adjust integration by providing the elements bounds and not use [0,1]
-
 /// Assembles the local discrete Hodge operator.
 pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
     elem: &BezierElem<T, 1, 1>,
@@ -40,7 +38,7 @@ pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
     quad: &TensorProdGaussLegendre<T>
 ) -> DMatrix<T> {
     // Evaluate basis at each quadrature point and store in buffer
-    let nodes = quad.nodes::<1>(elem.ref_elem);
+    let nodes = quad.nodes(elem.ref_elem);
     let buf: Vec<RowDVector<T>> = nodes.map(|n| {
         sp_local.eval(n[0])
     }).collect();
