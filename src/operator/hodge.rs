@@ -1,13 +1,13 @@
 use crate::basis::local::LocalBasis;
 use crate::bspline::global_basis::BsplineBasis;
 use crate::bspline::local_basis::LocalBsplineBasis;
+use crate::cells::bezier_elem::BezierElem;
 use crate::mesh::bezier::BezierMesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
 use itertools::Itertools;
 use nalgebra::{DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
-
 // todo: this function is only a temporary implementation for just 1D bezier meshes.
 //  make this generic over the space and mesh type!
 
@@ -20,8 +20,8 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
     let mut mij = CooMatrix::<T>::zeros(space.num_basis, space.num_basis);
 
     for elem in msh.elems() {
-        let sp_local = space.local_basis(elem);
-        let mij_local = assemble_hodge_local(&sp_local, &quad);
+        let sp_local = space.local_basis(&elem);
+        let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
         let indices = sp_local.global_indices().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);
@@ -35,11 +35,12 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
 
 /// Assembles the local discrete Hodge operator.
 pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
+    elem: &BezierElem<T, 1, 1>,
     sp_local: &LocalBsplineBasis<T>,
     quad: &TensorProdGaussLegendre<T>
 ) -> DMatrix<T> {
     // Evaluate basis at each quadrature point and store in buffer
-    let nodes = quad.nodes::<1>();
+    let nodes = quad.nodes::<1>(elem.ref_elem);
     let buf: Vec<RowDVector<T>> = nodes.map(|n| {
         sp_local.eval(n[0])
     }).collect();

@@ -32,12 +32,12 @@ impl <T: RealField + Copy> BsplineBasis<T> {
     }
     
     /// Finds the knot span for the 1D [`BezierElem`] `elem`.
-    pub(crate) fn find_span_by_elem(&self, elem: BezierElem<T, 1, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
+    pub(crate) fn find_span_by_elem(&self, elem: &BezierElem<T, 1, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
         self.find_span(elem.ref_elem.a.x)
     }
     
     /// Returns the [`LocalBsplineBasis`] for the given 1D `elem`.
-    pub fn local_basis(&self, elem: BezierElem<T, 1, 1>) -> LocalBsplineBasis<T> {
+    pub fn local_basis(&self, elem: &BezierElem<T, 1, 1>) -> LocalBsplineBasis<T> {
         let span = self.find_span_by_elem(elem).unwrap();
         LocalBsplineBasis::new(&self.knots, self.degree, span)
     }

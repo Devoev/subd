@@ -231,8 +231,8 @@ mod tests {
     
     #[test]
     fn iga_assembly() {
-        let n = 15;
-        let p = 3;
+        let n = 8;
+        let p = 2;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
         
         let basis = DeBoorMulti::<f64, 1>::open_uniform([2], [1]);
@@ -244,7 +244,7 @@ mod tests {
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let space = global_basis::BsplineBasis::new(knots, n, p);
 
-        let quad = TensorProdGaussLegendre::new(3).unwrap();
+        let quad = TensorProdGaussLegendre::new(5).unwrap();
         let mat = assemble_hodge(&msh, &space, quad);
         
         // Print
@@ -253,6 +253,8 @@ mod tests {
             dense[(i, j)] = v;
         }
         println!("{}", dense);
+        println!("Eigenvalues = {} (should be positive)", dense.eigenvalues().unwrap());
+        println!("||M - M^T|| = {} (should be zero)", (dense.clone() - dense.transpose()).norm());
     }
 
     #[test]
