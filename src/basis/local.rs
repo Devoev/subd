@@ -11,7 +11,6 @@ use crate::basis::traits::Basis;
 ///   for vector valued functions equal to the dimension of the parametric domain.
 pub trait LocalBasis<T: RealField, X, const N: usize> : Basis<T, X, N> {
     // todo: possibly change to IntoIterator or separate trait/ struct all together
-    //  also maybe move N to associated type NumComponents
     /// Iterator over (linear) global indices.
     type GlobalIndices: Iterator<Item = usize>;
     

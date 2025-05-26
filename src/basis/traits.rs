@@ -10,6 +10,7 @@ use crate::basis::local::LocalBasis;
 ///   For scalar valued functions equal to `1`,
 ///   for vector valued functions equal to the dimension of the parametric domain.
 pub trait Basis<T: RealField, X, const N: usize> {
+    // todo: maybe move N to associated type NumComponents
     /// Returns the number of basis functions in this set.
     fn num_basis(&self) -> usize;
 
