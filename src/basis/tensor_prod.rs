@@ -55,9 +55,13 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
 impl<T: RealField, B: LocalBasis<T, T, 1>, const D: usize> MultiProd<T, B, D>
     where B::GlobalIndices: Clone
 {
+    
+    // fixme: this function calculates incorrect indices in the tensor product case.
+    //  This happens because the local basis doesn't know the shape of the global basis,
+    //  and hence uses strides, that are too small
     /// Returns an iterator over all global indices of the tensor product basis functions
     /// in lexicographical order.
-    fn global_indices_multi_prod(&self) -> impl Iterator<Item = usize> {
+    fn global_indices_multi_prod(&self) -> impl Iterator<Item = usize> + Clone {
         let strides = self.strides();
         self.bases.iter()
             .map(|b| b.global_indices())
@@ -80,7 +84,7 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
 impl <T: RealField, B: LocalBasis<T, T, 1>, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
     where B::GlobalIndices: Clone
 {
-    type GlobalIndices = impl Iterator<Item = usize>;
+    type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
     fn global_indices(&self) -> Self::GlobalIndices {
         self.global_indices_multi_prod()

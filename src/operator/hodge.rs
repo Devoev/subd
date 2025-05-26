@@ -1,6 +1,6 @@
 use crate::basis::local::LocalBasis;
-use crate::bspline::global_basis::BsplineBasis;
-use crate::bspline::local_basis::BsplineBasisLocal;
+use crate::bspline::global_basis::{BsplineBasis, MultiBsplineBasis};
+use crate::bspline::local_basis::{BsplineBasisLocal, MultiBsplineBasisLocal};
 use crate::cells::bezier_elem::BezierElem;
 use crate::mesh::bezier::BezierMesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
@@ -14,12 +14,12 @@ use crate::basis::traits::Basis;
 //  make this generic over the space and mesh type!
 
 /// Assembles the discrete hodge operator (mass matrix).
-pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
-    msh: &BezierMesh<T, 1, 1>,
-    space: &BsplineBasis<T>,
+pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
+    msh: &BezierMesh<T, D, D>,
+    space: &MultiBsplineBasis<T, D>,
     quad: TensorProdGaussLegendre<T>
 ) -> CooMatrix<T> {
-    let mut mij = CooMatrix::<T>::zeros(space.num_basis, space.num_basis);
+    let mut mij = CooMatrix::<T>::zeros(space.num_basis(), space.num_basis());
 
     for elem in msh.elems() {
         let sp_local = space.local_basis(&elem.ref_elem);
@@ -34,16 +34,14 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
 }
 
 /// Assembles the local discrete Hodge operator.
-pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
-    elem: &BezierElem<T, 1, 1>,
-    sp_local: &BsplineBasisLocal<T>,
+pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
+    elem: &BezierElem<T, D, D>,
+    sp_local: &MultiBsplineBasisLocal<T, D>,
     quad: &TensorProdGaussLegendre<T>
 ) -> DMatrix<T> {
     // Evaluate basis at each quadrature point and store in buffer
     let nodes = quad.nodes(elem.ref_elem);
-    let buf: Vec<RowDVector<T>> = nodes.map(|n| {
-        sp_local.eval(n[0])
-    }).collect();
+    let buf: Vec<RowDVector<T>> = nodes.map(|n| sp_local.eval(n)).collect();
 
     // todo: multiply jacobian determinant or implement this in the quadrature directly
     
@@ -62,7 +60,7 @@ pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
     let mij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             let integrand = buf.iter().map(|b| uv_pullback(b, i, j));
-            quad.integrate::<1>(integrand)
+            quad.integrate::<D>(integrand)
         });
     
     // Assemble matrix

@@ -1,13 +1,12 @@
-use std::iter::zip;
-use itertools::{izip, Itertools};
 use crate::basis::global::GlobalBasis;
+use crate::basis::tensor_prod::MultiProd;
 use crate::bspline::local_basis::{BsplineBasisLocal, MultiBsplineBasisLocal};
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
+use itertools::{izip, Itertools};
 use nalgebra::{vector, RealField};
-use crate::basis::tensor_prod::MultiProd;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -44,6 +43,10 @@ impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis<'a> = BsplineBasisLocal<'a, T>;
 
+    fn num_basis(&self) -> usize {
+        self.num_basis
+    }
+
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_> {
         let span = self.find_span_by_elem(elem).unwrap();
         BsplineBasisLocal::new(&self.knots, self.degree, span)
@@ -58,6 +61,10 @@ pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>
 impl<T: RealField + Copy, const D: usize> GlobalBasis<T, [T; D], 1> for MultiBsplineBasis<T, D> {
     type Elem = HyperRectangle<T, D>;
     type LocalBasis<'a> = MultiBsplineBasisLocal<'a, T, D>;
+
+    fn num_basis(&self) -> usize {
+        self.bases.iter().map(|b| b.num_basis).product()
+    }
 
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_> {
         let bases = izip!(&self.bases, &elem.a, &elem.b)

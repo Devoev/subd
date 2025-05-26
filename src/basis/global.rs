@@ -1,6 +1,8 @@
 use crate::basis::local::LocalBasis;
 use nalgebra::RealField;
 
+// todo: possibly add Basis as supertrait
+
 /// Set of global basis functions which restricted to a single element form a [`LocalBasis`].
 ///
 /// # Type parameters
@@ -15,6 +17,9 @@ pub trait GlobalBasis<T: RealField, X, const N: usize> {
     
     /// Local basis for each [`Self::Elem`].
     type LocalBasis<'a>: LocalBasis<T, X, N> where Self: 'a;
+
+    /// Returns the number of basis functions in this set.
+    fn num_basis(&self) -> usize;
 
     /// Returns the [`Self::LocalBasis`] for the given `elem`,
     /// i.e. the restriction of this basis to the element.

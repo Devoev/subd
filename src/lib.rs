@@ -33,7 +33,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U1};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U1, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -41,6 +41,8 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use nalgebra_sparse::CsrMatrix;
+    use crate::basis::global::GlobalBasis;
+    use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::topo::Mesh;
     use crate::operator::hodge::assemble_hodge;
@@ -231,24 +233,26 @@ mod tests {
     
     #[test]
     fn iga_assembly() {
-        let n = 8;
-        let p = 2;
+        let n = 3;
+        let p = 1;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
         
-        let basis = DeBoorMulti::<f64, 1>::open_uniform([2], [1]);
+        let basis = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
         let geo_space = SplineSpace::new(basis);
-        let c = OMatrix::<f64, U1, Dyn>::from(vec![0.0, 1.0]);
+        let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0]);
         let geo_map = SplineGeo::new(c, &geo_space);
         
-        let cart_mesh = CartMesh::from_breaks([knots.breaks().copied().collect_vec()]);
+        let breaks = knots.breaks().copied().collect_vec();
+        let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let space = global_basis::BsplineBasis::new(knots, n, p);
+        let space = MultiBsplineBasis::new([space.clone(), space]);
 
         let quad = TensorProdGaussLegendre::new(5).unwrap();
         let mat = assemble_hodge(&msh, &space, quad);
         
         // Print
-        let mut dense = DMatrix::<f64>::zeros(n, n);
+        let mut dense = DMatrix::<f64>::zeros(space.num_basis(), space.num_basis());
         for (i, j, &v) in mat.triplet_iter() {
             dense[(i, j)] = v;
         }
