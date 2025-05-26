@@ -1,6 +1,6 @@
 use crate::basis::local::LocalBasis;
 use crate::bspline::global_basis::BsplineBasis;
-use crate::bspline::local_basis::LocalBsplineBasis;
+use crate::bspline::local_basis::BsplineBasisLocal;
 use crate::cells::bezier_elem::BezierElem;
 use crate::mesh::bezier::BezierMesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
@@ -9,6 +9,7 @@ use nalgebra::{DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
 use crate::basis::global::GlobalBasis;
+use crate::basis::traits::Basis;
 // todo: this function is only a temporary implementation for just 1D bezier meshes.
 //  make this generic over the space and mesh type!
 
@@ -35,7 +36,7 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
 /// Assembles the local discrete Hodge operator.
 pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
     elem: &BezierElem<T, 1, 1>,
-    sp_local: &LocalBsplineBasis<T>,
+    sp_local: &BsplineBasisLocal<T>,
     quad: &TensorProdGaussLegendre<T>
 ) -> DMatrix<T> {
     // Evaluate basis at each quadrature point and store in buffer
