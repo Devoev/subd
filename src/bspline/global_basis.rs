@@ -1,9 +1,10 @@
+use crate::basis::global::GlobalBasis;
 use crate::bspline::local_basis::LocalBsplineBasis;
+use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::RealField;
-use crate::cells::bezier_elem::BezierElem;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -31,13 +32,16 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         KnotSpan::find(&self.knots, self.num_basis, t)
     }
     
-    /// Finds the knot span for the 1D [`BezierElem`] `elem`.
-    pub(crate) fn find_span_by_elem(&self, elem: &BezierElem<T, 1, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
-        self.find_span(elem.ref_elem.a.x)
+    /// Finds the knot span for the 1D [`HyperRectangle`] `elem`.
+    pub(crate) fn find_span_by_elem(&self, elem: &HyperRectangle<T, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
+        self.find_span(elem.a.x)
     }
-    
-    /// Returns the [`LocalBsplineBasis`] for the given 1D `elem`.
-    pub fn local_basis(&self, elem: &BezierElem<T, 1, 1>) -> LocalBsplineBasis<T> {
+}
+impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
+    type Elem = HyperRectangle<T, 1>;
+    type LocalBasis<'a> = LocalBsplineBasis<'a, T>;
+
+    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_> {
         let span = self.find_span_by_elem(elem).unwrap();
         LocalBsplineBasis::new(&self.knots, self.degree, span)
     }

@@ -8,6 +8,7 @@ use itertools::Itertools;
 use nalgebra::{DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
+use crate::basis::global::GlobalBasis;
 // todo: this function is only a temporary implementation for just 1D bezier meshes.
 //  make this generic over the space and mesh type!
 
@@ -20,7 +21,7 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>>(
     let mut mij = CooMatrix::<T>::zeros(space.num_basis, space.num_basis);
 
     for elem in msh.elems() {
-        let sp_local = space.local_basis(&elem);
+        let sp_local = space.local_basis(&elem.ref_elem);
         let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
         let indices = sp_local.global_indices().enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
@@ -42,6 +43,8 @@ pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>>(
     let buf: Vec<RowDVector<T>> = nodes.map(|n| {
         sp_local.eval(n[0])
     }).collect();
+
+    // todo: multiply jacobian determinant or implement this in the quadrature directly
     
     // Calculate pullback of product uv
     let uv_pullback = |b: &RowDVector<T>, i: usize, j: usize| {

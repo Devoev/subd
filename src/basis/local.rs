@@ -10,6 +10,7 @@ use nalgebra::{Const, Dyn, OMatrix, RealField};
 ///   for vector valued functions equal to the dimension of the parametric domain.
 pub trait LocalBasis<T: RealField, X, const N: usize> {
     // todo: possibly change to IntoIterator or separate trait/ struct all together
+    //  also maybe move N to associated type NumComponents
     /// Iterator over (linear) global indices.
     type LinIndices: Iterator<Item = usize>;
 
