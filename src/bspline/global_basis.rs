@@ -39,7 +39,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         self.find_span(elem.a.x)
     }
 }
-impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> GlobalBasis<T, T, 1, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis<'a> = BsplineBasisLocal<'a, T>;
 
@@ -58,7 +58,7 @@ impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
 /// Basis of [`D`]-variate B-Splines on an entire knot vector.
 pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>;
 
-impl<T: RealField + Copy, const D: usize> GlobalBasis<T, [T; D], 1> for MultiBsplineBasis<T, D> {
+impl<T: RealField + Copy, const D: usize> GlobalBasis<T, [T; D], D, 1> for MultiBsplineBasis<T, D> {
     type Elem = HyperRectangle<T, D>;
     type LocalBasis<'a> = MultiBsplineBasisLocal<'a, T, D>;
 

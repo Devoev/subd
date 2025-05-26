@@ -24,7 +24,7 @@ pub trait Basis<T: RealField, X, const N: usize> {
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
 /// - [`D`] : Dimension of the reference domain.
-pub trait HgradBasis<T: RealField, X, const D: usize> : LocalBasis<T, X, 1> {
+pub trait HgradBasis<T: RealField, X, const D: usize> : LocalBasis<T, X, D, 1> {
     /// Evaluates the gradients of all basis functions at the parametric point `x` 
     /// as the column-wise matrix `(grad b[1],...,grad b[n])`.
     fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Dyn>;

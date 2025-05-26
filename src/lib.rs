@@ -233,8 +233,8 @@ mod tests {
     
     #[test]
     fn iga_assembly() {
-        let n = 3;
-        let p = 1;
+        let n = 5;
+        let p = 2;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
         
         let basis = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);

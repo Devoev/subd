@@ -1,6 +1,8 @@
+use crate::basis::global::GlobalBasis;
 use crate::basis::local::LocalBasis;
-use crate::bspline::global_basis::{BsplineBasis, MultiBsplineBasis};
-use crate::bspline::local_basis::{BsplineBasisLocal, MultiBsplineBasisLocal};
+use crate::basis::traits::Basis;
+use crate::bspline::global_basis::MultiBsplineBasis;
+use crate::bspline::local_basis::MultiBsplineBasisLocal;
 use crate::cells::bezier_elem::BezierElem;
 use crate::mesh::bezier::BezierMesh;
 use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
@@ -8,8 +10,6 @@ use itertools::Itertools;
 use nalgebra::{DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
-use crate::basis::global::GlobalBasis;
-use crate::basis::traits::Basis;
 // todo: this function is only a temporary implementation for just 1D bezier meshes.
 //  make this generic over the space and mesh type!
 
@@ -20,11 +20,14 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>
     quad: TensorProdGaussLegendre<T>
 ) -> CooMatrix<T> {
     let mut mij = CooMatrix::<T>::zeros(space.num_basis(), space.num_basis());
+    let strides = space.strides_global();
 
     for elem in msh.elems() {
         let sp_local = space.local_basis(&elem.ref_elem);
         let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
-        let indices = sp_local.global_indices().enumerate();
+        // todo: collect_vec() and into_iter() is only required, to be able to clone the iterator
+        //  this has to be fixed in LocalBasis
+        let indices = sp_local.global_lin_indices(&strides).enumerate().collect_vec().into_iter();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);
         }

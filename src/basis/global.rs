@@ -11,12 +11,12 @@ use nalgebra::RealField;
 /// - [`N`] : Number of components of the basis functions.
 ///   For scalar valued functions equal to `1`,
 ///   for vector valued functions equal to the dimension of the parametric domain.
-pub trait GlobalBasis<T: RealField, X, const N: usize> {
+pub trait GlobalBasis<T: RealField, X, const D: usize, const N: usize> {
     /// Element type.
     type Elem;
     
     /// Local basis for each [`Self::Elem`].
-    type LocalBasis<'a>: LocalBasis<T, X, N> where Self: 'a;
+    type LocalBasis<'a>: LocalBasis<T, X, D, N> where Self: 'a;
 
     /// Returns the number of basis functions in this set.
     fn num_basis(&self) -> usize;
