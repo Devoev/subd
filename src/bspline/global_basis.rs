@@ -1,12 +1,11 @@
 use crate::basis::global::GlobalBasis;
 use crate::basis::tensor_prod::MultiProd;
-use crate::bspline::local_basis::{BsplineBasisLocal, MultiBsplineBasisLocal};
+use crate::bspline::local_basis::BsplineBasisLocal;
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
-use itertools::{izip, Itertools};
-use nalgebra::{vector, RealField};
+use nalgebra::RealField;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -20,6 +19,9 @@ pub struct BsplineBasis<T> {
     /// Degree of basis functions.
     pub degree: usize
 }
+
+/// Basis of [`D`]-variate B-Splines on an entire knot vector.
+pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>;
 
 impl <T: RealField> BsplineBasis<T> {
     /// Constructs a new [`BsplineBasis`] from the given `knots`, `num_basis` and `degree`.
@@ -39,7 +41,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         self.find_span(elem.a.x)
     }
 }
-impl <'a, T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis = BsplineBasisLocal<T>;
 
@@ -50,28 +52,5 @@ impl <'a, T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
         let span = self.find_span_by_elem(elem).unwrap();
         BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
-    }
-}
-
-// todo: replace this impl with a generic impl for every GlobalBasis
-
-/// Basis of [`D`]-variate B-Splines on an entire knot vector.
-pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>;
-
-impl<T: RealField + Copy, const D: usize> GlobalBasis<T, [T; D], 1> for MultiBsplineBasis<T, D> {
-    type Elem = HyperRectangle<T, D>;
-    type LocalBasis = MultiBsplineBasisLocal<T, D>;
-
-    fn num_basis(&self) -> usize {
-        self.bases.iter().map(|b| b.num_basis).product()
-    }
-
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
-        let bases = izip!(&self.bases, &elem.a, &elem.b)
-            .map(|(b, &ai, &bi)| {
-                let interval = HyperRectangle::new(vector![ai], vector![bi]);
-                b.local_basis(&interval)
-            }).collect_array().unwrap();
-        MultiBsplineBasisLocal::new(bases)
     }
 }

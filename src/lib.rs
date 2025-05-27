@@ -14,9 +14,11 @@ pub mod quadrature;
 
 #[cfg(test)]
 mod tests {
+    use crate::basis::global::GlobalBasis;
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
+    use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
     use crate::bspline::spline_geo::{Jacobian, SplineCurve, SplineGeo};
@@ -28,25 +30,21 @@ mod tests {
     use crate::index::multi_index::MultiIndex;
     use crate::knots::knot_span::KnotSpan;
     use crate::knots::knot_vec::KnotVec;
+    use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
+    use crate::mesh::topo::Mesh;
+    use crate::operator::hodge::assemble_hodge;
+    use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
     use crate::subd::basis;
-    use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U1, U2};
+    use nalgebra::{matrix, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use nalgebra_sparse::CsrMatrix;
-    use crate::basis::global::GlobalBasis;
-    use crate::bspline::global_basis::MultiBsplineBasis;
-    use crate::mesh::bezier::BezierMesh;
-    use crate::mesh::topo::Mesh;
-    use crate::operator::hodge::assemble_hodge;
-    use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
 
     #[test]
     fn knots() {
