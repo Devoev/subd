@@ -39,17 +39,17 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         self.find_span(elem.a.x)
     }
 }
-impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
+impl <'a, T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
-    type LocalBasis<'a> = BsplineBasisLocal<'a, T>;
+    type LocalBasis = BsplineBasisLocal<T>;
 
     fn num_basis(&self) -> usize {
         self.num_basis
     }
 
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_> {
+    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
         let span = self.find_span_by_elem(elem).unwrap();
-        BsplineBasisLocal::new(&self.knots, self.degree, span)
+        BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
     }
 }
 
@@ -60,13 +60,13 @@ pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>
 
 impl<T: RealField + Copy, const D: usize> GlobalBasis<T, [T; D], 1> for MultiBsplineBasis<T, D> {
     type Elem = HyperRectangle<T, D>;
-    type LocalBasis<'a> = MultiBsplineBasisLocal<'a, T, D>;
+    type LocalBasis = MultiBsplineBasisLocal<T, D>;
 
     fn num_basis(&self) -> usize {
         self.bases.iter().map(|b| b.num_basis).product()
     }
 
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_> {
+    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
         let bases = izip!(&self.bases, &elem.a, &elem.b)
             .map(|(b, &ai, &bi)| {
                 let interval = HyperRectangle::new(vector![ai], vector![bi]);

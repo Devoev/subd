@@ -8,9 +8,9 @@ use std::ops::RangeInclusive;
 
 /// Local B-Spline basis inside a knot span.
 #[derive(Debug, Clone)]
-pub struct BsplineBasisLocal<'a, T: RealField> {
+pub struct BsplineBasisLocal<T: RealField> {
     /// Global knot vector.
-    pub knots: &'a KnotVec<T>, // todo: possibly replace with local knot vector view?
+    pub knots: KnotVec<T>, // todo: replace with local knot vector copy
 
     /// Degree of basis functions.
     pub degree: usize,
@@ -20,16 +20,16 @@ pub struct BsplineBasisLocal<'a, T: RealField> {
 }
 
 /// Basis of [`D`]-variate [local B-Splines](BsplineBasisLocal) on a local knot span.
-pub type MultiBsplineBasisLocal<'a, T, const D: usize> = MultiProd<T, BsplineBasisLocal<'a, T>, D>;
+pub type MultiBsplineBasisLocal<T, const D: usize> = MultiProd<T, BsplineBasisLocal<T>, D>;
 
-impl <'a, T: RealField> BsplineBasisLocal<'a, T> {
+impl <T: RealField> BsplineBasisLocal<T> {
     /// Constructs a new [`BsplineBasisLocal`] from the given `global_basis` and `span`.
-    pub fn new(knots: &'a KnotVec<T>, degree: usize, span: KnotSpan) -> Self {
+    pub fn new(knots: KnotVec<T>, degree: usize, span: KnotSpan) -> Self {
         Self { knots, degree, span }
     }
 }
 
-impl <'a, T: RealField + Copy> BsplineBasisLocal<'a, T> {
+impl <T: RealField + Copy> BsplineBasisLocal<T> {
     /// Evaluates the [`K`] derivatives of the basis functions
     /// inside the given `span` at the parametric point `t`.
     pub(crate) fn eval_derivs<const K: usize>(&self, t: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
@@ -125,13 +125,13 @@ impl <'a, T: RealField + Copy> BsplineBasisLocal<'a, T> {
     }
 }
 
-impl<'a, T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<'a, T> {
+impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
     fn num_basis(&self) -> usize {
         self.degree + 1
     }
 
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
-        let knots = self.knots;
+        let knots = &self.knots;
         let span_idx = self.span.0;
         let p = self.degree;
         let mut left = vec![T::zero(); p + 1];
@@ -155,7 +155,7 @@ impl<'a, T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<'a, T> {
     }
 }
 
-impl<'a, T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasisLocal<'a, T> {
+impl<T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasisLocal<T> {
     type GlobalIndices = RangeInclusive<usize>;
 
     fn global_indices(&self) -> Self::GlobalIndices {
@@ -163,7 +163,7 @@ impl<'a, T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasisLocal<'a, T> {
     }
 }
 
-impl<'a, T: RealField + Copy> LocalHgradBasis<T, T, 1> for BsplineBasisLocal<'a, T> {
+impl<T: RealField + Copy> LocalHgradBasis<T, T, 1> for BsplineBasisLocal<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()

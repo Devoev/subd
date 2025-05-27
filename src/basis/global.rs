@@ -16,12 +16,12 @@ pub trait GlobalBasis<T: RealField, X, const N: usize> {
     type Elem;
     
     /// Local basis for each [`Self::Elem`].
-    type LocalBasis<'a>: LocalBasis<T, X, N> where Self: 'a;
+    type LocalBasis: LocalBasis<T, X, N>;
 
     /// Returns the number of basis functions in this set.
     fn num_basis(&self) -> usize;
 
     /// Returns the [`Self::LocalBasis`] for the given `elem`,
     /// i.e. the restriction of this basis to the element.
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis<'_>;
+    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis;
 }
