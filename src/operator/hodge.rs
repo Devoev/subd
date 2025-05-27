@@ -1,5 +1,5 @@
 use crate::basis::local::GlobalToLocalBasis;
-use crate::basis::traits::Basis;
+use crate::basis::traits::{Basis, NumBasis};
 use crate::bspline::global_basis::MultiBsplineBasis;
 use crate::bspline::local_basis::MultiBsplineBasisLocal;
 use crate::cells::bezier_elem::BezierElem;

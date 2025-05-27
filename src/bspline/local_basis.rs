@@ -1,5 +1,5 @@
 use crate::basis::tensor_prod::MultiProd;
-use crate::basis::traits::{Basis, HgradBasis};
+use crate::basis::traits::{Basis, HgradBasis, NumBasis};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
@@ -123,11 +123,13 @@ impl <T: RealField + Copy> BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> NumBasis for BsplineBasisLocal<T> {
     fn num_basis(&self) -> usize {
         self.degree + 1
     }
+}
 
+impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;

@@ -45,6 +45,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::basis::traits::NumBasis;
 
     #[test]
     fn knots() {

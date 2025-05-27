@@ -1,6 +1,12 @@
 use nalgebra::{Const, Dyn, OMatrix, RealField};
 
-/// Set of basis functions.
+/// Set of [`Self::num_basis`] basis functions.
+pub trait NumBasis {
+    /// Returns the number of basis functions in this set.
+    fn num_basis(&self) -> usize;
+}
+
+/// Set of basis functions which can be evaluated at arbitrary points using [`Self::eval`].
 ///
 /// # Type parameters
 /// - [`T`] : Real scalar type.
@@ -8,11 +14,8 @@ use nalgebra::{Const, Dyn, OMatrix, RealField};
 /// - [`N`] : Number of components of the basis functions.
 ///   For scalar valued functions equal to `1`,
 ///   for vector valued functions equal to the dimension of the parametric domain.
-pub trait Basis<T: RealField, X, const N: usize> {
+pub trait Basis<T: RealField, X, const N: usize>: NumBasis {
     // todo: maybe move N to associated type NumComponents
-    /// Returns the number of basis functions in this set.
-    fn num_basis(&self) -> usize;
-
     /// Evaluates all basis functions at the parametric point `x`
     /// as the column-wise matrix `(b[1],...,b[n])`.
     fn eval(&self, x: X) -> OMatrix<T, Const<N>, Dyn>;

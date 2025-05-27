@@ -7,6 +7,7 @@ use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::RealField;
+use crate::basis::traits::NumBasis;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -42,15 +43,18 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         self.find_span(elem.a.x)
     }
 }
+
+impl<T: RealField + Copy> NumBasis for BsplineBasis<T> {
+    fn num_basis(&self) -> usize {
+        self.num_basis
+    }
+}
+
 impl <T: RealField + Copy> GlobalToLocalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis = BsplineBasisLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;
-
-    fn num_basis(&self) -> usize {
-        self.num_basis
-    }
-
+    
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
         let span = self.find_span_by_elem(elem).unwrap();
         BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
