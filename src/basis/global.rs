@@ -1,6 +1,5 @@
-use crate::basis::local::LocalBasis;
 use nalgebra::RealField;
-
+use crate::basis::traits::Basis;
 // todo: possibly add Basis as supertrait
 
 /// Set of global basis functions which restricted to a single element form a [`LocalBasis`].
@@ -16,7 +15,11 @@ pub trait GlobalBasis<T: RealField, X, const N: usize> {
     type Elem;
     
     /// Local basis for each [`Self::Elem`].
-    type LocalBasis: LocalBasis<T, X, N>;
+    type LocalBasis: Basis<T, X, N>;
+
+    // todo: possibly change to IntoIterator or separate trait/ struct all together
+    /// Iterator over linear global indices.
+    type GlobalIndices: Iterator<Item = usize>;
 
     /// Returns the number of basis functions in this set.
     fn num_basis(&self) -> usize;
@@ -24,4 +27,7 @@ pub trait GlobalBasis<T: RealField, X, const N: usize> {
     /// Returns the [`Self::LocalBasis`] for the given `elem`,
     /// i.e. the restriction of this basis to the element.
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis;
+
+    /// Returns an iterator over all global indices of the local basis of `elem`.
+    fn global_indices(&self, local_basis: &Self::LocalBasis) -> Self::GlobalIndices;
 }

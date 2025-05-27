@@ -1,10 +1,8 @@
-use crate::basis::local::{LocalBasis, LocalHgradBasis};
 use crate::basis::tensor_prod::MultiProd;
-use crate::basis::traits::Basis;
+use crate::basis::traits::{Basis, HgradBasis};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
-use std::ops::RangeInclusive;
 
 /// Local B-Spline basis inside a knot span.
 #[derive(Debug, Clone)]
@@ -16,7 +14,7 @@ pub struct BsplineBasisLocal<T: RealField> {
     pub degree: usize,
 
     /// Knot span of the local basis.
-    span: KnotSpan,
+    pub span: KnotSpan,
 }
 
 /// Basis of [`D`]-variate [local B-Splines](BsplineBasisLocal) on a local knot span.
@@ -155,15 +153,7 @@ impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasisLocal<T> {
-    type GlobalIndices = RangeInclusive<usize>;
-
-    fn global_indices(&self) -> Self::GlobalIndices {
-        self.span.nonzero_indices(self.degree)
-    }
-}
-
-impl<T: RealField + Copy> LocalHgradBasis<T, T, 1> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> HgradBasis<T, T, 1> for BsplineBasisLocal<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()

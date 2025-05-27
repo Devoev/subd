@@ -1,4 +1,3 @@
-use crate::basis::local::LocalBasis;
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::{izip, Itertools};
@@ -32,6 +31,21 @@ impl<T: RealField, B, const D: usize> MultiProd<T, B, D> {
 
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
+impl<T: RealField, B: GlobalBasis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
+    /// Returns the number of **global** basis functions per parametric direction as a [`DimShape`].
+    pub fn shape_global(&self) -> DimShape<D> {
+        let arr = self.bases.iter()
+            .map(|base| base.num_basis())
+            .collect_array();
+        DimShape(arr.unwrap())
+    }
+
+    /// Returns the [`Strides`] for the **global** basis functions.
+    pub fn strides_global(&self) -> Strides<D> {
+        Strides::from(self.shape_global())
+    }
+}
+
 impl<T: RealField, B: Basis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn shape(&self) -> DimShape<D> {
@@ -56,25 +70,6 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
     }
 }
 
-impl<T: RealField, B: LocalBasis<T, T, 1>, const D: usize> MultiProd<T, B, D>
-    where B::GlobalIndices: Clone
-{
-    
-    // fixme: this function calculates incorrect indices in the tensor product case.
-    //  This happens because the local basis doesn't know the shape of the global basis,
-    //  and hence uses strides, that are too small
-    /// Returns an iterator over all global indices of the tensor product basis functions
-    /// in lexicographical order.
-    fn global_indices_multi_prod(&self) -> impl Iterator<Item = usize> + Clone {
-        let strides = self.strides();
-        self.bases.iter()
-            .map(|b| b.global_indices())
-            .multi_cartesian_product()
-            .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
-            .map(move |i| i.into_lin(&strides))
-    }
-}
-
 impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for MultiProd<T, B, D> {
     fn num_basis(&self) -> usize {
         self.shape().len()
@@ -86,10 +81,11 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
 }
 
 impl<T: RealField + Copy, B: GlobalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> GlobalBasis<T, [T; D], 1> for MultiProd<T, B, D>
-    where <B::LocalBasis as LocalBasis<T, T, 1>>::GlobalIndices: Clone,
+    where B::GlobalIndices: Clone,
 {
     type Elem = HyperRectangle<T, D>;
     type LocalBasis = MultiProd<T, B::LocalBasis, D>;
+    type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
     fn num_basis(&self) -> usize {
         self.bases.iter().map(|base| base.num_basis()).product()
@@ -104,14 +100,13 @@ impl<T: RealField + Copy, B: GlobalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, co
             }).collect_array().unwrap();
         MultiProd::new(bases)
     }
-}
 
-impl <T: RealField, B: LocalBasis<T, T, 1>, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
-    where B::GlobalIndices: Clone
-{
-    type GlobalIndices = impl Iterator<Item = usize> + Clone;
-
-    fn global_indices(&self) -> Self::GlobalIndices {
-        self.global_indices_multi_prod()
+    fn global_indices(&self, local_basis: &Self::LocalBasis) -> Self::GlobalIndices {
+        let strides = self.strides_global();
+        zip(&self.bases, &local_basis.bases)
+            .map(|(b, b_local)| b.global_indices(b_local))
+            .multi_cartesian_product()
+            .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
+            .map(move |i| i.into_lin(&strides))
     }
 }

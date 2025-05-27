@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use crate::basis::global::GlobalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::bspline::local_basis::BsplineBasisLocal;
@@ -44,6 +45,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
 impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis = BsplineBasisLocal<T>;
+    type GlobalIndices = RangeInclusive<usize>;
 
     fn num_basis(&self) -> usize {
         self.num_basis
@@ -52,5 +54,9 @@ impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
     fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
         let span = self.find_span_by_elem(elem).unwrap();
         BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
+    }
+
+    fn global_indices(&self, local_basis: &Self::LocalBasis) -> Self::GlobalIndices {
+        local_basis.span.nonzero_indices(self.degree)
     }
 }
