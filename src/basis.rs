@@ -1,3 +1,3 @@
 pub mod tensor_prod;
-pub mod global;
+pub mod local;
 pub mod traits;

@@ -1,4 +1,4 @@
-use crate::basis::global::GlobalBasis;
+use crate::basis::local::GlobalToLocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::global_basis::MultiBsplineBasis;
 use crate::bspline::local_basis::MultiBsplineBasisLocal;

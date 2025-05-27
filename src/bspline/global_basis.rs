@@ -1,5 +1,5 @@
 use std::ops::RangeInclusive;
-use crate::basis::global::GlobalBasis;
+use crate::basis::local::GlobalToLocalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::bspline::local_basis::BsplineBasisLocal;
 use crate::cells::hyper_rectangle::HyperRectangle;
@@ -42,7 +42,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
         self.find_span(elem.a.x)
     }
 }
-impl <T: RealField + Copy> GlobalBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> GlobalToLocalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type LocalBasis = BsplineBasisLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;

@@ -4,7 +4,7 @@ use itertools::{izip, Itertools};
 use nalgebra::{vector, Const, Dyn, OMatrix, RealField, RowDVector};
 use std::iter::zip;
 use std::marker::PhantomData;
-use crate::basis::global::GlobalBasis;
+use crate::basis::local::GlobalToLocalBasis;
 use crate::basis::traits::Basis;
 use crate::cells::hyper_rectangle::HyperRectangle;
 
@@ -31,7 +31,7 @@ impl<T: RealField, B, const D: usize> MultiProd<T, B, D> {
 
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
-impl<T: RealField, B: GlobalBasis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
+impl<T: RealField, B: GlobalToLocalBasis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
     /// Returns the number of **global** basis functions per parametric direction as a [`DimShape`].
     pub fn shape_global(&self) -> DimShape<D> {
         let arr = self.bases.iter()
@@ -80,7 +80,7 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
     }
 }
 
-impl<T: RealField + Copy, B: GlobalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> GlobalBasis<T, [T; D], 1> for MultiProd<T, B, D>
+impl<T: RealField + Copy, B: GlobalToLocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> GlobalToLocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
     where B::GlobalIndices: Clone,
 {
     type Elem = HyperRectangle<T, D>;

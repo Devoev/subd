@@ -2,7 +2,7 @@ use nalgebra::RealField;
 use crate::basis::traits::Basis;
 // todo: possibly add Basis as supertrait
 
-/// Set of global basis functions which restricted to a single element form a [`LocalBasis`].
+/// Set of global basis functions which restricted to a single element form a [local basis][`Self::LocalBasis`].
 ///
 /// # Type parameters
 /// - [`T`] : Real scalar type.
@@ -10,7 +10,7 @@ use crate::basis::traits::Basis;
 /// - [`N`] : Number of components of the basis functions.
 ///   For scalar valued functions equal to `1`,
 ///   for vector valued functions equal to the dimension of the parametric domain.
-pub trait GlobalBasis<T: RealField, X, const N: usize> {
+pub trait GlobalToLocalBasis<T: RealField, X, const N: usize> {
     /// Element type.
     type Elem;
     

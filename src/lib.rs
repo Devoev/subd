@@ -14,7 +14,7 @@ pub mod quadrature;
 
 #[cfg(test)]
 mod tests {
-    use crate::basis::global::GlobalBasis;
+    use crate::basis::local::GlobalToLocalBasis;
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
