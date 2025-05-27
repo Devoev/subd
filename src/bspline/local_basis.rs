@@ -155,8 +155,7 @@ impl<'a, T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<'a, T> {
     }
 }
 
-impl<'a, T: RealField + Copy> LocalBasis<T, T, 1, 1> for BsplineBasisLocal<'a, T> {
-    type Index = usize;
+impl<'a, T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasisLocal<'a, T> {
     type GlobalIndices = RangeInclusive<usize>;
 
     fn global_indices(&self) -> Self::GlobalIndices {
