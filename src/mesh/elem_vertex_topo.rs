@@ -8,6 +8,7 @@ use crate::cells::chain::Chain;
 use crate::cells::quad::QuadTopo;
 use crate::cells::vertex::VertexTopo;
 use crate::mesh::topo;
+use crate::mesh::topo::MeshTopology;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
 /// The elements are `K`-cells of type [`C`].
@@ -85,7 +86,7 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
     // todo: add info about regular/ irregular adjacency
 }
 
-impl <'a, const K: usize, C: Cell<Const<K>>> topo::Mesh<'a, K, &'a C> for ElementVertex<K, C>
+impl <'a, const K: usize, C: Cell<Const<K>>> MeshTopology<'a, K, &'a C> for ElementVertex<K, C>
     where &'a C: Cell<Const<K>>
 {
     type Nodes = impl Iterator<Item = VertexTopo>;

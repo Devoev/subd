@@ -5,6 +5,7 @@ use crate::cells::vertex::VertexTopo;
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use crate::mesh::topo;
+use crate::mesh::topo::MeshTopology;
 
 /// Topology of a [`K`]-dimensional tensor product (cartesian) mesh.
 /// The topological structure is a regular grid, that can in 2D be schematically visualized as
@@ -59,7 +60,7 @@ impl<const D: usize> TensorProd<D> {
     }
 }
 
-impl<'a, const D: usize> topo::Mesh<'a, D, HyperRectangleTopo<D>> for TensorProd<D> {
+impl<'a, const D: usize> MeshTopology<'a, D, HyperRectangleTopo<D>> for TensorProd<D> {
     type Nodes = impl Iterator<Item = VertexTopo>;
     type Elems = impl Iterator<Item = HyperRectangleTopo<D>>;
 

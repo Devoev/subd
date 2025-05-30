@@ -3,7 +3,7 @@ use crate::cells::topo;
 use nalgebra::Const;
 
 /// Topology of a mesh consisting of cells of type [`C`].
-pub trait Mesh<'a, const K: usize, C: topo::Cell<Const<K>>> {
+pub trait MeshTopology<'a, const K: usize, C: topo::Cell<Const<K>>> {
     /// Node iterator.
     type Nodes: Iterator<Item = VertexTopo>;
 

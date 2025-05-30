@@ -32,7 +32,7 @@ mod tests {
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
-    use crate::mesh::topo::Mesh;
+    use crate::mesh::topo::MeshTopology;
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
     use crate::subd::basis;
