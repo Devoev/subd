@@ -4,6 +4,7 @@ use crate::mesh::tensor_prod_topo::TensorProd;
 use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::iter::zip;
+use crate::mesh::geo::Mesh;
 
 /// Cartesian mesh with [tensor product topology](TensorProd).
 /// The grid formed by the mesh nodes can in 2D be schematically visualized as
@@ -60,10 +61,12 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
             .unwrap()
             .into()
     }
+}
 
-    // todo: change signature of CartMesh::elems
-    /// Returns an iterator over all elements in this mesh.
-    pub fn elems(&self) -> impl Iterator<Item = HyperRectangle<T, K>> + '_ {
+impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K, HyperRectangle<T, K>> for CartMesh<T, K> {
+    type Elems = impl Iterator<Item = HyperRectangle<T, K>>;
+
+    fn elems(&'a self) -> Self::Elems {
         self.topology
             .elems()
             .map(|elem_topo| HyperRectangle::from_topo(elem_topo, self))
