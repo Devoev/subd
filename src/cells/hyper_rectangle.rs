@@ -1,3 +1,5 @@
+use crate::cells::chart::Chart;
+use crate::cells::geo;
 use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::vertex::VertexTopo;
 use crate::mesh::cartesian::CartMesh;
@@ -57,6 +59,49 @@ impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
     /// Returns the interval ranges `a[i]..=b[i]` for each parametric direction.
     pub fn ranges(&self) -> [RangeInclusive<T>; K] {
         zip(&self.a, &self.b).map(|(&a, &b)| a..=b).collect_array::<K>().unwrap()
+    }
+}
+
+/// **L**inear int**erp**olation (Lerp) in [`D`] dimensions.
+/// Transforms the unit hypercube `[0,1]^D` to a [`HyperRectangle`] by the component-wise mapping
+/// ```text
+/// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i]
+/// ```
+/// where `a` and `b` are the start and end coordinates of the rectangle respectively.
+pub struct Lerp<T, const D: usize> {
+    /// Start coordinates.
+    pub a: SVector<T, D>,
+
+    /// End coordinates.
+    pub b: SVector<T, D>,
+}
+
+impl<T, const D: usize> Lerp<T, D> {
+    /// Constructs a new [`Lerp`] from the given coordinate vectors `a` and `b`.
+    pub fn new(a: SVector<T, D>, b: SVector<T, D>) -> Self {
+        Lerp { a, b }
+    }
+}
+
+impl <T: RealField + Copy, const D: usize> Chart<T, [T; D], D> for Lerp<T, D> {
+    fn eval(&self, x: [T; D]) -> Point<T, D> {
+        self.eval(SVector::from(x))
+    }
+}
+
+impl <T: RealField + Copy, const D: usize> Chart<T, SVector<T, D>, D> for Lerp<T, D> {
+    fn eval(&self, x: SVector<T, D>) -> Point<T, D> {
+        let ones = SVector::repeat(T::one());
+        let p = (ones - x).component_mul(&self.a) + x.component_mul(&self.b);
+        Point::from(p)
+    }
+}
+
+impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], Const<D>, D> for HyperRectangle<T, D> {
+    type GeoMap = Lerp<T, D>;
+
+    fn geo_map(&self) -> Self::GeoMap {
+        Lerp::new(self.a, self.b)
     }
 }
 
