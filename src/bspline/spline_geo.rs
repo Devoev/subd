@@ -24,7 +24,7 @@ pub type SplineSurf<'a, T, const M: usize, Nc = Dyn> = SplineGeo<'a, T, SVector<
 /// A spline volume in [`M`] dimensions.
 pub type SplineVol<'a, T, const M: usize, Nc = Dyn> = SplineGeo<'a, T, SVector<T, 3>, DeBoorMulti<T, 3>, M, Nc>;
 
-impl <'a, T, X, B, const M: usize, Nc> Chart<T, X, M> for SplineGeo<'a, T, X, B, M, Nc>
+impl <T, X, B, const M: usize, Nc> Chart<T, X, M> for SplineGeo<'_, T, X, B, M, Nc>
     where T: RealField,
           B: BsplineBasis<T::RealField, X, 1>,
           Nc: Dim,
