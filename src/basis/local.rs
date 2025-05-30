@@ -18,7 +18,7 @@ pub trait GlobalToLocalBasis<T: RealField, X, const N: usize>: NumBasis {
 
     // todo: possibly change to IntoIterator or separate trait/ struct all together
     /// Iterator over linear global indices.
-    type GlobalIndices: Iterator<Item = usize>;
+    type GlobalIndices: Iterator<Item = usize> + Clone;
 
     /// Returns the [`Self::LocalBasis`] for the given `elem`,
     /// i.e. the restriction of this basis to the element.
