@@ -46,6 +46,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::basis::traits::NumBasis;
+    use crate::mesh::geo::Mesh;
 
     #[test]
     fn knots() {
