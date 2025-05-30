@@ -54,13 +54,13 @@ impl<T: RealField + Copy + Product<T> + Sum<T>> TensorProdGaussLegendre<T> {
     }
 
     /// Returns an iterator over the products of all weights for a single `D`-dimensional node.
-    pub fn weight_products<const D: usize>(&self) -> impl Iterator<Item = T> {
+    fn weight_products<const D: usize>(&self) -> impl Iterator<Item = T> {
         self.weights::<D>().map(|wi| wi.into_iter().product())
     }
 
     /// Returns an iterator over the quadrature nodes for the reference cube `[-1,1]^D`, 
     /// in lexicographical order.
-    pub fn nodes_ref<const D: usize>(&self) -> MultiProduct<IntoIter<T>> {
+    fn nodes_ref<const D: usize>(&self) -> MultiProduct<IntoIter<T>> {
         let nodes = (0..D).map(|_| self.nodes.clone());
         nodes.multi_cartesian_product()
     }
