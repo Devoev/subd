@@ -33,6 +33,7 @@ impl<T: FromPrimitive> TensorProdGaussLegendre<T> {
 impl<T: RealField + Copy + Product<T> + Sum<T>> TensorProdGaussLegendre<T> {
     /// Scale factor for the weights for each parametric direction.
     const SCALE_FACTOR: f64 = 0.5;
+    // todo: this is incorrect. Should depend on a and b
 
     /// Transforms the interval `[-1,1]` to `[a, b]`.
     fn transform_coord(&self, x: T, a: T, b: T) -> T {
