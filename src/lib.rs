@@ -2,19 +2,20 @@
 #![feature(cmp_minmax)]
 extern crate core;
 
-pub mod knots;
+pub mod basis;
 pub mod bspline;
-pub mod subd;
-pub mod mesh;
 pub mod cells;
 pub mod index;
-pub mod basis;
+pub mod knots;
+pub mod mesh;
 pub mod operator;
 pub mod quadrature;
+pub mod subd;
 
 #[cfg(test)]
 mod tests {
     use crate::basis::local::GlobalToLocalBasis;
+    use crate::basis::traits::NumBasis;
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
@@ -32,10 +33,12 @@ mod tests {
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
+    use crate::mesh::geo::Mesh;
     use crate::mesh::topo::MeshTopology;
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
     use crate::subd::basis;
+    use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{matrix, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
@@ -45,8 +48,6 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::basis::traits::NumBasis;
-    use crate::mesh::geo::Mesh;
 
     #[test]
     fn knots() {
@@ -55,7 +56,7 @@ mod tests {
         let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity().unzip();
         let xi3 = DeBoorMulti::new([xi1.clone(), xi2.clone()]);
         let xi4 = DeBoorMulti::<f64, 2>::open_uniform([5, 3], [1, 2]);
-        
+
         println!("Z: {:?}", z);
         println!("m: {:?}", m);
         println!("{:?}", xi1);
@@ -69,7 +70,7 @@ mod tests {
         const N: usize = 6;
         let p = 2;
         let t = 0.5;
-        
+
         let dims = DimShape([3, 3, 3]);
         let strides = Strides::from(dims);
         let multi_idx = [2, 2, 2];
@@ -117,7 +118,7 @@ mod tests {
         let basis_q = DeBoor::<f64>::open_uniform(n, p - 1);
         let basis_x = DeBoorBi::new(basis_p.clone(), basis_q.clone());
         let basis_y = tensor_prod::Prod::new(basis_q, basis_p);
-        
+
         let sp_vec_2d = cart_prod::Prod::new(basis_x.clone(), basis_y);
         let sp_vec_3d = cart_prod::TriProd::new(basis_x.clone(), basis_x.clone(), basis_x.clone());
         println!("{}", sp_vec_2d.eval_nonzero([0.5, 0.2]).0);
@@ -155,8 +156,7 @@ mod tests {
         }
 
         let data = points.into_iter();
-        let root_area = BitMapBackend::new("spline_surf.png", (800, 800))
-            .into_drawing_area();
+        let root_area = BitMapBackend::new("spline_surf.png", (800, 800)).into_drawing_area();
         root_area.fill(&WHITE).unwrap();
 
         let mut ctx = ChartBuilder::on(&root_area)
@@ -166,7 +166,7 @@ mod tests {
         ctx.configure_mesh().draw().unwrap();
         ctx.draw_series(LineSeries::new(data, RED)).unwrap();
     }
-    
+
     #[test]
     fn spline_derivs() {
         let n = 3;
@@ -177,7 +177,10 @@ mod tests {
         let de_boor_multi = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
         let space = SplineSpace::new(de_boor_multi.clone());
 
-        println!("Derivatives of basis: {}", de_boor.eval_derivs_nonzero::<3>(0.8).0);
+        println!(
+            "Derivatives of basis: {}",
+            de_boor.eval_derivs_nonzero::<3>(0.8).0
+        );
 
         // Jacobian
         let control_points = SMatrix::<f64, 3, 27>::new_random();
@@ -185,9 +188,12 @@ mod tests {
         let d_phi = Jacobian { geo_map: &surf };
         let j = d_phi.eval([0.0, 0.2, 0.5]);
         println!("Jacobian matrix: {j}");
-        
+
         // Function values
-        println!("Function values of basis: {}", de_boor_multi.eval_nonzero([0.1, 0.0, 0.5]).0);
+        println!(
+            "Function values of basis: {}",
+            de_boor_multi.eval_nonzero([0.1, 0.0, 0.5]).0
+        );
 
         // Gradients
         let grad_b = BasisGrad::new(de_boor_multi);
@@ -196,20 +202,25 @@ mod tests {
 
     #[test]
     fn bezier_elems() {
-        let knots = KnotVec::new(
-            vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]
-        ).unwrap();
+        let knots =
+            KnotVec::new(vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]).unwrap();
         let basis = DeBoor::new(knots.clone(), 7, 3).unwrap();
         // let quad = GaussLegendre::new(5).unwrap();
 
-        let ref_mesh = CartMesh::from_breaks([
-            knots.breaks().copied().collect_vec()
-        ]);
+        let ref_mesh = CartMesh::from_breaks([knots.breaks().copied().collect_vec()]);
 
         for (elem, topo) in zip(ref_mesh.elems(), ref_mesh.topology.elems()) {
             let span = basis.find_span(elem.a.x).unwrap();
-            println!("Bezier element = [{:.3}, {:.3}] (index = {})", elem.a.x, elem.b.x, topo.0[0]);
-            println!("Knot span = [{:.3}, {:.3}] (index = {})", knots[span.0], knots[span.0 + 1], span.0);
+            println!(
+                "Bezier element = [{:.3}, {:.3}] (index = {})",
+                elem.a.x, elem.b.x, topo.0[0]
+            );
+            println!(
+                "Knot span = [{:.3}, {:.3}] (index = {})",
+                knots[span.0],
+                knots[span.0 + 1],
+                span.0
+            );
         }
     }
 
@@ -221,27 +232,26 @@ mod tests {
 
     #[test]
     fn cart_mesh() {
-        let msh = CartMesh::from_breaks(
-            [vec![0.0, 1.0, 2.0, 3.0], vec![0.0, 1.0, 2.0, 3.0]]
-        );
+        let msh = CartMesh::from_breaks([vec![0.0, 1.0, 2.0, 3.0], vec![0.0, 1.0, 2.0, 3.0]]);
 
         for elem in msh.elems() {
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
     }
-    
+
     #[test]
     fn iga_assembly() {
         let n = 3;
         let p = 1;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
-        
+
         let basis = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
         let geo_space = SplineSpace::new(basis);
-        let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0]);
+        let c =
+            OMatrix::<f64, U2, Dyn>::from_column_slice(&[0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0]);
         let geo_map = SplineGeo::new(c, &geo_space);
-        
+
         let breaks = knots.breaks().copied().collect_vec();
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
@@ -250,15 +260,21 @@ mod tests {
 
         let quad = TensorProdGaussLegendre::new(5).unwrap();
         let mat = assemble_hodge(&msh, &space, quad);
-        
+
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.num_basis(), space.num_basis());
         for (i, j, &v) in mat.triplet_iter() {
             dense[(i, j)] = v;
         }
         println!("{}", dense);
-        println!("Eigenvalues = {} (should be positive)", dense.eigenvalues().unwrap());
-        println!("||M - M^T|| = {} (should be zero)", (dense.clone() - dense.transpose()).norm());
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            dense.eigenvalues().unwrap()
+        );
+        println!(
+            "||M - M^T|| = {} (should be zero)",
+            (dense.clone() - dense.transpose()).norm()
+        );
     }
 
     #[test]
@@ -273,7 +289,6 @@ mod tests {
         // let xi = KnotVec::uniform(8);
         // let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
 
-        
         let basis_uni = DeBoor::open_uniform(4, 3);
         let basis = DeBoorMulti::<f64, 2>::new([basis_uni.clone(), basis_uni]);
         for (u, v) in grid.clone() {
@@ -291,10 +306,19 @@ mod tests {
         }
         let time_mat_mat = start.elapsed();
 
-        println!("Took {:?} for {num_eval} basis evaluations (de Boor).", time_de_boor);
-        println!("Took {:?} for {num_eval} basis evaluations (matrix-matrix).", time_mat_mat);
-        println!("De Boors algorithm is {} % faster than matrix-matrix algorithm",
-                 (time_mat_mat.as_secs_f64() - time_de_boor.as_secs_f64()) / time_mat_mat.as_secs_f64() * 100.0)
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (de Boor).",
+            time_de_boor
+        );
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (matrix-matrix).",
+            time_mat_mat
+        );
+        println!(
+            "De Boors algorithm is {} % faster than matrix-matrix algorithm",
+            (time_mat_mat.as_secs_f64() - time_de_boor.as_secs_f64()) / time_mat_mat.as_secs_f64()
+                * 100.0
+        )
     }
 
     #[test]
@@ -306,7 +330,7 @@ mod tests {
         let start = Instant::now();
         let basis = DeBoor::open_uniform(30, 3);
         for t in grid.clone() {
-            let _  = black_box(basis.eval_nonzero(t));
+            let _ = black_box(basis.eval_nonzero(t));
         }
         let time_uni = start.elapsed();
 
@@ -314,14 +338,22 @@ mod tests {
         let start = Instant::now();
         let basis = DeBoorMulti::open_uniform([30], [3]);
         for t in grid.clone() {
-            let _  = black_box(basis.eval_nonzero(t));
+            let _ = black_box(basis.eval_nonzero(t));
         }
         let time_tp = start.elapsed();
 
-        println!("Took {:?} for {num_eval} basis evaluations (univariate algorithm).", time_uni);
-        println!("Took {:?} for {num_eval} basis evaluations (tensor product algorithm).", time_tp);
-        println!("Univariate algorithm is {} % faster than tensor product algorithm",
-                 (time_tp.as_secs_f64() - time_uni.as_secs_f64()) / time_tp.as_secs_f64() * 100.0)
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (univariate algorithm).",
+            time_uni
+        );
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (tensor product algorithm).",
+            time_tp
+        );
+        println!(
+            "Univariate algorithm is {} % faster than tensor product algorithm",
+            (time_tp.as_secs_f64() - time_uni.as_secs_f64()) / time_tp.as_secs_f64() * 100.0
+        )
     }
 
     #[test]
@@ -337,7 +369,7 @@ mod tests {
         let basis = DeBoor::open_uniform(n, p);
         let basis = DeBoorBi::new(basis.clone(), basis);
         for (u, v) in grid.clone() {
-            let _  = black_box(basis.eval_nonzero([u, v]));
+            let _ = black_box(basis.eval_nonzero([u, v]));
         }
         let time_bi = start.elapsed();
 
@@ -345,14 +377,22 @@ mod tests {
         let start = Instant::now();
         let basis = DeBoorMulti::open_uniform([n, n], [p, p]);
         for t in grid.clone() {
-            let _  = black_box(basis.eval_nonzero(t));
+            let _ = black_box(basis.eval_nonzero(t));
         }
         let time_tp = start.elapsed();
 
-        println!("Took {:?} for {num_eval} basis evaluations (bivariate algorithm).", time_bi);
-        println!("Took {:?} for {num_eval} basis evaluations (tensor product algorithm).", time_tp);
-        println!("Bivariate algorithm is {} % faster than tensor product algorithm",
-                 (time_tp.as_secs_f64() - time_bi.as_secs_f64()) / time_tp.as_secs_f64() * 100.0)
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (bivariate algorithm).",
+            time_bi
+        );
+        println!(
+            "Took {:?} for {num_eval} basis evaluations (tensor product algorithm).",
+            time_tp
+        );
+        println!(
+            "Bivariate algorithm is {} % faster than tensor product algorithm",
+            (time_tp.as_secs_f64() - time_bi.as_secs_f64()) / time_tp.as_secs_f64() * 100.0
+        )
     }
 
     #[test]
@@ -376,11 +416,18 @@ mod tests {
         }
         let time_muls = start.elapsed();
 
-
-        println!("Took {:?} for {num_eval} power calculations (using powi).", time_powi);
-        println!("Took {:?} for {num_eval} power calculations (manually optimized).", time_muls);
-        println!("powi is {} % slower than optimized algorithm",
-                 (time_powi.as_secs_f64() - time_muls.as_secs_f64()) / time_muls.as_secs_f64() * 100.0)
+        println!(
+            "Took {:?} for {num_eval} power calculations (using powi).",
+            time_powi
+        );
+        println!(
+            "Took {:?} for {num_eval} power calculations (manually optimized).",
+            time_muls
+        );
+        println!(
+            "powi is {} % slower than optimized algorithm",
+            (time_powi.as_secs_f64() - time_muls.as_secs_f64()) / time_muls.as_secs_f64() * 100.0
+        )
     }
 
     #[test]
@@ -404,11 +451,19 @@ mod tests {
         }
         let time_static = start.elapsed();
 
-
-        println!("Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (dynamic storage).", time_dyn);
-        println!("Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (static storage).", time_static);
-        println!("dynamic is {} % slower than static storage",
-                 (time_dyn.as_secs_f64() - time_static.as_secs_f64()) / time_static.as_secs_f64() * 100.0)
+        println!(
+            "Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (dynamic storage).",
+            time_dyn
+        );
+        println!(
+            "Took {:?} for {num_eval:e} {N}x{N} matrix-vector multiplications (static storage).",
+            time_static
+        );
+        println!(
+            "dynamic is {} % slower than static storage",
+            (time_dyn.as_secs_f64() - time_static.as_secs_f64()) / time_static.as_secs_f64()
+                * 100.0
+        )
     }
 
     #[test]
@@ -416,15 +471,15 @@ mod tests {
         let num_eval = 10;
         let grid = lin_space(0.0..=1.0, num_eval);
         let basis = DeBoor::<f64>::open_uniform(200, 3);
-        
+
         // Algorithm from the nurbs package
         let start = Instant::now();
         for t in grid.clone() {
             let span = KnotSpan::find(&basis.knots, basis.n, t).unwrap();
-            let _  = black_box(basis.eval_derivs_with_span::<5>(t, span));
+            let _ = black_box(basis.eval_derivs_with_span::<5>(t, span));
         }
         let time_algo_1 = start.elapsed();
-        
+
         // Implement algorithm using Curry-Schoenberg basis
         let start = Instant::now();
         for t in grid.clone() {
@@ -433,7 +488,47 @@ mod tests {
         }
         let time_algo_2 = start.elapsed();
 
-        println!("Took {:?} for {num_eval:e} derivative evaluations (algorithm #1).", time_algo_1);
-        println!("Took {:?} for {num_eval:e} derivative evaluations (algorithm #2).", time_algo_2);
+        println!(
+            "Took {:?} for {num_eval:e} derivative evaluations (algorithm #1).",
+            time_algo_1
+        );
+        println!(
+            "Took {:?} for {num_eval:e} derivative evaluations (algorithm #2).",
+            time_algo_2
+        );
+    }
+
+    #[test]
+    fn benchmark_vec_dot() {
+        let num_eval = 100_000_000;
+        const N: usize = 5;
+
+        let f = DVector::<f64>::new_random(N);
+        let quad = GaussLegendre::new(N).unwrap();
+        let w = DVector::from_iterator(N, quad.weights().copied());
+
+        // Vector dot vector
+        let start = Instant::now();
+        for _ in 0..num_eval {
+            let _ = black_box(f.dot(&w));
+        }
+        let time_dot = start.elapsed();
+
+        // Iter map
+        let start = Instant::now();
+        for _ in 0..num_eval {
+            let _ = black_box(zip(&f, &w).map(|(fi, wi)| fi * wi).sum::<f64>());
+        }
+        let time_iter = start.elapsed();
+
+        println!(
+            "Took {:?} for {num_eval:e} vector-vector muls (dot product).",
+            time_dot
+        );
+
+        println!(
+            "Took {:?} for {num_eval:e} vector-vector muls (iter map).",
+            time_iter
+        );
     }
 }
