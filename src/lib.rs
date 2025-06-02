@@ -48,6 +48,9 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::cells::hyper_rectangle::HyperRectangle;
+    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::traits::{ElementQuadrature, RefQuadrature};
 
     #[test]
     fn knots() {
@@ -222,6 +225,18 @@ mod tests {
                 span.0
             );
         }
+    }
+
+    #[test]
+    fn quadrature() {
+        let quad = GaussLegendre::new(5).unwrap();
+        let quad = GaussLegendreMulti::<f64, 1>::new([quad.clone()]);
+
+        println!("Quadrature nodes = {:?} (in [0,1]]", quad.nodes_ref().collect_vec());
+        println!("Quadrature weights = {:?} (in [0,1])", quad.weights_ref().collect_vec());
+
+        let elem = HyperRectangle::new(vector![0.2], vector![0.4]);
+        println!("Quadrature nodes = {:?} in {:?}", quad.nodes_elem(&elem).collect_vec(), elem);
     }
 
     #[test]
