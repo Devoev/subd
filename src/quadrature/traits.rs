@@ -1,3 +1,4 @@
+use std::iter::{zip, Sum};
 use crate::cells::chart::Chart;
 use crate::cells::geo::Cell;
 use nalgebra::{Const, Point, RealField};
@@ -5,17 +6,26 @@ use nalgebra::{Const, Point, RealField};
 // todo: possibly add RefCell and parametrize RefQuadrature?
 
 /// Quadrature rule on a reference domain. In 1D usually `[0,1]`.
-pub trait RefQuadrature<T> {
+pub trait RefQuadrature<T: RealField + Sum> {
     /// Quadrature node inside the element.
     type Node;
+
+    // todo: maybe replace iterators with DVector's and implement quadrature by dot product
 
     /// Returns an iterator over all quadrature nodes on the fixed reference domain.
     fn nodes_ref(&self) -> impl Iterator<Item = Self::Node>;
 
+    /// Returns an iterator over all quadrature weights on the fixed reference domain.
+    fn weights_ref(&self) -> impl Iterator<Item = T>;
+
     /// Numerically integrates a function `f` on the reference domain.
     /// The values of the function evaluated at the [quadrature nodes][`Self::nodes`]
     /// are given as `f[i] = f(x[i])`.
-    fn integrate_ref(&self, f: impl IntoIterator<Item = T>) -> T;
+    fn integrate_ref(&self, f: impl IntoIterator<Item = T>) -> T {
+        zip(self.weights_ref(), f)
+            .map(|(w, f)| w * f)
+            .sum::<T>()
+    }
 
     /// Evaluates the function `f` on every [quadrature node][Self::nodes] in the reference domain.
     fn eval_fn_ref<'a>(&'a self, f: impl Fn(Self::Node) -> T + 'a) -> impl Iterator<Item = T> + 'a where T: 'a {
@@ -35,7 +45,7 @@ pub trait RefQuadrature<T> {
 //  then [0,1]. For example Gauss Quad uses [-1,1]. What to do about that?
 
 /// Quadrature rule on an element.
-pub trait ElementQuadrature<T: RealField, const D: usize>: RefQuadrature<T> {
+pub trait ElementQuadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
     /// Element defining the integration domain.
     type Elem: Cell<T, Self::Node, Const<D>, D>;
 

@@ -5,6 +5,7 @@ use num_traits::FromPrimitive;
 use crate::quadrature::traits::RefQuadrature;
 
 // todo: should this be implement over [0,1] instead?
+// todo: remove this. the gauss_quad crate should be used instead
 /// Gauss-Legendre quadrature rule on the domain `[-1,1]`.
 pub struct GaussLegendre<T> {
     /// Quadrature nodes.
@@ -34,7 +35,13 @@ impl <T: RealField + Copy + Sum> RefQuadrature<T> for GaussLegendre<T> {
     fn nodes_ref(&self) -> impl Iterator<Item=Self::Node> {
         self.nodes.iter().cloned()
     }
-    
+
+    fn weights_ref(&self) -> impl Iterator<Item=T> {
+        self.weights
+            .iter()
+            .map(|&wi| wi / T::from_f64(2.0).unwrap())
+    }
+
     // todo: possibly implement this using dot product instead
     fn integrate_ref(&self, f: impl IntoIterator<Item=T>) -> T {
         let scale = T::from_f64(Self::SCALE_FACTOR).unwrap();

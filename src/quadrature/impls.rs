@@ -11,6 +11,11 @@ impl <T: RealField + Sum> RefQuadrature<T> for GaussLegendre {
             .map(|&xi| T::from_f64((xi + 1.0) / 2.0).unwrap())
     }
 
+    fn weights_ref(&self) -> impl Iterator<Item=T> {
+        self.weights()
+            .map(|&wi| T::from_f64(wi / 2.0).unwrap())
+    }
+
     fn integrate_ref(&self, f: impl IntoIterator<Item=T>) -> T {
         let scale = T::from_f64(0.5).unwrap();
         zip(f, self.weights())

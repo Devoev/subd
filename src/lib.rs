@@ -41,7 +41,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -501,15 +501,19 @@ mod tests {
     #[test]
     fn benchmark_vec_dot() {
         let num_eval = 100_000_000;
-        const N: usize = 5;
+        const N: usize = 20;
 
-        let f = DVector::<f64>::new_random(N);
+        let nodes = DVector::<f64>::new_random(N);
+        let f = |x: f64| x * 2.0;
         let quad = GaussLegendre::new(N).unwrap();
         let w = DVector::from_iterator(N, quad.weights().copied());
 
         // Vector dot vector
         let start = Instant::now();
         for _ in 0..num_eval {
+            // let f_it = nodes.iter().copied().map(f);
+            // let f = DVector::from_iterator(N, f_it);
+            let f = nodes.map(f);
             let _ = black_box(f.dot(&w));
         }
         let time_dot = start.elapsed();
@@ -517,7 +521,8 @@ mod tests {
         // Iter map
         let start = Instant::now();
         for _ in 0..num_eval {
-            let _ = black_box(zip(&f, &w).map(|(fi, wi)| fi * wi).sum::<f64>());
+            let f_it = nodes.iter().copied().map(f);
+            let _ = black_box(zip(f_it, &w).map(|(fi, wi)| fi * wi).sum::<f64>());
         }
         let time_iter = start.elapsed();
 
@@ -530,5 +535,11 @@ mod tests {
             "Took {:?} for {num_eval:e} vector-vector muls (iter map).",
             time_iter
         );
+
+        println!(
+            "dot product is {} % slower than using iterators",
+            (time_dot.as_secs_f64() - time_iter.as_secs_f64()) / time_iter.as_secs_f64()
+                * 100.0
+        )
     }
 }
