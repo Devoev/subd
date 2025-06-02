@@ -4,7 +4,7 @@ use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::vertex::VertexTopo;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{Const, DimNameSub, Point, RealField, SVector, U3};
+use nalgebra::{Const, DimNameSub, Point, Point1, RealField, SVector, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
@@ -97,8 +97,22 @@ impl <T: RealField + Copy, const D: usize> Chart<T, SVector<T, D>, D> for Lerp<T
     }
 }
 
+impl <T: RealField + Copy> Chart<T, T, 1> for Lerp<T, 1> {
+    fn eval(&self, x: T) -> Point<T, 1> {
+        Point1::new((T::one() - x) * self.a.x + x * self.b.x)
+    }
+}
+
 impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], Const<D>, D> for HyperRectangle<T, D> {
     type GeoMap = Lerp<T, D>;
+
+    fn geo_map(&self) -> Self::GeoMap {
+        Lerp::new(self.a, self.b)
+    }
+}
+
+impl <T: RealField + Copy> geo::Cell<T, T, U1, 1> for HyperRectangle<T, 1> {
+    type GeoMap = Lerp<T, 1>;
 
     fn geo_map(&self) -> Self::GeoMap {
         Lerp::new(self.a, self.b)
