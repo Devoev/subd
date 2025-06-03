@@ -9,30 +9,6 @@ pub trait MultiIndex<I, const D: usize>: Dimensioned<I, D> {
     fn into_lin(self, strides: &Strides<D>) -> I;
 }
 
-impl Dimensioned<usize, 1> for usize {
-    fn into_arr(self) -> [usize; 1] {
-        [self]
-    }
-}
-
-impl Dimensioned<usize, 2> for (usize, usize) {
-    fn into_arr(self) -> [usize; 2] {
-        [self.0, self.1]
-    }
-}
-
-impl Dimensioned<usize, 3> for (usize, usize, usize) {
-    fn into_arr(self) -> [usize; 3] {
-        [self.0, self.1, self.2]
-    }
-}
-
-impl<const D: usize> Dimensioned<usize, D> for [usize; D] {
-    fn into_arr(self) -> [usize; D] {
-        self
-    }
-}
-
 impl MultiIndex<usize, 1> for usize {
     fn into_lin(self, _: &Strides<1>) -> usize {
         self
@@ -41,21 +17,21 @@ impl MultiIndex<usize, 1> for usize {
 
 impl MultiIndex<usize, 2> for (usize, usize) {
     fn into_lin(self, strides: &Strides<2>) -> usize {
-        let strides = strides.into_arr();
+        let strides = strides.0;;
         self.0 * strides[0] + self.1 * strides[1]
     }
 }
 
 impl MultiIndex<usize, 3> for (usize, usize, usize) {
     fn into_lin(self, strides: &Strides<3>) -> usize {
-        let strides = strides.into_arr();
+        let strides = strides.0;
         self.0 * strides[0] + self.1 * strides[1] + self.2 * strides[2]
     }
 }
 
 impl<const D: usize> MultiIndex<usize, D> for [usize; D] {
     fn into_lin(self, strides: &Strides<D>) -> usize {
-        zip(self, strides.into_arr()).map(|(i, stride)| i * stride).sum()
+        zip(self, strides.0).map(|(i, stride)| i * stride).sum()
     }
 }
 
