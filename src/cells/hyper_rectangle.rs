@@ -4,7 +4,7 @@ use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::vertex::VertexTopo;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{Const, DimNameSub, Point, RealField, SVector, U1, U3};
+use nalgebra::{vector, Const, DimNameSub, Point, RealField, SVector, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
@@ -59,6 +59,13 @@ impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
     /// Returns the interval ranges `a[i]..=b[i]` for each parametric direction.
     pub fn ranges(&self) -> [RangeInclusive<T>; K] {
         zip(&self.a, &self.b).map(|(&a, &b)| a..=b).collect_array::<K>().unwrap()
+    }
+    
+    /// Returns the [Self::ranges] as 1D hyper rectangles.
+    pub fn intervals(&self) -> [HyperRectangle<T, 1>; K] {
+        zip(&self.a, &self.b).map(|(&a, &b)| {
+            HyperRectangle::new(vector![a], vector![b])
+        }).collect_array().unwrap()
     }
 }
 
