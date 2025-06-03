@@ -7,3 +7,4 @@ pub mod hyper_rectangle;
 pub mod bezier_elem;
 pub mod geo;
 pub mod chart;
+pub mod lerp;
