@@ -1,18 +1,11 @@
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::SVector;
 
 /// Types composed of [`D`] elements of type [`T`],
 /// i.e. a type isomorphic to the fixed-sized array `[T; D]`.
-pub trait Dimensioned<const D: usize, T> {
+pub trait Dimensioned<T, const D: usize> {
     /// Converts this type to an array of the underlying elements.
     fn into_arr(self) -> [T; D];
-}
-
-impl<const D: usize, T: Clone> Dimensioned<D, T> for SVector<T, D> {
-    fn into_arr(self) -> [T; D] {
-        self.data.0[0].clone()
-    }
 }
 
 /// Shape of a [`D`]-variate array.
@@ -26,7 +19,7 @@ impl<const D: usize> DimShape<D> {
     }
 
     /// Returns an iterator over multi indices of type `I` in range of this shape.
-    pub fn range<I: MultiIndex<D, usize> + From<[usize; D]>>(&self) -> impl Iterator<Item = I> {
+    pub fn range<I: MultiIndex<usize, D> + From<[usize; D]>>(&self) -> impl Iterator<Item = I> {
         let ranges = self.0.map(|n| 0..n);
         
         ranges.into_iter()
@@ -42,7 +35,7 @@ impl<const D: usize> DimShape<D> {
     }
 }
 
-impl<const D: usize> Dimensioned<D, usize> for DimShape<D> {
+impl<const D: usize> Dimensioned<usize, D> for DimShape<D> {
     fn into_arr(self) -> [usize; D] {
         self.0
     }
@@ -52,7 +45,7 @@ impl<const D: usize> Dimensioned<D, usize> for DimShape<D> {
 #[derive(Debug, Copy, Clone)]
 pub struct Strides<const D: usize>([usize; D]);
 
-impl<const D: usize> Dimensioned<D, usize> for Strides<D> {
+impl<const D: usize> Dimensioned<usize, D> for Strides<D> {
     fn into_arr(self) -> [usize; D] {
         self.0
     }
