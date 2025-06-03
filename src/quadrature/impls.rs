@@ -2,7 +2,7 @@ use std::iter::{zip, Sum};
 use gauss_quad::GaussLegendre;
 use nalgebra::RealField;
 use crate::cells::hyper_rectangle::HyperRectangle;
-use crate::quadrature::traits::{ElementQuadrature, RefQuadrature};
+use crate::quadrature::traits::{Quadrature, RefQuadrature};
 
 impl <T: RealField + Sum> RefQuadrature<T> for GaussLegendre {
     type Node = T;
@@ -25,6 +25,6 @@ impl <T: RealField + Sum> RefQuadrature<T> for GaussLegendre {
     }
 }
 
-impl <T: RealField + Copy + Sum> ElementQuadrature<T, 1> for GaussLegendre {
+impl <T: RealField + Copy + Sum> Quadrature<T, 1> for GaussLegendre {
     type Elem = HyperRectangle<T, 1>;
 }

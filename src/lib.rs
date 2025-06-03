@@ -50,7 +50,7 @@ mod tests {
     use std::time::Instant;
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
-    use crate::quadrature::traits::{ElementQuadrature, RefQuadrature};
+    use crate::quadrature::traits::{Quadrature, RefQuadrature};
 
     #[test]
     fn knots() {

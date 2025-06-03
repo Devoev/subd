@@ -1,9 +1,10 @@
-use crate::quadrature::traits::{ElementQuadrature, RefQuadrature};
+use crate::quadrature::traits::{Quadrature, RefQuadrature};
 use itertools::Itertools;
 use nalgebra::RealField;
 use std::iter::{Product, Sum};
 use std::marker::PhantomData;
 use gauss_quad::GaussLegendre;
+use crate::cells::bezier_elem::BezierElem;
 use crate::cells::hyper_rectangle::HyperRectangle;
 
 /// Quadrature rule on tensor-product domains.
@@ -51,9 +52,9 @@ impl<T: RealField + Copy + Sum, Q, const D: usize> RefQuadrature<T> for MultiPro
     }
 }
 
-impl <T: RealField + Copy + Sum, Q, const D: usize> ElementQuadrature<T, D> for MultiProd<T, Q, D>
+impl <T: RealField + Copy + Sum, Q, const D: usize> Quadrature<T, D> for MultiProd<T, Q, D>
     where T: RealField + Sum + Product + Clone,
-          Q: ElementQuadrature<T, 1, Node=T>
+          Q: Quadrature<T, 1, Node=T>
 {
     type Elem = HyperRectangle<T, D>;
 }

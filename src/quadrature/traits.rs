@@ -45,7 +45,7 @@ pub trait RefQuadrature<T: RealField + Sum> {
 //  then [0,1]. For example Gauss Quad uses [-1,1]. What to do about that?
 
 /// Quadrature rule on an element.
-pub trait ElementQuadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
+pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
     /// Element defining the integration domain.
     type Elem: Cell<T, Self::Node, Const<D>, D>;
 
