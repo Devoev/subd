@@ -237,6 +237,7 @@ mod tests {
 
         let elem = HyperRectangle::new(vector![0.2], vector![0.4]);
         println!("Quadrature nodes = {:?} in {:?}", quad.nodes_elem(&elem).collect_vec(), elem);
+        println!("Quadrature weights = {:?} in {:?}", quad.weights_elem(&elem).collect_vec(), elem);
     }
 
     #[test]

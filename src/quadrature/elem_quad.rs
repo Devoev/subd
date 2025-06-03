@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use nalgebra::{Const, Point, RealField};
 use crate::cells::chart::Chart;
 use crate::cells::geo::Cell;
-use crate::quadrature::traits::RefQuadrature;
+use crate::quadrature::traits::{Quadrature, RefQuadrature};
 
 // todo: this struct isn't yet used. Maybe replace the ElementQuadrature trait with this
 
@@ -39,4 +39,28 @@ impl<T, Q, E, const D: usize> ElemQuad<T, Q, E, D>
         self.ref_quad.integrate_ref(self.eval_fn_elem(elem, f))
         // todo: this is incorrect. Jacobian determinant needs to be computed as well for integration
     }
+}
+
+impl<T, Q, E, const D: usize> RefQuadrature<T> for ElemQuad<T, Q, E, D>
+    where T: RealField + Sum,
+          Q: RefQuadrature<T>,
+          E: Cell<T, Q::Node, Const<D>, D>
+{
+    type Node = Q::Node;
+
+    fn nodes_ref(&self) -> impl Iterator<Item=Self::Node> {
+        self.ref_quad.nodes_ref()
+    }
+
+    fn weights_ref(&self) -> impl Iterator<Item=T> {
+        self.ref_quad.weights_ref()
+    }
+}
+
+impl <T, Q, E, const D: usize> Quadrature<T, D> for ElemQuad<T, Q, E, D>
+    where T: RealField + Sum,
+          Q: RefQuadrature<T>,
+          E: Cell<T, Q::Node, Const<D>, D>
+{
+    type Elem = E;
 }

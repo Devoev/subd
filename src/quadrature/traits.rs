@@ -54,6 +54,21 @@ pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
         let geo_map = elem.geo_map();
         self.nodes_ref().map(move |n| geo_map.eval(n))
     }
+    
+    /// Returns an iterator over all quadrature weights in the given `elem`.
+    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = T> {
+        // todo: multiply by Jacobian of geo_map!
+        self.weights_ref()
+    }
+
+    /// Numerically integrates a function `f` on the given `elem`.
+    /// The values of the function evaluated at the [quadrature nodes][`Self::nodes_elem`]
+    /// are given as `f[i] = f(x[i])`.
+    fn integrate_elem(&self, elem: &Self::Elem, f: impl IntoIterator<Item = T>) -> T {
+        zip(self.weights_elem(elem), f)
+            .map(|(w, f)| w * f)
+            .sum::<T>()
+    }
 
     /// Evaluates the function `f` on every [quadrature node][Self::nodes_elem]
     /// of the given `elem`.
@@ -65,7 +80,6 @@ pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
     /// by evaluating the function at every quadrature point using [`Self::eval_fn_elem`].
     /// The actual quadrature is then performed using [Self::integrate_ref].
     fn integrate_fn_elem(&self, elem: &Self::Elem, f: impl Fn(Point<T, D>) -> T) -> T {
-        self.integrate_ref(self.eval_fn_elem(elem, f)) 
-        // todo: this is incorrect. Jacobian determinant needs to be computed as well for integration
+        self.integrate_elem(elem, self.eval_fn_elem(elem, f))
     }
 }
