@@ -1,6 +1,7 @@
+use crate::knots::breaks::Breaks;
+use crate::knots::knot_vec::KnotVec;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use crate::knots::knot_vec::KnotVec;
 
 /// An error returned when a parametric value is outside the range of a [`KnotVec`].
 #[derive(Debug)]
@@ -26,3 +27,22 @@ impl Display for UnsortedKnotsError {
 }
 
 impl Error for UnsortedKnotsError {}
+
+/// An error returned when constructing [`Breaks`] from a `Vec`.
+#[derive(Debug)]
+pub enum FromVecError {
+    /// The breakpoints are not sorted.
+    UnsortedBreaks,
+
+    /// The breakpoints are not unique.
+    DuplicateBreaks
+}
+
+impl Display for FromVecError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FromVecError::UnsortedBreaks => write!(f, "provided breakpoints are knot sorted"),
+            FromVecError::DuplicateBreaks => write!(f, "provided breakpoints are not unique"),
+        }
+    }
+}

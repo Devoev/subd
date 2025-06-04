@@ -8,12 +8,11 @@ use std::slice::Iter;
 use std::vec;
 use crate::knots::error::UnsortedKnotsError;
 
-/// A vector of increasing knot values of type [`T`], backed by a [`Vec<T>`].
+/// A vector of increasing *knot values* of type [`T`].
 #[derive(Debug, Clone)]
 pub struct KnotVec<T>(pub Vec<T>);
 
 impl<T: RealField + Copy> KnotVec<T> {
-
     /// Constructs a new [`KnotVec<T>`] from the given `knots`.
     ///
     /// # Errors
@@ -21,8 +20,8 @@ impl<T: RealField + Copy> KnotVec<T> {
     ///
     /// # Examples
     /// ```
-    /// use subd::knots::error::UnsortedKnotsError;
-    /// use subd::knots::knot_vec::KnotVec;
+    /// # use subd::knots::error::UnsortedKnotsError;
+    /// # use subd::knots::knot_vec::KnotVec;
     ///
     /// let knots_sorted = vec![0.0, 0.0, 0.5, 1.0, 1.0];
     /// assert!(KnotVec::new(knots_sorted).is_ok());
