@@ -4,7 +4,7 @@ use itertools::{izip, Itertools};
 use nalgebra::{vector, Const, Dyn, OMatrix, RealField, RowDVector};
 use std::iter::zip;
 use std::marker::PhantomData;
-use crate::basis::local::GlobalToLocalBasis;
+use crate::basis::local::LocalBasis;
 use crate::basis::traits::{Basis, NumBasis};
 use crate::cells::hyper_rectangle::HyperRectangle;
 
@@ -69,24 +69,24 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
     }
 }
 
-impl<T: RealField + Copy, B: GlobalToLocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> GlobalToLocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
+impl<T: RealField + Copy, B: LocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
     where B::GlobalIndices: Clone,
 {
     type Elem = HyperRectangle<T, D>;
-    type LocalBasis = MultiProd<T, B::LocalBasis, D>;
+    type ElemBasis = MultiProd<T, B::ElemBasis, D>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
     // todo: update this implementation by making HyperRectangle actually a MultiProd<Interval>
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
+    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         let bases = izip!(&self.bases, &elem.a, &elem.b)
             .map(|(b, &ai, &bi)| {
                 let interval = HyperRectangle::new(vector![ai], vector![bi]);
-                b.local_basis(&interval)
+                b.elem_basis(&interval)
             }).collect_array().unwrap();
         MultiProd::new(bases)
     }
 
-    fn global_indices(&self, local_basis: &Self::LocalBasis) -> Self::GlobalIndices {
+    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
         let strides = self.strides();
         zip(&self.bases, &local_basis.bases)
             .map(|(b, b_local)| b.global_indices(b_local))

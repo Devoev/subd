@@ -1,5 +1,5 @@
 use std::ops::RangeInclusive;
-use crate::basis::local::GlobalToLocalBasis;
+use crate::basis::local::LocalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::bspline::local_basis::BsplineBasisLocal;
 use crate::cells::hyper_rectangle::HyperRectangle;
@@ -50,17 +50,17 @@ impl<T: RealField + Copy> NumBasis for BsplineBasis<T> {
     }
 }
 
-impl <T: RealField + Copy> GlobalToLocalBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
-    type LocalBasis = BsplineBasisLocal<T>;
+    type ElemBasis = BsplineBasisLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;
     
-    fn local_basis(&self, elem: &Self::Elem) -> Self::LocalBasis {
+    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         let span = self.find_span_by_elem(elem).unwrap();
         BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
     }
 
-    fn global_indices(&self, local_basis: &Self::LocalBasis) -> Self::GlobalIndices {
+    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
         local_basis.span.nonzero_indices(self.degree)
     }
 }

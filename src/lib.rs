@@ -14,7 +14,7 @@ pub mod subd;
 
 #[cfg(test)]
 mod tests {
-    use crate::basis::local::GlobalToLocalBasis;
+    use crate::basis::local::LocalBasis;
     use crate::basis::traits::NumBasis;
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
