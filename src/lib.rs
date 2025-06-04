@@ -49,6 +49,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::cells::hyper_rectangle::HyperRectangle;
+    use crate::quadrature::bezier::BezierQuad;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::{Quadrature, RefQuadrature};
 
@@ -264,8 +265,12 @@ mod tests {
 
         let basis = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
         let geo_space = SplineSpace::new(basis);
-        let c =
-            OMatrix::<f64, U2, Dyn>::from_column_slice(&[0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0]);
+        let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[
+            0.0, 0.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            1.0, 1.0]
+        );
         let geo_map = SplineGeo::new(c, &geo_space);
 
         let breaks = knots.breaks().copied().collect_vec();
@@ -274,7 +279,8 @@ mod tests {
         let space = global_basis::BsplineBasis::new(knots, n, p);
         let space = MultiBsplineBasis::new([space.clone(), space]);
 
-        let quad = TensorProdGaussLegendre::new(5).unwrap();
+        let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
+        let quad = BezierQuad::new(ref_quad);
         let mat = assemble_hodge(&msh, &space, quad);
 
         // Print
