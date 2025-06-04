@@ -58,6 +58,18 @@ impl<T: RealField + Copy> Breaks<T> {
     }
 }
 
+impl<T> Breaks<T> {
+    /// Returns the number of breakpoints.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns `true` if the breakpoint vector is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
 impl <T : RealField> Index<usize> for Breaks<T> {
     type Output = T;
 

@@ -49,6 +49,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::cells::hyper_rectangle::HyperRectangle;
+    use crate::knots::breaks::Breaks;
     use crate::quadrature::bezier::BezierQuad;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::{Quadrature, RefQuadrature};
@@ -211,7 +212,8 @@ mod tests {
         let basis = DeBoor::new(knots.clone(), 7, 3).unwrap();
         // let quad = GaussLegendre::new(5).unwrap();
 
-        let ref_mesh = CartMesh::from_breaks([knots.breaks_iter().copied().collect_vec()]);
+        let breaks = Breaks::from_knots(knots.clone());
+        let ref_mesh = CartMesh::from_breaks([breaks]);
 
         for (elem, topo) in zip(ref_mesh.elems(), ref_mesh.topology.elems()) {
             let span = basis.find_span(elem.a.x).unwrap();
@@ -249,7 +251,8 @@ mod tests {
 
     #[test]
     fn cart_mesh() {
-        let msh = CartMesh::from_breaks([vec![0.0, 1.0, 2.0, 3.0], vec![0.0, 1.0, 2.0, 3.0]]);
+        let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
+        let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
 
         for elem in msh.elems() {
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
@@ -273,7 +276,7 @@ mod tests {
         );
         let geo_map = SplineGeo::new(c, &geo_space);
 
-        let breaks = knots.breaks_iter().copied().collect_vec();
+        let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let space = global_basis::BsplineBasis::new(knots, n, p);
