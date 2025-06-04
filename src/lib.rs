@@ -11,6 +11,7 @@ pub mod mesh;
 pub mod operator;
 pub mod quadrature;
 pub mod subd;
+mod maps;
 
 #[cfg(test)]
 mod tests {
