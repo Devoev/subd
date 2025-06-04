@@ -34,7 +34,7 @@ impl<T: RealField + Copy> Breaks<T> {
     pub fn new(mut breaks: Vec<T>) -> Result<Self, FromVecError> {
         if !breaks.is_sorted() { return Err(FromVecError::UnsortedBreaks) };
         let num_breaks = breaks.len();
-        breaks.dedup();
+        breaks.dedup(); // todo: replace this with a function that just checks for the first duplicate
         if num_breaks != breaks.len() { return Err(FromVecError::DuplicateBreaks) };
         Ok(Breaks(breaks))
     }
