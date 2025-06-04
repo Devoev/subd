@@ -22,7 +22,7 @@ pub type GaussLegendreMulti<T, const D: usize> = MultiProd<T, GaussLegendre, D>;
 //  maybe include scale factor in weights and add weights function in trait
 
 impl<T, Q, const D: usize> MultiProd<T, Q, D>
-    where T: RealField + Sum + Product + Clone,
+    where T: RealField + Sum,
           Q: RefQuadrature<T, Node=T>
 {
     /// Constructs a new [`MultiProd`] from the given `D` quadrature rules per parametric direction.
@@ -30,6 +30,15 @@ impl<T, Q, const D: usize> MultiProd<T, Q, D>
         MultiProd { quads, _phantom: PhantomData }
     }
 }
+
+impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
+    /// Constructs a new [`GaussLegendreMulti`] with the given `degrees` per parametric direction.
+    pub fn with_degrees(degrees: [usize; D]) -> Self {
+        GaussLegendreMulti::new(degrees.map(|degree| GaussLegendre::new(degree).unwrap()))
+    }
+}
+
+
 // todo: make this generic over Q again
 
 impl<T, const D: usize> RefQuadrature<T> for MultiProd<T, GaussLegendre, D>
