@@ -57,7 +57,7 @@ mod tests {
     fn knots() {
         let xi1 = DeBoor::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
         let xi2 = DeBoor::<f64>::open_uniform(6, 2);
-        let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity().unzip();
+        let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity_iter().unzip();
         let xi3 = DeBoorMulti::new([xi1.clone(), xi2.clone()]);
         let xi4 = DeBoorMulti::<f64, 2>::open_uniform([5, 3], [1, 2]);
 
@@ -211,7 +211,7 @@ mod tests {
         let basis = DeBoor::new(knots.clone(), 7, 3).unwrap();
         // let quad = GaussLegendre::new(5).unwrap();
 
-        let ref_mesh = CartMesh::from_breaks([knots.breaks().copied().collect_vec()]);
+        let ref_mesh = CartMesh::from_breaks([knots.breaks_iter().copied().collect_vec()]);
 
         for (elem, topo) in zip(ref_mesh.elems(), ref_mesh.topology.elems()) {
             let span = basis.find_span(elem.a.x).unwrap();
@@ -273,7 +273,7 @@ mod tests {
         );
         let geo_map = SplineGeo::new(c, &geo_space);
 
-        let breaks = knots.breaks().copied().collect_vec();
+        let breaks = knots.breaks_iter().copied().collect_vec();
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let space = global_basis::BsplineBasis::new(knots, n, p);

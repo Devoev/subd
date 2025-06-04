@@ -1,6 +1,11 @@
 use crate::knots::error::FromVecError;
-use nalgebra::RealField;
 use crate::knots::knot_vec::KnotVec;
+use core::fmt;
+use nalgebra::RealField;
+use std::fmt::{Display, Formatter};
+use std::ops::Index;
+use std::slice::Iter;
+use std::vec;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`]
 #[derive(Clone, Debug)]
@@ -26,16 +31,16 @@ impl<T: RealField + Copy> Breaks<T> {
     /// let breaks_duplicate = vec![0.0, 0.0, 0.5, 1.0, 1.0];
     /// assert_eq!(Breaks::new(breaks_duplicate), Err(FromVecError::DuplicateBreaks));
     /// ```
-    pub fn new(mut breaks: Vec<T>) -> Result<Breaks<T>, FromVecError> {
+    pub fn new(mut breaks: Vec<T>) -> Result<Self, FromVecError> {
         if !breaks.is_sorted() { return Err(FromVecError::UnsortedBreaks) };
         let num_breaks = breaks.len();
         breaks.dedup();
         if num_breaks != breaks.len() { return Err(FromVecError::DuplicateBreaks) };
         Ok(Breaks(breaks))
     }
-    
+
     /// Constructs new [`Breaks<T>`] from the given `knots` by removing duplicate knot values.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// # use subd::knots::breaks::Breaks;
@@ -43,12 +48,44 @@ impl<T: RealField + Copy> Breaks<T> {
     ///
     /// let knots = KnotVec::new(vec![0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0]).unwrap();
     /// let breaks = Breaks::from_knots(knots);
-    /// 
+    ///
     /// assert_eq!(breaks.0, vec![0.0, 0.25, 0.5, 0.75, 1.0]);
     /// ```
-    pub fn from_knots(knots: KnotVec<T>) -> Breaks<T> {
+    pub fn from_knots(knots: KnotVec<T>) -> Self {
         let mut breaks = knots.0;
         breaks.dedup();
         Breaks(breaks)
+    }
+}
+
+impl <T : RealField> Index<usize> for Breaks<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl <T : RealField + Copy> IntoIterator for Breaks<T> {
+    type Item = T;
+    type IntoIter = vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl <'a, T : RealField + Copy> IntoIterator for &'a Breaks<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<T : RealField> Display for Breaks<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
     }
 }

@@ -35,14 +35,14 @@ impl<T: RealField + Copy> KnotVec<T> {
             false => Err(UnsortedKnotsError),
         }
     }
-    
+
     /// Constructs a new [`KnotVec<T>`] assuming that the given `knots` are sorted.
     pub fn from_sorted(knots: Vec<T>) -> Self {
         KnotVec(knots)
     }
-    
+
     /// Constructs a new [`KnotVec<T>`] by sorting the given `knots`.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// # use subd::knots::knot_vec::KnotVec;
@@ -85,35 +85,31 @@ impl<T: RealField + Copy> KnotVec<T> {
 }
 
 /// An iterator that yields the breakpoints of a [`KnotVec`].
-pub type Breaks<'a, T> = Dedup<Iter<'a, T>>;
+pub type BreaksIter<'a, T> = Dedup<Iter<'a, T>>;
 
 /// An iterator that yields the breakpoints with multiplicity of a [`KnotVec`].
-pub type BreaksWithMultiplicity<'a, T> = DedupWithCount<Iter<'a, T>>;
+pub type BreaksWithMultiplicityIter<'a, T> = DedupWithCount<Iter<'a, T>>;
 
 impl<T : RealField + Copy> KnotVec<T> {
-
     /// Returns the number of knots.
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Returns `true` if the knot vector is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// Returns an iterator over the breaks, i.e. unique knot values.
-    pub fn breaks(&self) -> Breaks<T> {
+    pub fn breaks_iter(&self) -> BreaksIter<T> {
         self.0.iter().dedup()
     }
 
     /// Returns an iterator over (multiplicity, break) pairs.
-    pub fn breaks_with_multiplicity(&self) -> BreaksWithMultiplicity<T> {
+    pub fn breaks_with_multiplicity_iter(&self) -> BreaksWithMultiplicityIter<T> {
         self.0.iter().dedup_with_count()
     }
-
-    // /// Returns the global mesh size, i.e. `h = max{ h_Q }`.
-    // pub fn mesh_size(&self) -> T {
-    //     self.elems()
-    //         .map(|q| q.elem_size())
-    //         .max_by(|a, b| a.partial_cmp(b).unwrap())
-    //         .unwrap()
-    // }
 }
 
 impl <T : RealField> Index<usize> for KnotVec<T> {
