@@ -8,6 +8,7 @@ use std::iter::{empty, zip, Product, Sum};
 use std::marker::PhantomData;
 
 /// Quadrature rule for a [`BezierElem`].
+#[derive(Clone, Debug)]
 pub struct BezierQuad<'a, T, const D: usize> {
     /// Gauss-Legendre quadrature rule on the reference domain.
     ref_quad: GaussLegendreMulti<T, D>,
@@ -50,7 +51,7 @@ impl <'a, T, const D: usize> Quadrature<T, D> for BezierQuad<'a, T, D>
 
     fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
         let d_phi = Jacobian { geo_map: elem.geo_map };
-        zip(self.ref_quad.weights_elem(&elem.ref_elem), self.nodes_elem(elem))
+        zip(self.ref_quad.weights_elem(&elem.ref_elem), self.ref_quad.nodes_elem(&elem.ref_elem))
             .map(move |(wi, xi)| {
                 let d_phi_xi = d_phi.eval(xi.into_arr());
                 wi * d_phi_xi.determinant().abs()

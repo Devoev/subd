@@ -1,21 +1,23 @@
 use crate::basis::local::GlobalToLocalBasis;
 use crate::basis::traits::Basis;
 use crate::cells::bezier_elem::BezierElem;
+use crate::cells::geo::Cell;
 use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::index::dimensioned::Dimensioned;
 use crate::mesh::bezier::BezierMesh;
-use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
+use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::{DMatrix, RealField, RowDVector};
+use nalgebra::{Const, DMatrix, RealField, RowDVector};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
 // todo: this function is only a temporary implementation.
 //  make this generic over the space and mesh type!
 
 /// Assembles the discrete hodge operator (mass matrix).
-pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
-    msh: &BezierMesh<T, D, D>,
+pub fn assemble_hodge<'a, T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
+    msh: &'a BezierMesh<'a, T, D, D>,
     space: &impl GlobalToLocalBasis<T, [T; D], 1, Elem = HyperRectangle<T, D>>,
-    quad: TensorProdGaussLegendre<T>
+    quad: impl Quadrature<T, D, Elem=BezierElem<'a, T, D, D>>,
 ) -> CooMatrix<T> {
     let mut mij = CooMatrix::<T>::zeros(space.num_basis(), space.num_basis());
 
@@ -32,17 +34,18 @@ pub fn assemble_hodge<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>
 }
 
 /// Assembles the local discrete Hodge operator.
-pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
-    elem: &BezierElem<T, D, D>,
+pub fn assemble_hodge_local<T, X, E, const D: usize>(
+    elem: &E,
     sp_local: &impl Basis<T, [T; D], 1>,
-    quad: &TensorProdGaussLegendre<T>
-) -> DMatrix<T> {
+    quad: &impl Quadrature<T, D, Elem=E>,
+) -> DMatrix<T> 
+    where T: RealField + Copy + Product<T> + Sum<T>, 
+          E: Cell<T, X, Const<D>, D>
+{
     // Evaluate basis at each quadrature point and store in buffer
-    let nodes = quad.nodes(elem.ref_elem);
-    let buf: Vec<RowDVector<T>> = nodes.map(|n| sp_local.eval(n)).collect();
+    let nodes = quad.nodes_elem(elem);
+    let buf: Vec<RowDVector<T>> = nodes.map(|p| sp_local.eval(p.into_arr())).collect();
 
-    // todo: multiply jacobian determinant or implement this in the quadrature directly
-    
     // Calculate pullback of product uv
     let uv_pullback = |b: &RowDVector<T>, i: usize, j: usize| {
         // Eval basis
@@ -58,7 +61,7 @@ pub fn assemble_hodge_local<T: RealField + Copy + Product<T> + Sum<T>, const D: 
     let mij = (0..num_basis).cartesian_product(0..num_basis)
         .map(|(i, j)| {
             let integrand = buf.iter().map(|b| uv_pullback(b, i, j));
-            quad.integrate::<D>(integrand)
+            quad.integrate_elem(elem, integrand)
         });
     
     // Assemble matrix

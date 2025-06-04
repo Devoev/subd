@@ -8,6 +8,7 @@ use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
 
 /// Quadrature rule on tensor-product domains.
+#[derive(Clone, Copy, Debug)]
 pub struct MultiProd<T, Q, const D: usize> {
     /// Quadrature rules for each parametric direction.
     quads: [Q; D],
