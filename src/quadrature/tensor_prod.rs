@@ -32,8 +32,8 @@ impl<T, Q, const D: usize> MultiProd<T, Q, D>
 }
 // todo: make this generic over Q again
 
-impl<T: RealField + Copy + Sum, const D: usize> RefQuadrature<T> for MultiProd<T, GaussLegendre, D>
-    where T: RealField + Sum + Product + Clone,
+impl<T, const D: usize> RefQuadrature<T> for MultiProd<T, GaussLegendre, D>
+    where T: RealField + Sum + Product + Copy,
 {
     type Node = [T; D];
 
@@ -52,8 +52,8 @@ impl<T: RealField + Copy + Sum, const D: usize> RefQuadrature<T> for MultiProd<T
     }
 }
 
-impl <T: RealField + Copy + Sum, const D: usize> Quadrature<T, D> for MultiProd<T, GaussLegendre, D>
-    where T: RealField + Sum + Product + Clone,
+impl <T, const D: usize> Quadrature<T, D> for MultiProd<T, GaussLegendre, D>
+    where T: RealField + Sum + Product + Copy,
 {
     type Elem = HyperRectangle<T, D>;
 
