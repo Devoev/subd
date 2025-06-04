@@ -23,6 +23,24 @@ impl<T, const D: usize> Lerp<T, D> {
     }
 }
 
+// todo: possibly move above methods to generalized Lerp or something else
+impl <T: RealField + Copy, const D: usize> Lerp<T, D> {
+    /// Linearly transforms an arbitrary hyper rectangle `ref_elem` to `[a, b]`.
+    pub fn transform(&self, ref_elem: HyperRectangle<T, D>, x: SVector<T, D>) -> Point<T, D> {
+        let s = ref_elem.a; // Start
+        let e = ref_elem.b; // End
+        let p = self.a + (self.b - self.a).component_mul(&(x - s)).component_div(&(e - s));
+        Point::from(p)
+    }
+
+    /// Linearly transforms the symmetric normalized hypercube `[-1,1]^D` to `[a,b]`.
+    pub fn transform_normalized(&self, x: SVector<T, D>) -> Point<T, D> {
+        let ones = SVector::repeat(T::one());
+        let p = self.a + (self.b - self.a).component_mul(&(x + ones)) / T::from_usize(2).unwrap();
+        Point::from(p)
+    }
+}
+
 impl <T: RealField + Copy, const D: usize> Chart<T, [T; D], D> for Lerp<T, D> {
     fn eval(&self, x: [T; D]) -> Point<T, D> {
         self.eval(SVector::from(x))

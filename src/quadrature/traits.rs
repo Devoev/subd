@@ -1,9 +1,19 @@
 use std::iter::{zip, Sum};
+use std::ops::Mul;
 use crate::cells::chart::Chart;
 use crate::cells::geo::Cell;
 use nalgebra::{Const, Point, RealField};
 
 // todo: possibly add RefCell and parametrize RefQuadrature?
+
+/// Performs the numerical integration by evaluating the sum
+/// ```text
+/// I = ∑ w[i] f(x[i])
+/// ```
+/// where the weights `w` and the evaluated function `f` at the quadrature nodes are given.
+fn integrate_with_weights<T: Mul<Output=T> + Sum>(w: impl IntoIterator<Item = T>, f: impl IntoIterator<Item = T>) -> T {
+    zip(w, f).map(|(w, f)| w * f).sum::<T>()
+}
 
 /// Quadrature rule on a reference domain. In 1D usually `[0,1]`.
 pub trait RefQuadrature<T: RealField + Sum> {
@@ -22,9 +32,7 @@ pub trait RefQuadrature<T: RealField + Sum> {
     /// The values of the function evaluated at the [quadrature nodes][`Self::nodes`]
     /// are given as `f[i] = f(x[i])`.
     fn integrate_ref(&self, f: impl IntoIterator<Item = T>) -> T {
-        zip(self.weights_ref(), f)
-            .map(|(w, f)| w * f)
-            .sum::<T>()
+        integrate_with_weights(self.weights_ref(), f)
     }
 
     /// Evaluates the function `f` on every [quadrature node][Self::nodes] in the reference domain.
@@ -50,24 +58,16 @@ pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
     type Elem: Cell<T, Self::Node, Const<D>, D>;
 
     /// Returns an iterator over all quadrature nodes in the given `elem`.
-    fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = Point<T, D>> {
-        let geo_map = elem.geo_map();
-        self.nodes_ref().map(move |n| geo_map.eval(n))
-    }
+    fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = Point<T, D>>;
     
     /// Returns an iterator over all quadrature weights in the given `elem`.
-    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = T> {
-        // todo: multiply by Jacobian of geo_map!
-        self.weights_ref()
-    }
+    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = T>;
 
     /// Numerically integrates a function `f` on the given `elem`.
     /// The values of the function evaluated at the [quadrature nodes][`Self::nodes_elem`]
     /// are given as `f[i] = f(x[i])`.
     fn integrate_elem(&self, elem: &Self::Elem, f: impl IntoIterator<Item = T>) -> T {
-        zip(self.weights_elem(elem), f)
-            .map(|(w, f)| w * f)
-            .sum::<T>()
+        integrate_with_weights(self.weights_elem(elem), f)
     }
 
     /// Evaluates the function `f` on every [quadrature node][Self::nodes_elem]

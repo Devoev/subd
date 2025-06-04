@@ -229,15 +229,15 @@ mod tests {
 
     #[test]
     fn quadrature() {
-        let quad = GaussLegendre::new(5).unwrap();
-        let quad = GaussLegendreMulti::<f64, 1>::new([quad.clone()]);
+        let quad_1d = GaussLegendre::new(2).unwrap();
+        let quad_multi = GaussLegendreMulti::<f64, 2>::new([quad_1d.clone(), quad_1d.clone()]);
 
-        println!("Quadrature nodes = {:?} (in [0,1]]", quad.nodes_ref().collect_vec());
-        println!("Quadrature weights = {:?} (in [0,1])", quad.weights_ref().collect_vec());
+        println!("Quadrature nodes = {:?} (in [-1,1]]", quad_multi.nodes_ref().collect_vec());
+        println!("Quadrature weights = {:?} (in [-1,1])", quad_multi.weights_ref().collect_vec());
 
-        let elem = HyperRectangle::new(vector![0.2], vector![0.4]);
-        println!("Quadrature nodes = {:?} in {:?}", quad.nodes_elem(&elem).collect_vec(), elem);
-        println!("Quadrature weights = {:?} in {:?}", quad.weights_elem(&elem).collect_vec(), elem);
+        let elem = HyperRectangle::new(vector![0.2, 0.2], vector![0.4, 0.4]);
+        println!("Quadrature nodes = {:?} in {:?}", quad_multi.nodes_elem(&elem).collect_vec(), elem);
+        println!("Quadrature weights = {:?} in {:?}", quad_multi.weights_elem(&elem).collect_vec(), elem);
     }
 
     #[test]

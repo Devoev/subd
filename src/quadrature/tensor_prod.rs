@@ -1,11 +1,11 @@
-use crate::quadrature::traits::{Quadrature, RefQuadrature};
-use itertools::Itertools;
-use nalgebra::RealField;
-use std::iter::{Product, Sum};
-use std::marker::PhantomData;
-use gauss_quad::GaussLegendre;
-use crate::cells::bezier_elem::BezierElem;
+use crate::cells::geo::Cell;
 use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::quadrature::traits::{Quadrature, RefQuadrature};
+use gauss_quad::GaussLegendre;
+use itertools::Itertools;
+use nalgebra::{Point, RealField, Vector};
+use std::iter::{zip, Product, Sum};
+use std::marker::PhantomData;
 
 /// Quadrature rule on tensor-product domains.
 pub struct MultiProd<T, Q, const D: usize> {
@@ -30,10 +30,10 @@ impl<T, Q, const D: usize> MultiProd<T, Q, D>
         MultiProd { quads, _phantom: PhantomData }
     }
 }
+// todo: make this generic over Q again
 
-impl<T: RealField + Copy + Sum, Q, const D: usize> RefQuadrature<T> for MultiProd<T, Q, D>
+impl<T: RealField + Copy + Sum, const D: usize> RefQuadrature<T> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Clone,
-          Q: RefQuadrature<T, Node=T>
 {
     type Node = [T; D];
 
@@ -52,9 +52,21 @@ impl<T: RealField + Copy + Sum, Q, const D: usize> RefQuadrature<T> for MultiPro
     }
 }
 
-impl <T: RealField + Copy + Sum, Q, const D: usize> Quadrature<T, D> for MultiProd<T, Q, D>
+impl <T: RealField + Copy + Sum, const D: usize> Quadrature<T, D> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Clone,
-          Q: Quadrature<T, 1, Node=T>
 {
     type Elem = HyperRectangle<T, D>;
+
+    fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=Point<T, D>> {
+        let lerp = elem.geo_map();
+        self.nodes_ref()
+            .map(move |xi| lerp.transform_normalized(Vector::from(xi)))
+    }
+
+    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
+        zip(&self.quads, elem.intervals())
+            .map(|(quad, interval)| quad.weights_elem(&interval).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.into_iter().product())
+    }
 }
