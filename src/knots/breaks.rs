@@ -1,5 +1,6 @@
 use crate::knots::error::FromVecError;
 use nalgebra::RealField;
+use crate::knots::knot_vec::KnotVec;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`]
 #[derive(Clone, Debug)]
@@ -31,5 +32,23 @@ impl<T: RealField + Copy> Breaks<T> {
         breaks.dedup();
         if num_breaks != breaks.len() { return Err(FromVecError::DuplicateBreaks) };
         Ok(Breaks(breaks))
+    }
+    
+    /// Constructs new [`Breaks<T>`] from the given `knots` by removing duplicate knot values.
+    /// 
+    /// # Examples
+    /// ```
+    /// # use subd::knots::breaks::Breaks;
+    /// # use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let knots = KnotVec::new(vec![0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0]).unwrap();
+    /// let breaks = Breaks::from_knots(knots);
+    /// 
+    /// assert_eq!(breaks.0, vec![0.0, 0.25, 0.5, 0.75, 1.0]);
+    /// ```
+    pub fn from_knots(knots: KnotVec<T>) -> Breaks<T> {
+        let mut breaks = knots.0;
+        breaks.dedup();
+        Breaks(breaks)
     }
 }

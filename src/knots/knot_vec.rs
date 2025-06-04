@@ -35,6 +35,25 @@ impl<T: RealField + Copy> KnotVec<T> {
             false => Err(UnsortedKnotsError),
         }
     }
+    
+    /// Constructs a new [`KnotVec<T>`] assuming that the given `knots` are sorted.
+    pub fn from_sorted(knots: Vec<T>) -> Self {
+        KnotVec(knots)
+    }
+    
+    /// Constructs a new [`KnotVec<T>`] by sorting the given `knots`.
+    /// 
+    /// # Examples
+    /// ```
+    /// # use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let knots_unsorted = KnotVec::from_unsorted(vec![0.0, 1.0, 0.5, 1.0, 0.0]);
+    /// assert_eq!(knots_unsorted.0, vec![0.0, 0.0, 0.5, 1.0, 1.0]);
+    /// ```
+    pub fn from_unsorted(mut knots: Vec<T>) -> Self {
+        knots.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        KnotVec(knots)
+    }
 
     /// Constructs a uniform [`KnotVec<T>`] from `0` to `1` with `num` knots.
     ///
