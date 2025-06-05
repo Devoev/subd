@@ -69,7 +69,7 @@ impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], Const<D>, D> for HyperRectangle<T, D> {
+impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for HyperRectangle<T, D> {
     type GeoMap = Lerp<T, D>;
 
     fn geo_map(&self) -> Self::GeoMap {
@@ -77,7 +77,7 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], Const<D>, D> for
     }
 }
 
-impl <T: RealField + Copy> geo::Cell<T, T, U1, 1> for HyperRectangle<T, 1> {
+impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for HyperRectangle<T, 1> {
     type GeoMap = Lerp<T, 1>;
 
     fn geo_map(&self) -> Self::GeoMap {

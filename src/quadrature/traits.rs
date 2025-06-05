@@ -1,9 +1,8 @@
+use crate::cells::geo::Cell;
+use nalgebra::{Point, RealField};
 use std::iter::{zip, Sum};
 use std::ops::Mul;
-use crate::cells::chart::Chart;
-use crate::cells::geo::Cell;
-use nalgebra::{Const, Point, RealField};
-
+use crate::index::dimensioned::Dimensioned;
 // todo: possibly add RefCell and parametrize RefQuadrature?
 
 /// Performs the numerical integration by evaluating the sum
@@ -53,9 +52,11 @@ pub trait RefQuadrature<T: RealField + Sum> {
 //  then [0,1]. For example Gauss Quad uses [-1,1]. What to do about that?
 
 /// Quadrature rule on an element.
-pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> {
+pub trait Quadrature<T: RealField + Sum, const D: usize>: RefQuadrature<T> 
+    where Self::Node: Dimensioned<T, D>
+{
     /// Element defining the integration domain.
-    type Elem: Cell<T, Self::Node, Const<D>, D>;
+    type Elem: Cell<T, Self::Node, D, D>;
 
     /// Returns an iterator over all quadrature nodes in the given `elem`.
     fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item = Point<T, D>>;

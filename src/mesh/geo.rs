@@ -1,8 +1,9 @@
 use nalgebra::{Const, RealField};
 use crate::cells::geo;
+use crate::index::dimensioned::Dimensioned;
 
 /// Mesh consisting of cells of type [`C`], also called *elements*.
-pub trait Mesh<'a, T: RealField, X, const K: usize, const M: usize, C: geo::Cell<T, X, Const<K>, M>> {
+pub trait Mesh<'a, T: RealField, X: Dimensioned<T, K>, const K: usize, const M: usize, C: geo::Cell<T, X, K, M>> {
     /// Element iterator.
     type Elems: Iterator<Item = C>;
 

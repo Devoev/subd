@@ -1,6 +1,6 @@
-use nalgebra::{Point, Point1, RealField, SVector};
-use crate::cells::chart::Chart;
 use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::diffgeo::chart::Chart;
+use nalgebra::{Matrix, Point, Point1, RealField, SMatrix, SVector};
 
 /// **L**inear int**erp**olation (Lerp) in [`D`] dimensions.
 /// Transforms the unit hypercube `[0,1]^D` to a [`HyperRectangle`] by the component-wise mapping
@@ -23,7 +23,7 @@ impl<T, const D: usize> Lerp<T, D> {
     }
 }
 
-// todo: possibly move above methods to generalized Lerp or something else
+// todo: possibly move below transform methods to generalized Lerp or something else
 impl <T: RealField + Copy, const D: usize> Lerp<T, D> {
     /// Linearly transforms an arbitrary hyper rectangle `ref_elem` to `[a, b]`.
     pub fn transform(&self, ref_elem: HyperRectangle<T, D>, x: SVector<T, D>) -> Point<T, D> {
@@ -39,24 +39,41 @@ impl <T: RealField + Copy, const D: usize> Lerp<T, D> {
         let p = self.a + (self.b - self.a).component_mul(&(x + ones)) / T::from_usize(2).unwrap();
         Point::from(p)
     }
-}
-
-impl <T: RealField + Copy, const D: usize> Chart<T, [T; D], D> for Lerp<T, D> {
-    fn eval(&self, x: [T; D]) -> Point<T, D> {
-        self.eval(SVector::from(x))
+    
+    /// Returns the constant Jacobian matrix `J = diag(b - a)` of this transformation.
+    pub fn jacobian(&self) -> SMatrix<T, D, D> {
+        Matrix::from_diagonal(&(self.b - self.a))
     }
 }
 
-impl <T: RealField + Copy, const D: usize> Chart<T, SVector<T, D>, D> for Lerp<T, D> {
+impl <T: RealField + Copy, const D: usize> Chart<T, [T; D], D, D> for Lerp<T, D> {
+    fn eval(&self, x: [T; D]) -> Point<T, D> {
+        self.eval(SVector::from(x))
+    }
+
+    fn eval_diff(&self, _x: [T; D]) -> SMatrix<T, D, D> {
+        self.jacobian()
+    }
+}
+
+impl <T: RealField + Copy, const D: usize> Chart<T, SVector<T, D>, D, D> for Lerp<T, D> {
     fn eval(&self, x: SVector<T, D>) -> Point<T, D> {
         let ones = SVector::repeat(T::one());
         let p = (ones - x).component_mul(&self.a) + x.component_mul(&self.b);
         Point::from(p)
     }
+
+    fn eval_diff(&self, _x: SVector<T, D>) -> SMatrix<T, D, D> {
+        self.jacobian()
+    }
 }
 
-impl <T: RealField + Copy> Chart<T, T, 1> for Lerp<T, 1> {
+impl <T: RealField + Copy> Chart<T, T, 1, 1> for Lerp<T, 1> {
     fn eval(&self, x: T) -> Point<T, 1> {
         Point1::new((T::one() - x) * self.a.x + x * self.b.x)
+    }
+
+    fn eval_diff(&self, _x: T) -> SMatrix<T, 1, 1> {
+        self.b - self.a
     }
 }

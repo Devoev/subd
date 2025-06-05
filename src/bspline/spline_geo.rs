@@ -1,11 +1,12 @@
 use crate::bspline::basis::BsplineBasis;
 use crate::bspline::de_boor::{DeBoor, DeBoorMulti};
 use crate::bspline::spline::Spline;
-use crate::cells::chart::Chart;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::constraint::{AreMultipliable, ShapeConstraint};
 use nalgebra::{ArrayStorage, Const, DefaultAllocator, Dim, Dyn, Matrix, Point, RealField, SMatrix, SVector, U1};
+use crate::diffgeo::chart::Chart;
+use crate::index::dimensioned::Dimensioned;
 // todo: possibly change back to newtype or seperate type alltogether?
 
 /// A B-spline geometry embedded [`M`]-dimensional Euclidean space.
@@ -24,8 +25,9 @@ pub type SplineSurf<'a, T, const M: usize, Nc = Dyn> = SplineGeo<'a, T, SVector<
 /// A spline volume in [`M`] dimensions.
 pub type SplineVol<'a, T, const M: usize, Nc = Dyn> = SplineGeo<'a, T, SVector<T, 3>, DeBoorMulti<T, 3>, M, Nc>;
 
-impl <T, X, B, const M: usize, Nc> Chart<T, X, M> for SplineGeo<'_, T, X, B, M, Nc>
+impl <T, X, B, const D: usize, const M: usize, Nc> Chart<T, X, D, M> for SplineGeo<'_, T, X, B, M, Nc>
     where T: RealField,
+          X: Dimensioned<T, D>,
           B: BsplineBasis<T::RealField, X, 1>,
           Nc: Dim,
           DefaultAllocator: Allocator<Const<M>, Nc>
@@ -33,16 +35,25 @@ impl <T, X, B, const M: usize, Nc> Chart<T, X, M> for SplineGeo<'_, T, X, B, M, 
     fn eval(&self, x: X) -> Point<T, M> {
         Point::from(self.eval(x))
     }
+
+    fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
+        todo!("Implement this if BsplineBasis trait is fully replaced with Basis")
+    }
 }
 
-impl <'a, T, X, B, const M: usize, Nc> Chart<T, X, M> for &'a SplineGeo<'a, T, X, B, M, Nc>
+impl <'a, T, X, B, const D: usize, const M: usize, Nc> Chart<T, X, D, M> for &'a SplineGeo<'a, T, X, B, M, Nc>
     where T: RealField,
+          X: Dimensioned<T, D>,
           B: BsplineBasis<T::RealField, X, 1>,
           Nc: Dim,
           DefaultAllocator: Allocator<Const<M>, Nc>
 {
     fn eval(&self, x: X) -> Point<T, M> {
         Point::from((*self).eval(x))
+    }
+
+    fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
+        todo!("Implement this if BsplineBasis trait is fully replaced with Basis")
     }
 }
 

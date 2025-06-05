@@ -14,11 +14,13 @@ use std::iter::{Product, Sum};
 //  make this generic over the space and mesh type!
 
 /// Assembles the discrete hodge operator (mass matrix).
-pub fn assemble_hodge<'a, T: RealField + Copy + Product<T> + Sum<T>, const D: usize>(
+pub fn assemble_hodge<'a, T, const D: usize>(
     msh: &'a BezierMesh<'a, T, D, D>,
     space: &impl LocalBasis<T, [T; D], 1, Elem = HyperRectangle<T, D>>,
-    quad: impl Quadrature<T, D, Elem=BezierElem<'a, T, D, D>>,
-) -> CooMatrix<T> {
+    quad: impl Quadrature<T, D, Node=[T; D], Elem=BezierElem<'a, T, D, D>>,
+) -> CooMatrix<T>
+    where T: RealField + Copy + Product<T> + Sum<T>
+{
     let mut mij = CooMatrix::<T>::zeros(space.num_basis(), space.num_basis());
 
     for elem in msh.elems() {
@@ -37,10 +39,11 @@ pub fn assemble_hodge<'a, T: RealField + Copy + Product<T> + Sum<T>, const D: us
 pub fn assemble_hodge_local<T, X, E, const D: usize>(
     elem: &E,
     sp_local: &impl Basis<T, [T; D], 1>,
-    quad: &impl Quadrature<T, D, Elem=E>,
+    quad: &impl Quadrature<T, D, Node=X, Elem=E>,
 ) -> DMatrix<T> 
-    where T: RealField + Copy + Product<T> + Sum<T>, 
-          E: Cell<T, X, Const<D>, D>
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          X: Dimensioned<T, D>,
+          E: Cell<T, X, D, D>
 {
     // Evaluate basis at each quadrature point and store in buffer
     let nodes = quad.nodes_elem(elem);
