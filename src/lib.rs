@@ -11,7 +11,7 @@ pub mod mesh;
 pub mod operator;
 pub mod quadrature;
 pub mod subd;
-mod maps;
+mod diffgeo;
 
 #[cfg(test)]
 mod tests {
