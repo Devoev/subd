@@ -1,4 +1,4 @@
-use nalgebra::{Const, Dyn, OMatrix, RealField};
+use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
 
 /// Set of [`Self::num_basis`] basis functions.
 pub trait NumBasis {
@@ -19,6 +19,27 @@ pub trait Basis<T: RealField, X, const N: usize>: NumBasis {
     /// Evaluates all basis functions at the parametric point `x`
     /// as the column-wise matrix `(b[1],...,b[n])`.
     fn eval(&self, x: X) -> OMatrix<T, Const<N>, Dyn>;
+}
+
+/// Scalar, differentiable basis functions.
+/// # Type parameters
+/// - [`T`] : Real scalar type.
+/// - [`X`] : Type of parametric values in the reference domain.
+pub trait DiffBasis<T: RealField, X>: Basis<T, X, 1> {
+
+    /// Evaluates the value and the first [`K`] derivatives of all basis functions
+    /// at the parametric point `x` as the matrix
+    /// ```text
+    ///   ┌                   ┐
+    ///   │ b[1]   ...   b[n] │
+    ///   │ b'[1]  ...  b'[n] │
+    ///   │ b''[1] ... b''[n] │
+    ///   │                   │
+    ///   └                   ┘
+    /// ```
+    /// where each row corresponds to the `i-1`-th derivative of basis functions.
+    fn eval_derivs<const K: usize>(&self, x: X) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
+        where Const<K>: DimNameAdd<U1>;
 }
 
 /// Basis functions for `H(grad)`-conforming spaces (i.e. nodal functions).
