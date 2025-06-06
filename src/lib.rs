@@ -16,7 +16,7 @@ mod diffgeo;
 #[cfg(test)]
 mod tests {
     use crate::basis::local::LocalBasis;
-    use crate::basis::traits::NumBasis;
+    use crate::basis::traits::{Basis, DiffBasis, NumBasis};
     use crate::bspline::basis::{BsplineBasis, ScalarBasis};
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
@@ -42,7 +42,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, Vector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -177,17 +177,31 @@ mod tests {
         let p = 1;
 
         // Univariate derivatives
-        // let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        // let basis = global_basis::BsplineBasis::new(knots, n, p);
-        // let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis);
+        let knots = KnotVec::<f64>::new_open_uniform(n, p);
+        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis.clone());
         // let space = Space::<f64, f64, _>::new(basis_3d);
+
+        // todo: implement these "find" functions directly in LocalBasis
+        let find_local_basis_3d = |x: [f64; 3]| {
+            let vertex = Vector::from(x);
+            let elem = HyperRectangle::new(vertex, vertex);
+            basis_3d.elem_basis(&elem)
+        };
+
+        let find_local_basis = |x: f64| {
+            let vertex = Vector::from([x]);
+            let elem = HyperRectangle::new(vertex, vertex);
+            basis.elem_basis(&elem)
+        };
+
         let de_boor = DeBoor::<f64>::open_uniform(n, p);
         let de_boor_multi = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
         let space = SplineSpace::new(de_boor_multi.clone());
 
         println!(
             "Derivatives of basis: {}",
-            de_boor.eval_derivs_nonzero::<3>(0.8).0
+            find_local_basis(0.8).eval_derivs::<3>(0.8)
         );
 
         // Jacobian
@@ -198,14 +212,16 @@ mod tests {
         println!("Jacobian matrix: {j}");
 
         // Function values
+        let x = [0.1, 0.0, 0.5];
         println!(
             "Function values of basis: {}",
-            de_boor_multi.eval_nonzero([0.1, 0.0, 0.5]).0
+            find_local_basis_3d(x).eval([0.1, 0.0, 0.5])
         );
 
+        // todo: implement Hgrad for other bases
         // Gradients
         let grad_b = BasisGrad::new(de_boor_multi);
-        println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]))
+        println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]));
     }
 
     #[test]
