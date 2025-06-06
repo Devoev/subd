@@ -1,9 +1,10 @@
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::{izip, Itertools};
-use nalgebra::{vector, Const, Dyn, OMatrix, RealField, RowDVector};
+use nalgebra::{vector, Const, DefaultAllocator, Dyn, OMatrix, RealField, RowDVector, U1};
 use std::iter::zip;
 use std::marker::PhantomData;
+use nalgebra::allocator::Allocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::{Basis, NumBasis};
 use crate::cells::hyper_rectangle::HyperRectangle;
@@ -46,7 +47,7 @@ impl<T: RealField, B: NumBasis, const D: usize> MultiProd<T, B, D> {
     }
 }
 
-impl<T: RealField, B: Basis<T, T, 1>, const D: usize> MultiProd<T, B, D> {
+impl<T: RealField, B: Basis<T, T, NumComponents = U1, NumBasis = Dyn>, const D: usize> MultiProd<T, B, D> {
     /// Evaluates the tensor product basis at `x`
     /// by applying [`Matrix::kronecker`] to each univariate basis.
     fn eval_multi_prod(&self, x: [T; D]) -> RowDVector<T> {
@@ -63,7 +64,10 @@ impl<T: RealField, B: NumBasis, const D: usize> NumBasis for MultiProd<T, B, D> 
     }
 }
 
-impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for MultiProd<T, B, D> {
+impl<T: RealField, B: Basis<T, T, NumComponents = U1, NumBasis = Dyn>, const D: usize> Basis<T, [T; D]> for MultiProd<T, B, D> {
+    type NumBasis = Dyn;
+    type NumComponents = U1;
+
     fn eval(&self, x: [T; D]) -> OMatrix<T, Const<1>, Dyn> {
         self.eval_multi_prod(x)
     }
@@ -71,10 +75,11 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
 
 // todo: also implement DiffBasis and HgradBasis
 
-impl<T, B, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
-    where T: RealField + Copy, 
-          B: LocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>,
-          B::GlobalIndices: Clone,
+impl<T, BElem, B, const D: usize> LocalBasis<T, [T; D]> for MultiProd<T, B, D>
+    where T: RealField + Copy,
+          BElem: Basis<T, T, NumComponents = U1, NumBasis = Dyn>,
+          B: LocalBasis<T, T, Elem=HyperRectangle<T, 1>, ElemBasis=BElem>,
+          // DefaultAllocator: Allocator<<B::ElemBasis as Basis<T, T>>::NumComponents, <B::ElemBasis as Basis<T, T>>::NumBasis>
 {
     type Elem = HyperRectangle<T, D>;
     type ElemBasis = MultiProd<T, B::ElemBasis, D>;

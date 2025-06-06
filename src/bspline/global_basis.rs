@@ -50,7 +50,7 @@ impl<T: RealField + Copy> NumBasis for BsplineBasis<T> {
     }
 }
 
-impl <T: RealField + Copy> LocalBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
     type Elem = HyperRectangle<T, 1>;
     type ElemBasis = BsplineBasisLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;

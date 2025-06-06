@@ -33,7 +33,10 @@ impl<T: RealField + Copy> NumBasis for BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> Basis<T, T> for BsplineBasisLocal<T> {
+    type NumBasis = Dyn;
+    type NumComponents = U1;
+
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;

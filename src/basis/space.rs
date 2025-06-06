@@ -8,17 +8,14 @@ use crate::basis::lin_combination::LinCombination;
 ///
 /// See the [`Basis`] trait for information about type parameters.
 #[derive(Debug, Clone, Copy)]
-pub struct Space<T, X, const N: usize, B> {
+pub struct Space<T, X, B> {
     /// Set of basis functions spanning this function space.
     pub basis: B,
 
     _phantom_data: PhantomData<(T, X)>
 }
 
-/// Space spanned by scalar valued basis functions.
-pub type ScalarSpace<T, X, B> = Space<T, X, 1, B>;
-
-impl <T, X, const N: usize, B: NumBasis> Space<T, X, N, B> {
+impl <T, X, B: NumBasis> Space<T, X, B> {
     /// Constructs a new [`Space`] from the given `basis`.
     pub fn new(basis: B) -> Self {
         Self { basis, _phantom_data: PhantomData }
@@ -30,10 +27,10 @@ impl <T, X, const N: usize, B: NumBasis> Space<T, X, N, B> {
     }
 }
 
-impl <T: RealField, X, const N: usize, B: NumBasis> Space<T, X, N, B> {
+impl <T: RealField, X, B: NumBasis> Space<T, X, B> {
     /// Calculates the linear combination of the given `coeffs` with the basis function of this space,
     /// and returns the resulting [`LinCombination`].
-    pub fn linear_combination(&self, coeffs: DVector<T>) -> LinCombination<T, X, N, B>  {
+    pub fn linear_combination(&self, coeffs: DVector<T>) -> LinCombination<T, X, B>  {
         LinCombination::new(coeffs, self)
     }
 }

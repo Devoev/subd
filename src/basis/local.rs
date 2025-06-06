@@ -1,4 +1,5 @@
-use nalgebra::RealField;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, RealField};
 use crate::basis::traits::{Basis, NumBasis};
 
 /// Set of basis functions with local support on each [element](Self::Elem).
@@ -6,15 +7,14 @@ use crate::basis::traits::{Basis, NumBasis};
 /// # Type parameters
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
-/// - [`N`] : Number of components of the basis functions.
-///   For scalar valued functions equal to `1`,
-///   for vector valued functions equal to the dimension of the parametric domain.
-pub trait LocalBasis<T: RealField, X, const N: usize>: NumBasis {
+pub trait LocalBasis<T: RealField, X>: NumBasis
+    where DefaultAllocator: Allocator<<Self::ElemBasis as Basis<T, X>>::NumComponents, <Self::ElemBasis as Basis<T, X>>::NumBasis> 
+{
     /// Element type.
     type Elem;
     
     /// Restriction of the local basis on an element.
-    type ElemBasis: Basis<T, X, N>;
+    type ElemBasis: Basis<T, X>;
 
     // todo: possibly change to IntoIterator or separate trait/ struct all together
     /// Iterator over linear global indices.

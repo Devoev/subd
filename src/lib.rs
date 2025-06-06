@@ -49,6 +49,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::basis::space::Space;
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::knots::breaks::Breaks;
     use crate::quadrature::bezier::BezierQuad;
@@ -267,28 +268,29 @@ mod tests {
         let p = 1;
         let knots = DeBoor::<f64>::open_uniform(n, p).knots;
 
-        let basis = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
-        let geo_space = SplineSpace::new(basis);
+        let basis_geo = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
+        let space_geo = SplineSpace::new(basis_geo);
         let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[
             0.0, 0.0,
             0.0, 1.0,
             1.0, 0.0,
             1.0, 1.0]
         );
-        let geo_map = SplineGeo::new(c, &geo_space);
+        let geo_map = SplineGeo::new(c, &space_geo);
 
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
-        let space = global_basis::BsplineBasis::new(knots, n, p);
-        let space = MultiBsplineBasis::new([space.clone(), space]);
+        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let basis = MultiBsplineBasis::new([basis.clone(), basis]);
+        let space = Space::new(basis);
 
         let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
         let quad = BezierQuad::new(ref_quad);
         let mat = assemble_hodge(&msh, &space, quad);
 
         // Print
-        let mut dense = DMatrix::<f64>::zeros(space.num_basis(), space.num_basis());
+        let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
         for (i, j, &v) in mat.triplet_iter() {
             dense[(i, j)] = v;
         }
