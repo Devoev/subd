@@ -1,5 +1,5 @@
 use crate::basis::tensor_prod::MultiProd;
-use crate::basis::traits::{Basis, HgradBasis, NumBasis};
+use crate::basis::traits::{Basis, DiffBasis, HgradBasis, NumBasis};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
@@ -27,16 +27,47 @@ impl <T: RealField> BsplineBasisLocal<T> {
     }
 }
 
-impl <T: RealField + Copy> BsplineBasisLocal<T> {
-    /// Evaluates the [`K`] derivatives of the basis functions
-    /// inside the given `span` at the parametric point `t`.
-    pub(crate) fn eval_derivs<const K: usize>(&self, t: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
-        where Const<K>: DimNameAdd<U1>
+impl<T: RealField + Copy> NumBasis for BsplineBasisLocal<T> {
+    fn num_basis(&self) -> usize {
+        self.degree + 1
+    }
+}
+
+impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
+    fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
+        let knots = &self.knots;
+        let span_idx = self.span.0;
+        let p = self.degree;
+        let mut left = vec![T::zero(); p + 1];
+        let mut right = vec![T::zero(); p + 1];
+        let mut b = RowDVector::zeros(p + 1);
+        b[0] = T::one();
+
+        for i in 1..=p {
+            left[i] = x - knots[span_idx - i + 1];
+            right[i] = knots[span_idx + i] - x;
+            let mut saved = T::zero();
+
+            for j in 0..i {
+                let tmp = b[j] / (right[j+1] + left[i-j]);
+                b[j] = saved + right[j+1]*tmp;
+                saved = left[i-j]*tmp;
+            }
+            b[i] = saved;
+        }
+        b
+    }
+}
+
+impl <T: RealField + Copy> DiffBasis<T, T> for BsplineBasisLocal<T> {
+    fn eval_derivs<const K: usize>(&self, x: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
+    where
+        Const<K>: DimNameAdd<U1>
     {
         let knots = &self.knots;
         let span = self.span;
         let p = self.degree;
-        
+
         let mut ndu = vec![vec![T::zero(); p + 1]; p + 1];
         let mut left = vec![T::zero(); p + 1];
         let mut right = vec![T::zero(); p + 1];
@@ -44,8 +75,8 @@ impl <T: RealField + Copy> BsplineBasisLocal<T> {
         ndu[0][0] = T::one();
 
         for j in 1..=p {
-            left[j] = t - knots[span.0 + 1 - j];
-            right[j] = knots[span.0 + j] - t;
+            left[j] = x - knots[span.0 + 1 - j];
+            right[j] = knots[span.0 + j] - x;
 
             let mut saved = T::zero();
             for r in 0..j {
@@ -120,38 +151,6 @@ impl <T: RealField + Copy> BsplineBasisLocal<T> {
             acc *= idegree - k;
         }
         ders
-    }
-}
-
-impl<T: RealField + Copy> NumBasis for BsplineBasisLocal<T> {
-    fn num_basis(&self) -> usize {
-        self.degree + 1
-    }
-}
-
-impl<T: RealField + Copy> Basis<T, T, 1> for BsplineBasisLocal<T> {
-    fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
-        let knots = &self.knots;
-        let span_idx = self.span.0;
-        let p = self.degree;
-        let mut left = vec![T::zero(); p + 1];
-        let mut right = vec![T::zero(); p + 1];
-        let mut b = RowDVector::zeros(p + 1);
-        b[0] = T::one();
-
-        for i in 1..=p {
-            left[i] = x - knots[span_idx - i + 1];
-            right[i] = knots[span_idx + i] - x;
-            let mut saved = T::zero();
-
-            for j in 0..i {
-                let tmp = b[j] / (right[j+1] + left[i-j]);
-                b[j] = saved + right[j+1]*tmp;
-                saved = left[i-j]*tmp;
-            }
-            b[i] = saved;
-        }
-        b
     }
 }
 

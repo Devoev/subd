@@ -26,7 +26,6 @@ pub trait Basis<T: RealField, X, const N: usize>: NumBasis {
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
 pub trait DiffBasis<T: RealField, X>: Basis<T, X, 1> {
-
     /// Evaluates the value and the first [`K`] derivatives of all basis functions
     /// at the parametric point `x` as the matrix
     /// ```text

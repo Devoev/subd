@@ -69,8 +69,12 @@ impl<T: RealField, B: Basis<T, T, 1>, const D: usize> Basis<T, [T; D], 1> for Mu
     }
 }
 
-impl<T: RealField + Copy, B: LocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
-    where B::GlobalIndices: Clone,
+// todo: also implement DiffBasis and HgradBasis
+
+impl<T, B, const D: usize> LocalBasis<T, [T; D], 1> for MultiProd<T, B, D>
+    where T: RealField + Copy, 
+          B: LocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>,
+          B::GlobalIndices: Clone,
 {
     type Elem = HyperRectangle<T, D>;
     type ElemBasis = MultiProd<T, B::ElemBasis, D>;
@@ -78,11 +82,9 @@ impl<T: RealField + Copy, B: LocalBasis<T, T, 1, Elem=HyperRectangle<T, 1>>, con
 
     // todo: update this implementation by making HyperRectangle actually a MultiProd<Interval>
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        let bases = izip!(&self.bases, &elem.a, &elem.b)
-            .map(|(b, &ai, &bi)| {
-                let interval = HyperRectangle::new(vector![ai], vector![bi]);
-                b.elem_basis(&interval)
-            }).collect_array().unwrap();
+        let bases = zip(&self.bases, elem.intervals())
+            .map(|(b, interval)| b.elem_basis(&interval))
+            .collect_array().unwrap();
         MultiProd::new(bases)
     }
 
