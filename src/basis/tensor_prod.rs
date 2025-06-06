@@ -30,6 +30,13 @@ impl<T: RealField, B, const D: usize> MultiProd<T, B, D> {
     }
 }
 
+impl<T: RealField, B: Clone, const D: usize> MultiProd<T, B, D> {
+    /// Constructs a new [`MultiProd`] using the given `basis` for every parametric direction.
+    pub fn repeat(basis: B) -> Self {
+        Self::new(std::array::from_fn(|_| basis.clone()))
+    }
+}
+
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
 impl<T: RealField, B: NumBasis, const D: usize> MultiProd<T, B, D> {

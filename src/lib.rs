@@ -177,6 +177,10 @@ mod tests {
         let p = 1;
 
         // Univariate derivatives
+        // let knots = KnotVec::<f64>::new_open_uniform(n, p);
+        // let basis = global_basis::BsplineBasis::new(knots, n, p);
+        // let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis);
+        // let space = Space::<f64, f64, _>::new(basis_3d);
         let de_boor = DeBoor::<f64>::open_uniform(n, p);
         let de_boor_multi = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
         let space = SplineSpace::new(de_boor_multi.clone());
