@@ -1,8 +1,7 @@
 //! Spline bases for uniform knot vectors.
 
-use crate::bspline::basis::BsplineBasis;
-use nalgebra::{matrix, vector, Const, DVector, RealField, SMatrix, SVector};
-use std::ops::Range;
+use crate::basis::traits::{Basis, NumBasis};
+use nalgebra::{matrix, vector, Const, Dyn, OMatrix, RealField, RowDVector, SMatrix, SVector};
 
 /// B-Spline basis of dimension [`N`],
 /// evaluated by transformation of [`M`] monomial basis functions `{xᵐ}`
@@ -23,17 +22,19 @@ impl <T: RealField + Copy, const N: usize, const M: usize> BasisTransform<T, N, 
     }
 }
 
-impl <T: RealField + Copy, const N: usize, const M: usize> BsplineBasis<T, T, 1> for BasisTransform<T, N, M> {
-    type NonzeroIndices = Range<usize>;
-
+impl<T: RealField + Copy, const N: usize, const M: usize> NumBasis for BasisTransform<T, N, M> {
     fn num_basis(&self) -> usize {
         N
     }
+}
 
-    fn eval_nonzero(&self, x: T) -> (DVector<T>, Self::NonzeroIndices) {
-        (DVector::from_column_slice(self.eval(x).as_slice()), 0..N)
+impl <T: RealField + Copy, const N: usize, const M: usize> Basis<T, T, 1> for BasisTransform<T, N, M> {
+    fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
+        RowDVector::from_row_slice(self.eval(x).as_slice())
     }
 }
+
+// todo: docs are incorrect, because these (probably) are not the correct knot values
 
 /// Cubic B-Spline basis on the uniform knot vector `(0,1/7,2/7,3/7,4/7,5/7,6/7,1)`.
 /// The basis functions are `C²` at the boundary.
