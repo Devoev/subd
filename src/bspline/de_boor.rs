@@ -56,7 +56,7 @@ impl<T : RealField + Copy> DeBoor<T> {
 
     /// Constructs an open uniform [`DeBoor`].
     pub fn open_uniform(n: usize, p: usize) -> Self {
-        let internal = KnotVec::uniform(n-p+1);
+        let internal = KnotVec::new_uniform(n-p+1);
         let knots = chain!(
             std::iter::repeat_n(T::zero(), p),
             internal.0,

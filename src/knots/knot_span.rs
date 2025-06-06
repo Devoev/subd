@@ -22,7 +22,7 @@ impl KnotSpan {
     /// use subd::knots::knot_span::KnotSpan;
     /// use subd::knots::knot_vec::KnotVec;
     ///
-    /// let xi = KnotVec::uniform(10);
+    /// let xi = KnotVec::new_uniform(10);
     /// let span = KnotSpan::find(&xi, 4, 0.5);
     /// ```
     pub fn find<T: RealField + Copy>(knots: &KnotVec<T>, n: usize, t: T) -> Result<Self, OutsideKnotRangeError> {

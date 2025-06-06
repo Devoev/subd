@@ -1,12 +1,12 @@
+use crate::knots::error::UnsortedKnotsError;
 use core::fmt;
 use iter_num_tools::lin_space;
-use itertools::{Dedup, DedupWithCount, Itertools};
+use itertools::{chain, Dedup, DedupWithCount, Itertools};
 use nalgebra::RealField;
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, RangeInclusive};
 use std::slice::Iter;
 use std::vec;
-use crate::knots::error::UnsortedKnotsError;
 
 /// A vector of increasing *knot values* of type [`T`].
 #[derive(Debug, Clone)]
@@ -55,17 +55,64 @@ impl<T: RealField + Copy> KnotVec<T> {
         KnotVec(knots)
     }
 
-    /// Constructs a uniform [`KnotVec<T>`] from `0` to `1` with `num` knots.
+    /// Constructs a *uniform* (aka. equally spaced) [`KnotVec<T>`] from `0` to `1` with `num` knots.
     ///
     /// # Examples
     /// ```
-    /// use subd::knots::knot_vec::KnotVec;
-    /// 
-    /// let knots = KnotVec::<f64>::uniform(5);
+    /// # use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let knots = KnotVec::<f64>::new_uniform(5);
     /// assert_eq!(knots.0, vec![0.0, 0.25, 0.5, 0.75, 1.0]);
     /// ```
-    pub fn uniform(num: usize) -> Self {
+    pub fn new_uniform(num: usize) -> Self {
         KnotVec(lin_space(T::zero()..=T::one(), num).collect_vec())
+    }
+
+    /// Constructs an *open* (aka. clamped) [`KnotVec<T>`] with given `internal` knot values.
+    /// A knot vector is open if the first `p+1` knots equal `0`
+    /// and the last `p+1` knots equal `1`.
+    ///
+    /// # Errors
+    /// Will return an error if the given `internal` knots are not inside `[0,1]`.
+    /// todo: this is not implemented yet, currently panics
+    ///
+    /// # Examples
+    /// ```
+    /// # use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let p = 1;
+    /// let internal = KnotVec::from_sorted(vec![0.25, 0.5, 0.75]);
+    /// let knots = KnotVec::<f64>::new_open(internal, p);
+    /// assert_eq!(knots.0, vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+    /// ```
+    pub fn new_open(internal: KnotVec<T>, p: usize) -> Self {
+        if internal.first() < T::zero() || internal.last() > T::one() {
+            panic!("Internal knots are not inside (0,1)")
+        }
+
+        let knots = chain!(
+            std::iter::repeat_n(T::zero(), p+1),
+            internal.0,
+            std::iter::repeat_n(T::one(), p+1)
+        ).collect();
+
+        KnotVec::from_sorted(knots)
+    }
+
+    /// Constructs an *open* and *uniform* [`KnotVec<T>`] with `n+p+1` total knots.
+    ///
+    /// # Examples
+    /// ```
+    /// # use subd::knots::knot_vec::KnotVec;
+    ///
+    /// let n = 5;
+    /// let p = 1;
+    /// let knots = KnotVec::<f64>::new_open_uniform(n, p);
+    /// assert_eq!(knots.0, vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+    /// ```
+    pub fn new_open_uniform(n: usize, p: usize) -> Self {
+        let internal = KnotVec::new_uniform(n - p + 1);
+        KnotVec::new_open(internal, p - 1)
     }
 
     /// Returns the first knot.

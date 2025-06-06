@@ -58,18 +58,15 @@ mod tests {
 
     #[test]
     fn knots() {
-        let xi1 = DeBoor::new(KnotVec(vec![0.0, 0.0, 0.5, 1.0, 1.0]), 3, 1).unwrap();
-        let xi2 = DeBoor::<f64>::open_uniform(6, 2);
-        let (m, z): (Vec<_>, Vec<&f64>) = xi1.knots.breaks_with_multiplicity_iter().unzip();
-        let xi3 = DeBoorMulti::new([xi1.clone(), xi2.clone()]);
-        let xi4 = DeBoorMulti::<f64, 2>::open_uniform([5, 3], [1, 2]);
+        let n = 5;
+        let p = 1;
+        let uniform = KnotVec::<f64>::new_uniform(n-p+1);
+        let open = KnotVec::<f64>::new_open(uniform.clone(), p-1);
+        let open_uniform = KnotVec::<f64>::new_open_uniform(n, p);
 
-        println!("Z: {:?}", z);
-        println!("m: {:?}", m);
-        println!("{:?}", xi1);
-        println!("{:?}", xi2);
-        println!("{:?}", xi3);
-        println!("{:?}", xi4);
+        println!("{uniform:?}");
+        println!("{open:?}");
+        println!("{open_uniform:?}");
     }
 
     #[test]
