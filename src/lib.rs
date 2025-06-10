@@ -182,26 +182,15 @@ mod tests {
         let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis.clone());
         // let space = Space::<f64, f64, _>::new(basis_3d);
 
-        // todo: implement these "find" functions directly in LocalBasis
-        let find_local_basis_3d = |x: [f64; 3]| {
-            let vertex = Vector::from(x);
-            let elem = HyperRectangle::new(vertex, vertex);
-            basis_3d.elem_basis(&elem)
-        };
-
-        let find_local_basis = |x: f64| {
-            let vertex = Vector::from([x]);
-            let elem = HyperRectangle::new(vertex, vertex);
-            basis.elem_basis(&elem)
-        };
-
         let de_boor = DeBoor::<f64>::open_uniform(n, p);
         let de_boor_multi = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
         let space = SplineSpace::new(de_boor_multi.clone());
 
+        let x = 0.8;
+        let elem = basis.find_elem(x);
         println!(
             "Derivatives of basis: {}",
-            find_local_basis(0.8).eval_derivs::<3>(0.8)
+            basis.elem_basis(&elem).eval_derivs::<3>(0.8)
         );
 
         // Jacobian
@@ -213,9 +202,10 @@ mod tests {
 
         // Function values
         let x = [0.1, 0.0, 0.5];
+        let elem_3d = basis_3d.find_elem(x);
         println!(
             "Function values of basis: {}",
-            find_local_basis_3d(x).eval([0.1, 0.0, 0.5])
+            basis_3d.eval([0.1, 0.0, 0.5])
         );
 
         // todo: implement Hgrad for other bases

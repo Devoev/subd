@@ -6,8 +6,8 @@ use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::RealField;
-use crate::basis::traits::NumBasis;
+use nalgebra::{Dyn, OMatrix, RealField, U1};
+use crate::basis::traits::{Basis, NumBasis};
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -50,14 +50,28 @@ impl<T: RealField + Copy> NumBasis for BsplineBasis<T> {
     }
 }
 
+impl<T: RealField + Copy> Basis<T, T> for BsplineBasis<T> {
+    type NumBasis = Dyn;
+    type NumComponents = U1;
+
+    fn eval(&self, x: T) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
+        // todo: possibly change this, to return the full sized vector and not the local one
+        let span = self.find_span(x).unwrap();
+        self.elem_basis(&span).eval(x)
+    }
+}
+
 impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
-    type Elem = HyperRectangle<T, 1>;
+    type Elem = KnotSpan;
     type ElemBasis = BsplineBasisLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;
-    
+
+    fn find_elem(&self, x: T) -> Self::Elem {
+        self.find_span(x).unwrap()
+    }
+
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        let span = self.find_span_by_elem(elem).unwrap();
-        BsplineBasisLocal::new(self.knots.clone(), self.degree, span)
+        BsplineBasisLocal::new(self.knots.clone(), self.degree, *elem)
     }
 
     fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {

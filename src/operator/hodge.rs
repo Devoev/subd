@@ -1,8 +1,8 @@
 use crate::basis::local::LocalBasis;
+use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use crate::cells::bezier_elem::BezierElem;
 use crate::cells::geo::Cell;
-use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::bezier::BezierMesh;
 use crate::quadrature::traits::Quadrature;
@@ -11,7 +11,6 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
-use crate::basis::space::Space;
 // todo: this function is only a temporary implementation.
 //  make this generic over the space and mesh type!
 
@@ -22,13 +21,18 @@ pub fn assemble_hodge<'a, T, B, const D: usize>(
     quad: impl Quadrature<T, D, Node=[T; D], Elem=BezierElem<'a, T, D, D>>,
 ) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B: LocalBasis<T, [T; D], Elem = HyperRectangle<T, D>>,
+          B: LocalBasis<T, [T; D]>,
           DefaultAllocator: Allocator<<B::ElemBasis as Basis<T, [T; D]>>::NumComponents, <B::ElemBasis as Basis<T, [T; D]>>::NumBasis>
 {
     let mut mij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
     for elem in msh.elems() {
-        let sp_local = space.basis.elem_basis(&elem.ref_elem);
+        // todo: the find_elem call should be removed. 
+        //  This can be maybe done, if the bound on BezierMesh is loosened.
+        //  Can the bezier elem be directly passed to elem_basis,
+        //  or is a find_span call required?
+        let span = space.basis.find_elem(elem.ref_elem.a.into_arr());
+        let sp_local = space.basis.elem_basis(&span);
         let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
         let indices = space.basis.global_indices(&sp_local).enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
