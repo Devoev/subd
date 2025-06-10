@@ -1,4 +1,3 @@
-use crate::bspline::spline_geo::Jacobian;
 use crate::cells::bezier_elem::BezierElem;
 use crate::index::dimensioned::Dimensioned;
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
@@ -6,6 +5,7 @@ use crate::quadrature::traits::{Quadrature, RefQuadrature};
 use nalgebra::{Const, DimMin, Point, RealField};
 use std::iter::{empty, zip, Product, Sum};
 use std::marker::PhantomData;
+use crate::diffgeo::chart::Chart;
 
 /// Quadrature rule for a [`BezierElem`].
 #[derive(Clone, Debug)]
@@ -50,11 +50,10 @@ impl <'a, T, const D: usize> Quadrature<T, D> for BezierQuad<'a, T, D>
     }
 
     fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
-        let d_phi = Jacobian { geo_map: elem.geo_map };
         zip(self.ref_quad.weights_elem(&elem.ref_elem), self.ref_quad.nodes_elem(&elem.ref_elem))
             .map(move |(wi, xi)| {
-                let d_phi_xi = d_phi.eval(xi.into_arr());
-                wi * d_phi_xi.determinant().abs()
+                let d_phi = elem.geo_map.eval_diff(xi.into_arr());
+                wi * d_phi.determinant().abs()
             })
     }
 }

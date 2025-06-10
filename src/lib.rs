@@ -11,25 +11,28 @@ pub mod mesh;
 pub mod operator;
 pub mod quadrature;
 pub mod subd;
-mod diffgeo;
+pub mod diffgeo;
 
 #[cfg(test)]
 mod tests {
     use crate::basis::local::LocalBasis;
+    use crate::basis::space::Space;
     use crate::basis::traits::{Basis, DiffBasis, NumBasis};
-    use crate::bspline::basis::{BsplineBasis, ScalarBasis};
+    use crate::bspline::basis::BsplineBasis;
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_geo::{Jacobian, SplineCurve, SplineGeo};
+    use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::bspline::{cart_prod, global_basis, tensor_prod};
+    use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
     use crate::cells::vertex::VertexTopo;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
+    use crate::knots::breaks::Breaks;
     use crate::knots::knot_span::KnotSpan;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
@@ -37,24 +40,21 @@ mod tests {
     use crate::mesh::geo::Mesh;
     use crate::mesh::topo::MeshTopology;
     use crate::operator::hodge::assemble_hodge;
-    use crate::quadrature::tensor_prod_gauss_legendre::TensorProdGaussLegendre;
+    use crate::quadrature::bezier::BezierQuad;
+    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::traits::{Quadrature, RefQuadrature};
     use crate::subd::basis;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, Vector, U2};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2, U5};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::basis::space::Space;
-    use crate::cells::hyper_rectangle::HyperRectangle;
-    use crate::knots::breaks::Breaks;
-    use crate::quadrature::bezier::BezierQuad;
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
-    use crate::quadrature::traits::{Quadrature, RefQuadrature};
+    use crate::diffgeo::chart::Chart;
 
     #[test]
     fn knots() {
@@ -89,28 +89,31 @@ mod tests {
     fn splines() {
         let n = 4;
         let p = 2;
-        let splines = DeBoor::<f64>::open_uniform(n, p);
-        let splines_2d = DeBoorMulti::<f64, 2>::open_uniform([5, 5], [1, 1]);
-        let splines_3d = DeBoorMulti::<f64, 3>::open_uniform([5, 5, 5], [1, 1, 1]);
+        let knots = KnotVec::<f64>::new_open_uniform(n, p);
+        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let basis_2d = MultiBsplineBasis::new([basis.clone(), basis.clone()]);
+        let basis_3d = MultiBsplineBasis::new([basis.clone(), basis.clone(), basis.clone()]);
 
         let t = 0.6;
-        println!("{}", splines.eval_nonzero(t).0);
-        println!("{}", splines_2d.eval_nonzero([t, t]).0);
-        println!("{}", splines_3d.eval_nonzero([t, t, t]).0);
+        println!("{}", basis.eval(t));
+        println!("{}", basis_2d.eval([t, t]));
+        println!("{}", basis_3d.eval([t, t, t]));
     }
 
     #[test]
     fn spline_curves() {
         let n = 5;
         let p = 2;
+        let knots = KnotVec::<f64>::new_open_uniform(n, p);
+        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let space = Space::<f64, f64, _>::new(basis);
         let basis = DeBoor::<f64>::open_uniform(n, p);
-        let space = SplineSpace::new(basis);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
 
-        let curve = SplineCurve::new(coords, &space);
+        let curve = SplineCurve::from_matrix(coords, &space);
         dbg!(curve.eval(0.0));
     }
 
@@ -196,9 +199,9 @@ mod tests {
         // Jacobian
         let control_points = SMatrix::<f64, 3, 27>::new_random();
         let surf = space.linear_combination(control_points);
-        let d_phi = Jacobian { geo_map: &surf };
-        let j = d_phi.eval([0.0, 0.2, 0.5]);
-        println!("Jacobian matrix: {j}");
+        // let d_phi = Jacobian { geo_map: &surf };
+        // let j = d_phi.eval([0.0, 0.2, 0.5]);
+        // println!("Jacobian matrix: {j}");
 
         // Function values
         let x = [0.1, 0.0, 0.5];
@@ -273,17 +276,17 @@ mod tests {
     fn iga_assembly() {
         let n = 3;
         let p = 1;
-        let knots = DeBoor::<f64>::open_uniform(n, p).knots;
-
-        let basis_geo = DeBoorMulti::<f64, 2>::open_uniform([2, 2], [1, 1]);
-        let space_geo = SplineSpace::new(basis_geo);
+        let knots = KnotVec::new_open_uniform(n, p);
+        let basis_uni = global_basis::BsplineBasis::new(knots.clone(), n, p);
+        let basis_geo = MultiBsplineBasis::new([basis_uni.clone(), basis_uni.clone()]);
+        let space_geo = Space::new(basis_geo);
         let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[
             0.0, 0.0,
             0.0, 1.0,
             1.0, 0.0,
             1.0, 1.0]
         );
-        let geo_map = SplineGeo::new(c, &space_geo);
+        let geo_map = SplineGeo::new(c.transpose(), &space_geo);
 
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);

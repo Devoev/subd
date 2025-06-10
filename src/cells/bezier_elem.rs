@@ -1,8 +1,8 @@
-use nalgebra::{Const, Dyn, RealField};
-use crate::bspline::de_boor::DeBoorMulti;
+use crate::bspline::global_basis::MultiBsplineBasis;
 use crate::bspline::spline_geo::SplineGeo;
 use crate::cells::geo;
 use crate::cells::hyper_rectangle::HyperRectangle;
+use nalgebra::RealField;
 
 // todo: is BezierElem even needed somewhere?
 //  bezier elem should provide access to a local basis. 
@@ -17,18 +17,18 @@ pub struct BezierElem<'a, T: RealField + Copy, const D: usize, const M: usize> {
 
     // todo: see BezierMesh
     /// Spline parametrization mapping the reference mesh to the physical Bezier mesh.
-    pub geo_map: &'a SplineGeo<'a, T, [T; D], DeBoorMulti<T, D>, M, Dyn>
+    pub geo_map: &'a SplineGeo<'a, T, [T; D], MultiBsplineBasis<T, D>, M>
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T, D, M> {
     /// Constructs a new [`BezierElem`] from the given `ref_elem` and `geo_map`.
-    pub fn new(ref_elem: HyperRectangle<T, D>, geo_map: &'a SplineGeo<'a, T, [T; D], DeBoorMulti<T, D>, M, Dyn>) -> Self {
+    pub fn new(ref_elem: HyperRectangle<T, D>, geo_map: &'a SplineGeo<'a, T, [T; D], MultiBsplineBasis<T, D>, M>) -> Self {
         BezierElem { ref_elem, geo_map }
     }
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T, [T; D], D, M> for BezierElem<'a, T, D, M> {
-    type GeoMap = &'a SplineGeo<'a, T, [T; D], DeBoorMulti<T, D>, M, Dyn>;
+    type GeoMap = &'a SplineGeo<'a, T, [T; D], MultiBsplineBasis<T, D>, M>;
 
     fn geo_map(&self) -> Self::GeoMap {
         self.geo_map
