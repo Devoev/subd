@@ -38,12 +38,13 @@ pub trait DiffBasis<T: RealField, X>: Basis<T, X, NumComponents = U1>
     /// Evaluates the value and the first [`K`] derivatives of all basis functions
     /// at the parametric point `x` as the matrix
     /// ```text
-    ///   ┌                   ┐
-    ///   │ b[1]   ...   b[n] │
-    ///   │ b'[1]  ...  b'[n] │
-    ///   │ b''[1] ... b''[n] │
-    ///   │                   │
-    ///   └                   ┘
+    ///   ┌                     ┐
+    ///   │  b[1]   ...   b[n]  │
+    ///   │  db[1]  ...  db[n]  │
+    ///   │ db[1]^2 ... db[n]^2 │
+    ///   │ db[1]^3 ... db[n]^3 │
+    ///   │                     │
+    ///   └                     ┘
     /// ```
     /// where each row corresponds to the `i-1`-th derivative of basis functions.
     fn eval_derivs<const K: usize>(&self, x: X) -> OMatrix<T, DimNameSum<Const<K>, U1>, Self::NumBasis>
