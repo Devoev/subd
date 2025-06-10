@@ -24,7 +24,7 @@ mod tests {
     use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::bspline::grad::BasisGrad;
     use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
+    use crate::bspline::spline_geo::{SplineCurve, SplineGeo, SplineSurf};
     use crate::bspline::{cart_prod, global_basis, tensor_prod};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
@@ -47,7 +47,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2, U5};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2, U5, U8};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -107,7 +107,6 @@ mod tests {
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
         let basis = global_basis::BsplineBasis::new(knots, n, p);
         let space = Space::<f64, f64, _>::new(basis);
-        let basis = DeBoor::<f64>::open_uniform(n, p);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
@@ -137,18 +136,19 @@ mod tests {
         let n = 3;
         let p = 2;
 
-        let splines_1d = DeBoor::<f64>::open_uniform(n, p);
-        let splines_2d = DeBoorMulti::new([splines_1d.clone(), splines_1d.clone()]);
-        let space = SplineSpace::new(splines_2d);
+        let knots = KnotVec::<f64>::new_open_uniform(n, p);
+        let basis_1d = global_basis::BsplineBasis::new(knots, n, p);
+        let basis_2d = MultiBsplineBasis::new([basis_1d.clone(), basis_1d]);
+        let space = Space::new(basis_2d);
 
         let control_points = matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;
             0.1, 0.2, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 0.8
         ];
 
-        let coords_rand = SMatrix::<f64, 2, 9>::new_random();
+        let coords_rand = OMatrix::<f64, Dyn, U2>::new_random(9);
 
-        let surf = space.linear_combination(coords_rand);
+        let surf = SplineGeo::new(coords_rand, &space);
 
         const N: i32 = 100;
         let mut points: Vec<(f64, f64)> = vec![];
@@ -163,7 +163,7 @@ mod tests {
         }
 
         let data = points.into_iter();
-        let root_area = BitMapBackend::new("spline_surf.png", (800, 800)).into_drawing_area();
+        let root_area = BitMapBackend::new("out/spline_surf.png", (800, 800)).into_drawing_area();
         root_area.fill(&WHITE).unwrap();
 
         let mut ctx = ChartBuilder::on(&root_area)
@@ -183,11 +183,7 @@ mod tests {
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
         let basis = global_basis::BsplineBasis::new(knots, n, p);
         let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis.clone());
-        // let space = Space::<f64, f64, _>::new(basis_3d);
-
-        let de_boor = DeBoor::<f64>::open_uniform(n, p);
-        let de_boor_multi = DeBoorMulti::new([de_boor.clone(), de_boor.clone(), de_boor.clone()]);
-        let space = SplineSpace::new(de_boor_multi.clone());
+        let space = Space::<f64, [f64; 3], _>::new(basis_3d.clone());
 
         let x = 0.8;
         let elem = basis.find_elem(x);
@@ -197,11 +193,11 @@ mod tests {
         );
 
         // Jacobian
-        let control_points = SMatrix::<f64, 3, 27>::new_random();
-        let surf = space.linear_combination(control_points);
-        // let d_phi = Jacobian { geo_map: &surf };
-        // let j = d_phi.eval([0.0, 0.2, 0.5]);
-        // println!("Jacobian matrix: {j}");
+        let control_points = SMatrix::<f64, 3, 8>::new_random();
+        let solid = SplineGeo::from_matrix(control_points.transpose(), &space);
+        let x = [0.0, 0.2, 0.5];
+        let j = solid.eval_diff(x);
+        println!("Jacobian matrix: {j} and determinant {}", j.determinant());
 
         // Function values
         let x = [0.1, 0.0, 0.5];
@@ -213,8 +209,8 @@ mod tests {
 
         // todo: implement Hgrad for other bases
         // Gradients
-        let grad_b = BasisGrad::new(de_boor_multi);
-        println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]));
+        // let grad_b = BasisGrad::new(de_boor_multi);
+        // println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]));
     }
 
     #[test]

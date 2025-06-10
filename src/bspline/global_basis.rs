@@ -6,8 +6,8 @@ use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::{Dyn, OMatrix, RealField, U1};
-use crate::basis::traits::{Basis, NumBasis};
+use nalgebra::{Const, Dyn, OMatrix, RealField, U1};
+use crate::basis::traits::{Basis, HgradBasis, NumBasis};
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -58,6 +58,14 @@ impl<T: RealField + Copy> Basis<T, T> for BsplineBasis<T> {
         // todo: possibly change this, to return the full sized vector and not the local one
         let span = self.find_span(x).unwrap();
         self.elem_basis(&span).eval(x)
+    }
+}
+
+impl <T: RealField + Copy> HgradBasis<T, T, 1> for BsplineBasis<T> {
+    fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
+        // todo: possibly change this, to return the full sized vector and not the local one
+        let span = self.find_span(x).unwrap();
+        self.elem_basis(&span).eval_grad(x)
     }
 }
 

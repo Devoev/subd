@@ -1,9 +1,9 @@
 use crate::basis::local::LocalBasis;
-use crate::basis::traits::{Basis, NumBasis};
+use crate::basis::traits::{Basis, HgradBasis, NumBasis};
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::{Const, Dyn, OMatrix, RealField, RowDVector, U1};
+use nalgebra::{Const, Dyn, Matrix, OMatrix, RealField, RowDVector, U1};
 use std::iter::zip;
 use std::marker::PhantomData;
 
@@ -53,13 +53,30 @@ impl<T: RealField, B: NumBasis, const D: usize> MultiProd<T, B, D> {
 }
 
 impl<T: RealField, B: Basis<T, T, NumComponents = U1, NumBasis = Dyn>, const D: usize> MultiProd<T, B, D> {
-    /// Evaluates the tensor product basis at `x`
-    /// by applying [`Matrix::kronecker`] to each univariate basis.
-    fn eval_multi_prod(&self, x: [T; D]) -> RowDVector<T> {
-        zip(&self.bases, x)
-            .map(|(b, xi)| b.eval(xi))
-            .reduce(|acc, bi| acc.kronecker(&bi))
+    /// Computes the evaluated tensor product basis using [`Matrix::kronecker`],
+    /// given an iterator `b` of univariate basis functions for each parametric direction.
+    fn compute_multi_prod(&self, b: impl Iterator<Item = RowDVector<T>>) -> RowDVector<T> {
+        b.reduce(|acc, bi| acc.kronecker(&bi))
             .expect("Dimension D must be greater than 0!")
+    }
+}
+
+impl<T: RealField, B: HgradBasis<T, T, 1, NumBasis = Dyn>, const D: usize> MultiProd<T, B, D> {
+    // todo: move this to separate trait or Hgrad trait
+    /// Evaluates the partial derivatives of all basis functions with respect to the `i`-th direction
+    /// at the parametric point `x` as the column-wise vector `(b[1],...,b[i]/dx[i]...,b[n])`.
+    fn eval_partial_deriv(&self, x: [T; D], i: usize) -> RowDVector<T> {
+        let b = zip(&self.bases, x)
+            .enumerate()
+            .map(|(j, (b, xi))| {
+                if j == i {
+                    b.eval_grad(xi) // in 1D this is just the normal derivative
+                } else {
+                    b.eval(xi)
+                }
+            });
+
+        self.compute_multi_prod(b)
     }
 }
 
@@ -74,7 +91,15 @@ impl<T: RealField, B: Basis<T, T, NumComponents = U1, NumBasis = Dyn>, const D: 
     type NumComponents = U1;
 
     fn eval(&self, x: [T; D]) -> OMatrix<T, Const<1>, Dyn> {
-        self.eval_multi_prod(x)
+        let b = zip(&self.bases, x).map(|(b, xi)| b.eval(xi));
+        self.compute_multi_prod(b)
+    }
+}
+
+impl<T: RealField + Copy, B: HgradBasis<T, T, 1, NumBasis = Dyn>, const D: usize> HgradBasis<T, [T; D], D> for MultiProd<T, B, D> {
+    fn eval_grad(&self, x: [T; D]) -> OMatrix<T, Const<D>, Dyn> {
+        let partial_derivs = (0..D).map(|i| self.eval_partial_deriv(x, i)).collect_vec();
+        Matrix::from_rows(&partial_derivs)
     }
 }
 

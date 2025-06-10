@@ -1,12 +1,12 @@
 use crate::basis::space::Space;
-use crate::basis::traits::Basis;
+use crate::basis::traits::{Basis, HgradBasis};
 use crate::bspline::global_basis::{BsplineBasis, MultiBsplineBasis};
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix, U1};
 
-// todo: replace B argument with MultiBsplineBasis directly
+// todo: replace B argument with MultiBsplineBasis directly. or should only a local basis be used?
 
 /// A B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a regular [Spline] where each of the [`M`] components is represented
@@ -34,6 +34,7 @@ pub type SplineVol<'a, T, const M: usize> = SplineGeo<'a, T, (T, T, T), MultiBsp
 impl <'a, T: RealField, X, B, const M: usize> SplineGeo<'a, T, X, B, M> {
     /// Constructs a new [`SplineGeo`] from the given `control_points` and `space`.
     pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a Space<T, X, B>) -> Self {
+        // todo: check if number of control points match space dimension
         SplineGeo { control_points, space }
     }
 
@@ -41,7 +42,7 @@ impl <'a, T: RealField, X, B, const M: usize> SplineGeo<'a, T, X, B, M> {
     pub fn from_matrix<N: Dim>(mat: OMatrix<T, N, Const<M>>, space: &'a Space<T, X, B>) -> Self
         where DefaultAllocator: Allocator<N, Const<M>>
     {
-        let c = mat.generic_view((0, 0), (Dyn(5), Const::<M>));
+        let c = mat.generic_view((0, 0), (Dyn(mat.nrows()), Const::<M>));
         SplineGeo::new(c.into_owned(), space)
     }
 }
@@ -51,7 +52,7 @@ impl <'a, T: RealField, X, B, const M: usize> SplineGeo<'a, T, X, B, M> {
 impl <T, X, B, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, T, X, B, M>
     where T: RealField,
           X: Dimensioned<T, D>,
-          B: Basis<T, X, NumComponents = U1, NumBasis = Dyn>,
+          B: HgradBasis<T, X, D, NumBasis = Dyn>,
 {
     fn eval(&self, x: X) -> Point<T, M> {
         let b = self.space.basis.eval(x);
@@ -60,21 +61,23 @@ impl <T, X, B, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'
     }
 
     fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
-        todo!("Implement this if BsplineBasis trait is fully replaced with Basis")
+        let grads = &self.space.basis.eval_grad(x);
+        let c = &self.control_points;
+        (grads * c).transpose()
     }
 }
 
 impl <'a, T, X, B, const D: usize, const M: usize> Chart<T, X, D, M> for &'a SplineGeo<'a, T, X, B, M>
     where T: RealField,
           X: Dimensioned<T, D>,
-          B: Basis<T, X, NumComponents = U1, NumBasis = Dyn>,
+          B: HgradBasis<T, X, D, NumBasis = Dyn>,
 {
     fn eval(&self, x: X) -> Point<T, M> {
         Point::from((*self).eval(x))
     }
 
     fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
-        todo!("Implement this if BsplineBasis trait is fully replaced with Basis")
+        (*self).eval_diff(x)
     }
 }
 
