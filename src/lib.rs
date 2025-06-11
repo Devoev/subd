@@ -94,10 +94,14 @@ mod tests {
         let basis_2d = MultiBsplineBasis::new([basis.clone(), basis.clone()]);
         let basis_3d = MultiBsplineBasis::new([basis.clone(), basis.clone(), basis.clone()]);
 
+        let space_1d = BsplineSpace::new(MultiBsplineBasis::new([basis.clone()]));
+        let space_2d = BsplineSpace::new(basis_2d);
+        let space_3d = BsplineSpace::new(basis_3d);
+
         let t = 0.6;
-        println!("{}", basis.eval(t));
-        println!("{}", basis_2d.eval([t, t]));
-        println!("{}", basis_3d.eval([t, t, t]));
+        println!("{}", space_1d.eval_local(t));
+        println!("{}", space_2d.eval_local([t, t]));
+        println!("{}", space_3d.eval_local([t, t, t]));
     }
 
     #[test]
@@ -202,10 +206,9 @@ mod tests {
 
         // Function values
         let x = [0.1, 0.0, 0.5];
-        let elem_3d = basis_3d.find_elem(x);
         println!(
             "Function values of basis: {}",
-            basis_3d.eval([0.1, 0.0, 0.5])
+            space.eval_local([0.1, 0.0, 0.5])
         );
 
         // todo: implement Hgrad for other bases

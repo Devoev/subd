@@ -2,7 +2,8 @@ use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dyn, RealField};
 use crate::basis::eval::EvalBasis;
-// todo: possibly remove Basis super trait again
+
+// todo: NumBasis from basis super-trait is never used. Can this be removed?
 
 /// Set of basis functions with local support on each [element](Self::Elem).
 ///

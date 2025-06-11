@@ -66,21 +66,21 @@ impl<T: RealField + Copy> Basis for BsplineBasis<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasis<T> {
-    fn eval(&self, x: T) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
-        // todo: possibly change this, to return the full sized vector and not the local one
-        let span = self.find_span(x).unwrap();
-        self.elem_basis(&span).eval(x)
-    }
-}
-
-impl <T: RealField + Copy> EvalGrad<T, T, 1> for BsplineBasis<T> {
-    fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
-        // todo: possibly change this, to return the full sized vector and not the local one
-        let span = self.find_span(x).unwrap();
-        self.elem_basis(&span).eval_grad(x)
-    }
-}
+// impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasis<T> {
+//     fn eval(&self, x: T) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
+//         // todo: possibly change this, to return the full sized vector and not the local one
+//         let span = self.find_span(x).unwrap();
+//         self.elem_basis(&span).eval(x)
+//     }
+// }
+//
+// impl <T: RealField + Copy> EvalGrad<T, T, 1> for BsplineBasis<T> {
+//     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
+//         // todo: possibly change this, to return the full sized vector and not the local one
+//         let span = self.find_span(x).unwrap();
+//         self.elem_basis(&span).eval_grad(x)
+//     }
+// }
 
 impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
     type Elem = KnotSpan;

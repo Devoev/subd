@@ -1,9 +1,11 @@
+use itertools::Itertools;
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
+use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix, U1};
 use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::local::LocalBasis;
 
 /// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a linear combination where each of the [`M`] components is represented
@@ -51,24 +53,26 @@ impl <'a, T: RealField, X, const D: usize, const M: usize> SplineGeo<'a, T, X, D
 
 impl <T, X, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, T, X, D, M>
     where T: RealField + Copy,
-          X: Dimensioned<T, D>,
+          X: Dimensioned<T, D> + Copy
 {
     fn eval(&self, x: X) -> Point<T, M> {
-        let b = self.space.basis.eval(x.into_arr());
-        let c = &self.control_points;
+        let (b, idx) = self.space.eval_local_with_idx(x);
+        // todo: replace collect_vec().iter() somehow
+        let c = &self.control_points.select_rows(idx.collect_vec().iter());
         Point::from((b * c).transpose())
     }
 
     fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
-        let grads = &self.space.basis.eval_grad(x.into_arr());
-        let c = &self.control_points;
-        (grads * c).transpose()
+        todo!("Implement eval_grad_local");
+        // let grads = &self.space.basis.eval_grad(x);
+        // let c = &self.control_points;
+        // (grads * c).transpose()
     }
 }
 
 impl <'a, T, X, const D: usize, const M: usize> Chart<T, X, D, M> for &'a SplineGeo<'a, T, X, D, M>
     where T: RealField + Copy,
-          X: Dimensioned<T, D>,
+          X: Dimensioned<T, D> + Copy,
 {
     fn eval(&self, x: X) -> Point<T, M> {
         Point::from((*self).eval(x))
