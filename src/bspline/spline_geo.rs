@@ -1,45 +1,45 @@
-use crate::basis::space::Space;
 use crate::basis::traits::{Basis, HgradBasis};
-use crate::bspline::global_basis::{BsplineBasis, MultiBsplineBasis};
+use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix, U1};
+use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
 
-// todo: replace B argument with MultiBsplineBasis directly. or should only a local basis be used?
-
-/// A B-spline geometry embedded [`M`]-dimensional Euclidean space.
-/// Each spline geometry is a regular [Spline] where each of the [`M`] components is represented
+/// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
+/// Each spline geometry is a linear combination where each of the [`M`] components is represented
 /// by the same basis [`B`].
 /// This is equivalent to using points of size [`M`] for each coefficient 
 /// and a single scalar valued basis.
 #[derive(Debug, Clone)]
-pub struct SplineGeo<'a, T: RealField, X, B, const M: usize> {
+pub struct SplineGeo<'a, T: RealField, X, const D: usize, const M: usize> {
     /// Matrix of control points.
     pub control_points: OMatrix<T, Dyn, Const<M>>,
 
-    /// Space of basis functions.
-    pub space: &'a Space<T, X, B>,
+    /// Space of scalar B-Splines.
+    pub space: &'a BsplineSpace<T, X, D>
 }
 
 /// A spline curve in [`M`] dimensions.
-pub type SplineCurve<'a, T, const M: usize> = SplineGeo<'a, T, T, BsplineBasis<T>, M>;
+pub type SplineCurve<'a, T, const M: usize> = SplineGeo<'a, T, T, 1, M>;
 
 /// A spline surface in [`M`] dimensions.
-pub type SplineSurf<'a, T, const M: usize> = SplineGeo<'a, T, (T, T), MultiBsplineBasis<T, 2>, M>;
+pub type SplineSurf<'a, T, const M: usize> = SplineGeo<'a, T, (T, T), 2, M>;
 
 /// A spline volume in [`M`] dimensions.
-pub type SplineVol<'a, T, const M: usize> = SplineGeo<'a, T, (T, T, T), MultiBsplineBasis<T, 3>, M>;
+pub type SplineVol<'a, T, const M: usize> = SplineGeo<'a, T, (T, T, T), 3, M>;
 
-impl <'a, T: RealField, X, B, const M: usize> SplineGeo<'a, T, X, B, M> {
+/// A [`D`]-variate spline geometry in [`M`]-dimensions.
+pub type MultiSplineGeo<'a, T, const D: usize, const M: usize> = SplineGeo<'a, T, [T; D], D, M>;
+
+impl <'a, T: RealField, X, const D: usize, const M: usize> SplineGeo<'a, T, X, D, M> {
     /// Constructs a new [`SplineGeo`] from the given `control_points` and `space`.
-    pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a Space<T, X, B>) -> Self {
+    pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Self {
         // todo: check if number of control points match space dimension
         SplineGeo { control_points, space }
     }
 
     /// Constructs a new [`SplineGeo`] from the given matrix `mat` of control points as row vectors.
-    pub fn from_matrix<N: Dim>(mat: OMatrix<T, N, Const<M>>, space: &'a Space<T, X, B>) -> Self
+    pub fn from_matrix<N: Dim>(mat: OMatrix<T, N, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Self
         where DefaultAllocator: Allocator<N, Const<M>>
     {
         let c = mat.generic_view((0, 0), (Dyn(mat.nrows()), Const::<M>));
@@ -49,28 +49,26 @@ impl <'a, T: RealField, X, B, const M: usize> SplineGeo<'a, T, X, B, M> {
 
 // todo: add implementation for LocalBasis as well, or just for local basis
 
-impl <T, X, B, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, T, X, B, M>
-    where T: RealField,
+impl <T, X, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, T, X, D, M>
+    where T: RealField + Copy,
           X: Dimensioned<T, D>,
-          B: HgradBasis<T, X, D, NumBasis = Dyn>,
 {
     fn eval(&self, x: X) -> Point<T, M> {
-        let b = self.space.basis.eval(x);
+        let b = self.space.basis.eval(x.into_arr());
         let c = &self.control_points;
         Point::from((b * c).transpose())
     }
 
     fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
-        let grads = &self.space.basis.eval_grad(x);
+        let grads = &self.space.basis.eval_grad(x.into_arr());
         let c = &self.control_points;
         (grads * c).transpose()
     }
 }
 
-impl <'a, T, X, B, const D: usize, const M: usize> Chart<T, X, D, M> for &'a SplineGeo<'a, T, X, B, M>
-    where T: RealField,
+impl <'a, T, X, const D: usize, const M: usize> Chart<T, X, D, M> for &'a SplineGeo<'a, T, X, D, M>
+    where T: RealField + Copy,
           X: Dimensioned<T, D>,
-          B: HgradBasis<T, X, D, NumBasis = Dyn>,
 {
     fn eval(&self, x: X) -> Point<T, M> {
         Point::from((*self).eval(x))

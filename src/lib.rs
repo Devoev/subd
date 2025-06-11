@@ -22,14 +22,13 @@ mod tests {
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::global_basis::MultiBsplineBasis;
-    use crate::bspline::grad::BasisGrad;
-    use crate::bspline::space::SplineSpace;
-    use crate::bspline::spline_geo::{SplineCurve, SplineGeo, SplineSurf};
+    use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::bspline::{cart_prod, global_basis, tensor_prod};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
     use crate::cells::vertex::VertexTopo;
+    use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
     use crate::knots::breaks::Breaks;
@@ -47,14 +46,14 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2, U5, U8};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::diffgeo::chart::Chart;
+    use crate::bspline::space::BsplineSpace;
 
     #[test]
     fn knots() {
@@ -105,8 +104,9 @@ mod tests {
         let n = 5;
         let p = 2;
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        let basis = global_basis::BsplineBasis::new(knots, n, p);
-        let space = Space::<f64, f64, _>::new(basis);
+        let basis_1d = global_basis::BsplineBasis::new(knots, n, p);
+        let basis = MultiBsplineBasis::new([basis_1d]);
+        let space = BsplineSpace::new(basis);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
