@@ -18,7 +18,7 @@ use crate::basis::eval::EvalBasis;
 /// Assembles the discrete hodge operator (mass matrix).
 pub fn assemble_hodge<'a, T, B, const D: usize>(
     msh: &'a BezierMesh<'a, T, D, D>,
-    space: &Space<T, [T; D], B>,
+    space: &Space<T, [T; D], B, D>,
     quad: impl Quadrature<T, D, Node=[T; D], Elem=BezierElem<'a, T, D, D>>,
 ) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,

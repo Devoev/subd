@@ -188,7 +188,7 @@ mod tests {
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
         let basis = global_basis::BsplineBasis::new(knots, n, p);
         let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis.clone());
-        let space = Space::<f64, [f64; 3], _>::new(basis_3d.clone());
+        let space = Space::new(basis_3d.clone());
 
         let x = 0.8;
         let elem = basis.find_elem(x);
@@ -198,7 +198,7 @@ mod tests {
         );
 
         // Jacobian
-        let control_points = SMatrix::<f64, 3, 8>::new_random();
+        let control_points = SMatrix::<f64, 3, 27>::new_random();
         let solid = SplineGeo::from_matrix(control_points.transpose(), &space);
         let x = [0.0, 0.2, 0.5];
         let j = solid.eval_diff(x);
@@ -212,9 +212,7 @@ mod tests {
         );
 
         // todo: implement Hgrad for other bases
-        // Gradients
-        // let grad_b = BasisGrad::new(de_boor_multi);
-        // println!("Gradients of basis: {}", grad_b.eval([0.1, 0.0, 0.5]));
+        println!("Gradients of basis: {}", space.eval_grad_local([0.1, 0.0, 0.5]));
     }
 
     #[test]

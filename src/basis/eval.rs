@@ -45,9 +45,10 @@ pub trait EvalDerivs<T: RealField, X>: EvalBasis<T, X, NumComponents = U1>
 /// - [`X`] : Type of parametric values in the reference domain.
 /// - [`D`] : Dimension of the reference domain.
 pub trait EvalGrad<T: RealField, X, const D: usize> : EvalBasis<T, X, NumComponents = U1>
-    where DefaultAllocator: Allocator<U1, Self::NumBasis>
+    where DefaultAllocator: Allocator<U1, Self::NumBasis>,
+          DefaultAllocator: Allocator<Const<D>, Self::NumBasis>
 {
     /// Evaluates the gradients of all basis functions at the parametric point `x`
     /// as the column-wise matrix `(grad b[1],...,grad b[n])`.
-    fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Dyn>;
+    fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Self::NumBasis>;
 }

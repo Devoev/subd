@@ -63,10 +63,10 @@ impl <T, X, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, 
     }
 
     fn eval_diff(&self, x: X) -> SMatrix<T, M, D> {
-        todo!("Implement eval_grad_local");
-        // let grads = &self.space.basis.eval_grad(x);
-        // let c = &self.control_points;
-        // (grads * c).transpose()
+        let (grad_b, idx) = self.space.eval_grad_local_with_idx(x);
+        // todo: replace collect_vec().iter() somehow
+        let c = &self.control_points.select_rows(idx.collect_vec().iter());
+        (grad_b * c).transpose()
     }
 }
 

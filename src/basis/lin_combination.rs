@@ -5,17 +5,17 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DVector, DefaultAllocator, Dyn, OVector};
 
 /// Linear combination of coefficients with basis functions.
-pub struct LinCombination<'a, T: ComplexField, X, B> {
+pub struct LinCombination<'a, T: ComplexField, X, B, const D: usize> {
     /// Coefficients vector.
     pub coeffs: DVector<T>,
 
     /// Space of basis functions.
-    pub space: &'a Space<T::RealField, X, B>,
+    pub space: &'a Space<T::RealField, X, B, D>,
 }
 
-impl <'a, T: ComplexField, X, B: Basis> LinCombination<'a, T, X, B> {
+impl <'a, T: ComplexField, X, B: Basis, const D: usize> LinCombination<'a, T, X, B, D> {
     /// Constructs a new [`LinCombination`] from the given `coeffs` and `space`.
-    pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B>) -> Self {
+    pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B, D>) -> Self {
         assert_eq!(coeffs.ncols(), space.dim(),
                    "The number of coefficients (is {}) must match the dimension of the space (is {})",
                    coeffs.ncols(), space.dim());
@@ -24,7 +24,7 @@ impl <'a, T: ComplexField, X, B: Basis> LinCombination<'a, T, X, B> {
     }
 }
 
-impl <'a, T, X, B> LinCombination<'a, T, X, B>
+impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
     where T: ComplexField, // todo: replace this with ComplexField and fix c * b in eval
           B: EvalBasis<T::RealField, X, NumBasis=Dyn>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
