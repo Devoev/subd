@@ -1,11 +1,9 @@
-use itertools::Itertools;
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
+use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix, U1};
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::LocalBasis;
+use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
 
 /// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a linear combination where each of the [`M`] components is represented
@@ -82,37 +80,3 @@ impl <'a, T, X, const D: usize, const M: usize> Chart<T, X, D, M> for &'a Spline
         (*self).eval_diff(x)
     }
 }
-
-// /// Jacobian matrix of a [`SplineGeo`].
-// pub struct Jacobian<'a, T: RealField, X, B, const M: usize>
-// where T: RealField,
-//       B: Basis<T, X>,
-//       DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>
-// {
-//     pub geo_map: &'a SplineGeo<'a, T, X, B, M>,
-// }
-//
-// impl <'a, T, const D: usize, const M: usize, Nc> Jacobian<'a, T, [T; D], MultiBsplineBasis<T, D>, M>
-//     where T: RealField + Copy,
-//           Nc: Dim,
-//           ShapeConstraint: AreMultipliable<Const<M>, Nc, Dyn, U1>,
-//           DefaultAllocator: Allocator<Const<M>, Nc>,
-//           DefaultAllocator: Allocator<Const<M>, Const<D>, Buffer<T> = ArrayStorage<T, M, D>>
-// {
-//     /// Evaluates the Jacobian at the parametric point `x`.
-//     pub fn eval(&self, x: [T; D]) -> SMatrix<T, M, D> {
-//         let b = &self.geo_map.space.basis;
-//
-//         // Get nonzero indices and select coefficients
-//         let (_, idx) = b.eval_deriv_multi_prod(x, 0);
-//         let c = &self.geo_map.coeffs.select_columns(idx.collect_vec().iter());
-//
-//         // Calculate partial derivatives in each direction and evaluate
-//         let cols = (0..D).map(|du| {
-//             let (b_du, _) = b.eval_deriv_multi_prod(x, du);
-//             c * b_du
-//         }).collect_vec();
-//
-//         Matrix::from_columns(&cols)
-//     }
-// }

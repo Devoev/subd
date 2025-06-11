@@ -211,7 +211,6 @@ mod tests {
             space.eval_local([0.1, 0.0, 0.5])
         );
 
-        // todo: implement Hgrad for other bases
         println!("Gradients of basis: {}", space.eval_grad_local([0.1, 0.0, 0.5]));
     }
 
