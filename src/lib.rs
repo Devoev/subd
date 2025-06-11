@@ -274,13 +274,19 @@ mod tests {
         let basis_uni = global_basis::BsplineBasis::new(knots.clone(), n, p);
         let basis_geo = MultiBsplineBasis::new([basis_uni.clone(), basis_uni.clone()]);
         let space_geo = Space::new(basis_geo);
-        let c = OMatrix::<f64, U2, Dyn>::from_column_slice(&[
+        let c = OMatrix::<f64, Dyn, U2>::from_row_slice(&[
             0.0, 0.0,
-            0.0, 1.0,
+            0.5, 0.0,
             1.0, 0.0,
-            1.0, 1.0]
-        );
-        let geo_map = SplineGeo::new(c.transpose(), &space_geo)
+            0.0, 0.5,
+            0.5, 0.5,
+            1.0, 0.5,
+            0.0, 1.0,
+            0.5, 1.0,
+            1.0, 1.0,
+        ]);
+
+        let geo_map = SplineGeo::new(c, &space_geo)
             .unwrap_or_else(|e| panic!("{e}"));
 
         let breaks = Breaks::from_knots(knots.clone());

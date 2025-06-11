@@ -1,12 +1,10 @@
-use std::ops::Deref;
+use crate::basis::error::CoeffsSpaceDimError;
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
-use crate::basis::error::CoeffsSpaceDimError;
-use crate::basis::traits::Basis;
 
 /// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a linear combination where each of the [`M`] components is represented
@@ -55,8 +53,6 @@ impl <'a, T: RealField, X, const D: usize, const M: usize> SplineGeo<'a, T, X, D
         SplineGeo::new(c.into_owned(), space)
     }
 }
-
-// todo: add implementation for LocalBasis as well, or just for local basis
 
 impl <T, X, const D: usize, const M: usize> Chart<T, X, D, M> for SplineGeo<'_, T, X, D, M>
     where T: RealField + Copy,
