@@ -1,20 +1,8 @@
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
 use nalgebra::allocator::Allocator;
 
-/// Set of [`Self::num_basis`] basis functions.
-pub trait NumBasis {
-    /// Returns the number of basis functions in this set.
-    fn num_basis(&self) -> usize;
-}
-
-/// Set of basis functions which can be evaluated at arbitrary points using [`Self::eval`].
-///
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-pub trait Basis<T: RealField, X>: NumBasis
-    where DefaultAllocator: Allocator<Self::NumComponents, Self::NumBasis>
-{
+/// Set of [`Self::NumBasis`] basis functions with [`Self::NumComponents`].
+pub trait Basis {
     /// Number of basis functions.
     type NumBasis: Dim;
 
@@ -23,44 +11,15 @@ pub trait Basis<T: RealField, X>: NumBasis
     /// for vector valued functions equal to the dimension of the parametric domain.
     type NumComponents: DimName;
 
-    /// Evaluates all basis functions at the parametric point `x`
-    /// as the column-wise matrix `(b[1],...,b[n])`.
-    fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis>;
-}
+    /// Returns the number of basis functions in this set.
+    fn num_basis(&self) -> usize;
 
-/// Scalar, differentiable basis functions.
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-pub trait DiffBasis<T: RealField, X>: Basis<T, X, NumComponents = U1>
-    where DefaultAllocator: Allocator<U1, Self::NumBasis>
-{
-    /// Evaluates the value and the first [`K`] derivatives of all basis functions
-    /// at the parametric point `x` as the matrix
-    /// ```text
-    ///   ┌                     ┐
-    ///   │  b[1]   ...   b[n]  │
-    ///   │  db[1]  ...  db[n]  │
-    ///   │ db[1]^2 ... db[n]^2 │
-    ///   │ db[1]^3 ... db[n]^3 │
-    ///   │                     │
-    ///   └                     ┘
-    /// ```
-    /// where each row corresponds to the `i-1`-th derivative of basis functions.
-    fn eval_derivs<const K: usize>(&self, x: X) -> OMatrix<T, DimNameSum<Const<K>, U1>, Self::NumBasis>
-        where Const<K>: DimNameAdd<U1>,
-              DefaultAllocator: Allocator<<Const<K> as DimNameAdd<U1>>::Output, Self::NumBasis>;
-}
+    /// Returns the number of basis functions wrapped into [`Self::NumBasis`] (`Const` or `Dyn`).
+    fn num_basis_generic(&self) -> Self::NumBasis;
 
-/// Basis functions for `H(grad)`-conforming spaces (i.e. nodal functions).
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-/// - [`D`] : Dimension of the reference domain.
-pub trait HgradBasis<T: RealField, X, const D: usize> : Basis<T, X, NumComponents = U1>
-    where DefaultAllocator: Allocator<U1, Self::NumBasis>
-{
-    /// Evaluates the gradients of all basis functions at the parametric point `x` 
-    /// as the column-wise matrix `(grad b[1],...,grad b[n])`.
-    fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Dyn>;
+    /// Returns the number of components for each basis function.
+    fn num_components(&self) -> usize;
+
+    /// Returns the number of components wrapped into [`Self::NumComponents`] (`Const`).
+    fn num_components_generic(&self) -> Self::NumComponents;
 }

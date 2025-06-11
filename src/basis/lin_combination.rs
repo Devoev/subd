@@ -1,10 +1,8 @@
-use std::ops::Mul;
-use itertools::Itertools;
+use crate::basis::eval::EvalBasis;
 use crate::basis::space::Space;
-use crate::basis::traits::{Basis, NumBasis};
-use nalgebra::{ComplexField, Const, DVector, DefaultAllocator, Dyn, Matrix, OVector, RealField, SVector, VecStorage};
+use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use crate::basis::local::LocalBasis;
+use nalgebra::{ComplexField, DVector, DefaultAllocator, Dyn, OVector};
 
 /// Linear combination of coefficients with basis functions.
 pub struct LinCombination<'a, T: ComplexField, X, B> {
@@ -15,7 +13,7 @@ pub struct LinCombination<'a, T: ComplexField, X, B> {
     pub space: &'a Space<T::RealField, X, B>,
 }
 
-impl <'a, T: ComplexField, X, B: NumBasis> LinCombination<'a, T, X, B> {
+impl <'a, T: ComplexField, X, B: Basis> LinCombination<'a, T, X, B> {
     /// Constructs a new [`LinCombination`] from the given `coeffs` and `space`.
     pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B>) -> Self {
         assert_eq!(coeffs.ncols(), space.dim(),
@@ -28,7 +26,7 @@ impl <'a, T: ComplexField, X, B: NumBasis> LinCombination<'a, T, X, B> {
 
 impl <'a, T, X, B> LinCombination<'a, T, X, B>
     where T: ComplexField, // todo: replace this with ComplexField and fix c * b in eval
-          B: Basis<T::RealField, X, NumBasis=Dyn>,
+          B: EvalBasis<T::RealField, X, NumBasis=Dyn>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
           DefaultAllocator: Allocator<B::NumComponents>,
 {

@@ -1,8 +1,9 @@
 use crate::basis::tensor_prod::MultiProd;
-use crate::basis::traits::{Basis, DiffBasis, HgradBasis, NumBasis};
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
+use crate::basis::eval::{EvalBasis, EvalDerivs, EvalGrad};
+use crate::basis::traits::Basis;
 
 /// Local B-Spline basis inside a knot span.
 #[derive(Debug, Clone)]
@@ -27,16 +28,28 @@ impl <T: RealField> BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> NumBasis for BsplineBasisLocal<T> {
-    fn num_basis(&self) -> usize {
-        self.degree + 1
-    }
-}
-
-impl<T: RealField + Copy> Basis<T, T> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> Basis for BsplineBasisLocal<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
+    fn num_basis(&self) -> usize {
+        self.degree + 1
+    }
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        Dyn(self.num_basis())
+    }
+
+    fn num_components(&self) -> usize {
+        1
+    }
+
+    fn num_components_generic(&self) -> Self::NumComponents {
+        U1
+    }
+}
+
+impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasisLocal<T> {
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;
@@ -62,7 +75,7 @@ impl<T: RealField + Copy> Basis<T, T> for BsplineBasisLocal<T> {
     }
 }
 
-impl <T: RealField + Copy> DiffBasis<T, T> for BsplineBasisLocal<T> {
+impl <T: RealField + Copy> EvalDerivs<T, T> for BsplineBasisLocal<T> {
     fn eval_derivs<const K: usize>(&self, x: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
     where
         Const<K>: DimNameAdd<U1>
@@ -157,7 +170,7 @@ impl <T: RealField + Copy> DiffBasis<T, T> for BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> HgradBasis<T, T, 1> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> EvalGrad<T, T, 1> for BsplineBasisLocal<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()

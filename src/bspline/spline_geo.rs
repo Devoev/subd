@@ -1,9 +1,9 @@
-use crate::basis::traits::{Basis, HgradBasis};
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
+use crate::basis::eval::{EvalBasis, EvalGrad};
 
 /// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a linear combination where each of the [`M`] components is represented

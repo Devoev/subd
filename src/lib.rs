@@ -17,7 +17,7 @@ pub mod diffgeo;
 mod tests {
     use crate::basis::local::LocalBasis;
     use crate::basis::space::Space;
-    use crate::basis::traits::{Basis, DiffBasis, NumBasis};
+    use crate::basis::traits::{Basis};
     use crate::bspline::basis::BsplineBasis;
     use crate::bspline::de_boor::DeBoorMulti;
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
@@ -53,6 +53,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::basis::eval::{EvalBasis, EvalDerivs};
     use crate::bspline::space::BsplineSpace;
 
     #[test]

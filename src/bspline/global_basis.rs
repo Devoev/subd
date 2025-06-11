@@ -7,7 +7,8 @@ use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, Dyn, OMatrix, RealField, U1};
-use crate::basis::traits::{Basis, HgradBasis, NumBasis};
+use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::traits::Basis;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -44,16 +45,28 @@ impl <T: RealField + Copy> BsplineBasis<T> {
     }
 }
 
-impl<T: RealField + Copy> NumBasis for BsplineBasis<T> {
-    fn num_basis(&self) -> usize {
-        self.num_basis
-    }
-}
-
-impl<T: RealField + Copy> Basis<T, T> for BsplineBasis<T> {
+impl<T: RealField + Copy> Basis for BsplineBasis<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
+    fn num_basis(&self) -> usize {
+        self.num_basis
+    }
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        Dyn(self.num_basis)
+    }
+
+    fn num_components(&self) -> usize {
+        1
+    }
+
+    fn num_components_generic(&self) -> Self::NumComponents {
+        U1
+    }
+}
+
+impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasis<T> {
     fn eval(&self, x: T) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         // todo: possibly change this, to return the full sized vector and not the local one
         let span = self.find_span(x).unwrap();
@@ -61,7 +74,7 @@ impl<T: RealField + Copy> Basis<T, T> for BsplineBasis<T> {
     }
 }
 
-impl <T: RealField + Copy> HgradBasis<T, T, 1> for BsplineBasis<T> {
+impl <T: RealField + Copy> EvalGrad<T, T, 1> for BsplineBasis<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         // todo: possibly change this, to return the full sized vector and not the local one
         let span = self.find_span(x).unwrap();

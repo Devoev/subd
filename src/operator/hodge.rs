@@ -11,6 +11,7 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
+use crate::basis::eval::EvalBasis;
 // todo: this function is only a temporary implementation.
 //  make this generic over the space and mesh type!
 
@@ -22,7 +23,7 @@ pub fn assemble_hodge<'a, T, B, const D: usize>(
 ) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B: LocalBasis<T, [T; D]>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis<T, [T; D]>>::NumComponents, <B::ElemBasis as Basis<T, [T; D]>>::NumBasis>
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
     let mut mij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
@@ -52,7 +53,7 @@ pub fn assemble_hodge_local<T, X, E, B, const D: usize>(
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
-          B: Basis<T, [T; D]>,
+          B: EvalBasis<T, [T; D]>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>
 {
     // Evaluate basis at each quadrature point and store in buffer

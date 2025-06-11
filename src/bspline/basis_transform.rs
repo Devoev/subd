@@ -1,7 +1,8 @@
 //! Spline bases for uniform knot vectors.
 
-use crate::basis::traits::{Basis, NumBasis};
 use nalgebra::{matrix, vector, Const, RealField, RowSVector, SMatrix, SVector, U1};
+use crate::basis::eval::EvalBasis;
+use crate::basis::traits::Basis;
 
 /// B-Spline basis of dimension [`N`],
 /// evaluated by transformation of [`M`] monomial basis functions `{xᵐ}`
@@ -23,16 +24,28 @@ impl <T: RealField + Copy, const N: usize, const M: usize> BasisTransform<T, N, 
     }
 }
 
-impl<T: RealField + Copy, const N: usize, const M: usize> NumBasis for BasisTransform<T, N, M> {
-    fn num_basis(&self) -> usize {
-        N
-    }
-}
-
-impl <T: RealField + Copy, const N: usize, const M: usize> Basis<T, T> for BasisTransform<T, N, M> {
+impl<T: RealField + Copy, const N: usize, const M: usize> Basis for BasisTransform<T, N, M> {
     type NumBasis = Const<N>;
     type NumComponents = U1;
 
+    fn num_basis(&self) -> usize {
+        N
+    }
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        Const::<N>
+    }
+
+    fn num_components(&self) -> usize {
+        1
+    }
+
+    fn num_components_generic(&self) -> Self::NumComponents {
+        U1
+    }
+}
+
+impl <T: RealField + Copy, const N: usize, const M: usize> EvalBasis<T, T> for BasisTransform<T, N, M> {
     fn eval(&self, x: T) -> RowSVector<T, N> {
         self.eval(x).transpose()
     }

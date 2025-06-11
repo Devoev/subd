@@ -1,4 +1,4 @@
-use crate::basis::traits::{NumBasis};
+use crate::basis::traits::{Basis};
 use std::marker::PhantomData;
 use nalgebra::{DVector, RealField};
 use crate::basis::lin_combination::LinCombination;
@@ -15,7 +15,7 @@ pub struct Space<T, X, B> {
     _phantom_data: PhantomData<(T, X)>
 }
 
-impl <T, X, B: NumBasis> Space<T, X, B> {
+impl <T, X, B: Basis> Space<T, X, B> {
     /// Constructs a new [`Space`] from the given `basis`.
     pub fn new(basis: B) -> Self {
         Self { basis, _phantom_data: PhantomData }
@@ -27,7 +27,7 @@ impl <T, X, B: NumBasis> Space<T, X, B> {
     }
 }
 
-impl <T: RealField, X, B: NumBasis> Space<T, X, B> {
+impl <T: RealField, X, B: Basis> Space<T, X, B> {
     /// Calculates the linear combination of the given `coeffs` with the basis function of this space,
     /// and returns the resulting [`LinCombination`].
     pub fn linear_combination(&self, coeffs: DVector<T>) -> LinCombination<T, X, B>  {
