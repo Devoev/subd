@@ -108,10 +108,7 @@ mod tests {
     fn spline_curves() {
         let n = 5;
         let p = 2;
-        let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        let basis_1d = global_basis::BsplineBasis::new(knots, n, p);
-        let basis = MultiBsplineBasis::new([basis_1d]);
-        let space = BsplineSpace::new(basis);
+        let space = BsplineSpace::new_open_uniform([n], [p]);
         let coords = matrix![
             -1.0, -0.5, 0.0, 0.5, 1.0;
             0.0, 0.7, 0.0, -0.7, 0.0;
@@ -140,11 +137,7 @@ mod tests {
     fn spline_surf() {
         let n = 3;
         let p = 2;
-
-        let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        let basis_1d = global_basis::BsplineBasis::new(knots, n, p);
-        let basis_2d = MultiBsplineBasis::new([basis_1d.clone(), basis_1d]);
-        let space = Space::new(basis_2d);
+        let space = BsplineSpace::new_open_uniform([n, n], [p, p]);
 
         let control_points = matrix![
             0.0, 0.3, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.8;

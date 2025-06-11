@@ -15,21 +15,21 @@ use std::marker::PhantomData;
 /// bᵢ: X×...×X ⟶ ℝ   x ↦ bᵢ[1](x[1]) ... bᵢ[d](x[d])
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct MultiProd<T: RealField, B, const D: usize> {
+pub struct MultiProd<T, B, const D: usize> {
     /// The bases for each parametric direction.
     pub bases: [B; D],
 
     _phantom_data: PhantomData<T>,
 }
 
-impl<T: RealField, B, const D: usize> MultiProd<T, B, D> {
+impl<T, B, const D: usize> MultiProd<T, B, D> {
     /// Constructs a new [`MultiProd`] from the given array `bases` of `D` univariate bases.
     pub fn new(bases: [B; D]) -> Self {
         MultiProd { bases, _phantom_data: Default::default() }
     }
 }
 
-impl<T: RealField, B: Clone, const D: usize> MultiProd<T, B, D> {
+impl<T, B: Clone, const D: usize> MultiProd<T, B, D> {
     /// Constructs a new [`MultiProd`] using the given `basis` for every parametric direction.
     pub fn repeat(basis: B) -> Self {
         Self::new(std::array::from_fn(|_| basis.clone()))
@@ -38,7 +38,7 @@ impl<T: RealField, B: Clone, const D: usize> MultiProd<T, B, D> {
 
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
-impl<T: RealField, B: Basis, const D: usize> MultiProd<T, B, D> {
+impl<T, B: Basis, const D: usize> MultiProd<T, B, D> {
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn shape(&self) -> DimShape<D> {
         let arr = self.bases.iter()
