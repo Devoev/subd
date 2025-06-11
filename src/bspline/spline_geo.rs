@@ -43,7 +43,7 @@ impl <'a, T: RealField, X, const D: usize, const M: usize> SplineGeo<'a, T, X, D
     pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Result<Self, CoeffsSpaceDimError> {
         match control_points.nrows() == space.dim() {
             true => Ok(SplineGeo { control_points, space }),
-            false => Err(CoeffsSpaceDimError { num_coeffs: control_points.ncols(), dim_space: space.dim() })
+            false => Err(CoeffsSpaceDimError { num_coeffs: control_points.nrows(), dim_space: space.dim() })
         }
     }
 

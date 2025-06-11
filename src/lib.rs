@@ -53,6 +53,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::basis::error::CoeffsSpaceDimError;
     use crate::basis::eval::{EvalBasis, EvalDerivs};
     use crate::bspline::space::BsplineSpace;
 
@@ -114,7 +115,10 @@ mod tests {
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
 
-        let curve = SplineCurve::from_matrix(coords, &space).unwrap();
+        let curve = match SplineCurve::from_matrix(coords.transpose(), &space) {
+            Ok(curve) => { curve }
+            Err(error) => { panic!("{}", error) }
+        };
         dbg!(curve.eval(0.0));
     }
 
@@ -276,7 +280,8 @@ mod tests {
             1.0, 0.0,
             1.0, 1.0]
         );
-        let geo_map = SplineGeo::new(c.transpose(), &space_geo).unwrap();
+        let geo_map = SplineGeo::new(c.transpose(), &space_geo)
+            .unwrap_or_else(|e| panic!("{e}"));
 
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
