@@ -39,11 +39,19 @@ impl <T: RealField, X, B: Basis> Space<T, X, B> {
     }
 }
 
+/// The owned matrix of [`Basis::NumComponents`] rows and [`Basis::NumBasis`] columns,
+/// storing the evaluated basis functions of [EvalBasis::eval].
+type EvalLocal<T, X, B> = OMatrix<T, <B as Basis>::NumComponents, <<B as LocalBasis<T, X>>::ElemBasis as Basis>::NumBasis>;
+
+/// The basis matrix [`EvalLocal`] paired with the indices [`LocalBasis::global_indices`]
+/// of nonzero basis functions.
+type EvalLocalWithIdx<T, X, B> = (EvalLocal<T, X, B>, <B as LocalBasis<T, X>>::GlobalIndices);
+
 impl <T: RealField + Copy, X: Copy, B: LocalBasis<T, X>> Space<T, X, B>
     where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
     /// Evaluates only the local basis functions at the parametric point `x`.
-    pub fn eval_local(&self, x: X) -> OMatrix<T, B::NumComponents, <B::ElemBasis as Basis>::NumBasis> {
+    pub fn eval_local(&self, x: X) -> EvalLocal<T, X, B> {
         let elem = self.basis.find_elem(x);
         let local_basis = self.basis.elem_basis(&elem);
         local_basis.eval(x)
@@ -51,7 +59,7 @@ impl <T: RealField + Copy, X: Copy, B: LocalBasis<T, X>> Space<T, X, B>
 
     /// Evaluates only the local basis functions at the parametric point `x`.
     /// Returns the evaluated functions as well the indices corresponding to the global numbering.
-    pub fn eval_local_with_idx(&self, x: X) -> (OMatrix<T, B::NumComponents, <B::ElemBasis as Basis>::NumBasis>, B::GlobalIndices) {
+    pub fn eval_local_with_idx(&self, x: X) -> EvalLocalWithIdx<T, X, B> {
         let elem = self.basis.find_elem(x);
         let local_basis = self.basis.elem_basis(&elem);
         let b = local_basis.eval(x);
