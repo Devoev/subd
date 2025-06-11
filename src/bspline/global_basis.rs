@@ -45,7 +45,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
     }
 }
 
-impl<T: RealField + Copy> Basis for BsplineBasis<T> {
+impl<T: RealField> Basis for BsplineBasis<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 

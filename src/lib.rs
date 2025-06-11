@@ -114,7 +114,7 @@ mod tests {
             0.0, 0.7, 0.0, -0.7, 0.0;
         ];
 
-        let curve = SplineCurve::from_matrix(coords, &space);
+        let curve = SplineCurve::from_matrix(coords, &space).unwrap();
         dbg!(curve.eval(0.0));
     }
 
@@ -146,7 +146,7 @@ mod tests {
 
         let coords_rand = OMatrix::<f64, Dyn, U2>::new_random(9);
 
-        let surf = SplineGeo::new(coords_rand, &space);
+        let surf = SplineGeo::new(coords_rand, &space).unwrap();
 
         const N: i32 = 100;
         let mut points: Vec<(f64, f64)> = vec![];
@@ -192,7 +192,7 @@ mod tests {
 
         // Jacobian
         let control_points = SMatrix::<f64, 3, 27>::new_random();
-        let solid = SplineGeo::from_matrix(control_points.transpose(), &space);
+        let solid = SplineGeo::from_matrix(control_points.transpose(), &space).unwrap();
         let x = [0.0, 0.2, 0.5];
         let j = solid.eval_diff(x);
         println!("Jacobian matrix: {j} and determinant {}", j.determinant());
@@ -276,7 +276,7 @@ mod tests {
             1.0, 0.0,
             1.0, 1.0]
         );
-        let geo_map = SplineGeo::new(c.transpose(), &space_geo);
+        let geo_map = SplineGeo::new(c.transpose(), &space_geo).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);

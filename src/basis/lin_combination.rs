@@ -1,3 +1,4 @@
+use crate::basis::error::CoeffsSpaceDimError;
 use crate::basis::eval::EvalBasis;
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
@@ -15,12 +16,15 @@ pub struct LinCombination<'a, T: ComplexField, X, B, const D: usize> {
 
 impl <'a, T: ComplexField, X, B: Basis, const D: usize> LinCombination<'a, T, X, B, D> {
     /// Constructs a new [`LinCombination`] from the given `coeffs` and `space`.
-    pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B, D>) -> Self {
-        assert_eq!(coeffs.ncols(), space.dim(),
-                   "The number of coefficients (is {}) must match the dimension of the space (is {})",
-                   coeffs.ncols(), space.dim());
-
-        LinCombination { coeffs, space }
+    /// 
+    /// # Errors
+    /// Will return an error if the number of rows of `coeffs`
+    /// does not match the dimension of `space`.
+    pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B, D>) -> Result<Self, CoeffsSpaceDimError> {
+        match coeffs.nrows() == space.dim() {
+            true => Ok(LinCombination { coeffs, space }),
+            false => Err(CoeffsSpaceDimError { num_coeffs: coeffs.nrows(), dim_space: space.dim() })
+        }
     }
 }
 

@@ -6,6 +6,7 @@ use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, RealField, U1};
 use std::marker::PhantomData;
+use crate::basis::error::CoeffsSpaceDimError;
 
 /// Function space spanned by a set of basis functions of type [`B`]
 /// as `V = span{b[1],...,b[n]}`.
@@ -34,7 +35,7 @@ impl <T, X, B: Basis, const D: usize> Space<T, X, B, D> {
 impl <T: RealField, X, B: Basis, const D: usize> Space<T, X, B, D> {
     /// Calculates the linear combination of the given `coeffs` with the basis function of this space,
     /// and returns the resulting [`LinCombination`].
-    pub fn linear_combination(&self, coeffs: DVector<T>) -> LinCombination<T, X, B, D>  {
+    pub fn linear_combination(&self, coeffs: DVector<T>) -> Result<LinCombination<T, X, B, D>, CoeffsSpaceDimError> {
         LinCombination::new(coeffs, self)
     }
 }

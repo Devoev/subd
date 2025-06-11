@@ -17,7 +17,7 @@ impl<T, X, const D: usize> BsplineSpace<T, X, D> {
 }
 
 impl <T: RealField + Copy, X, const D: usize> BsplineSpace<T, X, D> {
-    /// Constructs an *open* and *uniform* [`BsplineSpace`] 
+    /// Constructs an *open* and *uniform* [`BsplineSpace`]
     /// with `n[i]+p[i]+1` knots for each parametric direction.
     ///
     /// # Examples

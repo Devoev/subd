@@ -1,9 +1,12 @@
+use std::ops::Deref;
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, Dyn, OMatrix, Point, RealField, SMatrix};
+use crate::basis::error::CoeffsSpaceDimError;
+use crate::basis::traits::Basis;
 
 /// A [`D`]-variate B-spline geometry embedded [`M`]-dimensional Euclidean space.
 /// Each spline geometry is a linear combination where each of the [`M`] components is represented
@@ -33,13 +36,19 @@ pub type MultiSplineGeo<'a, T, const D: usize, const M: usize> = SplineGeo<'a, T
 
 impl <'a, T: RealField, X, const D: usize, const M: usize> SplineGeo<'a, T, X, D, M> {
     /// Constructs a new [`SplineGeo`] from the given `control_points` and `space`.
-    pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Self {
-        // todo: check if number of control points match space dimension
-        SplineGeo { control_points, space }
+    ///
+    /// # Errors
+    /// Will return an error if the number of rows of `control_points`
+    /// does not match the dimension of `space`.
+    pub fn new(control_points: OMatrix<T, Dyn, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Result<Self, CoeffsSpaceDimError> {
+        match control_points.nrows() == space.dim() {
+            true => Ok(SplineGeo { control_points, space }),
+            false => Err(CoeffsSpaceDimError { num_coeffs: control_points.ncols(), dim_space: space.dim() })
+        }
     }
 
     /// Constructs a new [`SplineGeo`] from the given matrix `mat` of control points as row vectors.
-    pub fn from_matrix<N: Dim>(mat: OMatrix<T, N, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Self
+    pub fn from_matrix<N: Dim>(mat: OMatrix<T, N, Const<M>>, space: &'a BsplineSpace<T, X, D>) -> Result<Self, CoeffsSpaceDimError>
         where DefaultAllocator: Allocator<N, Const<M>>
     {
         let c = mat.generic_view((0, 0), (Dyn(mat.nrows()), Const::<M>));
