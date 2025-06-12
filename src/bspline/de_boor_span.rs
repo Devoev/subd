@@ -9,10 +9,10 @@ use crate::basis::traits::Basis;
 #[derive(Debug, Clone)]
 pub struct DeBoorSpan<T: RealField> {
     /// Global knot vector.
-    pub knots: KnotVec<T>, // todo: replace with local knot vector copy
+    knots: KnotVec<T>, // todo: replace with local knot vector copy
 
     /// Degree of basis functions.
-    pub degree: usize,
+    degree: usize,
 
     /// Knot span of the local basis.
     pub span: KnotSpan,
