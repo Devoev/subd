@@ -39,7 +39,7 @@ static MAT_INTERPOLATING_DERIV: LazyLock<SMatrix<f64, 2, 3>> = LazyLock::new(|| 
     ].cast() / 2.0
 });
 
-// todo: maybe remove fields from bases below
+// todo: remove fields from bases below and just cast every time (cost is negligible)
 
 /// Cubic B-Spline basis functions on `[0,1]`.
 #[derive(Clone, Copy, Debug)]

@@ -43,7 +43,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, OMatrix, SMatrix, SVector, U2};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowVector4, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -509,6 +509,58 @@ mod tests {
             "dot product is {} % slower than using iterators",
             (time_dot.as_secs_f64() - time_iter.as_secs_f64()) / time_iter.as_secs_f64()
                 * 100.0
+        )
+    }
+
+    #[test]
+    fn benchmark_cast() {
+        let num_eval = 1_000_000_000;
+        type NC = f64;
+        type C = f32;
+        let mat = matrix![
+            -1, 3, -3, 1;
+            3, -6, 3, 0;
+            -3, 0, 3, 0;
+            1, 4, 1, 0
+        ].cast::<C>();
+        let vec = RowVector4::<NC>::new_random();
+
+        fn cast<T: RealField>(m: Matrix4<C>, x: RowVector4<T>) -> RowVector4<T> {
+            x * m.cast()
+        }
+
+        fn no_cast<T: RealField>(m: Matrix4<T>, x: RowVector4<T>) -> RowVector4<T> {
+            x * m
+        }
+
+        let start = Instant::now();
+        for _ in 0..num_eval {
+            let _ = black_box(cast(mat, vec));
+            // println!("{}", eval.norm());
+        }
+        let time_cast = start.elapsed();
+
+        let start = Instant::now();
+        let mat = mat.cast();
+        for _ in 0..num_eval {
+            let _ = black_box(no_cast(mat, vec));
+            // println!("{}", eval.norm());
+        }
+        let time_no_cast = start.elapsed();
+
+        println!(
+            "Took {:?} for {num_eval:e} matrix-vector muls (with cast).",
+            time_cast
+        );
+
+        println!(
+            "Took {:?} for {num_eval:e} matrix-vector muls (without map).",
+            time_no_cast
+        );
+
+        println!(
+            "dot product is {} % slower than using iterators",
+            (time_cast.as_secs_f64() - time_no_cast.as_secs_f64()) / time_no_cast.as_secs_f64() * 100.0
         )
     }
 }
