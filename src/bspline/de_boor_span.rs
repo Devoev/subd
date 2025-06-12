@@ -5,9 +5,9 @@ use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVecto
 use crate::basis::eval::{EvalBasis, EvalDerivs, EvalGrad};
 use crate::basis::traits::Basis;
 
-/// Local B-Spline basis inside a knot span.
+/// Scalar univariate B-Spline basis functions, restricted to a local [`KnotSpan`].
 #[derive(Debug, Clone)]
-pub struct BsplineBasisLocal<T: RealField> {
+pub struct DeBoorSpan<T: RealField> {
     /// Global knot vector.
     pub knots: KnotVec<T>, // todo: replace with local knot vector copy
 
@@ -18,17 +18,17 @@ pub struct BsplineBasisLocal<T: RealField> {
     pub span: KnotSpan,
 }
 
-/// Basis of [`D`]-variate [local B-Splines](BsplineBasisLocal) on a local knot span.
-pub type MultiBsplineBasisLocal<T, const D: usize> = MultiProd<T, BsplineBasisLocal<T>, D>;
+/// Basis of [`D`]-variate [local B-Splines](DeBoorSpan) on a local knot span.
+pub type MultiDeBoorSpan<T, const D: usize> = MultiProd<T, DeBoorSpan<T>, D>;
 
-impl <T: RealField> BsplineBasisLocal<T> {
-    /// Constructs a new [`BsplineBasisLocal`] from the given `global_basis` and `span`.
+impl <T: RealField> DeBoorSpan<T> {
+    /// Constructs a new [`DeBoorSpan`] from the given `global_basis` and `span`.
     pub fn new(knots: KnotVec<T>, degree: usize, span: KnotSpan) -> Self {
         Self { knots, degree, span }
     }
 }
 
-impl<T: RealField> Basis for BsplineBasisLocal<T> {
+impl<T: RealField> Basis for DeBoorSpan<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
@@ -49,7 +49,7 @@ impl<T: RealField> Basis for BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> EvalBasis<T, T> for DeBoorSpan<T> {
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;
@@ -75,7 +75,7 @@ impl<T: RealField + Copy> EvalBasis<T, T> for BsplineBasisLocal<T> {
     }
 }
 
-impl <T: RealField + Copy> EvalDerivs<T, T> for BsplineBasisLocal<T> {
+impl <T: RealField + Copy> EvalDerivs<T, T> for DeBoorSpan<T> {
     fn eval_derivs<const K: usize>(&self, x: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
     where
         Const<K>: DimNameAdd<U1>
@@ -170,7 +170,7 @@ impl <T: RealField + Copy> EvalDerivs<T, T> for BsplineBasisLocal<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalGrad<T, T, 1> for BsplineBasisLocal<T> {
+impl<T: RealField + Copy> EvalGrad<T, T, 1> for DeBoorSpan<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()

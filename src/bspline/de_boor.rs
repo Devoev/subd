@@ -2,7 +2,7 @@ use crate::basis::cart_prod;
 use crate::basis::local::LocalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::basis::traits::Basis;
-use crate::bspline::local_basis::BsplineBasisLocal;
+use crate::bspline::de_boor_span::DeBoorSpan;
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
@@ -11,9 +11,11 @@ use itertools::{izip, Itertools};
 use nalgebra::{Dyn, RealField, U1};
 use std::ops::RangeInclusive;
 
-/// B-Spline basis on an entire knot vector.
+/// Scalar univariate B-Spline basis functions on a [`KnotVec<T>`].
+/// 
+/// The basis evaluation is done using the [De-Boor algorithm](https://en.wikipedia.org/wiki/De_Boor%27s_algorithm).
 #[derive(Clone, Debug)]
-pub struct BsplineBasis<T> {
+pub struct DeBoor<T> {
     /// The vector of knot values.
     pub(crate) knots: KnotVec<T>,
 
@@ -25,30 +27,30 @@ pub struct BsplineBasis<T> {
 }
 
 /// Basis of [`D`]-variate B-Splines on an entire knot vector.
-pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>;
+pub type MultiDeBoor<T, const D: usize> = MultiProd<T, DeBoor<T>, D>;
 
-/// Basis of [`D`]-variate 2D vector valued B-Splines.
-pub type MultiBsplineBasis2d<T, const D: usize> = cart_prod::Prod<T, MultiBsplineBasis<T, D>, MultiBsplineBasis<T, D>>;
+/// Basis of 2D vector valued B-Splines.
+pub type DeBoorVec2d<T> = cart_prod::Prod<T, MultiDeBoor<T, 2>, MultiDeBoor<T, 2>>;
 
-impl <T: RealField> BsplineBasis<T> {
-    /// Constructs a new [`BsplineBasis`] from the given `knots`, `num_basis` and `degree`.
+impl <T: RealField> DeBoor<T> {
+    /// Constructs a new [`DeBoor`] from the given `knots`, `num_basis` and `degree`.
     pub fn new(knots: KnotVec<T>, num_basis: usize, degree: usize) -> Self {
         Self { knots, num_basis, degree }
     }
 }
 
-impl <T: RealField, const D: usize> MultiBsplineBasis<T, D> {
-    /// Constructs a new [`MultiBsplineBasis`] from the given `knots`, `num_bases` and `degrees`
+impl <T: RealField, const D: usize> MultiDeBoor<T, D> {
+    /// Constructs a new [`MultiDeBoor`] from the given `knots`, `num_bases` and `degrees`
     /// for each parametric direction.
     pub fn from_knots(knots: [KnotVec<T>; D], num_bases: [usize; D], degrees: [usize; D]) -> Self {
         let bases = izip!(knots, num_bases, degrees)
-            .map(|(k, n, p)| BsplineBasis::new(k, n, p))
+            .map(|(k, n, p)| DeBoor::new(k, n, p))
             .collect_array().unwrap();
-        MultiBsplineBasis::new(bases)
+        MultiDeBoor::new(bases)
     }
 }
 
-impl <T: RealField + Copy> BsplineBasis<T> {
+impl <T: RealField + Copy> DeBoor<T> {
     /// Finds the knot span for the parametric value `t` using [`KnotSpan::find`].
     pub(crate) fn find_span(&self, t: T) -> Result<KnotSpan, OutsideKnotRangeError> {
         KnotSpan::find(&self.knots, self.num_basis, t)
@@ -60,7 +62,7 @@ impl <T: RealField + Copy> BsplineBasis<T> {
     }
 }
 
-impl<T: RealField> Basis for BsplineBasis<T> {
+impl<T: RealField> Basis for DeBoor<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
@@ -97,9 +99,9 @@ impl<T: RealField> Basis for BsplineBasis<T> {
 //     }
 // }
 
-impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
+impl <T: RealField + Copy> LocalBasis<T, T> for DeBoor<T> {
     type Elem = KnotSpan;
-    type ElemBasis = BsplineBasisLocal<T>;
+    type ElemBasis = DeBoorSpan<T>;
     type GlobalIndices = RangeInclusive<usize>;
 
     fn find_elem(&self, x: T) -> Self::Elem {
@@ -108,7 +110,7 @@ impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
 
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         // todo: replace knots.clone() for efficiency
-        BsplineBasisLocal::new(self.knots.clone(), self.degree, *elem)
+        DeBoorSpan::new(self.knots.clone(), self.degree, *elem)
     }
 
     fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {

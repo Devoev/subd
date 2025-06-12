@@ -19,9 +19,9 @@ mod tests {
     use crate::basis::eval::{EvalDerivs};
     use crate::basis::local::LocalBasis;
     use crate::basis::space::Space;
-    use crate::bspline::global_basis;
-    use crate::bspline::global_basis::MultiBsplineBasis;
-    use crate::bspline::space::{BsplineSpace, BsplineSpace2d};
+    use crate::bspline::de_boor;
+    use crate::bspline::de_boor::MultiDeBoor;
+    use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
@@ -86,11 +86,11 @@ mod tests {
         let n = 4;
         let p = 2;
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        let basis = global_basis::BsplineBasis::new(knots, n, p);
-        let basis_2d = MultiBsplineBasis::new([basis.clone(), basis.clone()]);
-        let basis_3d = MultiBsplineBasis::new([basis.clone(), basis.clone(), basis.clone()]);
+        let basis = de_boor::DeBoor::new(knots, n, p);
+        let basis_2d = MultiDeBoor::new([basis.clone(), basis.clone()]);
+        let basis_3d = MultiDeBoor::new([basis.clone(), basis.clone(), basis.clone()]);
 
-        let space_1d = BsplineSpace::new(MultiBsplineBasis::new([basis.clone()]));
+        let space_1d = BsplineSpace::new(MultiDeBoor::new([basis.clone()]));
         let space_2d = BsplineSpace::new(basis_2d);
         let space_3d = BsplineSpace::new(basis_3d);
 
@@ -128,14 +128,14 @@ mod tests {
         let knots_q = KnotVec::<f64>::new_open_uniform(n, p - 1);
 
         // Basis for components
-        let basis_x = MultiBsplineBasis::from_knots([knots_p.clone(), knots_q.clone()], [n, n], [p, p-1]);
-        let basis_y = MultiBsplineBasis::from_knots([knots_q.clone(), knots_p.clone()], [n, n], [p-1, p]);
+        let basis_x = MultiDeBoor::from_knots([knots_p.clone(), knots_q.clone()], [n, n], [p, p-1]);
+        let basis_y = MultiDeBoor::from_knots([knots_q.clone(), knots_p.clone()], [n, n], [p-1, p]);
 
         // Vector basis & space
         let basis_2d = cart_prod::Prod::new((basis_x, basis_y));
-        let space = BsplineSpace2d::new(basis_2d);
+        let space = BsplineSpaceVec2d::new(basis_2d);
 
-        let x = [0.5, 0.2];
+        let x = (0.5, 0.2);
         println!("{}", space.eval_local(x));
     }
 
@@ -185,8 +185,8 @@ mod tests {
 
         // Univariate derivatives
         let knots = KnotVec::<f64>::new_open_uniform(n, p);
-        let basis = global_basis::BsplineBasis::new(knots, n, p);
-        let basis_3d = MultiBsplineBasis::<f64, 3>::repeat(basis.clone());
+        let basis = de_boor::DeBoor::new(knots, n, p);
+        let basis_3d = MultiDeBoor::<f64, 3>::repeat(basis.clone());
         let space = Space::new(basis_3d.clone());
 
         let x = 0.8;
@@ -217,7 +217,7 @@ mod tests {
     fn bezier_elems() {
         let knots =
             KnotVec::new(vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]).unwrap();
-        let basis = global_basis::BsplineBasis::new(knots.clone(), 7, 3);
+        let basis = de_boor::DeBoor::new(knots.clone(), 7, 3);
         // let quad = GaussLegendre::new(5).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
@@ -273,8 +273,8 @@ mod tests {
         let n = 3;
         let p = 1;
         let knots = KnotVec::new_open_uniform(n, p);
-        let basis_uni = global_basis::BsplineBasis::new(knots.clone(), n, p);
-        let basis_geo = MultiBsplineBasis::new([basis_uni.clone(), basis_uni.clone()]);
+        let basis_uni = de_boor::DeBoor::new(knots.clone(), n, p);
+        let basis_geo = MultiDeBoor::new([basis_uni.clone(), basis_uni.clone()]);
         let space_geo = Space::new(basis_geo);
         let c = OMatrix::<f64, Dyn, U2>::from_row_slice(&[
             0.0, 0.0,
@@ -294,8 +294,8 @@ mod tests {
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
-        let basis = global_basis::BsplineBasis::new(knots, n, p);
-        let basis = MultiBsplineBasis::new([basis.clone(), basis]);
+        let basis = de_boor::DeBoor::new(knots, n, p);
+        let basis = MultiDeBoor::new([basis.clone(), basis]);
         let space = Space::new(basis);
 
         let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
@@ -366,7 +366,7 @@ mod tests {
         // univariate algorithm
         let start = Instant::now();
         let knots = KnotVec::new_open_uniform(n, p);
-        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let basis = de_boor::DeBoor::new(knots, n, p);
         let space = Space::<_,_,_,1>::new(basis);
         for t in grid.clone() {
             let _ = black_box(space.eval_local(t));
