@@ -1,15 +1,15 @@
-use std::ops::RangeInclusive;
-use itertools::{izip, Itertools};
+use crate::basis::cart_prod;
 use crate::basis::local::LocalBasis;
 use crate::basis::tensor_prod::MultiProd;
+use crate::basis::traits::Basis;
 use crate::bspline::local_basis::BsplineBasisLocal;
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::{Const, Dyn, OMatrix, RealField, U1};
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::traits::Basis;
+use itertools::{izip, Itertools};
+use nalgebra::{Dyn, RealField, U1};
+use std::ops::RangeInclusive;
 
 /// B-Spline basis on an entire knot vector.
 #[derive(Clone, Debug)]
@@ -26,6 +26,9 @@ pub struct BsplineBasis<T> {
 
 /// Basis of [`D`]-variate B-Splines on an entire knot vector.
 pub type MultiBsplineBasis<T, const D: usize> = MultiProd<T, BsplineBasis<T>, D>;
+
+/// Basis of [`D`]-variate 2D vector valued B-Splines.
+pub type MultiBsplineBasis2d<T, const D: usize> = cart_prod::Prod<T, MultiBsplineBasis<T, D>, MultiBsplineBasis<T, D>>;
 
 impl <T: RealField> BsplineBasis<T> {
     /// Constructs a new [`BsplineBasis`] from the given `knots`, `num_basis` and `degree`.
