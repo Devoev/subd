@@ -16,17 +16,13 @@ pub mod diffgeo;
 #[cfg(test)]
 mod tests {
     use crate::basis::cart_prod;
-    use crate::basis::eval::{EvalBasis, EvalDerivs};
+    use crate::basis::eval::{EvalDerivs};
     use crate::basis::local::LocalBasis;
     use crate::basis::space::Space;
-    use crate::basis::traits::Basis;
-    use crate::bspline::basis::BsplineBasis;
-    use crate::bspline::de_boor::DeBoorMulti;
-    use crate::bspline::de_boor::{DeBoor, DeBoorBi};
+    use crate::bspline::global_basis;
     use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::bspline::space::{BsplineSpace, BsplineSpace2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
-    use crate::bspline::global_basis;
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
@@ -35,12 +31,10 @@ mod tests {
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
     use crate::knots::breaks::Breaks;
-    use crate::knots::knot_span::KnotSpan;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
     use crate::mesh::geo::Mesh;
-    use crate::mesh::topo::MeshTopology;
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::bezier::BezierQuad;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
@@ -56,6 +50,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use num_traits::real::Real;
 
     #[test]
     fn knots() {
@@ -82,8 +77,8 @@ mod tests {
         println!("{:?}", multi_idx);
         println!("{:?}", multi_idx.into_lin(&strides));
 
-        let space = DeBoorMulti::<f64, 2>::open_uniform([N, N], [p, p]);
-        let strides = Strides::from(space.num_basis());
+        let space = BsplineSpace::<f64, (f64, f64), 2>::new_open_uniform([N, N], [p, p]);
+        let strides = space.basis.strides();
     }
 
     #[test]
@@ -222,7 +217,7 @@ mod tests {
     fn bezier_elems() {
         let knots =
             KnotVec::new(vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]).unwrap();
-        let basis = DeBoor::new(knots.clone(), 7, 3).unwrap();
+        let basis = global_basis::BsplineBasis::new(knots.clone(), 7, 3);
         // let quad = GaussLegendre::new(5).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
@@ -331,15 +326,9 @@ mod tests {
 
         // de Boor algorithm
         let start = Instant::now();
-        // todo: using uniform(8) throws errors, because xi is not open!
-        // let xi = KnotVec::uniform(8);
-        // let basis_uni = SplineBasis::new(xi, 4, 3).unwrap();
-
-        let basis_uni = DeBoor::open_uniform(4, 3);
-        let basis = DeBoorMulti::<f64, 2>::new([basis_uni.clone(), basis_uni]);
+        let space = BsplineSpace::new_open_uniform([4, 4], [3, 3]);
         for (u, v) in grid.clone() {
-            // let span = KnotSpan(MultiIndex([3, 3])); // hardcoding span for open uniform knot vector of maximal regularity (=global polynomials)
-            let eval = basis.eval_nonzero([u, v]);
+            let _ = black_box(space.eval_local([u, v]));
             // println!("{}", eval.norm());
         }
         let time_de_boor = start.elapsed();
@@ -347,7 +336,7 @@ mod tests {
         // matrix-matrix (for catmull clark)
         let start = Instant::now();
         for (u, v) in grid.clone() {
-            let eval = basis::eval_regular(u, v);
+            let eval = black_box(basis::eval_regular(u, v));
             // println!("{}", eval.norm());
         }
         let time_mat_mat = start.elapsed();
@@ -371,20 +360,24 @@ mod tests {
     fn benchmark_uni_vs_tp() {
         let num_eval = 10_000_000;
         let grid = lin_space(0.0..=1.0, num_eval);
+        let n = 30;
+        let p = 3;
 
         // univariate algorithm
         let start = Instant::now();
-        let basis = DeBoor::open_uniform(30, 3);
+        let knots = KnotVec::new_open_uniform(n, p);
+        let basis = global_basis::BsplineBasis::new(knots, n, p);
+        let space = Space::<_,_,_,1>::new(basis);
         for t in grid.clone() {
-            let _ = black_box(basis.eval_nonzero(t));
+            let _ = black_box(space.eval_local(t));
         }
         let time_uni = start.elapsed();
 
         // tensor product algorithm
         let start = Instant::now();
-        let basis = DeBoorMulti::open_uniform([30], [3]);
+        let space = BsplineSpace::new_open_uniform([n], [p]);
         for t in grid.clone() {
-            let _ = black_box(basis.eval_nonzero(t));
+            let _ = black_box(space.eval_local(t));
         }
         let time_tp = start.elapsed();
 
@@ -399,45 +392,6 @@ mod tests {
         println!(
             "Univariate algorithm is {} % faster than tensor product algorithm",
             (time_tp.as_secs_f64() - time_uni.as_secs_f64()) / time_tp.as_secs_f64() * 100.0
-        )
-    }
-
-    #[test]
-    fn benchmark_bi_vs_tp() {
-        let num_eval = 5_000;
-        let n = 100;
-        let p = 3;
-        let grid = lin_space(0.0..=1.0, num_eval);
-        let grid = grid.clone().cartesian_product(grid);
-
-        // univariate algorithm
-        let start = Instant::now();
-        let basis = DeBoor::open_uniform(n, p);
-        let basis = DeBoorBi::new(basis.clone(), basis);
-        for (u, v) in grid.clone() {
-            let _ = black_box(basis.eval_nonzero([u, v]));
-        }
-        let time_bi = start.elapsed();
-
-        // tensor product algorithm
-        let start = Instant::now();
-        let basis = DeBoorMulti::open_uniform([n, n], [p, p]);
-        for t in grid.clone() {
-            let _ = black_box(basis.eval_nonzero(t));
-        }
-        let time_tp = start.elapsed();
-
-        println!(
-            "Took {:?} for {num_eval} basis evaluations (bivariate algorithm).",
-            time_bi
-        );
-        println!(
-            "Took {:?} for {num_eval} basis evaluations (tensor product algorithm).",
-            time_tp
-        );
-        println!(
-            "Bivariate algorithm is {} % faster than tensor product algorithm",
-            (time_tp.as_secs_f64() - time_bi.as_secs_f64()) / time_tp.as_secs_f64() * 100.0
         )
     }
 
@@ -510,38 +464,6 @@ mod tests {
             (time_dyn.as_secs_f64() - time_static.as_secs_f64()) / time_static.as_secs_f64()
                 * 100.0
         )
-    }
-
-    #[test]
-    fn benchmark_derivs() {
-        let num_eval = 10;
-        let grid = lin_space(0.0..=1.0, num_eval);
-        let basis = DeBoor::<f64>::open_uniform(200, 3);
-
-        // Algorithm from the nurbs package
-        let start = Instant::now();
-        for t in grid.clone() {
-            let span = KnotSpan::find(&basis.knots, basis.n, t).unwrap();
-            let _ = black_box(basis.eval_derivs_with_span::<5>(t, span));
-        }
-        let time_algo_1 = start.elapsed();
-
-        // Implement algorithm using Curry-Schoenberg basis
-        let start = Instant::now();
-        for t in grid.clone() {
-            // let span = KnotSpan::find(&basis.knots, basis.n, t).unwrap();
-            // let _  = black_box(basis.eval_deriv_2(t, span));
-        }
-        let time_algo_2 = start.elapsed();
-
-        println!(
-            "Took {:?} for {num_eval:e} derivative evaluations (algorithm #1).",
-            time_algo_1
-        );
-        println!(
-            "Took {:?} for {num_eval:e} derivative evaluations (algorithm #2).",
-            time_algo_2
-        );
     }
 
     #[test]

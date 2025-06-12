@@ -107,6 +107,7 @@ impl <T: RealField + Copy> LocalBasis<T, T> for BsplineBasis<T> {
     }
 
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+        // todo: replace knots.clone() for efficiency
         BsplineBasisLocal::new(self.knots.clone(), self.degree, *elem)
     }
 
