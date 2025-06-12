@@ -23,7 +23,7 @@ mod tests {
     use crate::bspline::de_boor::{DeBoor, DeBoorBi};
     use crate::bspline::global_basis::MultiBsplineBasis;
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
-    use crate::bspline::{cart_prod, global_basis, tensor_prod};
+    use crate::bspline::{global_basis, tensor_prod};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
@@ -53,6 +53,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::basis::cart_prod;
     use crate::basis::error::CoeffsSpaceDimError;
     use crate::basis::eval::{EvalBasis, EvalDerivs};
     use crate::bspline::space::BsplineSpace;
@@ -130,11 +131,23 @@ mod tests {
         let basis_q = DeBoor::<f64>::open_uniform(n, p - 1);
         let basis_x = DeBoorBi::new(basis_p.clone(), basis_q.clone());
         let basis_y = tensor_prod::Prod::new(basis_q, basis_p);
+        //
+        // let sp_vec_2d = cart_prod::Prod::new(basis_x.clone(), basis_y);
+        // let sp_vec_3d = cart_prod::TriProd::new(basis_x.clone(), basis_x.clone(), basis_x.clone());
+        // println!("{}", sp_vec_2d.eval_nonzero([0.5, 0.2]).0);
+        // println!("{}", sp_vec_3d.eval_nonzero([0.5, 0.2]).0);
 
-        let sp_vec_2d = cart_prod::Prod::new(basis_x.clone(), basis_y);
-        let sp_vec_3d = cart_prod::TriProd::new(basis_x.clone(), basis_x.clone(), basis_x.clone());
-        println!("{}", sp_vec_2d.eval_nonzero([0.5, 0.2]).0);
-        println!("{}", sp_vec_3d.eval_nonzero([0.5, 0.2]).0);
+        let knots_p = KnotVec::<f64>::new_open_uniform(n, p);
+        let knots_q = KnotVec::<f64>::new_open_uniform(n, p - 1);
+        let basis_x = MultiBsplineBasis::from_knots([knots_p.clone(), knots_q.clone()], [n, n], [p, p-1]);
+        let basis_y = MultiBsplineBasis::from_knots([knots_q.clone(), knots_p.clone()], [n, n], [p-1, p]);
+        let basis_2d = cart_prod::Prod::<f64,_,_>::new((basis_x, basis_y));
+
+        let x = [0.5, 0.2];
+        // todo: evaluation
+        // let elem = basis_2d.find_elem(x);
+        // let loc = basis_2d.elem_basis(&elem);
+        // println!("{:?}", loc.eval(x));
     }
 
     #[test]

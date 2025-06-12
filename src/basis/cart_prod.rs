@@ -10,22 +10,22 @@ use std::marker::PhantomData;
 
 /// Cartesian product of two scalar bases [`B1`] and [`B2`].
 #[derive(Debug, Clone, Copy)]
-pub struct Prod<T, X, B1, B2> {
+pub struct Prod<T, B1, B2> {
     /// Pair of first and second basis.
     bases: (B1, B2),
 
-    _phantom_data: PhantomData<(T, X)>,
+    _phantom_data: PhantomData<T>,
 }
 
 
-impl <T, X, B1, B2> Prod<T, X, B1, B2> {
+impl <T, B1, B2> Prod<T, B1, B2> {
     /// Constructs a new [`Prod`] from the bases `b1` and `b2`.
     pub fn new(bases: (B1, B2)) -> Self {
         Prod { bases, _phantom_data: Default::default() }
     }
 }
 
-impl<T, X, B1, B2> Basis for Prod<T, X, B1, B2>
+impl<T, B1, B2> Basis for Prod<T, B1, B2>
 where B1: Basis<NumComponents = U1>,
       B2: Basis<NumComponents = U1>,
       B1::NumBasis: DimAdd<B2::NumBasis>
@@ -51,7 +51,7 @@ where B1: Basis<NumComponents = U1>,
 }
 
 #[allow(clippy::toplevel_ref_arg)]
-impl <T, X, B1, B2> EvalBasis<T, X> for Prod<T, X, B1, B2>
+impl <T, X, B1, B2> EvalBasis<T, X> for Prod<T, B1, B2>
 where T: RealField,
       X: Copy,
       B1: EvalBasis<T, X, NumComponents = U1>,
@@ -71,7 +71,7 @@ where T: RealField,
     }
 }
 
-impl <T, X, B1, B2> LocalBasis<T, X> for Prod<T, X, B1, B2>
+impl <T, X, B1, B2> LocalBasis<T, X> for Prod<T, B1, B2>
 where T: RealField,
       X: Copy,
       B1: LocalBasis<T, X, NumComponents = U1>,
@@ -82,10 +82,10 @@ where T: RealField,
       <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
       DefaultAllocator: Allocator<B1::NumComponents, <B1::ElemBasis as Basis>::NumBasis>,
       DefaultAllocator: Allocator<B2::NumComponents, <B2::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<nalgebra::Const<2>, <<B1::ElemBasis as Basis>::NumBasis as DimAdd<<B2::ElemBasis as Basis>::NumBasis>>::Output>
+      DefaultAllocator: Allocator<U2, <<B1::ElemBasis as Basis>::NumBasis as DimAdd<<B2::ElemBasis as Basis>::NumBasis>>::Output>
 {
     type Elem = (B1::Elem, B2::Elem); // todo: possibly change to Prod<..,..>
-    type ElemBasis = Prod<T, X, B1::ElemBasis, B2::ElemBasis>;
+    type ElemBasis = Prod<T, B1::ElemBasis, B2::ElemBasis>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
     fn find_elem(&self, x: X) -> Self::Elem {

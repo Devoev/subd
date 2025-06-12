@@ -1,4 +1,5 @@
 use std::ops::RangeInclusive;
+use itertools::{izip, Itertools};
 use crate::basis::local::LocalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::bspline::local_basis::BsplineBasisLocal;
@@ -30,6 +31,17 @@ impl <T: RealField> BsplineBasis<T> {
     /// Constructs a new [`BsplineBasis`] from the given `knots`, `num_basis` and `degree`.
     pub fn new(knots: KnotVec<T>, num_basis: usize, degree: usize) -> Self {
         Self { knots, num_basis, degree }
+    }
+}
+
+impl <T: RealField, const D: usize> MultiBsplineBasis<T, D> {
+    /// Constructs a new [`MultiBsplineBasis`] from the given `knots`, `num_bases` and `degrees`
+    /// for each parametric direction.
+    pub fn from_knots(knots: [KnotVec<T>; D], num_bases: [usize; D], degrees: [usize; D]) -> Self {
+        let bases = izip!(knots, num_bases, degrees)
+            .map(|(k, n, p)| BsplineBasis::new(k, n, p))
+            .collect_array().unwrap();
+        MultiBsplineBasis::new(bases)
     }
 }
 
