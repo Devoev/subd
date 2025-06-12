@@ -1,6 +1,6 @@
 use std::iter::zip;
 use nalgebra::{Point2, RealField};
-use crate::subd::mesh::{Edge, Face, Node};
+use crate::subd_legacy::mesh::{Edge, Face, Node};
 
 /// Returns whether the two faces are adjacent, i.e. share an edge.
 pub fn are_adjacent(a: &Face, b: &Face) -> bool {

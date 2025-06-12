@@ -1,13 +1,13 @@
 
 #[cfg(test)]
 pub mod test_ex {
-    use crate::subd::catmull_clark::{S11, S12, S21, S22};
-    use crate::subd::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
-    use crate::subd::mesh::{Face, TopologicalMesh, QuadMesh};
-    use crate::subd::patch::{NodeConnectivity, Patch};
-    use crate::subd::precompute::{MeshEval, PatchEval};
-    use crate::subd::quad::GaussLegendrePatch;
-    use crate::subd::{basis, catmull_clark, patch, plot};
+    use crate::subd_legacy::catmull_clark::{S11, S12, S21, S22};
+    use crate::subd_legacy::iga::{op_f_v, op_gradu_gradv, op_u_v, IgaFn};
+    use crate::subd_legacy::mesh::{Face, TopologicalMesh, QuadMesh};
+    use crate::subd_legacy::patch::{NodeConnectivity, Patch};
+    use crate::subd_legacy::precompute::{MeshEval, PatchEval};
+    use crate::subd_legacy::quad::GaussLegendrePatch;
+    use crate::subd_legacy::{basis, catmull_clark, patch, plot};
     use iter_num_tools::lin_space;
     use itertools::Itertools;
     use nalgebra::{center, point, Matrix, Point2, SMatrix};
@@ -15,7 +15,7 @@ pub mod test_ex {
     use std::f64::consts::PI;
     use std::sync::LazyLock;
     use std::time::Instant;
-    use crate::subd::surface::ParametricMap;
+    use crate::subd_legacy::surface::ParametricMap;
 
     /// Vector of coordinates in 2D.
     type Coords = Vec<Point2<f64>>;

@@ -12,6 +12,7 @@ pub mod operator;
 pub mod quadrature;
 pub mod subd;
 pub mod diffgeo;
+mod subd_legacy;
 
 #[cfg(test)]
 mod tests {
@@ -39,7 +40,6 @@ mod tests {
     use crate::quadrature::bezier::BezierQuad;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::{Quadrature, RefQuadrature};
-    use crate::subd::basis;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
@@ -51,6 +51,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use num_traits::real::Real;
+    use crate::subd_legacy;
 
     #[test]
     fn knots() {
@@ -336,7 +337,7 @@ mod tests {
         // matrix-matrix (for catmull clark)
         let start = Instant::now();
         for (u, v) in grid.clone() {
-            let eval = black_box(basis::eval_regular(u, v));
+            let eval = black_box(subd_legacy::basis::eval_regular(u, v));
             // println!("{}", eval.norm());
         }
         let time_mat_mat = start.elapsed();

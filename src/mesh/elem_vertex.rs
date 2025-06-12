@@ -5,7 +5,7 @@ use crate::cells::topo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::vertex::VertexTopo;
-use crate::subd::patch::Patch;
+use crate::subd_legacy::patch::Patch;
 use nalgebra::{Const, Point2, RealField};
 use crate::mesh::elem_vertex_topo as topo;
 

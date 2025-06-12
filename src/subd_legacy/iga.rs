@@ -1,9 +1,9 @@
 //! Functions for isogeometric analysis on subdivision surfaces.
 
-use crate::subd::mesh::QuadMesh;
-use crate::subd::patch::Patch;
-use crate::subd::precompute::{MeshEval, PatchEval};
-use crate::subd::surface::ParametricMap;
+use crate::subd_legacy::mesh::QuadMesh;
+use crate::subd_legacy::patch::Patch;
+use crate::subd_legacy::precompute::{MeshEval, PatchEval};
+use crate::subd_legacy::surface::ParametricMap;
 use itertools::Itertools;
 use nalgebra::{DMatrix, DVector, Dyn, Matrix2, OMatrix, Point2, RealField, U2};
 use nalgebra_sparse::CooMatrix;

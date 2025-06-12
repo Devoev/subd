@@ -1,7 +1,7 @@
 //! Custom quadrature rules and extensions to the gauss_quad crate.
 
-use crate::subd::precompute::{QuadEval};
-use crate::subd::surface::Jacobian;
+use crate::subd_legacy::precompute::{QuadEval};
+use crate::subd_legacy::surface::Jacobian;
 use gauss_quad::legendre::GaussLegendreError;
 use gauss_quad::{GaussLegendre, Node, Weight};
 use itertools::Itertools;

@@ -1,21 +1,21 @@
 
 #[cfg(test)]
 mod pde_test {
-    use crate::subd::cg::cg;
-    use crate::subd::examples::test_ex::{COORDS_PENTAGON, COORDS_QUAD, FACES_PENTAGON, FACES_QUAD};
-    use crate::subd::iga::IgaFn;
-    use crate::subd::mesh::{TopologicalMesh, QuadMesh};
-    use crate::subd::patch::Patch;
-    use crate::subd::precompute::{MeshEval};
-    use crate::subd::quad::GaussLegendrePatch;
-    use crate::subd::{iga, plot};
+    use crate::subd_legacy::cg::cg;
+    use crate::subd_legacy::examples::test_ex::{COORDS_PENTAGON, COORDS_QUAD, FACES_PENTAGON, FACES_QUAD};
+    use crate::subd_legacy::iga::IgaFn;
+    use crate::subd_legacy::mesh::{TopologicalMesh, QuadMesh};
+    use crate::subd_legacy::patch::Patch;
+    use crate::subd_legacy::precompute::{MeshEval};
+    use crate::subd_legacy::quad::GaussLegendrePatch;
+    use crate::subd_legacy::{iga, plot};
     use itertools::{iproduct, Itertools};
     use nalgebra::{DMatrix, DVector, Point2};
     use nalgebra_sparse::CsrMatrix;
     use std::collections::BTreeSet;
     use std::f64::consts::PI;
     use std::sync::LazyLock;
-    use crate::subd::surface::ParametricMap;
+    use crate::subd_legacy::surface::ParametricMap;
 
     /// Mesh for the regular square geometry.
     static MSH_SQUARE: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {

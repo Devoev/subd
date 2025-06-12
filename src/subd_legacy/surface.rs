@@ -1,8 +1,8 @@
 //! Functions and methods for evaluating and integrating over subdivision surfaces and patches.
 
-use crate::subd::basis;
-use crate::subd::mesh::QuadMesh;
-use crate::subd::patch::{NodeConnectivity, Patch};
+use crate::subd_legacy::basis;
+use crate::subd_legacy::mesh::QuadMesh;
+use crate::subd_legacy::patch::{NodeConnectivity, Patch};
 use gauss_quad::GaussLegendre;
 use nalgebra::{DVector, Dyn, Matrix2, Matrix2x1, OMatrix, Point2, RealField, U2};
 use num_traits::ToPrimitive;

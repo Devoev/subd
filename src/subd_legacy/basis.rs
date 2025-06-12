@@ -1,4 +1,4 @@
-use crate::subd::catmull_clark;
+use crate::subd_legacy::catmull_clark;
 use nalgebra::{matrix, one, vector, DMatrix, DVector, Dyn, OMatrix, RealField, SMatrix, SVector, U2};
 use num_traits::ToPrimitive;
 use std::iter::zip;

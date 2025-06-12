@@ -1,4 +1,4 @@
-use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
+use crate::subd_legacy::mesh::{Edge, Face, Node, QuadMesh};
 use itertools::{chain, Itertools};
 use nalgebra::{matrix, DMatrix, DVector, Dyn, MatrixXx2, Point2, RealField, RowDVector, SMatrix, Schur};
 use std::collections::HashMap;

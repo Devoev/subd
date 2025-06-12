@@ -1,6 +1,6 @@
 use std::cmp::minmax;
-use crate::subd::face::edges_of_face;
-use crate::subd::mesh::{Edge, Face};
+use crate::subd_legacy::face::edges_of_face;
+use crate::subd_legacy::mesh::{Edge, Face};
 
 /// Returns a new edge with reverse orientation.
 pub fn reverse_edge(edge: Edge) -> Edge {

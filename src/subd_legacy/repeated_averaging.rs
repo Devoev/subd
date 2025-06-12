@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use itertools::Itertools;
 use nalgebra::{center, RealField};
-use crate::subd::face::{edges_of_face, sort_face};
-use crate::subd::mesh::{Edge, Face, Node, QuadMesh};
+use crate::subd_legacy::face::{edges_of_face, sort_face};
+use crate::subd_legacy::mesh::{Edge, Face, Node, QuadMesh};
 
 impl <T: RealField + Copy> QuadMesh<T> {
 

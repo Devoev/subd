@@ -1,6 +1,6 @@
-use crate::subd::patch::Patch;
-use crate::subd::quad::GaussLegendrePatch;
-use crate::subd::surface::{Basis, BasisGrad, Jacobian, ParametricMap, Parametrization};
+use crate::subd_legacy::patch::Patch;
+use crate::subd_legacy::quad::GaussLegendrePatch;
+use crate::subd_legacy::surface::{Basis, BasisGrad, Jacobian, ParametricMap, Parametrization};
 use nalgebra::{Matrix2, RealField};
 use num_traits::ToPrimitive;
 use std::slice::Iter;

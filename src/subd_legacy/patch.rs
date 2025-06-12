@@ -1,6 +1,6 @@
-use crate::subd::edge::{next_edge, reverse_edge};
-use crate::subd::face::{are_touching, edges_of_face, sort_by_node, sort_by_origin};
-use crate::subd::mesh::{Face, Node, QuadMesh};
+use crate::subd_legacy::edge::{next_edge, reverse_edge};
+use crate::subd_legacy::face::{are_touching, edges_of_face, sort_by_node, sort_by_origin};
+use crate::subd_legacy::mesh::{Face, Node, QuadMesh};
 use itertools::Itertools;
 use nalgebra::{Dyn, OMatrix, RealField, U2};
 use std::iter::once;
