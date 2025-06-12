@@ -12,26 +12,32 @@ use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
 use crate::basis::eval::EvalBasis;
-// todo: this function is only a temporary implementation.
-//  make this generic over the space and mesh type!
 
+
+// todo: introduce X generic and restrict
+//  1. B: LocalBasis<T, X>
+//  2. Q: Quadrature<_,_,Node=X>
 /// Assembles the discrete hodge operator (mass matrix).
-pub fn assemble_hodge<'a, T, B, const D: usize>(
+pub fn assemble_hodge<'a, T, B, const D: usize, Q>(
     msh: &'a BezierMesh<'a, T, D, D>,
     space: &Space<T, [T; D], B, D>,
-    quad: impl Quadrature<T, D, Node=[T; D], Elem=BezierElem<'a, T, D, D>>,
+    quad: Q,
 ) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B: LocalBasis<T, [T; D]>,
+          Q: Quadrature<T, D, Node=[T; D], Elem=BezierElem<'a, T, D, D>>,
           DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
     let mut mij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
     for elem in msh.elems() {
-        // todo: the find_elem call should be removed. 
-        //  This can be maybe done, if the bound on BezierMesh is loosened.
-        //  Can the bezier elem be directly passed to elem_basis,
-        //  or is a find_span call required?
+        // todo:
+        //  1. integration should be performed on the parametric domain, 
+        //      by pulling back the basis functions. Hence every `elem` needs to know about it's
+        //      reference element. Introduce RefCell trait or similar for that
+        //  2. for the B-Spline case, not only the reference element (`HyperRectangle`)
+        //      is required, but also the span. Should this be computed internally in `find_elem`
+        //      or should it be encoded in a trait/API
         let span = space.basis.find_elem(elem.ref_elem.a.into_arr());
         let sp_local = space.basis.elem_basis(&span);
         let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
@@ -45,18 +51,21 @@ pub fn assemble_hodge<'a, T, B, const D: usize>(
 }
 
 /// Assembles the local discrete Hodge operator.
-pub fn assemble_hodge_local<T, X, E, B, const D: usize>(
+pub fn assemble_hodge_local<T, X, E, B, const D: usize, Q>(
     elem: &E,
     sp_local: &B,
-    quad: &impl Quadrature<T, D, Node=X, Elem=E>,
+    quad: &Q,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
-          B: EvalBasis<T, [T; D]>,
+          B: EvalBasis<T, [T; D]>, // todo: change to EvalBasis<T, X>,
+          Q: Quadrature<T, D, Node=X, Elem=E>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>
 {
     // Evaluate basis at each quadrature point and store in buffer
+    // todo: the basis functions are defined on the REF DOMAIN. nodes_elem is hence incorrect!
+    //  the quadrature nodes also have to be pulled back. nodes_ref or else should be used!
     let nodes = quad.nodes_elem(elem);
     let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = nodes.map(|p| sp_local.eval(p.into_arr())).collect();
 
