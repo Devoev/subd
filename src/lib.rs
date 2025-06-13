@@ -43,7 +43,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowVector4, SMatrix, SVector, U2};
+    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowSVector, RowVector4, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -515,21 +515,21 @@ mod tests {
     #[test]
     fn benchmark_cast() {
         let num_eval = 1_000_000_000;
+        const N: usize = 8;
+
         type NC = f64;
         type C = f32;
-        let mat = matrix![
-            -1, 3, -3, 1;
-            3, -6, 3, 0;
-            -3, 0, 3, 0;
-            1, 4, 1, 0
-        ].cast::<C>();
-        let vec = RowVector4::<NC>::new_random();
+        type Mat<T> = SMatrix::<T, N, N>;
+        type Vec<T> = RowSVector<T, N>;
 
-        fn cast<T: RealField>(m: Matrix4<C>, x: RowVector4<T>) -> RowVector4<T> {
+        let mat = Mat::<C>::new_random();
+        let vec = Vec::<NC>::new_random();
+
+        fn cast<T: RealField>(m: Mat<C>, x: Vec<T>) -> Vec<T> {
             x * m.cast()
         }
 
-        fn no_cast<T: RealField>(m: Matrix4<T>, x: RowVector4<T>) -> RowVector4<T> {
+        fn no_cast<T: RealField>(m: Mat<T>, x: Vec<T>) -> Vec<T> {
             x * m
         }
 
@@ -549,17 +549,17 @@ mod tests {
         let time_no_cast = start.elapsed();
 
         println!(
-            "Took {:?} for {num_eval:e} matrix-vector muls (with cast).",
+            "Took {:?} for {num_eval:e} {N}x{N} matrix-vector muls (with cast).",
             time_cast
         );
 
         println!(
-            "Took {:?} for {num_eval:e} matrix-vector muls (without map).",
+            "Took {:?} for {num_eval:e} {N}x{N} matrix-vector muls (without map).",
             time_no_cast
         );
 
         println!(
-            "dot product is {} % slower than using iterators",
+            "Casting is {} % slower than no casting",
             (time_cast.as_secs_f64() - time_no_cast.as_secs_f64()) / time_no_cast.as_secs_f64() * 100.0
         )
     }
