@@ -1,9 +1,44 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::QuadTopo;
+use crate::cells::quad::{Quad, QuadTopo};
 use crate::mesh::elem_vertex_topo::QuadVertex;
 use itertools::Itertools;
-use nalgebra::{Const, DimName, DimNameSub, U2};
+use nalgebra::{DimName, DimNameSub, Point, RealField, U2};
+use crate::cells::geo;
+use crate::subd::mesh::CatmarkMesh;
+
+/// A Catmull-Clark surface patch.
+pub enum CatmarkPatch<T: RealField, const M: usize> {
+    /// The regular interior case. See [`CatmarkPatchNodes::Regular`].
+    Regular([Point<T, M>; 16]),
+
+    /// The regular boundary case. See [`CatmarkPatchNodes::Boundary`].
+    Boundary([Point<T, M>; 12]),
+
+    /// The regular corner case. See [`CatmarkPatchNodes::Corner`].
+    Corner([Point<T, M>; 9]),
+
+    /// The irregular interior case. See [`CatmarkPatchNodes::Irregular`].
+    Irregular(Vec<Point<T, M>>)
+}
+
+impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
+
+    pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: CatmarkPatchNodes) -> Self {
+        let coords = patch_topo.as_slice().iter()
+            .map(|node| msh.coords[node.0])
+            .collect_vec();
+        todo!()
+    }
+}
+
+// impl <T: RealField, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
+//     type GeoMap = ();
+//
+//     fn geo_map(&self) -> Self::GeoMap {
+//         todo!()
+//     }
+// }
 
 // todo: the implementations below should be updated!
 
