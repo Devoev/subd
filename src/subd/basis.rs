@@ -1,28 +1,28 @@
 use crate::basis::eval::EvalBasis;
 use crate::basis::traits::Basis;
-use crate::bspline::cubic::{CubicBspline, Interpolating, Smooth};
+use crate::bspline::cubic::CubicBspline;
 use nalgebra::{Dyn, OMatrix, RealField, U1};
 
 /// Basis functions for Catmull-Clark subdivision.
-pub enum CatmullClarkBasis<T> {
-    Regular(Smooth<T>, Smooth<T>),
-    Boundary(Smooth<T>, Interpolating<T>),
-    Corner(Interpolating<T>, Interpolating<T>),
+pub enum CatmullClarkBasis {
+    Regular,
+    Boundary,
+    Corner,
     Irregular // todo
 }
 
-impl<T: Copy> CatmullClarkBasis<T> {
+impl CatmullClarkBasis {
     /// Returns a pair of [`CubicBspline`] for both parametric directions.
-    fn bases(&self) -> (CubicBspline<T>, CubicBspline<T>) {
+    fn bases(&self) -> (CubicBspline, CubicBspline) {
         match self {
-            CatmullClarkBasis::Regular(bu, bv) => {
-                (CubicBspline::Smooth(*bu), CubicBspline::Smooth(*bv))
+            CatmullClarkBasis::Regular => {
+                (CubicBspline::Smooth, CubicBspline::Smooth)
             }
-            CatmullClarkBasis::Boundary(bu, bv) => {
-                (CubicBspline::Smooth(*bu), CubicBspline::Interpolating(*bv))
+            CatmullClarkBasis::Boundary => {
+                (CubicBspline::Smooth, CubicBspline::Interpolating)
             }
-            CatmullClarkBasis::Corner(bu, bv) => {
-                (CubicBspline::Interpolating(*bu), CubicBspline::Interpolating(*bv))
+            CatmullClarkBasis::Corner => {
+                (CubicBspline::Interpolating, CubicBspline::Interpolating)
             }
             CatmullClarkBasis::Irregular => {
                 todo!()
@@ -31,15 +31,15 @@ impl<T: Copy> CatmullClarkBasis<T> {
     }
 }
 
-impl<T> Basis for CatmullClarkBasis<T> {
+impl Basis for CatmullClarkBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
     fn num_basis(&self) -> usize {
         match self {
-            CatmullClarkBasis::Regular(_, _) => 16,
-            CatmullClarkBasis::Boundary(_, _) => 12,
-            CatmullClarkBasis::Corner(_, _) => 9,
+            CatmullClarkBasis::Regular => 16,
+            CatmullClarkBasis::Boundary => 12,
+            CatmullClarkBasis::Corner => 9,
             CatmullClarkBasis::Irregular => todo!()
         }
     }
@@ -57,7 +57,7 @@ impl<T> Basis for CatmullClarkBasis<T> {
     }
 }
 
-impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmullClarkBasis<T> {
+impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmullClarkBasis {
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {
