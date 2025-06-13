@@ -1,7 +1,7 @@
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
-use nalgebra::{Dyn, OMatrix, RealField, U1};
+use nalgebra::{Const, Dyn, Matrix, OMatrix, RealField, U1, U2};
 
 /// Basis functions for Catmull-Clark subdivision.
 pub enum CatmullClarkBasis {
@@ -53,6 +53,25 @@ impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmullClarkBasis {
             _ => {
                 let (bu, bv) = self.bases();
                 bv.eval(v).kronecker(&bu.eval(u))
+            }
+        }
+    }
+}
+
+impl <T: RealField + Copy> EvalGrad<T, (T, T), 2> for CatmullClarkBasis {
+    fn eval_grad(&self, x: (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
+        let (u, v) = x;
+        match self {
+            CatmullClarkBasis::Irregular(n) => { todo!() },
+            _ => {
+                let (basis_u, basis_v) = self.bases();
+                let bu = basis_u.eval(u);
+                let bu_du = basis_u.eval_grad(u);
+                let bv = basis_v.eval(v);
+                let bv_dv = basis_v.eval_grad(v);
+                let b_du = bv.kronecker(&bu_du);
+                let b_dv = bv_dv.kronecker(&bu);
+                Matrix::from_rows(&[b_du, b_dv])
             }
         }
     }

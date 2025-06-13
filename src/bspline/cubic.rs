@@ -122,3 +122,12 @@ impl <T: RealField + Copy> EvalBasis<T, T> for CubicBspline {
         }
     }
 }
+
+impl<T: RealField + Copy> EvalGrad<T, T, 1> for CubicBspline {
+    fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Self::NumBasis> {
+        match self {
+            CubicBspline::Smooth => RowDVector::from_row_slice(Smooth.eval_grad(x).as_slice()),
+            CubicBspline::Interpolating => RowDVector::from_row_slice(Interpolating.eval_grad(x).as_slice()),
+        }
+    }
+}
