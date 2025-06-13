@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn mesh() {
         // Define quads
-        let quads = vec![
+        let quads_regular = vec![
             QuadTopo::from_indices(0, 1, 5, 4),
             QuadTopo::from_indices(1, 2, 6, 5),
             QuadTopo::from_indices(2, 3, 7, 6),
@@ -269,9 +269,21 @@ mod tests {
             QuadTopo::from_indices(9, 10, 14, 13),
             QuadTopo::from_indices(10, 11, 15, 14),
         ];
+        let quads_irregular = vec![
+            QuadTopo::from_indices(0, 5, 4, 3),
+            QuadTopo::from_indices(1, 0, 3, 2),
+            QuadTopo::from_indices(2, 3, 16, 17),
+            QuadTopo::from_indices(3, 4, 15, 16),
+            QuadTopo::from_indices(4, 12, 11, 15),
+            QuadTopo::from_indices(5, 13, 12, 4),
+            QuadTopo::from_indices(6, 14, 13, 5),
+            QuadTopo::from_indices(7, 6, 5, 0),
+            QuadTopo::from_indices(8, 7, 0, 9),
+            QuadTopo::from_indices(9, 0, 1, 10),
+        ];
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let msh_topo = QuadVertex::from_elems(quads);
+        let msh_topo = QuadVertex::from_elems(quads_irregular);
         let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
 
         // Print patches
