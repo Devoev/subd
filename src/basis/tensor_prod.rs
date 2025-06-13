@@ -87,20 +87,8 @@ impl<T: RealField, B: Basis<NumComponents = U1, NumBasis = Dyn>, const D: usize>
     type NumBasis = Dyn;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        self.shape().len()
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
-        Dyn(self.num_basis())
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
+        Dyn(self.shape().len())
     }
 }
 

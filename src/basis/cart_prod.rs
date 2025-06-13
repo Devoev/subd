@@ -33,20 +33,8 @@ where B1: Basis<NumComponents = U1>,
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
 
-    fn num_basis(&self) -> usize {
-        self.bases.0.num_basis() + self.bases.1.num_basis()
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.bases.0.num_basis_generic().add(self.bases.1.num_basis_generic())
-    }
-
-    fn num_components(&self) -> usize {
-        2
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U2
     }
 }
 

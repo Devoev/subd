@@ -32,20 +32,8 @@ impl<T: RealField> Basis for DeBoorSpan<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        self.degree + 1
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
-        Dyn(self.num_basis())
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
+        Dyn(self.degree + 1)
     }
 }
 

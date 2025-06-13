@@ -60,20 +60,8 @@ impl Basis for Smooth {
     type NumBasis = U4;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        4
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
         U4
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
     }
 }
 
@@ -95,20 +83,8 @@ impl Basis for Interpolating {
     type NumBasis = U3;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        3
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
         U3
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
     }
 }
 
@@ -130,23 +106,11 @@ impl Basis for CubicBspline {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        match self {
-            CubicBspline::Smooth => 4,
-            CubicBspline::Interpolating => 3
-        }
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
-        Dyn(self.num_basis())
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
+        match self {
+            CubicBspline::Smooth => Dyn(4),
+            CubicBspline::Interpolating => Dyn(3)
+        }
     }
 }
 

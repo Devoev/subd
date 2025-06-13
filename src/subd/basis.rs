@@ -8,7 +8,7 @@ pub enum CatmullClarkBasis {
     Regular,
     Boundary,
     Corner,
-    Irregular // todo
+    Irregular(usize) // todo: valence parameter
 }
 
 impl CatmullClarkBasis {
@@ -24,7 +24,7 @@ impl CatmullClarkBasis {
             CatmullClarkBasis::Corner => {
                 (CubicBspline::Interpolating, CubicBspline::Interpolating)
             }
-            CatmullClarkBasis::Irregular => {
+            CatmullClarkBasis::Irregular(_) => {
                 todo!()
             }
         }
@@ -35,25 +35,13 @@ impl Basis for CatmullClarkBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
-    fn num_basis(&self) -> usize {
-        match self {
-            CatmullClarkBasis::Regular => 16,
-            CatmullClarkBasis::Boundary => 12,
-            CatmullClarkBasis::Corner => 9,
-            CatmullClarkBasis::Irregular => todo!()
-        }
-    }
-
     fn num_basis_generic(&self) -> Self::NumBasis {
-        Dyn(self.num_basis())
-    }
-
-    fn num_components(&self) -> usize {
-        1
-    }
-
-    fn num_components_generic(&self) -> Self::NumComponents {
-        U1
+        match self {
+            CatmullClarkBasis::Regular => Dyn(16),
+            CatmullClarkBasis::Boundary => Dyn(12),
+            CatmullClarkBasis::Corner => Dyn(9),
+            CatmullClarkBasis::Irregular(n) => todo!("dependent on valence")
+        }
     }
 }
 
@@ -61,7 +49,7 @@ impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmullClarkBasis {
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {
-            CatmullClarkBasis::Irregular => { todo!() },
+            CatmullClarkBasis::Irregular(n) => { todo!() },
             _ => {
                 let (bu, bv) = self.bases();
                 bv.eval(v).kronecker(&bu.eval(u))
