@@ -4,9 +4,13 @@ use crate::cells::quad::QuadTopo;
 use crate::mesh::elem_vertex_topo::QuadVertex;
 use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
-use nalgebra::{DimName, DimNameSub, Point, RealField, U2};
+use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
+use crate::cells::geo;
+use crate::subd::basis::CatmarkBasis;
+use crate::subd::map::CatmarkMap;
 
 /// A Catmull-Clark surface patch.
+#[derive(Debug, Clone)]
 pub enum CatmarkPatch<T: RealField, const M: usize> {
     /// The regular interior case. See [`CatmarkPatchNodes::Regular`].
     Regular([Point<T, M>; 16]),
@@ -35,15 +39,44 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
             CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), n)
         }
     }
+
+    /// Returns a slice containing the control points.
+    pub fn as_slice(&self) -> &[Point<T, M>] {
+        match self {
+            CatmarkPatch::Regular(val) => val.as_slice(),
+            CatmarkPatch::Boundary(val) => val.as_slice(),
+            CatmarkPatch::Corner(val) => val.as_slice(),
+            CatmarkPatch::Irregular(val, _) => val.as_slice(),
+        }
+    }
+
+    /// Returns the bicubic Catmull-Clark basis functions corresponding to the patch.
+    pub fn basis(&self) -> CatmarkBasis {
+        match self {
+            CatmarkPatch::Regular(_) => CatmarkBasis::Regular,
+            CatmarkPatch::Boundary(_) => CatmarkBasis::Boundary,
+            CatmarkPatch::Corner(_) => CatmarkBasis::Corner,
+            CatmarkPatch::Irregular(_, n) => CatmarkBasis::Irregular(*n)
+        }
+    }
+
+    /// Returns a matrix `(c1,...,cN)` over the coordinates of control points of this patch.
+    pub fn coords(&self) -> OMatrix<T, Dyn, Const<M>> {
+        let points = self.as_slice()
+            .iter()
+            .map(|&point| point.coords.transpose())
+            .collect_vec();
+        OMatrix::from_rows(&points)
+    }
 }
 
-// impl <T: RealField, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
-//     type GeoMap = ();
-//
-//     fn geo_map(&self) -> Self::GeoMap {
-//         todo!()
-//     }
-// }
+impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
+    type GeoMap = CatmarkMap<T, M>;
+
+    fn geo_map(&self) -> Self::GeoMap {
+        CatmarkMap(self.clone()) // todo: possibly replace clone if reference is introduced in CatmarkMap
+    }
+}
 
 // todo: the implementations below should be updated!
 
