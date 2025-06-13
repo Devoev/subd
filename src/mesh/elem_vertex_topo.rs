@@ -2,7 +2,7 @@
 
 use std::hash::Hash;
 use itertools::Itertools;
-use nalgebra::{Const, DimNameSub, U1, U2};
+use nalgebra::{Const, DimNameDiff, DimNameSub, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::quad::QuadTopo;
@@ -51,19 +51,20 @@ impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
             .filter(move |elem| elem.contains_node(node))
     }
 
-    /// Finds all elements adjacent to the given `elem` and returns them as an iterator.
+    /// Finds all elements adjacent (aka. connected by a `K-1` dimensional sub-cell) 
+    /// to the given `elem` and returns them as an iterator.
     pub fn adjacent_elems<'a>(&'a self, elem: &'a C) -> impl Iterator<Item = &'a C> + 'a
-    where Const<K>: DimNameSub<Const<K>>
+    where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
     {
         self.elems
             .iter()
-            .filter(move |e| e.is_connected::<K>(elem))
+            .filter(move |e| e.is_connected(elem, Const::<K>.sub(U1)))
     }
 
 }
 
 impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
-    where Const<K>: DimNameSub<U1> + DimNameSub<Const<K>>
+    where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
 {
     /// Returns `true` if given `elem` is at the boundary of the mesh,
     /// i.e. it has less than [`C::NUM_SUB_CELLS`] adjacent elements.

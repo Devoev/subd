@@ -4,7 +4,7 @@ use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{vector, Const, DimNameSub, Point, RealField, SVector, U1, U3};
+use nalgebra::{vector, Const, DimName, DimNameSub, Point, RealField, SVector, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
@@ -97,9 +97,9 @@ impl <const K: usize> Cell<Const<K>> for HyperRectangleTopo<K> {
         todo!()
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        Const<K>: DimNameSub<Const<M>>
+        Const<K>: DimNameSub<M>
     {
         todo!()
     }

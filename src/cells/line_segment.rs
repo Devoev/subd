@@ -1,5 +1,5 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimNameSub, Point2, RealField, U0, U1};
+use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, U0, U1};
 use std::cmp::minmax;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
@@ -70,22 +70,22 @@ impl Cell<U1> for LineSegmentTopo {
         &self.0
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        U1: DimNameSub<Const<M>>
+        U1: DimNameSub<M>
     {
-        match M {
+        match dim.value() {
             1 => { // edges are the same
                 self.start() == other.start() && self.end() == other.end()
-                || self.start() == other.end() && self.end() == other.start()
+                    || self.start() == other.end() && self.end() == other.start()
             },
             0 => { // edges share a node
                 self.start() == other.start()
-                || self.start() == other.end()
-                || self.end() == other.start()
-                || self.end() == other.end()
+                    || self.start() == other.end()
+                    || self.end() == other.start()
+                    || self.end() == other.end()
             },
-            _ => unreachable!("Dimension `M` (is {M}) should be <= `K` (is 1)")
+            _ => unreachable!("Dimension `M` (is {dim:?}) should be <= `K` (is 1)")
         }
     }
 }

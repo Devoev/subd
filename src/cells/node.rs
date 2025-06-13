@@ -1,4 +1,4 @@
-use nalgebra::{Const, DimNameSub, U0};
+use nalgebra::{Const, DimName, DimNameSub, U0};
 use crate::cells::topo::Cell;
 
 /// Index of a node aka. vertex in a mesh. Represented by a global index.
@@ -10,9 +10,9 @@ impl Cell<U0> for NodeIdx {
         &[] // todo: return self?
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        U0: DimNameSub<Const<M>>
+        U0: DimNameSub<M>
     {
         self == other
     }

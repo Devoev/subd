@@ -18,7 +18,7 @@ pub trait Cell<K: DimName> {
     /// |   |   |
     /// +---+---+
     /// ```
-    /// by an edge (`M = 1`) and `connected_to<1>` returns `true`.
+    /// by an edge (`M = 1`) and `connected_to(other, U1)` returns `true`.
     ///
     /// The faces
     /// ```text
@@ -29,9 +29,10 @@ pub trait Cell<K: DimName> {
     ///     +---+
     /// ```
     /// are not connected by an edge, but by a node (`M = 0`).
-    /// In this case `connected_to<1>` returns `false` but `connected_to<0>` returns `true`.
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
-    where K: DimNameSub<Const<M>>;
+    /// In this case `connected_to(other, U1)` returns `false`
+    /// but `connected_to(other, U0)` returns `true`.
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
+    where K: DimNameSub<M>;
 
     /// Returns `true` if the cell contains the given `node`.
     fn contains_node(&self, node: NodeIdx) -> bool {
@@ -83,9 +84,9 @@ impl <K: DimName> Cell<K> for () {
         &[]
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        K: DimNameSub<Const<M>>
+        K: DimNameSub<M>
     {
         false
     }

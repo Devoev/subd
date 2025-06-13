@@ -3,7 +3,7 @@ use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadTopo;
 use crate::mesh::elem_vertex_topo::QuadVertex;
 use itertools::Itertools;
-use nalgebra::{Const, DimNameSub, U2};
+use nalgebra::{Const, DimName, DimNameSub, U2};
 
 // todo: the implementations below should be updated!
 
@@ -146,9 +146,9 @@ impl cells::topo::Cell<U2> for CatmarkPatchNodes {
         self.as_slice()
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        U2: DimNameSub<Const<M>>
+        U2: DimNameSub<M>
     {
         todo!()
     }
@@ -228,6 +228,8 @@ impl CatmarkPatchFaces {
             .filter(|other| other.is_touching(center))
             .collect_vec();
 
+        dbg!(center);
+        dbg!(msh.is_regular(center));
         if msh.is_regular(center) || msh.is_boundary_elem(&center) {
             match faces.len() {
                 8 => {
@@ -253,7 +255,7 @@ impl CatmarkPatchFaces {
                     let faces: [QuadTopo; 4] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
                     CatmarkPatchFaces::Corner(faces)
                 },
-                _ => panic!("Possibly add more options for faces.len()")
+                _ => panic!("Possibly add more options for `faces.len()` (is {})", faces.len())
             }
         } else {
             let node_irr = msh.irregular_node_of_face(center).unwrap();

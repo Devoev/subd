@@ -1,5 +1,5 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimNameSub, Point2, RealField, Vector2, U1, U2};
+use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, Vector2, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::line_segment::LineSegmentTopo;
@@ -132,20 +132,20 @@ impl Cell<U2> for QuadTopo {
         &self.0
     }
 
-    fn is_connected<const M: usize>(&self, other: &Self) -> bool
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
-        U2: DimNameSub<Const<M>>
+        U2: DimNameSub<M>
     {
         let num_shared_nodes = self.nodes()
             .into_iter()
             .filter(|n| other.nodes().contains(n))
             .count();
-        
-        match M { 
+
+        match dim.value() {
             2 => num_shared_nodes == 4, // faces are the same
             1 => num_shared_nodes == 2, // faces share an edge
             0 => num_shared_nodes == 1, // faces share a node
-            _ => unreachable!("Dimension `M` (is {M}) should be <= `K` (is 2)"),
+            _ => unreachable!("Dimension `M` (is {dim:?}) should be <= `K` (is 2)"),
         }
     }
 }
