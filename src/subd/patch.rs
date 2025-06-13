@@ -1,11 +1,10 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::{Quad, QuadTopo};
+use crate::cells::quad::QuadTopo;
 use crate::mesh::elem_vertex_topo::QuadVertex;
+use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameSub, Point, RealField, U2};
-use crate::cells::geo;
-use crate::subd::mesh::CatmarkMesh;
 
 /// A Catmull-Clark surface patch.
 pub enum CatmarkPatch<T: RealField, const M: usize> {
@@ -19,16 +18,22 @@ pub enum CatmarkPatch<T: RealField, const M: usize> {
     Corner([Point<T, M>; 9]),
 
     /// The irregular interior case. See [`CatmarkPatchNodes::Irregular`].
-    Irregular(Vec<Point<T, M>>)
+    Irregular(Vec<Point<T, M>>, usize)
 }
 
 impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
-
+    /// Constructs a new [`CatmarkPatch`] from the given `msh` and `patch_topo`.
     pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: CatmarkPatchNodes) -> Self {
-        let coords = patch_topo.as_slice().iter()
-            .map(|node| msh.coords[node.0])
-            .collect_vec();
-        todo!()
+        let coords = patch_topo
+            .as_slice()
+            .iter()
+            .map(|node| *msh.coords(*node));
+        match patch_topo {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), n)
+        }
     }
 }
 
