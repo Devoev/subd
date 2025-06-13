@@ -2,11 +2,14 @@ use crate::cells;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadTopo;
 use crate::mesh::elem_vertex_topo::QuadVertex;
+use itertools::Itertools;
 use nalgebra::{Const, DimNameSub, U2};
 
-/// Topology of a Catmull-Clark surface patch.
+// todo: the implementations below should be updated!
+
+/// Patch-to-nodes topology of a Catmull-Clark surface patch.
 #[derive(Clone, Debug)]
-pub enum CatmullClarkPatchTopology {
+pub enum CatmarkPatchNodes {
     /// The regular interior case of valence `n=4`.
     /// The nodes are ordered in lexicographical order
     /// ```text
@@ -66,25 +69,79 @@ pub enum CatmullClarkPatchTopology {
     // todo: add IrregularBoundary/Corner case of valence = 4
 }
 
-impl CatmullClarkPatchTopology {
-    /// Finds the [`CatmullClarkPatchTopology`] in the given quad-vertex topology `msh`.
+impl CatmarkPatchNodes {
+    /// Finds the [`CatmarkPatchNodes`] in the given quad-vertex topology `msh`.
     /// The center face `p` is given by `quad`.
     pub fn find(msh: &QuadVertex, quad: &QuadTopo) -> Self {
-        todo!("Copy from subd_legacy::patch or re-implement")    
+        match CatmarkPatchFaces::find(msh, *quad) {
+            CatmarkPatchFaces::Regular(faces) => {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1), (2, 1),
+                    (0, 3), (0, 2), (1, 2), (2, 2),
+                    (6, 0), (6, 1), (7, 1), (8, 1),
+                    (6, 3), (6, 2), (7, 2), (8, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces[face].0[node]);
+                CatmarkPatchNodes::Regular(nodes)
+            }
+            CatmarkPatchFaces::Boundary(faces) => {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1), (2, 1),
+                    (3, 0), (3, 1), (4, 1), (5, 1),
+                    (3, 3), (3, 2), (4, 2), (5, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces[face].0[node]);
+                CatmarkPatchNodes::Boundary(nodes)
+            }
+            CatmarkPatchFaces::Corner(faces) => {
+                let pick = [
+                    (0, 0), (0, 1), (1, 1),
+                    (2, 0), (2, 1), (3, 1),
+                    (2, 3), (2, 2), (3, 2),
+                ];
+                let nodes = pick.map(|(face, node)| faces[face].0[node]);
+                CatmarkPatchNodes::Corner(nodes)
+            }
+            CatmarkPatchFaces::Irregular(faces) => {
+                // Get faces at irregular node
+                let node_irr = faces[0].0[0];
+                let mut nodes = vec![node_irr];
+
+                let n = faces.len() - 5;
+                let faces_irr = &faces[..n];
+                let faces_reg = &faces[n..];
+
+                // Get nodes around irregular faces
+                let nodes_irr = faces_irr.iter()
+                    .flat_map(|&face| [face.0[3], face.0[2]]);
+                nodes.extend(nodes_irr);
+
+                // Get faces away from irregular node
+                let pick = [
+                    (0, 2), (0, 1), (1, 1), (2, 1),
+                    (3, 2), (4, 2), (4, 3)
+                ];
+                let nodes_reg = pick.map(|(face, node)| faces_reg[face].0[node]);
+
+                // Combine both
+                nodes.extend_from_slice(&nodes_reg);
+                CatmarkPatchNodes::Irregular(nodes, n)
+            }
+        }
     }
-    
+
     /// Returns a slice containing the nodes.
     pub fn as_slice(&self) -> &[NodeIdx] {
         match self {
-            CatmullClarkPatchTopology::Regular(val) => val.as_slice(),
-            CatmullClarkPatchTopology::Boundary(val) => val.as_slice(),
-            CatmullClarkPatchTopology::Corner(val) => val.as_slice(),
-            CatmullClarkPatchTopology::Irregular(val, _) => val.as_slice(),
+            CatmarkPatchNodes::Regular(val) => val.as_slice(),
+            CatmarkPatchNodes::Boundary(val) => val.as_slice(),
+            CatmarkPatchNodes::Corner(val) => val.as_slice(),
+            CatmarkPatchNodes::Irregular(val, _) => val.as_slice(),
         }
     }
 }
 
-impl cells::topo::Cell<U2> for CatmullClarkPatchTopology {
+impl cells::topo::Cell<U2> for CatmarkPatchNodes {
     fn nodes(&self) -> &[NodeIdx] {
         self.as_slice()
     }
@@ -94,5 +151,227 @@ impl cells::topo::Cell<U2> for CatmullClarkPatchTopology {
         U2: DimNameSub<Const<M>>
     {
         todo!()
+    }
+}
+
+/// Patch-to-faces topology of a Catmull-Clark surface patch.
+#[derive(Clone, Debug)]
+pub enum CatmarkPatchFaces {
+    /// The regular interior case of valence `n=4`.
+    /// The faces are ordered in lexicographical order
+    /// ```text
+    /// +---+---+---+
+    /// | 6 | 7 | 8 |
+    /// +---+---+---+
+    /// | 3 | p | 5 |
+    /// +---+---+---+
+    /// | 0 | 1 | 2 |
+    /// +---+---+---+
+    /// ```
+    /// where `p` is the center face of the patch.
+    /// Each face is sorted such that the first node is the lower left one.
+    Regular([QuadTopo; 9]),
+
+    /// The regular boundary case of valence `n=3`.
+    /// The faces are ordered in lexicographical order
+    /// ```text
+    /// |   |   |   |
+    /// +---+---+---+
+    /// | 3 | 4 | 5 |
+    /// +---+---+---+
+    /// | 0 | p | 2 |
+    /// +---+---+---+
+    /// ```
+    /// where `p` is the center face of the patch.
+    /// Each face is sorted such that the first node is the lower left one.
+    Boundary([QuadTopo; 6]),
+
+    /// The regular corner case of valence `n=2`.
+    /// The faces are ordered in lexicographical order
+    /// ```text
+    /// |   |   |
+    /// +---+---+---
+    /// | 2 | 3 |
+    /// +---+---+---
+    /// | p | 1 |
+    /// +---+---+---
+    /// ```
+    /// where `p` is the center face of the patch.
+    /// Each face is sorted such that the first node is the lower left one.
+    Corner([QuadTopo; 4]),
+
+    /// The irregular interior case of valence `n≠4`.
+    /// The faces are ordered in the following order
+    /// ```text
+    ///   +-----+-----+-----+
+    ///   | n+4 | n+3 |  n  |
+    ///   +-----+-----+-----+
+    ///   |  0  |  p  | n+1 |
+    ///   +-----+-----+-----+
+    ///  /     /|  2  | n+2 |
+    /// + n-1 / +-----+-----+
+    ///  \   / /
+    ///   ○---+
+    /// ```
+    /// where `p` is the center face of the patch. The orientation of each face is as
+    /// - Face `p`: Sorted such that the irregular node is the lower left one.
+    /// - Faces `0..n-1`: Sorted such that the first node is the irregular one.
+    /// - Faces `n..n+4`: Sorted such that the first node is the lower left one.
+    Irregular(Vec<QuadTopo>)
+}
+
+impl CatmarkPatchFaces {
+    /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
+    pub fn find(msh: &QuadVertex, center: QuadTopo) -> CatmarkPatchFaces {
+        // Find all faces in the 1-ring neighborhood
+        let faces = msh.elems.iter()
+            .filter(|other| other.is_touching(center))
+            .collect_vec();
+
+        if msh.is_regular(center) || msh.is_boundary_elem(&center) {
+            match faces.len() {
+                8 => {
+                    let faces: [QuadTopo; 9] = Self::traverse_faces_regular(center, faces).try_into().unwrap();
+                    CatmarkPatchFaces::Regular(faces)
+                },
+                5 => {
+                    let node_irr = center.0.into_iter().enumerate()
+                        .find_map(|(idx, node)| {
+                            let next_idx = (idx + 1) % 4;
+                            let next_node = center.0[next_idx];
+                            (msh.valence(node) == 4 && msh.valence(next_node) != 4).then_some(next_node)
+                        }).unwrap();
+                    let center_face = center.sorted_by_origin(node_irr);
+                    let faces: [QuadTopo; 6] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
+                    CatmarkPatchFaces::Boundary(faces)
+                },
+                3 => {
+                    let node_irr = center.0.into_iter()
+                        .find(|&n| msh.valence(n) == 2)
+                        .unwrap();
+                    let center_face = center.sorted_by_origin(node_irr);
+                    let faces: [QuadTopo; 4] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
+                    CatmarkPatchFaces::Corner(faces)
+                },
+                _ => panic!("Possibly add more options for faces.len()")
+            }
+        } else {
+            let node_irr = msh.irregular_node_of_face(center).unwrap();
+            let center_face = center.sorted_by_origin(node_irr);
+            let faces = Self::traverse_faces_irregular(center_face, faces);
+            CatmarkPatchFaces::Irregular(faces)
+        }
+    }
+
+    /// Traverses the given `faces` of a **regular** patch in lexicographical order around the already **sorted** `center_face`
+    /// and returns them in a vector.
+    ///
+    /// The traversal order is compatible with [`FaceConnectivity::Regular`], [`FaceConnectivity::Boundary`] and [`FaceConnectivity::Corner`].
+    fn traverse_faces_regular(center: QuadTopo, faces: Vec<&QuadTopo>) -> Vec<QuadTopo> {
+        let center_edges = center.edges();
+        let mut faces_sorted: Vec<Option<QuadTopo>> = vec![None; 9];
+        faces_sorted[4] = Some(center);
+
+        for &face in faces {
+            // Check if faces are connected by an edge
+            let edges = face.edges();
+            let edge_res = center_edges.iter().find_position(|&&edge| edges.contains(&edge.reversed()));
+            if let Some((i, edge)) = edge_res {
+                match i {
+                    0 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 2)),
+                    1 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 3)),
+                    2 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 0)),
+                    3 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 1)),
+                    _ => unreachable!()
+                }
+                continue
+            }
+
+            // Check if faces are connected by a node
+            let node_res = center.0.iter().find_position(|&&node| face.nodes().contains(&node));
+            if let Some((i, &node)) = node_res {
+                match i {
+                    0 => faces_sorted[0] = Some(face.sorted_by_node(node, 2)),
+                    1 => faces_sorted[0] = Some(face.sorted_by_node(node, 3)),
+                    2 => faces_sorted[0] = Some(face.sorted_by_node(node, 0)),
+                    3 => faces_sorted[0] = Some(face.sorted_by_node(node, 1)),
+                    _ => unreachable!()
+                }
+                continue
+            }
+
+            panic!("Face {face:?} is not connected to the center face {center:?}");
+        }
+
+        faces_sorted.into_iter().flatten().collect()
+    }
+
+    /// Traverses the given `faces` of an **irregular** patch around the already **sorted** `center_face`
+    /// and returns them in a vector.
+    ///
+    /// The traversal order is compatible with [`FaceConnectivity::Irregular`].
+    fn traverse_faces_irregular(center: QuadTopo, mut faces: Vec<&QuadTopo>) -> Vec<QuadTopo> {
+
+        // Find irregular faces 0..n-1
+        let mut faces_irregular = vec![center];
+        let node_irr = center.nodes()[0];
+
+        let mut found_face = center;
+        while faces.len() > 5 {
+            // Find next face
+            let next_edge = found_face.edges()[0];
+            let face_idx = faces.iter()
+                .position(|&&face| face.edges().contains(&next_edge.reversed()))
+                .expect("No face contains given edge. Check faces argument.");
+
+            found_face = faces.swap_remove(face_idx).sorted_by_origin(node_irr);
+            faces_irregular.push(found_face);
+        }
+
+        faces_irregular.rotate_right(1);
+
+        // Find regular faces n..n+4
+        let mut faces_regular = vec![QuadTopo([NodeIdx(0); 4]); 5]; // todo: replace with better default value
+
+        // Find faces connected to edges 1 and 2
+        for (edge_dix, &edge) in center.edges()[1..=2].iter().enumerate() {
+            let face_idx = faces.iter()
+                .position(|&&face| face.edges().contains(&edge.reversed()))
+                .expect("No face contains given edge. Check faces argument.");
+            let face = *faces.swap_remove(face_idx);
+            match edge_dix {
+                0 => faces_regular[1] = face.sorted_by_node(edge.start(), 0),
+                1 => faces_regular[3] = face.sorted_by_node(edge.start(), 1),
+                _ => unreachable!("Iterating over only 2 edges!")
+            };
+        }
+
+        // Find faces connected to nodes 1, 2, 3
+        for (node_idx, node) in center.nodes()[1..=3].iter().enumerate() {
+            let face_idx = faces.iter()
+                .position(|&&face| face.nodes().contains(node))
+                .expect("No face contains given node. Check faces argument.");
+            let face = *faces.swap_remove(face_idx);
+            match node_idx {
+                0 => faces_regular[2] = face.sorted_by_node(*node, 3),
+                1 => faces_regular[0] = face.sorted_by_node(*node, 0),
+                2 => faces_regular[4] = face.sorted_by_node(*node, 1),
+                _ => unreachable!("Iterating over only 3 nodes!")
+            }
+        }
+
+        // Combine faces
+        faces_irregular.extend_from_slice(&faces_regular);
+        faces_irregular
+    }
+
+    /// Returns a slice containing the faces.
+    pub fn as_slice(&self) -> &[QuadTopo] {
+        match self {
+            CatmarkPatchFaces::Regular(val) => val.as_slice(),
+            CatmarkPatchFaces::Boundary(val) => val.as_slice(),
+            CatmarkPatchFaces::Corner(val) => val.as_slice(),
+            CatmarkPatchFaces::Irregular(val) => val.as_slice(),
+        }
     }
 }

@@ -1,19 +1,19 @@
 use crate::mesh::elem_vertex_topo::{ElementVertex, QuadVertex};
-use crate::subd::patch::CatmullClarkPatchTopology;
+use crate::subd::patch::CatmarkPatchNodes;
 
 /// Topology of a Catmull-Clark mesh.
-pub type CatmullClarkMeshTopology = ElementVertex<2, CatmullClarkPatchTopology>;
+pub type CatmarkMeshTopology = ElementVertex<2, CatmarkPatchNodes>;
 
-impl CatmullClarkMeshTopology {
-    /// Converts the given quad-vertex topology `msh` to a [`CatmullClarkMeshTopology`].
+impl CatmarkMeshTopology {
+    /// Converts the given quad-vertex topology `msh` to a [`CatmarkMeshTopology`].
     /// 
     /// This is done by finding the patch corresponding to every quadrilateral 
-    /// using [`CatmullClarkPatchTopology::find`].
+    /// using [`CatmarkPatchNodes::find`].
     pub fn from_quad_mesh(msh: &QuadVertex) -> Self {
         let patches = msh.elems
             .iter()
-            .map(|quad| CatmullClarkPatchTopology::find(msh, quad))
+            .map(|quad| CatmarkPatchNodes::find(msh, quad))
             .collect();
-        CatmullClarkMeshTopology::new(patches, msh.num_nodes)
+        CatmarkMeshTopology::new(patches, msh.num_nodes)
     }
 }
