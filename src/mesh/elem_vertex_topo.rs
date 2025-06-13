@@ -110,7 +110,7 @@ impl <'a, const K: usize, C: Cell<Const<K>>> MeshTopology<'a, K, &'a C> for Elem
 }
 
 /// A face-vertex mesh topology with `2`-dimensional faces [`F`].
-type FaceVertex<F> = ElementVertex<2, F>;
+pub type FaceVertex<F> = ElementVertex<2, F>;
 
 impl <F: CellBoundary<U2>> FaceVertex<F>
     where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
@@ -135,7 +135,7 @@ impl <F: CellBoundary<U2>> FaceVertex<F>
 }
 
 /// A face-vertex mesh topology of quadrilateral faces.
-type QuadVertex = FaceVertex<QuadTopo>;
+pub type QuadVertex = FaceVertex<QuadTopo>;
 
 impl QuadVertex {
     /// Returns `true` if the face is regular.
