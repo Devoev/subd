@@ -51,6 +51,9 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use num_traits::real::Real;
+    use crate::mesh::elem_vertex::QuadVertexMesh;
+    use crate::mesh::elem_vertex_topo::QuadVertex;
+    use crate::subd::mesh::CatmarkMeshTopology;
     use crate::subd_legacy;
 
     #[test]
@@ -254,8 +257,27 @@ mod tests {
 
     #[test]
     fn mesh() {
-        let quad = QuadTopo([NodeIdx(0), NodeIdx(1), NodeIdx(2), NodeIdx(3)]);
-        quad.is_connected::<2>(&quad);
+        // Define quads
+        let quads = vec![
+            QuadTopo::from_indices(0, 1, 5, 4),
+            QuadTopo::from_indices(1, 2, 6, 5),
+            QuadTopo::from_indices(2, 3, 7, 6),
+            QuadTopo::from_indices(4, 5, 9, 8),
+            QuadTopo::from_indices(5, 6, 10, 9),
+            QuadTopo::from_indices(6, 7, 11, 10),
+            QuadTopo::from_indices(8, 9, 13, 12),
+            QuadTopo::from_indices(9, 10, 14, 13),
+            QuadTopo::from_indices(10, 11, 15, 14),
+        ];
+
+        // Constructs quad mesh and catmark patch mesh (topological)
+        let msh_topo = QuadVertex::from_elems(quads);
+        let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
+
+        // Print patches
+        for elem in catmark_topo.elems {
+            println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
+        }
     }
 
     #[test]

@@ -1,3 +1,3 @@
-mod basis;
-mod patch;
-mod mesh;
+pub mod basis;
+pub mod patch;
+pub mod mesh;

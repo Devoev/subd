@@ -279,9 +279,9 @@ impl CatmarkPatchFaces {
             if let Some((i, edge)) = edge_res {
                 match i {
                     0 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 2)),
-                    1 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 3)),
-                    2 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 0)),
-                    3 => faces_sorted[1] = Some(face.sorted_by_node(edge.end(), 1)),
+                    1 => faces_sorted[5] = Some(face.sorted_by_node(edge.end(), 3)),
+                    2 => faces_sorted[7] = Some(face.sorted_by_node(edge.end(), 0)),
+                    3 => faces_sorted[3] = Some(face.sorted_by_node(edge.end(), 1)),
                     _ => unreachable!()
                 }
                 continue
@@ -292,9 +292,9 @@ impl CatmarkPatchFaces {
             if let Some((i, &node)) = node_res {
                 match i {
                     0 => faces_sorted[0] = Some(face.sorted_by_node(node, 2)),
-                    1 => faces_sorted[0] = Some(face.sorted_by_node(node, 3)),
-                    2 => faces_sorted[0] = Some(face.sorted_by_node(node, 0)),
-                    3 => faces_sorted[0] = Some(face.sorted_by_node(node, 1)),
+                    1 => faces_sorted[2] = Some(face.sorted_by_node(node, 3)),
+                    2 => faces_sorted[8] = Some(face.sorted_by_node(node, 0)),
+                    3 => faces_sorted[6] = Some(face.sorted_by_node(node, 1)),
                     _ => unreachable!()
                 }
                 continue

@@ -45,6 +45,10 @@ impl<T: RealField> Quad<T> {
 pub struct QuadTopo(pub [NodeIdx; 4]);
 
 impl QuadTopo {
+    /// Constructs a new [`QuadTopo`] from the given indices `i,j,k,l` of the corner nodes.
+    pub fn from_indices(i: usize, j: usize, k: usize, l: usize) -> Self {
+        QuadTopo([NodeIdx(i), NodeIdx(j), NodeIdx(k), NodeIdx(l)])
+    }
     /// Returns the corner nodes.
     pub fn nodes(&self) -> [NodeIdx; 4] {
         self.0
