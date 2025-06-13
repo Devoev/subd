@@ -1,7 +1,7 @@
 //! Topology of a tensor product mesh.
 
 use crate::cells::hyper_rectangle::HyperRectangleTopo;
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::index::multi_index::MultiIndex;
 use crate::mesh::topo;
@@ -48,8 +48,8 @@ impl<const D: usize> TensorProd<D> {
     }
     
     /// Returns an iterator over all nodes with linear indices in increasing index order.
-    pub fn nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
-        self.indices().map(|idx| VertexTopo(idx.into_lin(&self.strides)))
+    pub fn nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
+        self.indices().map(|idx| NodeIdx(idx.into_lin(&self.strides)))
     }
 
     /// Returns an iterator over all elements in lexicographical order.
@@ -61,7 +61,7 @@ impl<const D: usize> TensorProd<D> {
 }
 
 impl<'a, const D: usize> MeshTopology<'a, D, HyperRectangleTopo<D>> for TensorProd<D> {
-    type Nodes = impl Iterator<Item = VertexTopo>;
+    type Nodes = impl Iterator<Item =NodeIdx>;
     type Elems = impl Iterator<Item = HyperRectangleTopo<D>>;
 
     fn num_nodes(&self) -> usize {

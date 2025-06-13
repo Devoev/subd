@@ -4,7 +4,7 @@
 use crate::cells::topo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::quad::{Quad, QuadTopo};
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 use crate::subd_legacy::patch::Patch;
 use nalgebra::{Const, Point2, RealField};
 use crate::mesh::elem_vertex_topo as topo;
@@ -41,7 +41,7 @@ impl <const K: usize, T: RealField, C: Cell<Const<K>>> ElementVertexMesh<K, T, C
 
 impl<T: RealField> QuadVertexMesh<T> {
     /// Returns the [`Point2`] of the given `node` index.
-    pub fn coords(&self, node: VertexTopo) -> &Point2<T> {
+    pub fn coords(&self, node: NodeIdx) -> &Point2<T> {
         &self.coords[node.0]
     }
 

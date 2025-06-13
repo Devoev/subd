@@ -1,11 +1,11 @@
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 use crate::cells::topo;
 use nalgebra::Const;
 
 /// Topology of a mesh consisting of cells of type [`C`].
 pub trait MeshTopology<'a, const K: usize, C: topo::Cell<Const<K>>> {
     /// Node iterator.
-    type Nodes: Iterator<Item = VertexTopo>;
+    type Nodes: Iterator<Item =NodeIdx>;
 
     /// Element iterator.
     type Elems: Iterator<Item = C>;

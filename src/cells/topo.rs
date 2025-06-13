@@ -1,11 +1,11 @@
 use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1, U2, U3};
 use crate::cells::chain::Chain;
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 
 /// Topology of a [`K`]-dimensional cell inside a mesh.
 pub trait Cell<K: DimName> {
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
-    fn nodes(&self) -> &[VertexTopo];
+    fn nodes(&self) -> &[NodeIdx];
 
     /// Returns `true` if this cell is topologically connected (or adjacent) to the `other` cell
     /// by an [`M`]-dimensional sub-cell with `M <= K`. 
@@ -34,7 +34,7 @@ pub trait Cell<K: DimName> {
     where K: DimNameSub<Const<M>>;
 
     /// Returns `true` if the cell contains the given `node`.
-    fn contains_node(&self, node: VertexTopo) -> bool {
+    fn contains_node(&self, node: NodeIdx) -> bool {
         self.nodes().contains(&node)
     }
 }
@@ -79,7 +79,7 @@ pub type Face3<C> = SubCell<U3, C>;
 pub type Edge3<C> = SubCell<Face3<C>, C>;
 
 impl <K: DimName> Cell<K> for () {
-    fn nodes(&self) -> &[VertexTopo] {
+    fn nodes(&self) -> &[NodeIdx] {
         &[]
     }
 

@@ -1,7 +1,7 @@
 use crate::cells::geo;
 use crate::cells::lerp::Lerp;
 use crate::cells::topo::{Cell, CellBoundary};
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
 use nalgebra::{vector, Const, DimNameSub, Point, RealField, SVector, U1, U3};
@@ -93,7 +93,7 @@ impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for HyperRectangle<T, 1> {
 pub struct HyperRectangleTopo<const K: usize>(pub [usize; K]);
 
 impl <const K: usize> Cell<Const<K>> for HyperRectangleTopo<K> {
-    fn nodes(&self) -> &[VertexTopo] {
+    fn nodes(&self) -> &[NodeIdx] {
         todo!()
     }
 

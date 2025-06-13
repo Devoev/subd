@@ -3,7 +3,7 @@ use nalgebra::{Const, DimNameSub, Point2, RealField, U0, U1};
 use std::cmp::minmax;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 
 /// A line segment of topology [`LineSegmentTopo`].
 pub struct LineSegment<T: RealField> {
@@ -30,17 +30,17 @@ impl<T: RealField> LineSegment<T> {
 /// ```
 /// where `0` is the start and `1` the end node.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct LineSegmentTopo(pub [VertexTopo; 2]);
+pub struct LineSegmentTopo(pub [NodeIdx; 2]);
 
 impl LineSegmentTopo {
 
     /// Returns the start node of this edge.
-    pub fn start(&self) -> VertexTopo {
+    pub fn start(&self) -> NodeIdx {
         self.0[0]
     }
 
     /// Returns the end node of this edge.
-    pub fn end(&self) -> VertexTopo {
+    pub fn end(&self) -> NodeIdx {
         self.0[1]
     }
 
@@ -66,7 +66,7 @@ impl LineSegmentTopo {
 }
 
 impl Cell<U1> for LineSegmentTopo {
-    fn nodes(&self) -> &[VertexTopo] {
+    fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
 
@@ -92,7 +92,7 @@ impl Cell<U1> for LineSegmentTopo {
 
 impl CellBoundary<U1> for LineSegmentTopo {
     const NUM_SUB_CELLS: usize = 2;
-    type SubCell = VertexTopo;
+    type SubCell = NodeIdx;
     type Boundary = LineSegmentBndTopo;
 
     fn boundary(&self) -> Self::Boundary {
@@ -106,10 +106,10 @@ impl OrderedCell<U1> for LineSegmentTopo {
     }
 }
 
-pub struct LineSegmentBndTopo(pub [VertexTopo; 2]);
+pub struct LineSegmentBndTopo(pub [NodeIdx; 2]);
 
-impl Chain<U0, VertexTopo> for LineSegmentBndTopo {
-    fn cells(&self) -> &[VertexTopo] {
+impl Chain<U0, NodeIdx> for LineSegmentBndTopo {
+    fn cells(&self) -> &[NodeIdx] {
         &self.0
     }
 }

@@ -27,7 +27,7 @@ mod tests {
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::cells::topo::Cell;
-    use crate::cells::vertex::VertexTopo;
+    use crate::cells::node::NodeIdx;
     use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn mesh() {
-        let quad = QuadTopo([VertexTopo(0), VertexTopo(1), VertexTopo(2), VertexTopo(3)]);
+        let quad = QuadTopo([NodeIdx(0), NodeIdx(1), NodeIdx(2), NodeIdx(3)]);
         quad.is_connected::<2>(&quad);
     }
 

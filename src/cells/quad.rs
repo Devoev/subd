@@ -3,7 +3,7 @@ use nalgebra::{Const, DimNameSub, Point2, RealField, Vector2, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::line_segment::LineSegmentTopo;
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 
 /// A 2d quadrilateral element of topology [`QuadTopo`].
 pub struct Quad<T: RealField> {
@@ -42,11 +42,11 @@ impl<T: RealField> Quad<T> {
 /// ```
 /// where `0,1,2,3` are the corner nodes of the quadrilateral.
 #[derive(Debug, Clone, Copy)]
-pub struct QuadTopo(pub [VertexTopo; 4]);
+pub struct QuadTopo(pub [NodeIdx; 4]);
 
 impl QuadTopo {
     /// Returns the corner nodes.
-    pub fn nodes(&self) -> [VertexTopo; 4] {
+    pub fn nodes(&self) -> [NodeIdx; 4] {
         self.0
     }
 
@@ -66,7 +66,7 @@ impl QuadTopo {
 
     // todo: return an intersection result (possibly an enum)
     /// Returns the intersection between `self` and `other` as an iterator of the overlapping nodes.
-    pub fn intersection(&self, other: QuadTopo) -> impl Iterator<Item=VertexTopo> {
+    pub fn intersection(&self, other: QuadTopo) -> impl Iterator<Item=NodeIdx> {
         self.nodes().into_iter().filter(move |n| other.nodes().contains(n))
     }
 
@@ -94,7 +94,7 @@ impl QuadTopo {
     /// ```
     /// i.e. the given node `n` moves from the original position `1`
     /// to position `local_idx=3`.
-    pub fn sorted_by_node(&self, node: VertexTopo, local_idx: usize) -> QuadTopo {
+    pub fn sorted_by_node(&self, node: NodeIdx, local_idx: usize) -> QuadTopo {
         let original_idx = self.nodes().iter().position(|&n| n == node).unwrap();
         let mut nodes = self.nodes();
         if local_idx > original_idx {
@@ -118,13 +118,13 @@ impl QuadTopo {
     /// +---> u
     /// ```
     /// where `0` is the `uv_origin`.
-    pub fn sorted_by_origin(&self, uv_origin: VertexTopo) -> QuadTopo {
+    pub fn sorted_by_origin(&self, uv_origin: NodeIdx) -> QuadTopo {
         self.sorted_by_node(uv_origin, 0)
     }
 }
 
 impl Cell<U2> for QuadTopo {
-    fn nodes(&self) -> &[VertexTopo] {
+    fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
 

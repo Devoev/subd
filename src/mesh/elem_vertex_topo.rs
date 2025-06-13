@@ -6,7 +6,7 @@ use nalgebra::{Const, DimNameSub, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::quad::QuadTopo;
-use crate::cells::vertex::VertexTopo;
+use crate::cells::node::NodeIdx;
 use crate::mesh::topo;
 use crate::mesh::topo::MeshTopology;
 
@@ -40,12 +40,12 @@ impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
     }
     
     /// Returns an iterator over all nodes in increasing index order.
-    pub fn nodes(&self) -> impl Iterator<Item = VertexTopo> {
-        (0..self.num_nodes).map(VertexTopo)
+    pub fn nodes(&self) -> impl Iterator<Item =NodeIdx> {
+        (0..self.num_nodes).map(NodeIdx)
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
-    pub fn elems_of_node(&self, node: VertexTopo) -> impl Iterator<Item = &C> {
+    pub fn elems_of_node(&self, node: NodeIdx) -> impl Iterator<Item = &C> {
         self.elems
             .iter()
             .filter(move |elem| elem.contains_node(node))
@@ -74,12 +74,12 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
     // todo: is_boundary_node is inefficient. Update this by not calling is_boundary_elem ?
     /// Returns `true` if the given `node` is a boundary node,
     /// i.e. all elements containing the node are boundary elements.
-    pub fn is_boundary_node(&self, node: VertexTopo) -> bool {
+    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
         self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
     }
 
     /// Returns an iterator over all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item = VertexTopo> + '_ {
+    pub fn boundary_nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
         self.nodes().filter(|&n| self.is_boundary_node(n))
     }
 
@@ -89,7 +89,7 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
 impl <'a, const K: usize, C: Cell<Const<K>>> MeshTopology<'a, K, &'a C> for ElementVertex<K, C>
     where &'a C: Cell<Const<K>>
 {
-    type Nodes = impl Iterator<Item = VertexTopo>;
+    type Nodes = impl Iterator<Item =NodeIdx>;
     type Elems = std::slice::Iter<'a, C>;
 
     fn num_nodes(&self) -> usize {
@@ -124,12 +124,12 @@ impl <F: CellBoundary<U2>> FaceVertex<F>
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: VertexTopo) -> impl Iterator<Item = Edge2<F>> + '_ {
+    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = Edge2<F>> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
-    pub fn valence(&self, node: VertexTopo) -> usize {
+    pub fn valence(&self, node: NodeIdx) -> usize {
         self.edges_of_node(node).count()
     }
 }
@@ -144,7 +144,7 @@ impl QuadVertex {
     }
 
     /// Finds the irregular node of the given `face`, if any exists.
-    pub fn irregular_node_of_face(&self, face: QuadTopo) -> Option<VertexTopo> {
+    pub fn irregular_node_of_face(&self, face: QuadTopo) -> Option<NodeIdx> {
         face.nodes()
             .into_iter()
             .find(|&v| self.valence(v) != 4)
@@ -152,7 +152,7 @@ impl QuadVertex {
 
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
-    pub fn boundary_nodes_of_face(&self, face: QuadTopo) -> Vec<VertexTopo> {
+    pub fn boundary_nodes_of_face(&self, face: QuadTopo) -> Vec<NodeIdx> {
         face.nodes().into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
 }
