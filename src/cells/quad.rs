@@ -1,34 +1,35 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, Vector2, U1, U2};
+use nalgebra::{Const, DimName, DimNameSub, Point, Point2, RealField, SVector, Vector2, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::line_segment::LineSegmentTopo;
 use crate::cells::node::NodeIdx;
 
-/// A 2d quadrilateral element of topology [`QuadTopo`].
-pub struct Quad<T: RealField> {
-    pub vertices: [Point2<T>; 4]
+/// A 2d quadrilateral element of topology [`QuadTopo`],
+/// embedded in [`M`]-dimensional space.
+pub struct Quad<T: RealField, const M: usize> {
+    pub vertices: [Point<T, M>; 4]
 }
 
-impl<T: RealField> Quad<T> {
+impl<T: RealField, const M: usize> Quad<T, M> {
 
     /// Constructs a new [`Quad`] from the given `vertices`.
-    pub fn new(vertices: [Point2<T>; 4]) -> Self {
+    pub fn new(vertices: [Point<T, M>; 4]) -> Self {
         Quad { vertices }
     }
 
     /// Constructs a new [`Quad`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: QuadTopo, msh: &QuadVertexMesh<T>) -> Self {
+    pub fn from_msh(topology: QuadTopo, msh: &QuadVertexMesh<T, M>) -> Self {
         Quad::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 
     /// Computes the centroid of this face.
-    pub fn centroid(&self) -> Point2<T> {
+    pub fn centroid(&self) -> Point<T, M> {
         let centroid = self.vertices
             .iter()
             .map(|p| &p.coords)
-            .sum::<Vector2<T>>() / T::from_f64(4.0).unwrap();
-        Point2::from(centroid)
+            .sum::<SVector<T, M>>() / T::from_f64(4.0).unwrap();
+        Point::from(centroid)
     }
 }
 

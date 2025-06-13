@@ -1,24 +1,25 @@
 use crate::mesh::elem_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point2, RealField, U0, U1};
+use nalgebra::{Const, DimName, DimNameSub, Point, Point2, RealField, U0, U1};
 use std::cmp::minmax;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
 
-/// A line segment of topology [`LineSegmentTopo`].
-pub struct LineSegment<T: RealField> {
-    pub vertices: [Point2<T>; 2]
+/// A line segment of topology [`LineSegmentTopo`],
+/// embedded in [`M`]-dimensional space.
+pub struct LineSegment<T: RealField, const M: usize> {
+    pub vertices: [Point<T, M>; 2]
 }
 
-impl<T: RealField> LineSegment<T> {
+impl<T: RealField, const M: usize> LineSegment<T, M> {
 
     /// Constructs a new [`LineSegment`] from the given `vertices`.
-    pub fn new(vertices: [Point2<T>; 2]) -> Self {
+    pub fn new(vertices: [Point<T, M>; 2]) -> Self {
         LineSegment { vertices }
     }
 
     /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: LineSegmentTopo, msh: &QuadVertexMesh<T>) -> Self {
+    pub fn from_msh(topology: LineSegmentTopo, msh: &QuadVertexMesh<T, M>) -> Self {
         LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 }

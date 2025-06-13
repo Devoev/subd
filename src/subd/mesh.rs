@@ -3,7 +3,7 @@ use crate::mesh::elem_vertex_topo::{ElementVertex, QuadVertex};
 use crate::subd::patch::CatmarkPatchNodes;
 
 /// Catmull-Clark mesh.
-pub type CatmarkMesh<T, const M: usize> = ElementVertexMesh<2, T, CatmarkPatchNodes>;
+pub type CatmarkMesh<T, const M: usize> = ElementVertexMesh<T, CatmarkPatchNodes, 2, M>;
 
 /// Topology of a Catmull-Clark mesh.
 pub type CatmarkMeshTopology = ElementVertex<2, CatmarkPatchNodes>;
