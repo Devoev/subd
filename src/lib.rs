@@ -28,7 +28,7 @@ use crate::basis::cart_prod;
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
     use crate::diffgeo::chart::Chart;
-    use crate::index::dimensioned::{DimShape, Strides};
+    use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
     use crate::index::multi_index::MultiIndex;
     use crate::knots::breaks::Breaks;
     use crate::knots::knot_vec::KnotVec;
@@ -36,9 +36,9 @@ use crate::basis::cart_prod;
     use crate::mesh::cartesian::CartMesh;
     use crate::mesh::geo::Mesh;
     use crate::operator::hodge::assemble_hodge;
-    use crate::quadrature::bezier::BezierQuad;
+    use crate::quadrature::pullback::BezierQuad;
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
-    use crate::quadrature::traits::{Quadrature, RefQuadrature};
+    use crate::quadrature::traits::{Quadrature};
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
@@ -50,7 +50,9 @@ use crate::basis::cart_prod;
     use std::iter::zip;
     use std::time::Instant;
     use num_traits::real::Real;
+    use crate::knots::knot_span::KnotSpan;
     use crate::mesh::elem_vertex_topo::QuadVertex;
+    use crate::quadrature::pullback;
     use crate::subd::mesh::{CatmarkMesh, CatmarkMeshTopology};
     use crate::subd::patch::CatmarkPatch;
     use crate::subd_legacy;
@@ -246,8 +248,8 @@ use crate::basis::cart_prod;
         let quad_1d = GaussLegendre::new(2).unwrap();
         let quad_multi = GaussLegendreMulti::<f64, 2>::new([quad_1d.clone(), quad_1d.clone()]);
 
-        println!("Quadrature nodes = {:?} (in [-1,1]]", quad_multi.nodes_ref().collect_vec());
-        println!("Quadrature weights = {:?} (in [-1,1])", quad_multi.weights_ref().collect_vec());
+        // println!("Quadrature nodes = {:?} (in [-1,1]]", quad_multi.nodes_ref().collect_vec());
+        // println!("Quadrature weights = {:?} (in [-1,1])", quad_multi.weights_ref().collect_vec());
 
         let elem = HyperRectangle::new(vector![0.2, 0.2], vector![0.4, 0.4]);
         println!("Quadrature nodes = {:?} in {:?}", quad_multi.nodes_elem(&elem).collect_vec(), elem);
@@ -345,7 +347,10 @@ use crate::basis::cart_prod;
 
         let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
         let quad = BezierQuad::new(ref_quad);
-        let mat = assemble_hodge(&msh, &space, quad);
+        let mat = assemble_hodge(&msh, &space, quad, |elem| {
+            // todo: this should DIRECTLY be implemented in the spline spaces
+            space.basis.find_elem(elem.a.into_arr())
+        });
 
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());

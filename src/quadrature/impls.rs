@@ -1,36 +1,39 @@
 use crate::cells::geo::Cell;
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::cells::lerp::Lerp;
-use crate::quadrature::traits::{Quadrature, RefQuadrature};
+use crate::cells::unit_cube::SymmetricUnitCube;
+use crate::quadrature::traits::Quadrature;
 use gauss_quad::GaussLegendre;
-use nalgebra::{vector, Point, RealField, U1};
+use nalgebra::{vector, RealField};
 use std::iter::Sum;
 
-impl <T: RealField + Sum> RefQuadrature<T> for GaussLegendre {
+// todo: are the two implementations really needed? or is the 2nd one sufficient
+
+impl <T: RealField + Sum> Quadrature<T, SymmetricUnitCube<1>, 1> for GaussLegendre {
     type Node = T;
 
-    fn nodes_ref(&self) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, _elem: &SymmetricUnitCube<1>) -> impl Iterator<Item=T> {
         self.nodes()
             .map(|&xi| T::from_f64(xi).unwrap())
     }
 
-    fn weights_ref(&self) -> impl Iterator<Item=T> {
+    fn weights_elem(&self, _elem: &SymmetricUnitCube<1>) -> impl Iterator<Item=T> {
         self.weights()
             .map(|&wi| T::from_f64(wi).unwrap())
     }
 }
 
-impl <T: RealField + Copy + Sum> Quadrature<T, 1> for GaussLegendre {
-    type Elem = HyperRectangle<T, 1>;
+impl <T: RealField + Copy + Sum> Quadrature<T, HyperRectangle<T, 1>, 1> for GaussLegendre {
+    type Node = T;
 
-    fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=Point<T, 1>> {
+    fn nodes_elem(&self, elem: &HyperRectangle<T, 1>) -> impl Iterator<Item=T> {
         let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
-        self.nodes_ref().map(move |xi: T| lerp.transform_symmetric(vector![xi]))
+        self.nodes_elem(&SymmetricUnitCube).map(move |xi: T| lerp.transform_symmetric(vector![xi]).x)
     }
 
-    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
-        // todo: implement this by giving Lerp a pushforward/ jacobian method
-        let d_phi = (elem.b.x - elem.a.x) / T::from_i32(2).unwrap();
-        self.weights_ref().map(move |wi: T| wi * d_phi)
+    fn weights_elem(&self, elem: &HyperRectangle<T, 1>) -> impl Iterator<Item=T> {
+        let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
+        let d_phi = lerp.jacobian().x / T::from_i32(2).unwrap(); // todo: add new jacobian method for symmetric interval
+        self.weights_elem(&SymmetricUnitCube).map(move |wi: T| wi * d_phi)
     }
 }

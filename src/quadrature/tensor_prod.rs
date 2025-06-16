@@ -1,9 +1,11 @@
 use crate::cells::geo::Cell;
 use crate::cells::hyper_rectangle::HyperRectangle;
-use crate::quadrature::traits::{Quadrature, RefQuadrature};
+use crate::cells::unit_cube::SymmetricUnitCube;
+use crate::index::dimensioned::Dimensioned;
+use crate::quadrature::traits::Quadrature;
 use gauss_quad::GaussLegendre;
 use itertools::Itertools;
-use nalgebra::{Point, RealField, Vector};
+use nalgebra::{RealField, Vector};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
 
@@ -19,12 +21,8 @@ pub struct MultiProd<T, Q, const D: usize> {
 /// [`D`]-variate Gauss-Legendre quadrature.
 pub type GaussLegendreMulti<T, const D: usize> = MultiProd<T, GaussLegendre, D>;
 
-// todo: implement tensor product quadrature as in TensorProdGaussLegendre
-//  maybe include scale factor in weights and add weights function in trait
-
 impl<T, Q, const D: usize> MultiProd<T, Q, D>
     where T: RealField + Sum,
-          Q: RefQuadrature<T, Node=T>
 {
     /// Constructs a new [`MultiProd`] from the given `D` quadrature rules per parametric direction.
     pub fn new(quads: [Q; D]) -> Self {
@@ -39,41 +37,43 @@ impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
     }
 }
 
-
 // todo: make this generic over Q again
 
-impl<T, const D: usize> RefQuadrature<T> for MultiProd<T, GaussLegendre, D>
+// todo: are both implementations really needed? Or is the 2nd one sufficient
+
+impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>, D> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
     type Node = [T; D];
 
-    fn nodes_ref(&self) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=Self::Node> {
         self.quads.iter()
-            .map(|quad| quad.nodes_ref().collect_vec())
+            .map(|quad| quad.nodes_elem(&SymmetricUnitCube).collect_vec())
             .multi_cartesian_product()
             .map(|vec| vec.try_into().unwrap())
     }
 
-    fn weights_ref(&self) -> impl Iterator<Item=T> {
+    fn weights_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=T> {
         self.quads.iter()
-            .map(|quad| quad.weights_ref().collect_vec())
+            .map(|quad| quad.weights_elem(&SymmetricUnitCube).collect_vec())
             .multi_cartesian_product()
             .map(|vec| vec.into_iter().product())
     }
 }
 
-impl <T, const D: usize> Quadrature<T, D> for MultiProd<T, GaussLegendre, D>
+impl <T, const D: usize> Quadrature<T, HyperRectangle<T, D>, D> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
-    type Elem = HyperRectangle<T, D>;
+    type Node = [T; D];
 
-    fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=Point<T, D>> {
+    fn nodes_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=Self::Node> {
         let lerp = elem.geo_map();
-        self.nodes_ref()
-            .map(move |xi| lerp.transform_symmetric(Vector::from(xi)))
+        self.nodes_elem(&SymmetricUnitCube)
+            .map(move |xi| lerp.transform_symmetric(Vector::from(xi)).into_arr())
     }
 
-    fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
+    fn weights_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=T> {
+        // todo: use weights_elem on ref domain for this impl
         zip(&self.quads, elem.intervals())
             .map(|(quad, interval)| quad.weights_elem(&interval).collect_vec())
             .multi_cartesian_product()
