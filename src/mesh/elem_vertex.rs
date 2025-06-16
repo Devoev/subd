@@ -7,7 +7,9 @@ use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::topo::Cell;
 use crate::mesh::elem_vertex_topo as topo;
 use crate::subd_legacy::patch::Patch;
-use nalgebra::{Const, Point, RealField};
+use nalgebra::{Const, DefaultAllocator, Dim, OMatrix, Point, RealField};
+use nalgebra::allocator::Allocator;
+use crate::bspline::space::BsplineSpace;
 
 /// Element-vertex mesh of [`K`]-dimensional topology [`ElementVertexTopo`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
@@ -36,6 +38,18 @@ impl <T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> ElementVe
         assert_eq!(coords.len(), topology.num_nodes, 
                    "Length of `coords` (is {}) doesn't equal `num_nodes` (is {})", coords.len(), topology.num_nodes);
         ElementVertexMesh { coords, topology }
+    }
+
+    // todo: rename function
+    /// Constructs a new [`ElementVertexMesh`] from the given matrix `coords` of row-wise control points
+    /// and `elems_to_vertices` connectivity.
+    pub fn from_matrix<N: Dim>(coords: OMatrix<T, N, Const<M>>, elems_to_vertices: topo::ElementVertex<K, C>) -> Self
+        where DefaultAllocator: Allocator<N, Const<M>>
+    {
+        let coords = coords.row_iter()
+            .map(|row| Point::from(row.transpose()))
+            .collect();
+        ElementVertexMesh::new(coords, elems_to_vertices)
     }
 
     /// Returns the [`Point`] of the given `node` index.

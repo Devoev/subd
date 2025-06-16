@@ -282,29 +282,15 @@ use crate::basis::cart_prod;
         ];
 
         // Define coords
-        let coords_regular = vec![
-            point![0.0, 0.0],
-            point![1.0, 0.0],
-            point![2.0, 0.0],
-            point![3.0, 0.0],
-            point![0.0, 1.0],
-            point![1.0, 1.0],
-            point![2.0, 1.0],
-            point![3.0, 1.0],
-            point![0.0, 2.0],
-            point![1.0, 2.0],
-            point![2.0, 2.0],
-            point![3.0, 2.0],
-            point![0.0, 3.0],
-            point![1.0, 3.0],
-            point![2.0, 3.0],
-            point![3.0, 3.0],
-        ];
+        let coords_regular = matrix![
+            0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0;
+            0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0
+        ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let msh_topo = QuadVertex::from_elems(quads_regular);
         let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
-        let msh = CatmarkMesh::new(coords_regular, catmark_topo);
+        let msh = CatmarkMesh::from_matrix(coords_regular, catmark_topo);
 
         // Print patches
         for elem in &msh.topology.elems {
