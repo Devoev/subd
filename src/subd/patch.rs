@@ -301,8 +301,6 @@ impl CatmarkPatchFaces {
             .filter(|other| other.is_touching(center))
             .collect_vec();
 
-        dbg!(center);
-        dbg!(msh.is_regular(center));
         if msh.is_regular(center) || msh.is_boundary_elem(&center) {
             match faces.len() {
                 8 => {

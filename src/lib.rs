@@ -16,7 +16,8 @@ mod subd_legacy;
 
 #[cfg(test)]
 mod tests {
-    use crate::basis::cart_prod;
+    use crate::cells::geo::Cell;
+use crate::basis::cart_prod;
     use crate::basis::eval::{EvalDerivs};
     use crate::basis::local::LocalBasis;
     use crate::basis::space::Space;
@@ -26,8 +27,6 @@ mod tests {
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::cells::hyper_rectangle::HyperRectangle;
     use crate::cells::quad::QuadTopo;
-    use crate::cells::topo::Cell;
-    use crate::cells::node::NodeIdx;
     use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Strides};
     use crate::index::multi_index::MultiIndex;
@@ -43,7 +42,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowSVector, RowVector4, SMatrix, SVector, U2};
+    use nalgebra::{matrix, point, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowSVector, RowVector4, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
@@ -51,9 +50,9 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use num_traits::real::Real;
-    use crate::mesh::elem_vertex::QuadVertexMesh;
     use crate::mesh::elem_vertex_topo::QuadVertex;
-    use crate::subd::mesh::CatmarkMeshTopology;
+    use crate::subd::mesh::{CatmarkMesh, CatmarkMeshTopology};
+    use crate::subd::patch::CatmarkPatch;
     use crate::subd_legacy;
 
     #[test]
@@ -282,13 +281,38 @@ mod tests {
             QuadTopo::from_indices(9, 0, 1, 10),
         ];
 
+        // Define coords
+        let coords_regular = vec![
+            point![0.0, 0.0],
+            point![1.0, 0.0],
+            point![2.0, 0.0],
+            point![3.0, 0.0],
+            point![0.0, 1.0],
+            point![1.0, 1.0],
+            point![2.0, 1.0],
+            point![3.0, 1.0],
+            point![0.0, 2.0],
+            point![1.0, 2.0],
+            point![2.0, 2.0],
+            point![3.0, 2.0],
+            point![0.0, 3.0],
+            point![1.0, 3.0],
+            point![2.0, 3.0],
+            point![3.0, 3.0],
+        ];
+
         // Constructs quad mesh and catmark patch mesh (topological)
-        let msh_topo = QuadVertex::from_elems(quads_irregular);
+        let msh_topo = QuadVertex::from_elems(quads_regular);
         let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
+        let msh = CatmarkMesh::new(coords_regular, catmark_topo);
 
         // Print patches
-        for elem in catmark_topo.elems {
+        for elem in &msh.topology.elems {
+            let patch = CatmarkPatch::from_msh(&msh, elem.clone());
+            let map = patch.geo_map();
             println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
+            println!("{}", map.eval((0.5, 0.1)));
+            println!("{}", map.eval_diff((0.5, 0.1)));
         }
     }
 

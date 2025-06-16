@@ -1,9 +1,9 @@
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::diffgeo::chart::Chart;
 use crate::subd::patch::CatmarkPatch;
 use nalgebra::{Point, RealField, SMatrix};
 
-// todo: possibly replace with reference to CatmarkPatch
+// todo: possibly replace with reference to CatmarkPatch or with just CatmarkPatch
 
 /// Parametrization of a [`CatmarkPatch`].
 pub struct CatmarkMap<T: RealField, const M: usize>(pub CatmarkPatch<T, M>);
@@ -16,6 +16,8 @@ impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for CatmarkMap
     }
 
     fn eval_diff(&self, x: (T, T)) -> SMatrix<T, M, 2> {
-        todo!("Copy from subd_legacy::surface or re-implement")
+        let grad_b = self.0.basis().eval_grad(x);
+        let c = self.0.coords();
+        (grad_b * c).transpose()
     }
 }

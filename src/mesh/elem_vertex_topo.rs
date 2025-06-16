@@ -34,7 +34,7 @@ impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
             .flat_map(C::nodes)
             .max()
             .expect("Elements vector `elems` must not be empty.")
-            .0;
+            .0 + 1;
         
         ElementVertex::new(elems, num_nodes)
     }
