@@ -1,55 +1,93 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
-use nalgebra::{Const, Dyn, Matrix, OMatrix, RealField, U1, U2};
+use crate::subd::mesh::CatmarkMesh;
+use crate::subd::patch::CatmarkPatch;
+use nalgebra::{Dyn, Matrix, OMatrix, RealField, U1, U2};
+use std::iter::once;
 
 /// Basis functions for Catmull-Clark subdivision.
-pub enum CatmarkBasis {
+pub struct CatmarkBasis<'a, T: RealField, const M: usize>(&'a CatmarkMesh<T, M>);
+
+impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
+    type NumBasis = Dyn;
+    type NumComponents = U1;
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        Dyn(self.0.topology.num_nodes)
+    }
+}
+
+impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for CatmarkBasis<'a, T, M> {
+    type Elem = CatmarkPatch<T, M>;
+    type ElemBasis = CatmarkPatchBasis;
+    type GlobalIndices = impl Iterator<Item = usize> + Clone;
+
+    fn find_elem(&self, x: (T, T)) -> Self::Elem {
+        todo!()
+    }
+
+    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+        elem.basis()
+    }
+
+    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
+        // todo: CatmarkPatchBasis doesnt have info about where it is in the mesh
+        //  elem needs to be passed for that reason.
+        //  the impl of DeBoor needs to be changed then...
+        //  or change CatmarkPatchBasis ?
+        once(0)
+    }
+}
+
+/// Basis functions on a Catmull-Clark patch.
+pub enum CatmarkPatchBasis {
     Regular,
     Boundary,
     Corner,
     Irregular(usize) // todo: valence parameter
 }
 
-impl CatmarkBasis {
+impl CatmarkPatchBasis {
     /// Returns a pair of [`CubicBspline`] for both parametric directions.
     fn bases(&self) -> (CubicBspline, CubicBspline) {
         match self {
-            CatmarkBasis::Regular => {
+            CatmarkPatchBasis::Regular => {
                 (CubicBspline::Smooth, CubicBspline::Smooth)
             }
-            CatmarkBasis::Boundary => {
+            CatmarkPatchBasis::Boundary => {
                 (CubicBspline::Smooth, CubicBspline::Interpolating)
             }
-            CatmarkBasis::Corner => {
+            CatmarkPatchBasis::Corner => {
                 (CubicBspline::Interpolating, CubicBspline::Interpolating)
             }
-            CatmarkBasis::Irregular(_) => {
+            CatmarkPatchBasis::Irregular(_) => {
                 todo!()
             }
         }
     }
 }
 
-impl Basis for CatmarkBasis {
+impl Basis for CatmarkPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         match self {
-            CatmarkBasis::Regular => Dyn(16),
-            CatmarkBasis::Boundary => Dyn(12),
-            CatmarkBasis::Corner => Dyn(9),
-            CatmarkBasis::Irregular(n) => todo!("dependent on valence")
+            CatmarkPatchBasis::Regular => Dyn(16),
+            CatmarkPatchBasis::Boundary => Dyn(12),
+            CatmarkPatchBasis::Corner => Dyn(9),
+            CatmarkPatchBasis::Irregular(n) => todo!("dependent on valence")
         }
     }
 }
 
-impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmarkBasis {
+impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmarkPatchBasis {
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {
-            CatmarkBasis::Irregular(n) => { todo!() },
+            CatmarkPatchBasis::Irregular(n) => { todo!() },
             _ => {
                 let (bu, bv) = self.bases();
                 bv.eval(v).kronecker(&bu.eval(u))
@@ -58,11 +96,11 @@ impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmarkBasis {
     }
 }
 
-impl <T: RealField + Copy> EvalGrad<T, (T, T), 2> for CatmarkBasis {
+impl <T: RealField + Copy> EvalGrad<T, (T, T), 2> for CatmarkPatchBasis {
     fn eval_grad(&self, x: (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         let (u, v) = x;
         match self {
-            CatmarkBasis::Irregular(n) => { todo!() },
+            CatmarkPatchBasis::Irregular(n) => { todo!() },
             _ => {
                 let (basis_u, basis_v) = self.bases();
                 let bu = basis_u.eval(u);

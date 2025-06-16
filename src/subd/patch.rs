@@ -7,7 +7,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use crate::cells::geo;
 use crate::cells::unit_cube::UnitCube;
-use crate::subd::basis::CatmarkBasis;
+use crate::subd::basis::CatmarkPatchBasis;
 use crate::subd::map::CatmarkMap;
 
 /// A Catmull-Clark surface patch.
@@ -52,12 +52,12 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 
     /// Returns the bicubic Catmull-Clark basis functions corresponding to the patch.
-    pub fn basis(&self) -> CatmarkBasis {
+    pub fn basis(&self) -> CatmarkPatchBasis {
         match self {
-            CatmarkPatch::Regular(_) => CatmarkBasis::Regular,
-            CatmarkPatch::Boundary(_) => CatmarkBasis::Boundary,
-            CatmarkPatch::Corner(_) => CatmarkBasis::Corner,
-            CatmarkPatch::Irregular(_, n) => CatmarkBasis::Irregular(*n)
+            CatmarkPatch::Regular(_) => CatmarkPatchBasis::Regular,
+            CatmarkPatch::Boundary(_) => CatmarkPatchBasis::Boundary,
+            CatmarkPatch::Corner(_) => CatmarkPatchBasis::Corner,
+            CatmarkPatch::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
         }
     }
 
