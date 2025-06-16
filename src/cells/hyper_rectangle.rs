@@ -7,6 +7,7 @@ use itertools::{repeat_n, Itertools};
 use nalgebra::{vector, Const, DimName, DimNameSub, Point, RealField, SVector, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
+use crate::cells::unit_cube::UnitCube;
 
 /// A [`K`]-dimensional hyperrectangle.
 /// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
@@ -70,7 +71,12 @@ impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
 }
 
 impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for HyperRectangle<T, D> {
+    type RefCell = UnitCube<D>;
     type GeoMap = Lerp<T, D>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        UnitCube
+    }
 
     fn geo_map(&self) -> Self::GeoMap {
         Lerp::new(self.a, self.b)
@@ -78,7 +84,12 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for HyperR
 }
 
 impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for HyperRectangle<T, 1> {
+    type RefCell = UnitCube<1>;
     type GeoMap = Lerp<T, 1>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        UnitCube
+    }
 
     fn geo_map(&self) -> Self::GeoMap {
         Lerp::new(self.a, self.b)

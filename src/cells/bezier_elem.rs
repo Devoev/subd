@@ -27,7 +27,12 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T,
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T, [T; D], D, M> for BezierElem<'a, T, D, M> {
+    type RefCell = HyperRectangle<T, D>;
     type GeoMap = &'a SplineGeo<'a, T, [T; D], D, M>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        self.ref_elem
+    }
 
     fn geo_map(&self) -> Self::GeoMap {
         self.geo_map

@@ -6,6 +6,7 @@ use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use crate::cells::geo;
+use crate::cells::unit_cube::UnitCube;
 use crate::subd::basis::CatmarkBasis;
 use crate::subd::map::CatmarkMap;
 
@@ -71,7 +72,12 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
 }
 
 impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
+    type RefCell = UnitCube<2>;
     type GeoMap = CatmarkMap<T, M>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        UnitCube
+    }
 
     fn geo_map(&self) -> Self::GeoMap {
         CatmarkMap(self.clone()) // todo: possibly replace clone if reference is introduced in CatmarkMap
