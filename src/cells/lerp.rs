@@ -34,7 +34,7 @@ impl <T: RealField + Copy, const D: usize> Lerp<T, D> {
     }
 
     /// Linearly transforms the symmetric normalized hypercube `[-1,1]^D` to `[a,b]`.
-    pub fn transform_normalized(&self, x: SVector<T, D>) -> Point<T, D> {
+    pub fn transform_symmetric(&self, x: SVector<T, D>) -> Point<T, D> {
         let ones = SVector::repeat(T::one());
         let p = self.a + (self.b - self.a).component_mul(&(x + ones)) / T::from_usize(2).unwrap();
         Point::from(p)

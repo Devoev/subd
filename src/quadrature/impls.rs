@@ -25,7 +25,7 @@ impl <T: RealField + Copy + Sum> Quadrature<T, 1> for GaussLegendre {
 
     fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=Point<T, 1>> {
         let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
-        self.nodes_ref().map(move |xi: T| lerp.transform_normalized(vector![xi]))
+        self.nodes_ref().map(move |xi: T| lerp.transform_symmetric(vector![xi]))
     }
 
     fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {

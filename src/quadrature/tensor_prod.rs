@@ -70,7 +70,7 @@ impl <T, const D: usize> Quadrature<T, D> for MultiProd<T, GaussLegendre, D>
     fn nodes_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=Point<T, D>> {
         let lerp = elem.geo_map();
         self.nodes_ref()
-            .map(move |xi| lerp.transform_normalized(Vector::from(xi)))
+            .map(move |xi| lerp.transform_symmetric(Vector::from(xi)))
     }
 
     fn weights_elem(&self, elem: &Self::Elem) -> impl Iterator<Item=T> {
