@@ -11,7 +11,7 @@ use std::vec;
 #[derive(Clone, Debug)]
 pub struct Breaks<T>(pub Vec<T>);
 
-impl<T: RealField + Copy> Breaks<T> {
+impl<T: RealField> Breaks<T> {
     /// Constructs new [`Breaks<T>`] from the given `breaks`.
     ///
     /// # Errors
