@@ -1,7 +1,7 @@
+use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
-use core::fmt;
 use nalgebra::RealField;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug};
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
@@ -48,9 +48,22 @@ impl<T> BreaksWithMultiplicity<T> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Returns a vector of [knot span indices](KnotSpan),
+    /// associated with this breakpoint vector.
+    pub fn knot_spans(&self) -> Vec<KnotSpan> {
+        let mut acc = 0;
+        let num_spans = self.len() - 1;
+        let mut spans = Vec::with_capacity(num_spans);
+        for (i, (k, _)) in self.into_iter().take(num_spans).enumerate() {
+            acc += k - 1;
+            spans.push(KnotSpan(i + acc));
+        }
+        spans
+    }
 }
 
-impl <T : RealField> Index<usize> for BreaksWithMultiplicity<T> {
+impl <T> Index<usize> for BreaksWithMultiplicity<T> {
     type Output = (usize, T);
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -58,7 +71,7 @@ impl <T : RealField> Index<usize> for BreaksWithMultiplicity<T> {
     }
 }
 
-impl <T : RealField + Copy> IntoIterator for BreaksWithMultiplicity<T> {
+impl <T> IntoIterator for BreaksWithMultiplicity<T> {
     type Item = (usize, T);
     type IntoIter = vec::IntoIter<(usize, T)>;
 
@@ -67,17 +80,11 @@ impl <T : RealField + Copy> IntoIterator for BreaksWithMultiplicity<T> {
     }
 }
 
-impl <'a, T : RealField + Copy> IntoIterator for &'a BreaksWithMultiplicity<T> {
+impl <'a, T> IntoIterator for &'a BreaksWithMultiplicity<T> {
     type Item = &'a (usize, T);
     type IntoIter = Iter<'a, (usize, T)>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
-    }
-}
-
-impl<T : RealField> Display for BreaksWithMultiplicity<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0)
     }
 }

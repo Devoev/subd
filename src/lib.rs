@@ -51,6 +51,7 @@ use crate::basis::cart_prod;
     use std::time::Instant;
     use num_traits::real::Real;
     use plotly::color::NamedColor::DarkGoldenrod;
+    use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
     use crate::knots::knot_span::KnotSpan;
     use crate::mesh::elem_vertex_topo::QuadVertex;
     use crate::quadrature::pullback;
@@ -644,11 +645,12 @@ use crate::basis::cart_prod;
     #[test]
     fn benchmark_find_span() {
         // Parameters
-        const NUM_BASIS: usize = 100_000_000;
+        const NUM_BASIS: usize = 10_000_000;
         const DEGREE: usize = 6;
+        const NUM_SPANS: f64 = 1_000_000.0;
 
         // Knot vector
-        let random = DVector::<f64>::new_random(NUM_BASIS - DEGREE - 1).map(|v| (v * 50.0).round() / 50.0);
+        let random = DVector::<f64>::new_random(NUM_BASIS - DEGREE - 1).map(|v| (v * NUM_SPANS).round() / NUM_SPANS);
         let internal = KnotVec::from_unsorted(random.as_slice().to_vec());
         let knots = KnotVec::new_open(internal, DEGREE);
 
@@ -658,43 +660,40 @@ use crate::basis::cart_prod;
         let start = Instant::now();
         let breaks = Breaks::from_knots(knots.clone());
         let msh = CartMesh::from_breaks([breaks.clone()]);
-        // let mut spans_1 = vec![0; breaks.len() - 1];
+        let mut spans_1 = vec![0; breaks.len() - 1];
         for (elem, topo) in zip(msh.elems(), msh.topology.elems()) {
             let elem_idx = topo.0[0];
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 
-            // spans_1[elem_idx] = span_idx;
+            spans_1[elem_idx] = span_idx;
         };
 
         let time_find_span = start.elapsed();
 
         // multiplicity
         let start = Instant::now();
-        let (multiplicities, breaks): (Vec<usize>, Vec<f64>) = knots.breaks_with_multiplicity_iter().unzip();
-        // let mut spans_2 = vec![0; breaks.len() - 1];
-        let mut k = 0;
-        for elem_idx in 0..multiplicities.len() - 1 {
-            k += multiplicities[elem_idx] - 1;
-            let span_idx = black_box(elem_idx + k);
-
-            // spans_2[elem_idx] = span_idx;
-        }
+        let breaks_with_multi = BreaksWithMultiplicity::from_knots(knots);
+        let spans_2 = breaks_with_multi.knot_spans()
+            .iter().map(|span| span.0)
+            .collect_vec();
 
         let time_multi = start.elapsed();
 
         // Check if both span indices are actually equal
-        // assert_eq!(spans_1, spans_2);
+        assert_eq!(spans_1, spans_2);
 
         // Compare runtimes
         println!(
-            "Took {:?} for finding spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with find_span).",
-            time_find_span
+            "Took {:?} for finding {:e} spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with find_span).",
+            time_find_span,
+            spans_1.len()
         );
 
         println!(
-            "Took {:?} for finding spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with breaks_with_multiplicity_iter).",
-            time_multi
+            "Took {:?} for finding {:e} spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with breaks_with_multiplicity_iter).",
+            time_multi,
+            spans_2.len()
         );
 
         println!(

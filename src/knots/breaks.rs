@@ -70,7 +70,7 @@ impl<T> Breaks<T> {
     }
 }
 
-impl <T : RealField> Index<usize> for Breaks<T> {
+impl <T> Index<usize> for Breaks<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -78,7 +78,7 @@ impl <T : RealField> Index<usize> for Breaks<T> {
     }
 }
 
-impl <T : RealField + Copy> IntoIterator for Breaks<T> {
+impl <T> IntoIterator for Breaks<T> {
     type Item = T;
     type IntoIter = vec::IntoIter<T>;
 
@@ -87,17 +87,11 @@ impl <T : RealField + Copy> IntoIterator for Breaks<T> {
     }
 }
 
-impl <'a, T : RealField + Copy> IntoIterator for &'a Breaks<T> {
+impl <'a, T> IntoIterator for &'a Breaks<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
-    }
-}
-
-impl<T : RealField> Display for Breaks<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0)
     }
 }
