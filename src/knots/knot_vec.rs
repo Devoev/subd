@@ -137,7 +137,7 @@ pub type BreaksIter<'a, T> = Dedup<Iter<'a, T>>;
 /// An iterator that yields the breakpoints with multiplicity of a [`KnotVec`].
 pub type BreaksWithMultiplicityIter<'a, T> = DedupWithCount<Iter<'a, T>>;
 
-impl<T : RealField + Copy> KnotVec<T> {
+impl<T : RealField> KnotVec<T> {
     /// Returns the number of knots.
     pub fn len(&self) -> usize {
         self.0.len()

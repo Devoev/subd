@@ -34,7 +34,13 @@ pub type DeBoorVec2d<T> = cart_prod::Prod<T, MultiDeBoor<T, 2>, MultiDeBoor<T, 2
 
 impl <T: RealField> DeBoor<T> {
     /// Constructs a new [`DeBoor`] from the given `knots`, `num_basis` and `degree`.
+    /// 
+    /// # Panics
+    /// Will panic if the length of the knot vector is not equal to `num_basis + degree + 1`.
     pub fn new(knots: KnotVec<T>, num_basis: usize, degree: usize) -> Self {
+        assert_eq!(knots.len(), num_basis + degree + 1,
+                   "Length of `knots` (is {:?}) doesn't equal `num_basis + degree + 1` (is {:?})",
+                   knots.len(), num_basis + degree + 1);
         Self { knots, num_basis, degree }
     }
 }
