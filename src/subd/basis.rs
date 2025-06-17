@@ -10,7 +10,7 @@ use nalgebra::{Dyn, Matrix, OMatrix, RealField, U1, U2};
 use std::vec;
 
 /// Basis functions for Catmull-Clark subdivision.
-pub struct CatmarkBasis<'a, T: RealField, const M: usize>(&'a CatmarkMesh<T, M>);
+pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
 
 impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
     type NumBasis = Dyn;

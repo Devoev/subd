@@ -36,7 +36,7 @@ use crate::basis::cart_prod;
     use crate::mesh::cartesian::CartMesh;
     use crate::mesh::geo::Mesh;
     use crate::operator::hodge::assemble_hodge;
-    use crate::quadrature::pullback::BezierQuad;
+    use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::{Quadrature};
     use gauss_quad::GaussLegendre;
@@ -55,6 +55,7 @@ use crate::basis::cart_prod;
     use crate::knots::knot_span::KnotSpan;
     use crate::mesh::elem_vertex_topo::QuadVertex;
     use crate::quadrature::pullback;
+    use crate::subd::basis::CatmarkBasis;
     use crate::subd::mesh::{CatmarkMesh, CatmarkMeshTopology};
     use crate::subd::patch::CatmarkPatch;
     use crate::subd_legacy;
@@ -395,6 +396,61 @@ use crate::basis::cart_prod;
             "||M - M^T|| = {} (should be zero)",
             (dense.clone() - dense.transpose()).norm()
         );
+    }
+    #[test]
+    fn subd_assembly() {
+        // Define quads
+        let quads_regular = vec![
+            QuadTopo::from_indices(0, 1, 5, 4),
+            QuadTopo::from_indices(1, 2, 6, 5),
+            QuadTopo::from_indices(2, 3, 7, 6),
+            QuadTopo::from_indices(4, 5, 9, 8),
+            QuadTopo::from_indices(5, 6, 10, 9),
+            QuadTopo::from_indices(6, 7, 11, 10),
+            QuadTopo::from_indices(8, 9, 13, 12),
+            QuadTopo::from_indices(9, 10, 14, 13),
+            QuadTopo::from_indices(10, 11, 15, 14),
+        ];
+
+        // Define coords
+        let coords_regular = matrix![
+            0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0;
+            0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0
+        ].transpose();
+
+        // Constructs quad mesh and catmark patch mesh (topological)
+        let msh_topo = QuadVertex::from_elems(quads_regular);
+        let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
+        let msh = CatmarkMesh::from_matrix(coords_regular, catmark_topo);
+
+        // Construct basis and space
+        let basis = CatmarkBasis(&msh);
+        // let space = Space::new(basis);
+
+        // let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
+        // let quad = PullbackQuad::new(ref_quad);
+
+        // todo: implement Mesh for ElementVertexMesh. Then assembly can work
+
+        // let mat = assemble_hodge(&msh, &space, quad, |elem| {
+        //     // todo: this should DIRECTLY be implemented in the spline spaces
+        //     space.basis.find_elem(elem.a.into_arr())
+        // });
+        //
+        // // Print
+        // let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
+        // for (i, j, &v) in mat.triplet_iter() {
+        //     dense[(i, j)] = v;
+        // }
+        // println!("{}", dense);
+        // println!(
+        //     "Eigenvalues = {} (should be positive)",
+        //     dense.eigenvalues().unwrap()
+        // );
+        // println!(
+        //     "||M - M^T|| = {} (should be zero)",
+        //     (dense.clone() - dense.transpose()).norm()
+        // );
     }
 
     #[test]

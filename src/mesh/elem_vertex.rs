@@ -7,9 +7,8 @@ use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::topo::Cell;
 use crate::mesh::elem_vertex_topo as topo;
 use crate::subd_legacy::patch::Patch;
-use nalgebra::{Const, DefaultAllocator, Dim, OMatrix, Point, RealField};
 use nalgebra::allocator::Allocator;
-use crate::bspline::space::BsplineSpace;
+use nalgebra::{Const, DefaultAllocator, Dim, OMatrix, Point, RealField};
 
 /// Element-vertex mesh of [`K`]-dimensional topology [`ElementVertexTopo`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
