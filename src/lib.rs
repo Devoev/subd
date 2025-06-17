@@ -41,7 +41,7 @@ use crate::basis::cart_prod;
     use crate::quadrature::traits::{Quadrature};
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
-    use itertools::Itertools;
+    use itertools::{assert_equal, Itertools};
     use nalgebra::{matrix, point, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowSVector, RowVector4, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
@@ -50,6 +50,7 @@ use crate::basis::cart_prod;
     use std::iter::zip;
     use std::time::Instant;
     use num_traits::real::Real;
+    use plotly::color::NamedColor::DarkGoldenrod;
     use crate::knots::knot_span::KnotSpan;
     use crate::mesh::elem_vertex_topo::QuadVertex;
     use crate::quadrature::pullback;
@@ -220,8 +221,10 @@ use crate::basis::cart_prod;
 
     #[test]
     fn bezier_elems() {
-        let knots =
-            KnotVec::new(vec![0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]).unwrap();
+        let knots = KnotVec::new(vec![
+            0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]
+        ).unwrap();
+
         let basis = de_boor::DeBoor::new(knots.clone(), 7, 3);
         // let quad = GaussLegendre::new(5).unwrap();
 
@@ -635,6 +638,68 @@ use crate::basis::cart_prod;
         println!(
             "Casting is {} % slower than no casting",
             (time_cast.as_secs_f64() - time_no_cast.as_secs_f64()) / time_no_cast.as_secs_f64() * 100.0
+        )
+    }
+
+    #[test]
+    fn benchmark_find_span() {
+        // Parameters
+        const NUM_BASIS: usize = 100_000_000;
+        const DEGREE: usize = 6;
+
+        // Knot vector
+        let random = DVector::<f64>::new_random(NUM_BASIS - DEGREE - 1).map(|v| (v * 50.0).round() / 50.0);
+        let internal = KnotVec::from_unsorted(random.as_slice().to_vec());
+        let knots = KnotVec::new_open(internal, DEGREE);
+
+        let basis = de_boor::DeBoor::new(knots.clone(), NUM_BASIS, DEGREE);
+
+        // find_span
+        let start = Instant::now();
+        let breaks = Breaks::from_knots(knots.clone());
+        let msh = CartMesh::from_breaks([breaks.clone()]);
+        // let mut spans_1 = vec![0; breaks.len() - 1];
+        for (elem, topo) in zip(msh.elems(), msh.topology.elems()) {
+            let elem_idx = topo.0[0];
+            let span = black_box(basis.find_span(elem.a.x).unwrap());
+            let span_idx = span.0;
+
+            // spans_1[elem_idx] = span_idx;
+        };
+
+        let time_find_span = start.elapsed();
+
+        // multiplicity
+        let start = Instant::now();
+        let (multiplicities, breaks): (Vec<usize>, Vec<f64>) = knots.breaks_with_multiplicity_iter().unzip();
+        // let mut spans_2 = vec![0; breaks.len() - 1];
+        let mut k = 0;
+        for elem_idx in 0..multiplicities.len() - 1 {
+            k += multiplicities[elem_idx] - 1;
+            let span_idx = black_box(elem_idx + k);
+
+            // spans_2[elem_idx] = span_idx;
+        }
+
+        let time_multi = start.elapsed();
+
+        // Check if both span indices are actually equal
+        // assert_eq!(spans_1, spans_2);
+
+        // Compare runtimes
+        println!(
+            "Took {:?} for finding spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with find_span).",
+            time_find_span
+        );
+
+        println!(
+            "Took {:?} for finding spans with {NUM_BASIS:e} basis functions of degree {DEGREE} (with breaks_with_multiplicity_iter).",
+            time_multi
+        );
+
+        println!(
+            "Using `find_span` is {} % slower than using `breaks_with_multiplicity_iter`",
+            (time_find_span.as_secs_f64() - time_multi.as_secs_f64()) / time_multi.as_secs_f64() * 100.0
         )
     }
 }
