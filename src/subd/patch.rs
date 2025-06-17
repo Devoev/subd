@@ -28,7 +28,7 @@ pub enum CatmarkPatch<T: RealField, const M: usize> {
 
 impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     /// Constructs a new [`CatmarkPatch`] from the given `msh` and `patch_topo`.
-    pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: CatmarkPatchNodes) -> Self {
+    pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: &CatmarkPatchNodes) -> Self {
         let coords = patch_topo
             .as_slice()
             .iter()
@@ -37,7 +37,7 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
             CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
             CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
             CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), n)
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), *n)
         }
     }
 

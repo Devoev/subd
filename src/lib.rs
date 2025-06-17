@@ -296,7 +296,7 @@ use crate::basis::cart_prod;
 
         // Print patches
         for elem in &msh.topology.elems {
-            let patch = CatmarkPatch::from_msh(&msh, elem.clone());
+            let patch = CatmarkPatch::from_msh(&msh, elem);
             let map = patch.geo_map();
             println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
             println!("{}", map.eval((0.5, 0.1)));

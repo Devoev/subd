@@ -3,7 +3,7 @@ use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::subd::mesh::CatmarkMesh;
-use crate::subd::patch::CatmarkPatch;
+use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 use nalgebra::{Dyn, Matrix, OMatrix, RealField, U1, U2};
 use std::iter::once;
 
@@ -20,7 +20,7 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
 }
 
 impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for CatmarkBasis<'a, T, M> {
-    type Elem = CatmarkPatch<T, M>;
+    type Elem = CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
@@ -29,7 +29,9 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for Catmark
     }
 
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        elem.basis()
+        // todo: move this to `elem` function on CellTopo or else
+        let patch = CatmarkPatch::from_msh(self.0, elem);
+        patch.basis()
     }
 
     fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
