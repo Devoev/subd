@@ -226,19 +226,44 @@ use crate::basis::cart_prod;
         // let quad = GaussLegendre::new(5).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
-        let ref_mesh = CartMesh::from_breaks([breaks]);
+        let msh = CartMesh::from_breaks([breaks.clone()]);
 
-        for (elem, topo) in zip(ref_mesh.elems(), ref_mesh.topology.elems()) {
+        // find_span
+        println!("--- Finding span indices with `breaks` and `find_span` ---");
+        for (elem, topo) in zip(msh.elems(), msh.topology.elems()) {
+            let elem_idx = topo.0[0];
             let span = basis.find_span(elem.a.x).unwrap();
+            let span_idx = span.0;
+
             println!(
                 "Bezier element = [{:.3}, {:.3}] (index = {})",
-                elem.a.x, elem.b.x, topo.0[0]
+                elem.a.x, elem.b.x, elem_idx
             );
             println!(
                 "Knot span = [{:.3}, {:.3}] (index = {})",
-                knots[span.0],
-                knots[span.0 + 1],
-                span.0
+                knots[span_idx],
+                knots[span_idx + 1],
+                span_idx
+            );
+        }
+
+        // multiplicity
+        println!("--- Find span indices with `breaks_with_multiplicity_iter` ---");
+        let (multiplicities, _): (Vec<usize>, Vec<f64>) = knots.breaks_with_multiplicity_iter().unzip();
+        let mut k = 0;
+        for elem_idx in 0..multiplicities.len() - 1 {
+            k += multiplicities[elem_idx] - 1;
+            let span_idx = elem_idx + k;
+
+            println!(
+                "Bezier element = [{:.3}, {:.3}] (index = {})",
+                breaks[elem_idx], breaks[elem_idx + 1], elem_idx
+            );
+            println!(
+                "Knot span = [{:.3}, {:.3}] (index = {})",
+                knots[span_idx],
+                knots[span_idx + 1],
+                span_idx
             );
         }
     }
