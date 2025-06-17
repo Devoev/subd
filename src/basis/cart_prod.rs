@@ -86,8 +86,8 @@ where T: RealField,
         Prod::new((b1.elem_basis(&elem.0), b2.elem_basis(&elem.1)))
     }
 
-    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
-        // todo: implement this
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+        // todo: implement this!
         once(0)
     }
 }

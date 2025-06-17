@@ -34,7 +34,7 @@ pub type DeBoorVec2d<T> = cart_prod::Prod<T, MultiDeBoor<T, 2>, MultiDeBoor<T, 2
 
 impl <T: RealField> DeBoor<T> {
     /// Constructs a new [`DeBoor`] from the given `knots`, `num_basis` and `degree`.
-    /// 
+    ///
     /// # Panics
     /// Will panic if the length of the knot vector is not equal to `num_basis + degree + 1`.
     pub fn new(knots: KnotVec<T>, num_basis: usize, degree: usize) -> Self {
@@ -91,7 +91,7 @@ impl <T: RealField + Copy> LocalBasis<T, T> for DeBoor<T> {
         DeBoorSpan::new(self.knots.clone(), self.degree, *elem)
     }
 
-    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
-        local_basis.span.nonzero_indices(self.degree)
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+        elem.nonzero_indices(self.degree)
     }
 }

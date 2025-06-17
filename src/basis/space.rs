@@ -64,7 +64,7 @@ impl <T: RealField + Copy, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T
         let elem = self.basis.find_elem(x);
         let local_basis = self.basis.elem_basis(&elem);
         let b = local_basis.eval(x);
-        let idx = self.basis.global_indices(&local_basis);
+        let idx = self.basis.global_indices(&elem);
         (b, idx)
     }
 }
@@ -99,7 +99,7 @@ impl <T, X, B, const D: usize> Space<T, X, B, D>
         let elem = self.basis.find_elem(x);
         let local_basis = self.basis.elem_basis(&elem);
         let b = local_basis.eval_grad(x);
-        let idx = self.basis.global_indices(&local_basis);
+        let idx = self.basis.global_indices(&elem);
         (b, idx)
     }
 }

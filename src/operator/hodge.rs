@@ -35,7 +35,7 @@ pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
         let sp_elem = ref_elem_to_sp_elem(&elem.ref_cell());
         let sp_local = space.basis.elem_basis(&sp_elem);
         let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
-        let indices = space.basis.global_indices(&sp_local).enumerate();
+        let indices = space.basis.global_indices(&sp_elem).enumerate();
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);
         }

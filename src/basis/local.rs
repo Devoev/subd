@@ -31,7 +31,6 @@ pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
     /// i.e. the restriction of this basis to the element.
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis;
 
-    // todo: possibly change to take elem instead of local_basis
     /// Returns an iterator over all global indices of the local basis of `elem`.
-    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices;
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices;
 }

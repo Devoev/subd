@@ -142,10 +142,10 @@ impl<T, X, BElem, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
         MultiProd::new(bases)
     }
 
-    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
         let strides = self.strides();
-        zip(&self.bases, &local_basis.bases)
-            .map(|(b, b_local)| b.global_indices(b_local))
+        zip(&self.bases, elem)
+            .map(|(b, b_elem)| b.global_indices(b_elem))
             .multi_cartesian_product()
             .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
             .map(move |i| i.into_lin(&strides))

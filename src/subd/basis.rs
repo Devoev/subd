@@ -2,10 +2,12 @@ use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
+use crate::cells::topo::Cell;
 use crate::subd::mesh::CatmarkMesh;
 use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
+use itertools::Itertools;
 use nalgebra::{Dyn, Matrix, OMatrix, RealField, U1, U2};
-use std::iter::once;
+use std::vec;
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(&'a CatmarkMesh<T, M>);
@@ -22,7 +24,7 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
 impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for CatmarkBasis<'a, T, M> {
     type Elem = CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
-    type GlobalIndices = impl Iterator<Item = usize> + Clone;
+    type GlobalIndices = vec::IntoIter<usize>;
 
     fn find_elem(&self, x: (T, T)) -> Self::Elem {
         todo!()
@@ -34,12 +36,10 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for Catmark
         patch.basis()
     }
 
-    fn global_indices(&self, local_basis: &Self::ElemBasis) -> Self::GlobalIndices {
-        // todo: CatmarkPatchBasis doesnt have info about where it is in the mesh
-        //  elem needs to be passed for that reason.
-        //  the impl of DeBoor needs to be changed then...
-        //  or change CatmarkPatchBasis ?
-        once(0)
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+        // todo: possibly remove allocation
+        let indices = elem.nodes().iter().map(|node| node.0).collect_vec();
+        indices.into_iter()
     }
 }
 
