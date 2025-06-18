@@ -16,7 +16,7 @@ use std::iter::{Product, Sum};
 /// Assembles the discrete hodge operator (mass matrix).
 pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
     msh: &'a M,
-    space: &Space<T, [T; D], B, D>,
+    space: &Space<T, X, B, D>,
     quad: PullbackQuad<T, X, E, Q, D>,
     ref_elem_to_sp_elem: impl Fn(&E::RefCell) -> B::Elem // todo: this function is just temporary
 ) -> CooMatrix<T>
