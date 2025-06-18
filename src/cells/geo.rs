@@ -16,7 +16,7 @@ pub trait Cell<T: RealField, X: Dimensioned<T, D>, const D: usize, const M: usiz
     /// Returns the parametrization of this cell.
     fn geo_map(&self) -> Self::GeoMap;
     
-    // todo: maybe add methods for jacobian?
+    // todo: maybe merge Chart and Cell traits?
 }
 
 // todo: maybe remove this trait
