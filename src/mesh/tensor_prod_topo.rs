@@ -1,8 +1,9 @@
 //! Topology of a tensor product mesh.
 
+use std::iter::Map;
 use crate::cells::hyper_rectangle::HyperRectangleTopo;
 use crate::cells::node::NodeIdx;
-use crate::index::dimensioned::{DimShape, Strides};
+use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
 use crate::mesh::topo;
 use crate::mesh::topo::MeshTopology;
@@ -43,12 +44,13 @@ impl<const D: usize> TensorProd<D> {
     }
     
     /// Returns an iterator over all multi-indices in this grid.
-    pub fn indices(&self) -> impl Iterator<Item = [usize; D]> {
-        self.dim_shape.range()
+    pub fn indices(&self) -> MultiRange<[usize; D]>{
+        self.dim_shape.multi_range()
     }
     
+    // todo: replace iterator type with newtype NodesIter
     /// Returns an iterator over all nodes with linear indices in increasing index order.
-    pub fn nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
+    pub fn nodes(&self) -> Map<MultiRange<[usize; D]>, impl FnMut([usize; D]) -> NodeIdx + '_> {
         self.indices().map(|idx| NodeIdx(idx.into_lin(&self.strides)))
     }
 
@@ -56,7 +58,7 @@ impl<const D: usize> TensorProd<D> {
     pub fn elems(&self) -> impl Iterator<Item=HyperRectangleTopo<D>> {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
-        dim_shape_elems.range().map(HyperRectangleTopo)
+        dim_shape_elems.multi_range().map(HyperRectangleTopo)
     }
 }
 

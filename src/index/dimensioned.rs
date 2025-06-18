@@ -1,5 +1,7 @@
+use std::iter::Map;
+use std::ops::Range;
 use crate::index::multi_index::MultiIndex;
-use itertools::Itertools;
+use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, SVector, Scalar};
 
 /// Types composed of [`D`] elements of type [`T`],
@@ -50,6 +52,10 @@ impl<const D: usize, T: Scalar> Dimensioned<T, D> for Point<T, D> {
 #[derive(Debug, Copy, Clone)]
 pub struct DimShape<const D: usize>(pub [usize; D]);
 
+/// An iterator over the multivariate cartesian product of ranges.
+/// Yields all multi-indices inside a [`DimShape`].
+pub type MultiRange<I> = Map<MultiProduct<Range<usize>>, fn(Vec<usize>) -> I>;
+
 impl<const D: usize> DimShape<D> {
     /// Returns the total length of this shape, i.e. the product of all dimensions.
     pub fn len(&self) -> usize {
@@ -57,7 +63,7 @@ impl<const D: usize> DimShape<D> {
     }
 
     /// Returns an iterator over multi indices of type `I` in range of this shape.
-    pub fn range<I: MultiIndex<usize, D> + From<[usize; D]>>(&self) -> impl Iterator<Item = I> {
+    pub fn multi_range<I: MultiIndex<usize, D> + From<[usize; D]>>(&self) -> MultiRange<I> {
         let ranges = self.0.map(|n| 0..n);
         
         ranges.into_iter()
