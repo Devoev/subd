@@ -1,6 +1,8 @@
 //! Topology of an element-vertex mesh.
 
 use std::hash::Hash;
+use std::iter::Map;
+use std::ops::Range;
 use itertools::Itertools;
 use nalgebra::{Const, DimNameDiff, DimNameSub, U1, U2};
 use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
@@ -19,6 +21,9 @@ pub struct ElementVertex<const K: usize, C: Cell<Const<K>>> {
     /// Total number of nodes.
     pub num_nodes: usize,
 }
+
+/// An iterator that yields the [nodes indices](NodeIdx) of an element-vertex mesh.
+pub type NodesIter = Map<Range<usize>, fn(usize) -> NodeIdx>;
 
 impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
     /// Constructs a new [`ElementVertex`] from the given `elems` topology vector 
@@ -40,7 +45,7 @@ impl <const K: usize, C: Cell<Const<K>>> ElementVertex<K, C> {
     }
     
     /// Returns an iterator over all nodes in increasing index order.
-    pub fn nodes(&self) -> impl Iterator<Item =NodeIdx> {
+    pub fn nodes(&self) -> NodesIter {
         (0..self.num_nodes).map(NodeIdx)
     }
 
@@ -90,7 +95,7 @@ impl <const K: usize, C: CellBoundary<Const<K>>> ElementVertex<K, C>
 impl <'a, const K: usize, C: Cell<Const<K>>> MeshTopology<'a, K, &'a C> for ElementVertex<K, C>
     where &'a C: Cell<Const<K>>
 {
-    type Nodes = impl Iterator<Item =NodeIdx>;
+    type Nodes = NodesIter;
     type Elems = std::slice::Iter<'a, C>;
 
     fn num_nodes(&self) -> usize {
