@@ -6,7 +6,6 @@ use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::topo::Cell;
 use crate::mesh::elem_vertex_topo as topo;
-use crate::subd_legacy::patch::Patch;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, OMatrix, Point, RealField};
 
@@ -66,15 +65,5 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
     /// Returns an iterator over all faces in this mesh.
     pub fn faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
         self.topology.elems.iter().map(|&face| Quad::from_msh(face, self))
-    }
-
-    /// Finds the patch of the regular or irregular `face`.
-    pub fn find_patch(&self, face: QuadTopo) -> Patch<T> {
-        todo!()
-    }
-
-    /// Returns an iterator over all patches in this mesh.
-    pub fn patches(&self) -> impl Iterator<Item =Patch<T>> {
-        self.topology.elems.iter().map(|&face| self.find_patch(face))
     }
 }

@@ -1,16 +1,15 @@
 //! Topology of an element-vertex mesh.
 
+use crate::cells::chain::Chain;
+use crate::cells::node::NodeIdx;
+use crate::cells::quad::QuadTopo;
+use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
+use crate::mesh::topo::MeshTopology;
+use itertools::Itertools;
+use nalgebra::{Const, DimNameDiff, DimNameSub, U1, U2};
 use std::hash::Hash;
 use std::iter::Map;
 use std::ops::Range;
-use itertools::Itertools;
-use nalgebra::{Const, DimNameDiff, DimNameSub, U1, U2};
-use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
-use crate::cells::chain::Chain;
-use crate::cells::quad::QuadTopo;
-use crate::cells::node::NodeIdx;
-use crate::mesh::topo;
-use crate::mesh::topo::MeshTopology;
 
 /// Topology of [`K`]-dimensional element-vertex mesh.
 /// The elements are `K`-cells of type [`C`].
