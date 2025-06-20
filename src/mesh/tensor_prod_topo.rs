@@ -44,7 +44,7 @@ impl <const D: usize> TensorProd<D> {
     }
 }
 
-/// An iterator over the nodes of a [`TensorProd<D>`] mesh.
+/// An iterator over the linear nodes ([`NodeIdx`]) of a [`TensorProd<D>`] mesh.
 pub struct NodesIter<'a, const D: usize> {
     iter: MultiRange<[usize; D]>,
     strides: &'a Strides<D>
@@ -70,7 +70,7 @@ impl<const D: usize> Iterator for NodesIter<'_, D> {
     }
 }
 
-/// An iterator over the elements of a [`TensorProd<D>`] mesh.
+/// An iterator over the elements ([`HyperRectangleTopo<D>`]) of a [`TensorProd<D>`] mesh.
 pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> HyperRectangleTopo<D>>;
 
 impl<const D: usize> TensorProd<D> {
