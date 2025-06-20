@@ -7,7 +7,17 @@ use nalgebra::RealField;
 //  2. store calculated coords directly in struct instead of computation in coords()
 
 /// The [`D`]-dimensional unit hyper-cube `[0,1]^D`.
-#[derive(Debug, Copy, Clone)]
+/// In 2D the domain is given by
+/// ```text
+///      v ^
+///        |
+///     1 -+------+
+///        |      |
+///        |      |
+///     0 -+------+--->
+///        0      1   u
+/// ```
+#[derive(Debug, Copy, Clone, Default)]
 pub struct UnitCube<const D: usize>;
 
 impl <const D: usize> UnitCube<D> {
@@ -26,7 +36,20 @@ impl <T: RealField + Copy, const D: usize> RefCell<T, [T; D], D> for UnitCube<D>
 }
 
 /// The [`D`]-dimensional symmetric normalized hyper-cube `[-1,1]^D`.
-#[derive(Debug, Copy, Clone)]
+/// In 2D the domain is given by
+/// ```text
+///            v ^
+///  (-1,1)      |      (1,1)
+///       +------+------+
+///       |      |      |
+///       |      |      |
+///    ---+------+------+--->
+///       |      |      |   u
+///       |      |      |
+///       +------+------+ 
+/// (-1,-1)      |      (1,-1)
+/// ```
+#[derive(Debug, Copy, Clone, Default)]
 pub struct SymmetricUnitCube<const D: usize>;
 
 impl <const D: usize> SymmetricUnitCube<D> {
