@@ -16,7 +16,34 @@ fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item
 
 // todo: replace Node associated type with generic, such that different impls for tuples and arrays can work
 
-/// Quadrature rule on a [`D`]-dimensional element of type [`E`].
+/// Quadrature rule for the [numerical integration](https://en.wikipedia.org/wiki/Numerical_integration)
+/// of a function, using node-weights pairs.
+/// 
+/// The integral of a function `f` is approximated as the weighted sum
+/// ```text
+/// ∫ f dx ≅ ∑ w[i] f(x[i])
+/// ```
+/// where `w[i]` are the weights and `x[i]` the nodes.
+/// 
+/// # How to use a quadrature rule
+/// The `Quadrature` trait provides the method [`integrate_fn_elem`](Quadrature::integrate_fn_elem)
+/// which, given an integration domain `elem: Elem` and a function `f: Node -> T`,
+/// performs the numerical integration of `f` on `elem`. This is done by evaluating the function
+/// on every quadrature node, given by [`nodes_elem`](Quadrature::nodes_elem), and multiplying
+/// the evaluated function values with the weights, given by [`weights_elem`](Quadrature::weights_elem).
+/// 
+/// For efficiency reasons it may make sense to evaluate the function apriori,
+/// and then perform the numerical integration. This can be done by evaluating the function
+/// using [`eval_fn_elem`] on every quadrature node (or simply getting the nodes using `nodes_elem`
+/// and performing the evaluation yourself) 
+/// and then calling [`integrate_elem`](Quadrature::integrate_elem)
+/// to perform the actual integration.
+/// 
+/// # Type parameters
+/// - [`T`]: Scalar type.
+/// - [`Elem`]: Type of integration domain.
+/// - [`Node`]: Type of quadrature nodes.
+/// - [`Weight`]: Type of quadrature weight. By default, equal to `T`.
 pub trait Quadrature<T, Node, Elem, Weight = T> where T: Sum, Weight: Mul<T, Output=T> {
     /// Returns an iterator over all quadrature nodes in the given `elem`.
     fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item = Node>;
