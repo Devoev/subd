@@ -425,32 +425,32 @@ use crate::basis::cart_prod;
 
         // Construct basis and space
         let basis = CatmarkBasis(&msh);
-        // let space = Space::new(basis);
+        let space = Space::new(basis);
 
-        // let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
-        // let quad = PullbackQuad::new(ref_quad);
+        let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
+        let quad = PullbackQuad::new(ref_quad);
 
         // todo: implement Mesh for ElementVertexMesh. Then assembly can work
 
-        // let mat = assemble_hodge(&msh, &space, quad, |elem| {
-        //     // todo: this should DIRECTLY be implemented in the spline spaces
-        //     space.basis.find_elem(elem.a.into_arr())
-        // });
-        //
-        // // Print
-        // let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
-        // for (i, j, &v) in mat.triplet_iter() {
-        //     dense[(i, j)] = v;
-        // }
-        // println!("{}", dense);
-        // println!(
-        //     "Eigenvalues = {} (should be positive)",
-        //     dense.eigenvalues().unwrap()
-        // );
-        // println!(
-        //     "||M - M^T|| = {} (should be zero)",
-        //     (dense.clone() - dense.transpose()).norm()
-        // );
+        let mat = assemble_hodge(&msh, &space, quad, |elem| {
+            todo!("Can't possibly convert the reference element or even geometric element to topological one. \
+                Iteration over topological elements is thus needed in the first place")
+        });
+
+        // Print
+        let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
+        for (i, j, &v) in mat.triplet_iter() {
+            dense[(i, j)] = v;
+        }
+        println!("{}", dense);
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            dense.eigenvalues().unwrap()
+        );
+        println!(
+            "||M - M^T|| = {} (should be zero)",
+            (dense.clone() - dense.transpose()).norm()
+        );
     }
 
     #[test]

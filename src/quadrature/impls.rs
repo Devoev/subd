@@ -1,7 +1,7 @@
 use crate::cells::geo::Cell;
 use crate::cells::hyper_rectangle::HyperRectangle;
 use crate::cells::lerp::Lerp;
-use crate::cells::unit_cube::SymmetricUnitCube;
+use crate::cells::unit_cube::{SymmetricUnitCube, UnitCube};
 use crate::quadrature::traits::Quadrature;
 use gauss_quad::GaussLegendre;
 use nalgebra::{vector, RealField};
@@ -20,6 +20,20 @@ impl <T: RealField + Sum> Quadrature<T, SymmetricUnitCube<1>, 1> for GaussLegend
     fn weights_elem(&self, _elem: &SymmetricUnitCube<1>) -> impl Iterator<Item=T> {
         self.weights()
             .map(|&wi| T::from_f64(wi).unwrap())
+    }
+}
+
+impl <T: RealField + Sum> Quadrature<T, UnitCube<1>, 1> for GaussLegendre {
+    type Node = T;
+
+    fn nodes_elem(&self, _elem: &UnitCube<1>) -> impl Iterator<Item=T> {
+        self.nodes()
+            .map(|&xi| T::from_f64((xi + 1.0) / 2.0).unwrap())
+    }
+
+    fn weights_elem(&self, _elem: &UnitCube<1>) -> impl Iterator<Item=T> {
+        self.weights()
+            .map(|&wi| T::from_f64(wi / 2.0).unwrap())
     }
 }
 

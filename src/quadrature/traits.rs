@@ -14,9 +14,7 @@ fn integrate_with_weights<T: Mul<Output=T> + Sum>(w: impl IntoIterator<Item = T>
     zip(w, f).map(|(w, f)| w * f).sum::<T>()
 }
 
-// todo: possibly replace this trait with a struct
-//  the nodes_elem method doesn't work, if the reference quadrature uses a different ref domain
-//  then [0,1]. For example Gauss Quad uses [-1,1]. What to do about that?
+// todo: replace Node associated type with generic, such that different impls for tuples and arrays can work
 
 /// Quadrature rule on a [`D`]-dimensional element of type [`E`].
 pub trait Quadrature<T: RealField + Sum, E, const D: usize> {
