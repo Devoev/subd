@@ -9,9 +9,7 @@ use std::iter::Sum;
 
 // todo: are the two implementations really needed? or is the 2nd one sufficient
 
-impl <T: RealField + Sum> Quadrature<T, SymmetricUnitCube<1>, 1> for GaussLegendre {
-    type Node = T;
-
+impl <T: RealField + Sum> Quadrature<T, T, SymmetricUnitCube<1>> for GaussLegendre {
     fn nodes_elem(&self, _elem: &SymmetricUnitCube<1>) -> impl Iterator<Item=T> {
         self.nodes()
             .map(|&xi| T::from_f64(xi).unwrap())
@@ -23,9 +21,7 @@ impl <T: RealField + Sum> Quadrature<T, SymmetricUnitCube<1>, 1> for GaussLegend
     }
 }
 
-impl <T: RealField + Sum> Quadrature<T, UnitCube<1>, 1> for GaussLegendre {
-    type Node = T;
-
+impl <T: RealField + Sum> Quadrature<T, T, UnitCube<1>> for GaussLegendre {
     fn nodes_elem(&self, _elem: &UnitCube<1>) -> impl Iterator<Item=T> {
         self.nodes()
             .map(|&xi| T::from_f64((xi + 1.0) / 2.0).unwrap())
@@ -37,9 +33,7 @@ impl <T: RealField + Sum> Quadrature<T, UnitCube<1>, 1> for GaussLegendre {
     }
 }
 
-impl <T: RealField + Copy + Sum> Quadrature<T, HyperRectangle<T, 1>, 1> for GaussLegendre {
-    type Node = T;
-
+impl <T: RealField + Copy + Sum> Quadrature<T, T, HyperRectangle<T, 1>> for GaussLegendre {
     fn nodes_elem(&self, elem: &HyperRectangle<T, 1>) -> impl Iterator<Item=T> {
         let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
         self.nodes_elem(&SymmetricUnitCube).map(move |xi: T| lerp.transform_symmetric(vector![xi]).x)

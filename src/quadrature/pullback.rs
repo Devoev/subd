@@ -36,7 +36,7 @@ impl <T, X, E, Q, const D: usize>  PullbackQuad<T, X, E, Q, D>
 where T: RealField + Sum + Product + Copy,
       X: Dimensioned<T, D>,
       E: Cell<T, X, D, D>,
-      Q: Quadrature<T, E::RefCell, D, Node=X>
+      Q: Quadrature<T, X, E::RefCell>
 {
     /// Returns an iterator over all nodes in the reference domain.
     pub fn nodes_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = X> + 'a {
@@ -49,16 +49,15 @@ where T: RealField + Sum + Product + Copy,
     }
 }
 
-impl <T, X, E, Q, const D: usize> Quadrature<T, E, D> for PullbackQuad<T, X, E, Q, D>
+impl <T, X, E, Q, const D: usize> Quadrature<T, Point<T, D>, E> for PullbackQuad<T, X, E, Q, D>
 where T: RealField + Sum + Product + Copy,
       X: Dimensioned<T, D>,
       E: Cell<T, X, D, D>,
-      Q: Quadrature<T, E::RefCell, D, Node=X>,
+      Q: Quadrature<T, X, E::RefCell>,
       Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
-    type Node = Point<T, D>;
 
-    fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Point<T, D>> {
         // todo: remove collect
         let res = self
             .nodes_ref(&elem.ref_cell())

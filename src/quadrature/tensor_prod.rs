@@ -39,12 +39,10 @@ impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
 
 // todo: make this generic over Q and E again
 
-impl<T> Quadrature<T, UnitCube<2>, 2> for MultiProd<T, GaussLegendre, 2>
+impl<T> Quadrature<T, (T, T), UnitCube<2>> for MultiProd<T, GaussLegendre, 2>
     where T: RealField + Sum + Product + Copy,
 {
-    type Node = (T, T);
-
-    fn nodes_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=(T, T)> {
         self.quads[0].nodes_elem(&UnitCube)
             .cartesian_product(self.quads[1].nodes_elem(&UnitCube).collect_vec())
     }
@@ -59,17 +57,16 @@ impl<T> Quadrature<T, UnitCube<2>, 2> for MultiProd<T, GaussLegendre, 2>
 // todo: are all 3 implementations really needed? Or is the HyperCube one sufficient?
 //  or just merge all into one generic
 
-impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>, D> for MultiProd<T, GaussLegendre, D>
+impl<T, const D: usize> Quadrature<T, [T; D], SymmetricUnitCube<D>> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
-    type Node = [T; D];
-
-    fn nodes_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=[T; D]> {
         self.quads.iter()
             .map(|quad| quad.nodes_elem(&SymmetricUnitCube).collect_vec())
             .multi_cartesian_product()
             .map(|vec| vec.try_into().unwrap())
     }
+
 
     fn weights_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=T> {
         self.quads.iter()
@@ -79,32 +76,29 @@ impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>, D> for MultiProd<T, 
     }
 }
 
-// impl<T, const D: usize> Quadrature<T, UnitCube<D>, D> for MultiProd<T, GaussLegendre, D>
-// where T: RealField + Sum + Product + Copy,
-// {
-//     type Node = [T; D];
-//
-//     fn nodes_elem(&self, _elem: &UnitCube<D>) -> impl Iterator<Item=Self::Node> {
-//         self.quads.iter()
-//             .map(|quad| quad.nodes_elem(&UnitCube).collect_vec())
-//             .multi_cartesian_product()
-//             .map(|vec| vec.try_into().unwrap())
-//     }
-//
-//     fn weights_elem(&self, _elem: &UnitCube<D>) -> impl Iterator<Item=T> {
-//         self.quads.iter()
-//             .map(|quad| quad.weights_elem(&UnitCube).collect_vec())
-//             .multi_cartesian_product()
-//             .map(|vec| vec.into_iter().product())
-//     }
-// }
-
-impl <T, const D: usize> Quadrature<T, HyperRectangle<T, D>, D> for MultiProd<T, GaussLegendre, D>
+impl<T, const D: usize> Quadrature<T, [T; D], UnitCube<D>> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
-    type Node = [T; D];
 
-    fn nodes_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=Self::Node> {
+    fn nodes_elem(&self, _elem: &UnitCube<D>) -> impl Iterator<Item=[T; D]> {
+        self.quads.iter()
+            .map(|quad| quad.nodes_elem(&UnitCube).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.try_into().unwrap())
+    }
+
+    fn weights_elem(&self, _elem: &UnitCube<D>) -> impl Iterator<Item=T> {
+        self.quads.iter()
+            .map(|quad| quad.weights_elem(&UnitCube).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.into_iter().product())
+    }
+}
+
+impl <T, const D: usize> Quadrature<T, [T; D], HyperRectangle<T, D>> for MultiProd<T, GaussLegendre, D>
+    where T: RealField + Sum + Product + Copy,
+{
+    fn nodes_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=[T; D]> {
         let lerp = elem.geo_map();
         self.nodes_elem(&SymmetricUnitCube)
             .map(move |xi| lerp.transform_symmetric(Vector::from(xi)).into_arr())

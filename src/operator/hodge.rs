@@ -25,7 +25,7 @@ pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
           E: Cell<T, X, D, D>,
           M: Mesh<'a, T, X, D, D, E>,
           B: LocalBasis<T, X>, // todo: add Elem = E::RefCell
-          Q: Quadrature<T, E::RefCell, D, Node=X>,
+          Q: Quadrature<T, X, E::RefCell>,
           DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
@@ -54,7 +54,7 @@ pub fn assemble_hodge_local<T, X, E, B, Q, const D: usize>(
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
           B: EvalBasis<T, X>,
-          Q: Quadrature<T, E::RefCell, D, Node=X>,
+          Q: Quadrature<T, X, E::RefCell>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
