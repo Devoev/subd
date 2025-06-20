@@ -1,9 +1,5 @@
-use crate::cells::geo::Cell;
-use nalgebra::{Point, RealField};
 use std::iter::{zip, Sum};
 use std::ops::Mul;
-use crate::index::dimensioned::Dimensioned;
-// todo: possibly add RefCell and parametrize RefQuadrature?
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -13,8 +9,6 @@ use crate::index::dimensioned::Dimensioned;
 fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item = W>, f: impl IntoIterator<Item = T>) -> T {
     zip(w, f).map(|(w, f)| w * f).sum::<T>()
 }
-
-// todo: replace Node associated type with generic, such that different impls for tuples and arrays can work
 
 /// Quadrature rule for the [numerical integration](https://en.wikipedia.org/wiki/Numerical_integration)
 /// of a function, using node-weights pairs.
