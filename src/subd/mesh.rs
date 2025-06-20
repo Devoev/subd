@@ -1,6 +1,8 @@
+use nalgebra::RealField;
 use crate::mesh::elem_vertex::ElementVertexMesh;
 use crate::mesh::elem_vertex_topo::{ElementVertex, QuadVertex};
-use crate::subd::patch::CatmarkPatchNodes;
+use crate::mesh::geo::Mesh;
+use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 
 /// Catmull-Clark mesh.
 pub type CatmarkMesh<T, const M: usize> = ElementVertexMesh<T, CatmarkPatchNodes, 2, M>;
@@ -19,5 +21,15 @@ impl CatmarkMeshTopology {
             .map(|quad| CatmarkPatchNodes::find(msh, quad))
             .collect();
         CatmarkMeshTopology::new(patches, msh.num_nodes)
+    }
+}
+
+impl <'a, T: RealField + Copy, const M: usize> Mesh<'a, T, (T, T), 2, M, CatmarkPatch<T, M>> for CatmarkMesh<T, M> {
+    type Elems = impl Iterator<Item = CatmarkPatch<T, M>>;
+
+    fn elems(&'a self) -> Self::Elems {
+        self.topology.elems
+            .iter()
+            .map(move |patch_to_nodes| CatmarkPatch::from_msh(&self, patch_to_nodes))
     }
 }
