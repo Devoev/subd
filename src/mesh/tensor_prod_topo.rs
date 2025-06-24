@@ -1,7 +1,7 @@
 //! Topology of a tensor product mesh.
 
 use std::iter::Map;
-use crate::cells::hyper_rectangle::HyperRectangleTopo;
+use crate::cells::cartesian::CartCellIdx;
 use crate::cells::node::NodeIdx;
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
@@ -70,8 +70,8 @@ impl<const D: usize> Iterator for NodesIter<'_, D> {
     }
 }
 
-/// An iterator over the elements ([`HyperRectangleTopo<D>`]) of a [`TensorProd<D>`] mesh.
-pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> HyperRectangleTopo<D>>;
+/// An iterator over the elements ([`CartCellIdx<D>`]) of a [`TensorProd<D>`] mesh.
+pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
 impl<const D: usize> TensorProd<D> {
     /// Returns an iterator over all multi-indices in this grid.
@@ -88,11 +88,11 @@ impl<const D: usize> TensorProd<D> {
     pub fn elems(&self) -> ElemsIter<D> {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
-        dim_shape_elems.multi_range().map(HyperRectangleTopo)
+        dim_shape_elems.multi_range().map(CartCellIdx)
     }
 }
 
-impl<'a, const D: usize> MeshTopology<'a, D, HyperRectangleTopo<D>> for TensorProd<D> {
+impl<'a, const D: usize> MeshTopology<'a, D, CartCellIdx<D>> for TensorProd<D> {
     type Nodes = NodesIter<'a, D>;
     type Elems = ElemsIter<D>;
 

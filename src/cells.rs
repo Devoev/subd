@@ -3,7 +3,7 @@ pub mod chain;
 pub mod line_segment;
 pub mod quad;
 pub mod node;
-pub mod hyper_rectangle;
+pub mod cartesian;
 pub mod bezier_elem;
 pub mod geo;
 pub mod lerp;

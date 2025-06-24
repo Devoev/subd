@@ -4,12 +4,12 @@ use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{vector, Const, DimName, DimNameSub, Point, RealField, SVector, U1, U3};
+use nalgebra::{vector, Const, DimName, DimNameSub, Point, Point1, RealField, SVector, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
 use crate::cells::unit_cube::UnitCube;
 
-/// A [`K`]-dimensional hyperrectangle.
+/// A [`K`]-dimensional cartesian cell aka. hyper-rectangle.
 /// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
 /// ```text
 /// { x : a[i] <= x[i] <= b[i] }
@@ -19,33 +19,44 @@ use crate::cells::unit_cube::UnitCube;
 /// [a[1], b[1]] × ... × [a[K], b[K]]
 /// ```
 /// of intervals `[a[i], b[i]]`.
+/// Geometrically it is a `K`-cell restricted by cartesian gridlines.
 #[derive(Debug, Clone, Copy)]
-pub struct HyperRectangle<T: RealField, const K: usize> {
+pub struct CartCell<T: RealField, const K: usize> {
     /// Start coordinates.
-    pub a: SVector<T, K>,
+    pub a: Point<T, K>,
 
     /// End coordinates.
-    pub b: SVector<T, K>,
+    pub b: Point<T, K>,
+}
+
+impl<T: RealField> CartCell<T, 1> {
+    /// Constructs a new univariate [`CartCell`],
+    /// i.e. the interval `[a,b]`.
+    pub fn new_univariate(a: T, b: T) -> Self {
+        CartCell::new(Point1::new(a), Point1::new(b))
+    }
+}
+
+impl<T: RealField, const K: usize> CartCell<T, K> {
+    /// Constructs a new [`CartCell`] from the given coordinates `a` and `b`.
+    pub fn new(a: Point<T, K>, b: Point<T, K>) -> Self {
+        CartCell { a, b }
+    }
 }
 
 // todo: update points and ranges methods
-impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
-    /// Constructs a new [`HyperRectangle`] from the given coordinate vectors `a` and `b`.
-    pub fn new(a: SVector<T, K>, b: SVector<T, K>) -> Self {
-        HyperRectangle { a, b }
-    }
-    
-    /// Constructs a new [`HyperRectangle`] from the given topology `topo`
+impl<T: RealField + Copy, const K: usize> CartCell<T, K> {
+    /// Constructs a new [`CartCell`] from the given topology `topo`
     /// and mesh `msh`.
-    pub fn from_topo(topo: HyperRectangleTopo<K>, msh: &CartMesh<T, K>) -> Self {
+    pub fn from_topo(topo: CartCellIdx<K>, msh: &CartMesh<T, K>) -> Self {
         let idx_a = topo.0;
         let idx_b = idx_a.map(|i| i + 1);
         let a = msh.vertex(idx_a);
         let b = msh.vertex(idx_b);
-        HyperRectangle::new(a.coords, b.coords)
+        CartCell::new(a, b)
     }
     
-    /// Returns an iterator over the corner points of this hyperrectangle.
+    /// Returns an iterator over the corner points of this cell.
     pub fn points(&self) -> impl Iterator<Item=Point<T, K>> + '_ {
         repeat_n([&self.a, &self.b], K)
             .multi_cartesian_product()
@@ -59,18 +70,19 @@ impl<T: RealField + Copy, const K: usize> HyperRectangle<T, K> {
 
     /// Returns the interval ranges `a[i]..=b[i]` for each parametric direction.
     pub fn ranges(&self) -> [RangeInclusive<T>; K] {
-        zip(&self.a, &self.b).map(|(&a, &b)| a..=b).collect_array::<K>().unwrap()
+        zip(&self.a.coords, &self.b.coords).map(|(&a, &b)| a..=b).collect_array::<K>().unwrap()
     }
     
-    /// Returns the [Self::ranges] as 1D hyper rectangles.
-    pub fn intervals(&self) -> [HyperRectangle<T, 1>; K] {
-        zip(&self.a, &self.b).map(|(&a, &b)| {
-            HyperRectangle::new(vector![a], vector![b])
-        }).collect_array().unwrap()
+    /// Returns the [Self::ranges] as 1D intervals.
+    pub fn intervals(&self) -> [CartCell<T, 1>; K] {
+        zip(&self.a.coords, &self.b.coords)
+            .map(|(&a, &b)| CartCell::new_univariate(a, b))
+            .collect_array()
+            .unwrap()
     }
 }
 
-impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for HyperRectangle<T, D> {
+impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for CartCell<T, D> {
     type RefCell = UnitCube<D>;
     type GeoMap = Lerp<T, D>;
 
@@ -83,7 +95,7 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for HyperR
     }
 }
 
-impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for HyperRectangle<T, 1> {
+impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for CartCell<T, 1> {
     type RefCell = UnitCube<1>;
     type GeoMap = Lerp<T, 1>;
 
@@ -96,14 +108,11 @@ impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for HyperRectangle<T, 1> {
     }
 }
 
-// todo: index type is incorrect
-//  - nodes and vols should have one multi index
-//  - edges and faces should have 3 ?
-
+/// Multi-index of a [`CartCell`].
 #[derive(Debug, Clone, Copy)]
-pub struct HyperRectangleTopo<const K: usize>(pub [usize; K]);
+pub struct CartCellIdx<const K: usize>(pub [usize; K]);
 
-impl <const K: usize> Cell<Const<K>> for HyperRectangleTopo<K> {
+impl <const K: usize> Cell<Const<K>> for CartCellIdx<K> {
     fn nodes(&self) -> &[NodeIdx] {
         todo!()
     }
@@ -116,9 +125,9 @@ impl <const K: usize> Cell<Const<K>> for HyperRectangleTopo<K> {
     }
 }
 
-impl CellBoundary<U3> for HyperRectangleTopo<3> {
+impl CellBoundary<U3> for CartCellIdx<3> {
     const NUM_SUB_CELLS: usize = 6;
-    type SubCell = HyperRectangleTopo<2>;
+    type SubCell = CartCellIdx<2>;
     type Boundary = ();
 
     fn boundary(&self) -> Self::Boundary {

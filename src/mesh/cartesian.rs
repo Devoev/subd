@@ -1,4 +1,4 @@
-use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::cells::cartesian::CartCell;
 use crate::index::dimensioned::DimShape;
 use crate::mesh::tensor_prod_topo::TensorProd;
 use itertools::Itertools;
@@ -64,12 +64,12 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K, HyperRectangle<T, K>> for CartMesh<T, K> {
-    type Elems = impl Iterator<Item = HyperRectangle<T, K>>;
+impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K, CartCell<T, K>> for CartMesh<T, K> {
+    type Elems = impl Iterator<Item = CartCell<T, K>>;
 
     fn elems(&'a self) -> Self::Elems {
         self.topology
             .elems()
-            .map(|elem_topo| HyperRectangle::from_topo(elem_topo, self))
+            .map(|elem_topo| CartCell::from_topo(elem_topo, self))
     }
 }

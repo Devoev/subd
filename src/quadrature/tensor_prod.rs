@@ -1,5 +1,5 @@
 use crate::cells::geo::Cell;
-use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::cells::cartesian::CartCell;
 use crate::cells::unit_cube::{SymmetricUnitCube, UnitCube};
 use crate::index::dimensioned::Dimensioned;
 use crate::quadrature::traits::Quadrature;
@@ -95,16 +95,16 @@ impl<T, const D: usize> Quadrature<T, [T; D], UnitCube<D>> for MultiProd<T, Gaus
     }
 }
 
-impl <T, const D: usize> Quadrature<T, [T; D], HyperRectangle<T, D>> for MultiProd<T, GaussLegendre, D>
+impl <T, const D: usize> Quadrature<T, [T; D], CartCell<T, D>> for MultiProd<T, GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
-    fn nodes_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=[T; D]> {
+    fn nodes_elem(&self, elem: &CartCell<T, D>) -> impl Iterator<Item=[T; D]> {
         let lerp = elem.geo_map();
         self.nodes_elem(&SymmetricUnitCube)
             .map(move |xi| lerp.transform_symmetric(Vector::from(xi)).into_arr())
     }
 
-    fn weights_elem(&self, elem: &HyperRectangle<T, D>) -> impl Iterator<Item=T> {
+    fn weights_elem(&self, elem: &CartCell<T, D>) -> impl Iterator<Item=T> {
         // todo: use weights_elem on ref domain for this impl
         zip(&self.quads, elem.intervals())
             .map(|(quad, interval)| quad.weights_elem(&interval).collect_vec())

@@ -25,7 +25,7 @@ use crate::basis::cart_prod;
     use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
-    use crate::cells::hyper_rectangle::HyperRectangle;
+    use crate::cells::cartesian::CartCell;
     use crate::cells::quad::QuadTopo;
     use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
@@ -281,7 +281,7 @@ use crate::basis::cart_prod;
         // println!("Quadrature nodes = {:?} (in [-1,1]]", quad_multi.nodes_ref().collect_vec());
         // println!("Quadrature weights = {:?} (in [-1,1])", quad_multi.weights_ref().collect_vec());
 
-        let elem = HyperRectangle::new(vector![0.2, 0.2], vector![0.4, 0.4]);
+        let elem = CartCell::new(point![0.2, 0.2], point![0.4, 0.4]);
         println!("Quadrature nodes = {:?} in {:?}", quad_multi.nodes_elem(&elem).collect_vec(), elem);
         println!("Quadrature weights = {:?} in {:?}", quad_multi.weights_elem(&elem).collect_vec(), elem);
     }

@@ -1,5 +1,5 @@
 use crate::cells::geo::Cell;
-use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::cells::cartesian::CartCell;
 use crate::cells::lerp::Lerp;
 use crate::cells::unit_cube::{SymmetricUnitCube, UnitCube};
 use crate::quadrature::traits::Quadrature;
@@ -33,14 +33,14 @@ impl <T: RealField + Sum> Quadrature<T, T, UnitCube<1>> for GaussLegendre {
     }
 }
 
-impl <T: RealField + Copy + Sum> Quadrature<T, T, HyperRectangle<T, 1>> for GaussLegendre {
-    fn nodes_elem(&self, elem: &HyperRectangle<T, 1>) -> impl Iterator<Item=T> {
-        let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
+impl <T: RealField + Copy + Sum> Quadrature<T, T, CartCell<T, 1>> for GaussLegendre {
+    fn nodes_elem(&self, elem: &CartCell<T, 1>) -> impl Iterator<Item=T> {
+        let lerp: Lerp<T, 1> = <CartCell<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
         self.nodes_elem(&SymmetricUnitCube).map(move |xi: T| lerp.transform_symmetric(vector![xi]).x)
     }
 
-    fn weights_elem(&self, elem: &HyperRectangle<T, 1>) -> impl Iterator<Item=T> {
-        let lerp: Lerp<T, 1> = <HyperRectangle<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
+    fn weights_elem(&self, elem: &CartCell<T, 1>) -> impl Iterator<Item=T> {
+        let lerp: Lerp<T, 1> = <CartCell<T, 1> as Cell<T, T, 1, 1>>::geo_map(elem);
         let d_phi = lerp.jacobian().x / T::from_i32(2).unwrap(); // todo: add new jacobian method for symmetric interval
         self.weights_elem(&SymmetricUnitCube).map(move |wi: T| wi * d_phi)
     }

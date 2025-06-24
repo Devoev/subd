@@ -1,24 +1,24 @@
-use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::cells::cartesian::CartCell;
 use crate::diffgeo::chart::Chart;
-use nalgebra::{Matrix, Point, Point1, RealField, SMatrix, SVector};
+use nalgebra::{Matrix, Point, Point1, RealField, SMatrix, SVector, Scalar};
 
 /// **L**inear int**erp**olation (Lerp) in [`D`] dimensions.
-/// Transforms the unit hypercube `[0,1]^D` to a [`HyperRectangle`] by the component-wise mapping
+/// Transforms the unit hypercube `[0,1]^D` to a [`CartCell`] by the component-wise mapping
 /// ```text
 /// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i]
 /// ```
 /// where `a` and `b` are the start and end coordinates of the rectangle respectively.
-pub struct Lerp<T, const D: usize> {
+pub struct Lerp<T: Scalar, const D: usize> {
     /// Start coordinates.
-    pub a: SVector<T, D>,
+    pub a: Point<T, D>,
 
     /// End coordinates.
-    pub b: SVector<T, D>,
+    pub b: Point<T, D>,
 }
 
-impl<T, const D: usize> Lerp<T, D> {
+impl<T: Scalar, const D: usize> Lerp<T, D> {
     /// Constructs a new [`Lerp`] from the given coordinate vectors `a` and `b`.
-    pub fn new(a: SVector<T, D>, b: SVector<T, D>) -> Self {
+    pub fn new(a: Point<T, D>, b: Point<T, D>) -> Self {
         Lerp { a, b }
     }
 }
@@ -26,7 +26,7 @@ impl<T, const D: usize> Lerp<T, D> {
 // todo: possibly move below transform methods to generalized Lerp or something else
 impl <T: RealField + Copy, const D: usize> Lerp<T, D> {
     /// Linearly transforms an arbitrary hyper rectangle `ref_elem` to `[a, b]`.
-    pub fn transform(&self, ref_elem: HyperRectangle<T, D>, x: SVector<T, D>) -> Point<T, D> {
+    pub fn transform(&self, ref_elem: CartCell<T, D>, x: Point<T, D>) -> Point<T, D> {
         let s = ref_elem.a; // Start
         let e = ref_elem.b; // End
         let p = self.a + (self.b - self.a).component_mul(&(x - s)).component_div(&(e - s));
@@ -59,7 +59,7 @@ impl <T: RealField + Copy, const D: usize> Chart<T, [T; D], D, D> for Lerp<T, D>
 impl <T: RealField + Copy, const D: usize> Chart<T, SVector<T, D>, D, D> for Lerp<T, D> {
     fn eval(&self, x: SVector<T, D>) -> Point<T, D> {
         let ones = SVector::repeat(T::one());
-        let p = (ones - x).component_mul(&self.a) + x.component_mul(&self.b);
+        let p = (ones - x).component_mul(&self.a.coords) + x.component_mul(&self.b.coords);
         Point::from(p)
     }
 

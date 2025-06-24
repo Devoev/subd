@@ -3,7 +3,7 @@ use crate::basis::local::LocalBasis;
 use crate::basis::tensor_prod::MultiProd;
 use crate::basis::traits::Basis;
 use crate::bspline::de_boor_span::DeBoorSpan;
-use crate::cells::hyper_rectangle::HyperRectangle;
+use crate::cells::cartesian::CartCell;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
@@ -62,8 +62,8 @@ impl <T: RealField + Copy> DeBoor<T> {
         KnotSpan::find(&self.knots, self.num_basis, t)
     }
     
-    /// Finds the knot span for the 1D [`HyperRectangle`] `elem`.
-    pub(crate) fn find_span_by_elem(&self, elem: &HyperRectangle<T, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
+    /// Finds the knot span for the 1D [`CartCell`] `elem`.
+    pub(crate) fn find_span_by_elem(&self, elem: &CartCell<T, 1>) -> Result<KnotSpan, OutsideKnotRangeError> {
         self.find_span(elem.a.x)
     }
 }
