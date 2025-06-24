@@ -1,11 +1,13 @@
-use crate::cells::cartesian::CartCell;
+use crate::cells::cartesian::{CartCell, CartCellIdx};
 use crate::index::dimensioned::DimShape;
 use crate::mesh::tensor_prod_topo::TensorProd;
 use itertools::Itertools;
 use nalgebra::{Point, RealField};
 use std::iter::zip;
 use crate::knots::breaks::Breaks;
-use crate::mesh::geo::Mesh;
+use crate::mesh::tensor_prod_topo;
+use crate::mesh::topo::MeshTopology;
+use crate::mesh::traits::Mesh;
 
 /// Cartesian mesh with [tensor product topology](TensorProd).
 /// The grid formed by the mesh nodes can in 2D be schematically visualized as
@@ -64,12 +66,29 @@ impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K, CartCell<T, K>> for CartMesh<T, K> {
-    type Elems = impl Iterator<Item = CartCell<T, K>>;
+impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for CartMesh<T, K> {
+    type Elem = CartCellIdx<K>;
+    type GeoElem = CartCell<T, K>;
+    type NodesIter = tensor_prod_topo::NodesIter<'a, K>;
+    type ElemsIter = tensor_prod_topo::ElemsIter<K>;
 
-    fn elems(&'a self) -> Self::Elems {
-        self.topology
-            .elems()
-            .map(|elem_topo| CartCell::from_topo(elem_topo, self))
+    fn num_nodes(&self) -> usize {
+        self.topology.num_nodes()
+    }
+
+    fn num_elems(&self) -> usize {
+        self.topology.num_elems()
+    }
+
+    fn nodes(&'a self) -> Self::NodesIter {
+        self.topology.nodes()
+    }
+
+    fn elems(&'a self) -> Self::ElemsIter {
+        self.topology.elems()
+    }
+
+    fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
+        CartCell::from_topo(elem, self)
     }
 }

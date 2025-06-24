@@ -4,7 +4,7 @@ use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::index::dimensioned::Dimensioned;
-use crate::mesh::geo::Mesh;
+use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
@@ -18,12 +18,12 @@ pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
     msh: &'a M,
     space: &Space<T, X, B, D>,
     quad: PullbackQuad<T, X, E, Q, D>,
-    ref_elem_to_sp_elem: impl Fn(&E::RefCell) -> B::Elem // todo: this function is just temporary
+    elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem // todo: this function is just temporary
 ) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, E>,
+          M: Mesh<'a, T, X, D, D, GeoElem = E>,
           B: LocalBasis<T, X>, // todo: add Elem = E::RefCell
           Q: Quadrature<T, X, E::RefCell>,
           DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
@@ -32,10 +32,11 @@ pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
     let mut mij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
     for elem in msh.elems() {
-        let sp_elem = ref_elem_to_sp_elem(&elem.ref_cell());
+        let sp_elem = elem_to_sp_elem(&elem);
         let sp_local = space.basis.elem_basis(&sp_elem);
-        let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
         let indices = space.basis.global_indices(&sp_elem).enumerate();
+        let geo_elem = msh.geo_elem(elem);
+        let mij_local = assemble_hodge_local(&geo_elem, &sp_local, &quad);
         for ((i_local, i), (j_local, j)) in indices.clone().cartesian_product(indices) {
             mij.push(i, j, mij_local[(i_local, j_local)]);
         }

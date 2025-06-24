@@ -34,7 +34,7 @@ use crate::basis::cart_prod;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
-    use crate::mesh::geo::Mesh;
+    use crate::mesh::traits::Mesh;
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
@@ -235,8 +235,9 @@ use crate::basis::cart_prod;
 
         // find_span
         println!("--- Finding span indices with `breaks` and `find_span` ---");
-        for (elem, topo) in zip(msh.elems(), msh.topology.elems()) {
-            let elem_idx = topo.0[0];
+        for idx in msh.elems() {
+            let elem_idx = idx.0[0];
+            let elem = msh.geo_elem(idx);
             let span = basis.find_span(elem.a.x).unwrap();
             let span_idx = span.0;
 
@@ -339,7 +340,8 @@ use crate::basis::cart_prod;
         let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
         let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
 
-        for elem in msh.elems() {
+        for idx in msh.elems() {
+            let elem = msh.geo_elem(idx);
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
@@ -379,7 +381,8 @@ use crate::basis::cart_prod;
         let quad = BezierQuad::new(ref_quad);
         let mat = assemble_hodge(&msh, &space, quad, |elem| {
             // todo: this should DIRECTLY be implemented in the spline spaces
-            space.basis.find_elem(elem.a.into_arr())
+            let x = msh.geo_elem(*elem).ref_elem.a;
+            space.basis.find_elem(x.into_arr())
         });
 
         // Print
@@ -432,9 +435,8 @@ use crate::basis::cart_prod;
 
         // todo: implement Mesh for ElementVertexMesh. Then assembly can work
 
-        let mat = assemble_hodge(&msh, &space, quad, |elem| {
-            todo!("Can't possibly convert the reference element or even geometric element to topological one. \
-                Iteration over topological elements is thus needed in the first place")
+        let mat = assemble_hodge(&msh, &space, quad, |&elem| {
+            elem.clone()
         });
 
         // Print
@@ -717,12 +719,12 @@ use crate::basis::cart_prod;
         let breaks = Breaks::from_knots(knots.clone());
         let msh = CartMesh::from_breaks([breaks.clone()]);
         let mut spans_1 = vec![0; breaks.len() - 1];
-        for (elem, topo) in zip(msh.elems(), msh.topology.elems()) {
-            let elem_idx = topo.0[0];
+        for idx in msh.elems() {
+            let elem = msh.geo_elem(idx);
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 
-            spans_1[elem_idx] = span_idx;
+            spans_1[idx.0[0]] = span_idx;
         };
 
         let time_find_span = start.elapsed();

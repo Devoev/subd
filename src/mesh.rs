@@ -5,5 +5,5 @@ pub mod elem_vertex_topo;
 pub mod tensor_prod_topo;
 pub mod cartesian;
 pub mod bezier;
-pub mod geo;
+pub mod traits;
 pub mod topo;
