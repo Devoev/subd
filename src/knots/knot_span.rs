@@ -3,11 +3,11 @@ use nalgebra::RealField;
 use std::ops::RangeInclusive;
 use crate::knots::error::OutsideKnotRangeError;
 
-/// A knot span represented by a knot index `i`, 
-/// such that `xi[i] <= i < xi[i+1]`, where
+/// The half-open (possibly empty) interval `[xi[i], xi[i+1])`, where
 /// `xi` is the knot vector.
 /// 
-/// The span is thus the half-open interval `[xi[i], xi[i+1])`.
+/// It is represented by a single index `i`, 
+/// such that `xi[i] <= i < xi[i+1]`.
 #[derive(Debug, Copy, Clone)]
 pub struct KnotSpan(pub(crate) usize);
 
