@@ -1,15 +1,14 @@
 use crate::cells::cartesian::{CartCell, CartCellIdx};
-use crate::index::dimensioned::DimShape;
-use crate::mesh::tensor_prod_topo::TensorProd;
+use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use itertools::Itertools;
 use nalgebra::{Point, RealField};
-use std::iter::zip;
+use std::iter::{zip, Map};
+use crate::cells::node::NodeIdx;
+use crate::index::multi_index::MultiIndex;
 use crate::knots::breaks::Breaks;
-use crate::mesh::tensor_prod_topo;
-use crate::mesh::topo::MeshTopology;
 use crate::mesh::traits::Mesh;
 
-/// Cartesian mesh with [tensor product topology](TensorProd).
+/// Cartesian mesh built by tensor product of [`Breaks<T>`].
 /// The grid formed by the mesh nodes can in 2D be schematically visualized as
 /// ```text
 ///        ^
@@ -26,69 +25,126 @@ use crate::mesh::traits::Mesh;
 ///           bx[0]       bx[nx]
 /// ```
 /// where `bx` and `by` are the breakpoints for the `x` and `y` direction respectively.
-pub struct CartMesh<T: RealField, const K: usize> {
+pub struct CartMesh<T: RealField, const D: usize> {
     /// Breakpoints for each parametric direction.
-    pub breaks: [Breaks<T>; K],
+    pub breaks: [Breaks<T>; D],
 
-    /// Tensor product topology of the mesh.
-    pub topology: TensorProd<K>
+    /// Shape of the parametric directions.
+    pub dim_shape: DimShape<D>,
+
+    /// Strides for each parametric direction.
+    pub strides: Strides<D>
 }
 
-impl<T: RealField + Copy, const K: usize> CartMesh<T, K> {
-    /// Constructs a new [`CartMesh`] from the given `breaks` and `topology`.
+impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
+    /// Constructs a new [`CartMesh`] from the given `breaks`, `dim_shape` and `strides`.
     ///
     /// # Panics
-    /// If the shape of the `breaks` does not equal the shape of the `topology`,
+    /// If the shape of the `breaks` does not equal the shape of `dim_shape`,
     /// the function will panic.
-    pub fn new(breaks: [Breaks<T>; K], topology: TensorProd<K>) -> Self {
+    pub fn new(breaks: [Breaks<T>; D], dim_shape: DimShape<D>, strides: Strides<D>) -> Self {
         let n_breaks = breaks.iter().map(|b| b.len()).collect_vec();
-        let n_topo = topology.dim_shape.0;
-        assert_eq!(n_breaks, n_topo,
-                   "Shape of `breaks` (is {:?}) doesn't equal shape of `topology` (is {:?})",
-                   n_breaks, n_topo);
-        CartMesh { breaks, topology }
+        let n_shape = dim_shape.0;
+        assert_eq!(n_breaks, n_shape,
+                   "Shape of `breaks` (is {:?}) doesn't equal shape of `dim_shape` (is {:?})",
+                   n_breaks, n_shape);
+        CartMesh { breaks, dim_shape, strides }
     }
 
     /// Constructs a new [`CartMesh`] from the given `breaks`.
-    /// The tensor product topology is constructed from the shape of the breaks.
-    pub fn from_breaks(breaks: [Breaks<T>; K]) -> Self {
+    /// The topological information for the shape and strides is constructed from the shape of the breaks.
+    pub fn from_breaks(breaks: [Breaks<T>; D]) -> Self {
         let shape = breaks.iter().map(|b| b.len()).collect_array().unwrap();
-        CartMesh { breaks, topology: TensorProd::from_dims(DimShape(shape)) }
+        let dim_shape = DimShape(shape);
+        CartMesh { breaks, dim_shape, strides: Strides::from(dim_shape) }
     }
     
     /// Constructs the vertex point at the given multi-index position `idx`.
-    pub fn vertex(&self, idx: [usize; K]) -> Point<T, K> {
+    pub fn vertex(&self, idx: [usize; D]) -> Point<T, D> {
         zip(idx, &self.breaks)
             .map(|(i, breaks)| breaks[i])
-            .collect_array::<K>()
+            .collect_array::<D>()
             .unwrap()
             .into()
+    }
+}
+
+/// An iterator over the linear nodes ([`NodeIdx`]) of a [`CartMesh`] mesh.
+pub struct NodesIter<'a, const D: usize> {
+    iter: MultiRange<[usize; D]>,
+    strides: &'a Strides<D>
+}
+
+impl <'a, const D: usize> NodesIter<'a, D> {
+    /// Constructs a new [`NodesIter`] from the given `iter` and `strides`.
+    pub fn new(iter: MultiRange<[usize; D]>, strides: &'a Strides<D>) -> Self {
+        NodesIter { iter, strides }
+    }
+
+    /// Constructs a enw [`NodesIter`] from the given cartesian `msh`.
+    pub fn from_msh<T: RealField>(msh: &'a CartMesh<T, D>) -> Self {
+        NodesIter::new(msh.indices(), &msh.strides)
+    }
+}
+
+// todo: this implementation doesn't make much sense. Either just return the multi-indices,
+//  or iterate over linear indices directly. Flattening the multi-indices is way to expensive
+
+impl<const D: usize> Iterator for NodesIter<'_, D> {
+    type Item = NodeIdx;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|idx| NodeIdx(idx.into_lin(self.strides)))
+    }
+}
+
+/// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
+pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
+
+impl<T: RealField, const D: usize> CartMesh<T, D> {
+    /// Returns an iterator over all multi-indices in this grid.
+    pub fn indices(&self) -> MultiRange<[usize; D]> {
+        self.dim_shape.multi_range()
+    }
+
+    /// Returns an iterator over all nodes with linear indices in increasing index order.
+    pub fn nodes(&self) -> NodesIter<'_, D> {
+        NodesIter::from_msh(self)
+    }
+
+    /// Returns an iterator over all elements in lexicographical order.
+    pub fn elems(&self) -> ElemsIter<D> {
+        let mut dim_shape_elems = self.dim_shape;
+        dim_shape_elems.shrink(1);
+        dim_shape_elems.multi_range().map(CartCellIdx)
     }
 }
 
 impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for CartMesh<T, K> {
     type Elem = CartCellIdx<K>;
     type GeoElem = CartCell<T, K>;
-    type NodesIter = tensor_prod_topo::NodesIter<'a, K>;
-    type ElemsIter = tensor_prod_topo::ElemsIter<K>;
+    type NodesIter = NodesIter<'a, K>;
+    type ElemsIter = ElemsIter<K>;
 
     fn num_nodes(&self) -> usize {
-        self.topology.num_nodes()
+        self.dim_shape.len()
     }
 
     fn num_elems(&self) -> usize {
-        self.topology.num_elems()
+        let mut dim_shape_elems = self.dim_shape;
+        dim_shape_elems.shrink(1);
+        dim_shape_elems.len()
     }
 
     fn nodes(&'a self) -> Self::NodesIter {
-        self.topology.nodes()
+        self.nodes()
     }
 
     fn elems(&'a self) -> Self::ElemsIter {
-        self.topology.elems()
+        self.elems()
     }
 
     fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
-        CartCell::from_topo(elem, self)
+        CartCell::from_msh_and_idx(elem, self)
     }
 }

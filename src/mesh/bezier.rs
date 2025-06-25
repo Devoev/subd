@@ -1,7 +1,6 @@
 use crate::bspline::spline_geo::SplineGeo;
 use crate::cells::bezier_elem::BezierElem;
-use crate::mesh::cartesian::CartMesh;
-use crate::mesh::{tensor_prod_topo, traits};
+use crate::mesh::cartesian::{CartMesh, ElemsIter, NodesIter};
 use crate::mesh::traits::Mesh;
 use nalgebra::RealField;
 use crate::cells::cartesian::CartCellIdx;
@@ -43,8 +42,8 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, [T; D], D, M> for BezierMesh<'a, T, D, M> {
     type Elem = CartCellIdx<D>; // todo: change to knot spans
     type GeoElem = BezierElem<'a, T, D, M>;
-    type NodesIter = tensor_prod_topo::NodesIter<'a, D>;
-    type ElemsIter = tensor_prod_topo::ElemsIter<D>;
+    type NodesIter = NodesIter<'a, D>;
+    type ElemsIter = ElemsIter<D>;
 
     fn num_nodes(&self) -> usize {
         self.ref_mesh.num_nodes()

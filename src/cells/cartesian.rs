@@ -46,10 +46,10 @@ impl<T: RealField, const K: usize> CartCell<T, K> {
 
 // todo: update points and ranges methods
 impl<T: RealField + Copy, const K: usize> CartCell<T, K> {
-    /// Constructs a new [`CartCell`] from the given topology `topo`
+    /// Constructs a new [`CartCell`] from the given cell index `idx`
     /// and mesh `msh`.
-    pub fn from_topo(topo: CartCellIdx<K>, msh: &CartMesh<T, K>) -> Self {
-        let idx_a = topo.0;
+    pub fn from_msh_and_idx(idx: CartCellIdx<K>, msh: &CartMesh<T, K>) -> Self {
+        let idx_a = idx.0;
         let idx_b = idx_a.map(|i| i + 1);
         let a = msh.vertex(idx_a);
         let b = msh.vertex(idx_b);
