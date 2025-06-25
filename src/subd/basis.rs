@@ -8,6 +8,7 @@ use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 use itertools::Itertools;
 use nalgebra::{Dyn, Matrix, OMatrix, RealField, U1, U2};
 use std::vec;
+use crate::mesh::traits::MeshTopology;
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
@@ -17,7 +18,7 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
     type NumComponents = U1;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
-        Dyn(self.0.topology.num_nodes)
+        Dyn(self.0.num_nodes())
     }
 }
 

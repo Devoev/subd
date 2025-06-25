@@ -1,7 +1,7 @@
 use crate::bspline::spline_geo::SplineGeo;
 use crate::cells::bezier_elem::BezierElem;
 use crate::mesh::cartesian::{CartMesh, ElemsIter, NodesIter};
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology};
 use nalgebra::RealField;
 use crate::cells::cartesian::CartCellIdx;
 
@@ -39,11 +39,10 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, [T; D], D, M> for BezierMesh<'a, T, D, M> {
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology<'a, D> for BezierMesh<'a, T, D, M> {
     type Elem = CartCellIdx<D>; // todo: change to knot spans
-    type GeoElem = BezierElem<'a, T, D, M>;
-    type NodesIter = NodesIter<'a, D>;
-    type ElemsIter = ElemsIter<D>;
+    type NodeIter = NodesIter<'a, D>;
+    type ElemIter = ElemsIter<D>;
 
     fn num_nodes(&self) -> usize {
         self.ref_mesh.num_nodes()
@@ -53,13 +52,17 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, [T; D
         self.ref_mesh.num_elems()
     }
 
-    fn nodes(&'a self) -> Self::NodesIter {
+    fn node_iter(&'a self) -> Self::NodeIter {
         self.ref_mesh.nodes()
     }
 
-    fn elems(&'a self) -> Self::ElemsIter {
+    fn elem_iter(&'a self) -> Self::ElemIter {
         self.ref_mesh.elems()
     }
+}
+
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, [T; D], D, M> for BezierMesh<'a, T, D, M> {
+    type GeoElem = BezierElem<'a, T, D, M>;
 
     fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
         let cell = self.ref_mesh.geo_elem(elem);

@@ -6,7 +6,7 @@ use std::iter::{zip, Map};
 use crate::cells::node::NodeIdx;
 use crate::index::multi_index::MultiIndex;
 use crate::knots::breaks::Breaks;
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology};
 
 /// Cartesian mesh built by tensor product of [`Breaks<T>`].
 /// The grid formed by the mesh nodes can in 2D be schematically visualized as
@@ -120,11 +120,10 @@ impl<T: RealField, const D: usize> CartMesh<T, D> {
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for CartMesh<T, K> {
+impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for CartMesh<T, K> {
     type Elem = CartCellIdx<K>;
-    type GeoElem = CartCell<T, K>;
-    type NodesIter = NodesIter<'a, K>;
-    type ElemsIter = ElemsIter<K>;
+    type NodeIter = NodesIter<'a, K>;
+    type ElemIter = ElemsIter<K>;
 
     fn num_nodes(&self) -> usize {
         self.dim_shape.len()
@@ -136,13 +135,17 @@ impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for Cart
         dim_shape_elems.len()
     }
 
-    fn nodes(&'a self) -> Self::NodesIter {
+    fn node_iter(&'a self) -> Self::NodeIter {
         self.nodes()
     }
 
-    fn elems(&'a self) -> Self::ElemsIter {
+    fn elem_iter(&'a self) -> Self::ElemIter {
         self.elems()
     }
+}
+
+impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for CartMesh<T, K> {
+    type GeoElem = CartCell<T, K>;
 
     fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
         CartCell::from_msh_and_idx(elem, self)

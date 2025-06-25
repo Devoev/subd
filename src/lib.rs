@@ -16,9 +16,8 @@ mod subd_legacy;
 
 #[cfg(test)]
 mod tests {
-    use crate::cells::geo::Cell;
-use crate::basis::cart_prod;
-    use crate::basis::eval::{EvalDerivs};
+    use crate::basis::cart_prod;
+    use crate::basis::eval::EvalDerivs;
     use crate::basis::local::LocalBasis;
     use crate::basis::space::Space;
     use crate::bspline::de_boor;
@@ -26,39 +25,37 @@ use crate::basis::cart_prod;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::cells::cartesian::CartCell;
+    use crate::cells::geo::Cell;
     use crate::cells::quad::QuadTopo;
     use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
     use crate::index::multi_index::MultiIndex;
     use crate::knots::breaks::Breaks;
+    use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
-    use crate::mesh::traits::Mesh;
+    use crate::mesh::traits::{Mesh, MeshTopology};
     use crate::operator::hodge::assemble_hodge;
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
-    use crate::quadrature::traits::{Quadrature};
+    use crate::quadrature::traits::Quadrature;
+    use crate::subd::basis::CatmarkBasis;
+    use crate::subd::mesh::CatmarkMesh;
+    use crate::subd::patch::CatmarkPatch;
+    use crate::subd_legacy;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
-    use itertools::{assert_equal, Itertools};
-    use nalgebra::{matrix, point, vector, DMatrix, DVector, Dyn, Matrix4, OMatrix, RealField, RowSVector, RowVector4, SMatrix, SVector, U2};
+    use itertools::Itertools;
+    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, OMatrix, RealField, RowSVector, SMatrix, SVector, U2};
+    use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use num_traits::real::Real;
-    use plotly::color::NamedColor::DarkGoldenrod;
-    use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
-    use crate::knots::knot_span::KnotSpan;
-    use crate::mesh::elem_vertex_topo::QuadVertex;
-    use crate::quadrature::pullback;
-    use crate::subd::basis::CatmarkBasis;
-    use crate::subd::mesh::{CatmarkMesh, CatmarkMeshTopology};
-    use crate::subd::patch::CatmarkPatch;
-    use crate::subd_legacy;
+    use crate::mesh::face_vertex::QuadVertexMesh;
 
     #[test]
     fn knots() {
@@ -320,13 +317,12 @@ use crate::basis::cart_prod;
             0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0
         ].transpose();
 
-        // Constructs quad mesh and catmark patch mesh (topological)
-        let msh_topo = QuadVertex::from_elems(quads_regular);
-        let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
-        let msh = CatmarkMesh::from_matrix(coords_regular, catmark_topo);
+        // Constructs quad mesh and catmark patch mesh
+        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let msh = CatmarkMesh::from_quad_mesh(quad_msh);
 
         // Print patches
-        for elem in &msh.topology.elems {
+        for elem in msh.elem_iter() {
             let patch = CatmarkPatch::from_msh(&msh, elem);
             let map = patch.geo_map();
             println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
@@ -422,9 +418,8 @@ use crate::basis::cart_prod;
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let msh_topo = QuadVertex::from_elems(quads_regular);
-        let catmark_topo = CatmarkMeshTopology::from_quad_mesh(&msh_topo);
-        let msh = CatmarkMesh::from_matrix(coords_regular, catmark_topo);
+        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let msh = CatmarkMesh::from_quad_mesh(quad_msh);
 
         // Construct basis and space
         let basis = CatmarkBasis(&msh);

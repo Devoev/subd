@@ -31,7 +31,7 @@ pub fn assemble_hodge<'a, T, X, E, B, M, Q, const D: usize>(
 {
     let mut mij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
-    for elem in msh.elems() {
+    for elem in msh.elem_iter() {
         let sp_elem = elem_to_sp_elem(&elem);
         let sp_local = space.basis.elem_basis(&sp_elem);
         let indices = space.basis.global_indices(&sp_elem).enumerate();

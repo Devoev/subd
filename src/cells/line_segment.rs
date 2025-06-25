@@ -1,9 +1,9 @@
-use crate::mesh::elem_vertex::QuadVertexMesh;
 use nalgebra::{Const, DimName, DimNameSub, Point, Point2, RealField, U0, U1};
 use std::cmp::minmax;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
+use crate::mesh::face_vertex::QuadVertexMesh;
 
 /// A line segment of topology [`LineSegmentTopo`],
 /// embedded in [`M`]-dimensional space.

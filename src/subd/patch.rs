@@ -1,12 +1,12 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadTopo;
-use crate::mesh::elem_vertex_topo::QuadVertex;
 use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use crate::cells::geo;
 use crate::cells::unit_cube::UnitCube;
+use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::basis::CatmarkPatchBasis;
 use crate::subd::map::CatmarkMap;
 
@@ -151,7 +151,7 @@ pub enum CatmarkPatchNodes {
 impl CatmarkPatchNodes {
     /// Finds the [`CatmarkPatchNodes`] in the given quad-vertex topology `msh`.
     /// The center face `p` is given by `quad`.
-    pub fn find(msh: &QuadVertex, quad: &QuadTopo) -> Self {
+    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, quad: &QuadTopo) -> Self {
         match CatmarkPatchFaces::find(msh, *quad) {
             CatmarkPatchFaces::Regular(faces) => {
                 let pick = [
@@ -300,8 +300,9 @@ pub enum CatmarkPatchFaces {
 }
 
 impl CatmarkPatchFaces {
+    // todo: remove T and M arguments. Can we replace QuadVertexMesh argument=?
     /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
-    pub fn find(msh: &QuadVertex, center: QuadTopo) -> CatmarkPatchFaces {
+    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadTopo) -> CatmarkPatchFaces {
         // Find all faces in the 1-ring neighborhood
         let faces = msh.elems.iter()
             .filter(|other| other.is_touching(center))

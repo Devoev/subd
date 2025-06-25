@@ -1,8 +1,7 @@
 //! Mesh data structures.
 
 pub mod elem_vertex;
-pub mod elem_vertex_topo;
 pub mod cartesian;
 pub mod bezier;
 pub mod traits;
-pub mod topo;
+pub mod face_vertex;

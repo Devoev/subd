@@ -1,69 +1,129 @@
 //! Data structures for an element-to-vertex mesh.
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::{Quad, QuadTopo};
-use crate::cells::topo::Cell;
-use crate::mesh::elem_vertex_topo as topo;
+use crate::cells::topo::{Cell, CellBoundary};
+use crate::index::dimensioned::Dimensioned;
+use crate::mesh::traits::{Mesh, MeshTopology};
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, OMatrix, Point, RealField};
+use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, OMatrix, Point, RealField, U1};
+use std::iter::Map;
+use std::ops::Range;
 
-/// Element-vertex mesh of [`K`]-dimensional topology [`ElementVertexTopo`]
+/// Element-vertex mesh, with topological connectivity information
+/// of [`K`]-dimensional cells [`C`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
-pub struct ElementVertexMesh<T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> {
+pub struct ElemVertexMesh<T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point<T, M>>,
-    /// Topological connectivity of the elements.
-    pub topology: topo::ElementVertex<K, C>,
+
+    /// Element connectivity vector.
+    pub elems: Vec<C>,
 }
 
-/// A face-vertex mesh with `2`-dimensional faces [`C`].
-pub type FaceVertexMesh<T, C, const M: usize> = ElementVertexMesh<T, C, 2, M>;
-
-/// A face-vertex mesh with quadrilateral faces.
-pub type QuadVertexMesh<T, const M: usize> = FaceVertexMesh<T, QuadTopo, M>;
-
-impl <T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> ElementVertexMesh<T, C, K, M> {
+impl <T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
     // todo: replace panic with result
-    /// Constructs a new [`ElementVertexMesh`] from the given `coords` and `topology`.
+    /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     /// 
     /// # Panics
     /// If the number of points in the given `coords` vector 
     /// does not equal the number of nodes in the `topology`,
     /// the function will panic.
-    pub fn new(coords: Vec<Point<T, M>>, topology: topo::ElementVertex<K, C>) -> Self {
-        assert_eq!(coords.len(), topology.num_nodes, 
-                   "Length of `coords` (is {}) doesn't equal `num_nodes` (is {})", coords.len(), topology.num_nodes);
-        ElementVertexMesh { coords, topology }
+    pub fn new(coords: Vec<Point<T, M>>, elems: Vec<C>) -> Self {
+        // todo: update this
+        let num_nodes = elems.iter()
+            .flat_map(C::nodes)
+            .max()
+            .expect("Elements vector `elems` must not be empty.")
+            .0 + 1;
+        assert_eq!(coords.len(), num_nodes,
+                   "Length of `coords` (is {}) doesn't equal `num_nodes` (is {})", coords.len(), num_nodes);
+        ElemVertexMesh { coords, elems }
     }
 
     // todo: rename function
-    /// Constructs a new [`ElementVertexMesh`] from the given matrix `coords` of row-wise control points
-    /// and `elems_to_vertices` connectivity.
-    pub fn from_matrix<N: Dim>(coords: OMatrix<T, N, Const<M>>, elems_to_vertices: topo::ElementVertex<K, C>) -> Self
+    /// Constructs a new [`ElemVertexMesh`] from the given matrix `coords` of row-wise control points
+    /// and `elems` connectivity.
+    pub fn from_matrix<N: Dim>(coords: OMatrix<T, N, Const<M>>, elems: Vec<C>) -> Self
         where DefaultAllocator: Allocator<N, Const<M>>
     {
         let coords = coords.row_iter()
             .map(|row| Point::from(row.transpose()))
             .collect();
-        ElementVertexMesh::new(coords, elems_to_vertices)
+        ElemVertexMesh::new(coords, elems)
     }
 
     /// Returns the [`Point`] of the given `node` index.
     pub fn coords(&self, node: NodeIdx) -> &Point<T, M> {
         &self.coords[node.0]
     }
-}
 
-impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
-    /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&self) -> impl Iterator<Item=LineSegment<T, M>> + '_ {
-        self.topology.edges().map(|edge_top| LineSegment::from_msh(edge_top, self))
+    /// Finds all elements which contain the given `node` and returns them as an iterator.
+    pub fn elems_of_node(&self, node: NodeIdx) -> impl Iterator<Item = &C> {
+        self.elems
+            .iter()
+            .filter(move |elem| elem.contains_node(node))
     }
 
-    /// Returns an iterator over all faces in this mesh.
-    pub fn faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
-        self.topology.elems.iter().map(|&face| Quad::from_msh(face, self))
+    /// Finds all elements adjacent (aka. connected by a `K-1` dimensional sub-cell)
+    /// to the given `elem` and returns them as an iterator.
+    pub fn adjacent_elems<'a>(&'a self, elem: &'a C) -> impl Iterator<Item = &'a C> + 'a
+    where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
+    {
+        self.elems
+            .iter()
+            .filter(move |e| e.is_connected(elem, Const::<K>.sub(U1)))
+    }
+}
+
+impl <T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M>
+    where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
+{
+    /// Returns `true` if given `elem` is at the boundary of the mesh,
+    /// i.e. it has less than [`C::NUM_SUB_CELLS`] adjacent elements.
+    pub fn is_boundary_elem(&self, elem: &C) -> bool {
+        self.adjacent_elems(elem).count() < C::NUM_SUB_CELLS
+    }
+
+    // todo: is_boundary_node is inefficient. Update this by not calling is_boundary_elem ?
+    /// Returns `true` if the given `node` is a boundary node,
+    /// i.e. all elements containing the node are boundary elements.
+    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
+        self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
+    }
+
+    /// Returns an iterator over all boundary nodes in this mesh.
+    pub fn boundary_nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
+        self.node_iter().filter(|&n| self.is_boundary_node(n))
+    }
+
+    // todo: add info about regular/ irregular adjacency
+}
+
+/// An iterator that yields the [nodes indices](NodeIdx) of an element-vertex mesh.
+pub type NodesIter = Map<Range<usize>, fn(usize) -> NodeIdx>;
+
+/// An iterator that yields the elements of an element-vertex mesh.
+pub type ElemsIter<'a, C> = std::slice::Iter<'a, C>;
+
+impl <'a, T: RealField, C: Cell<Const<K>> + 'a, const K: usize, const M: usize> MeshTopology<'a, K> for ElemVertexMesh<T, C, K, M> {
+    type Elem = &'a C;
+    type NodeIter = NodesIter;
+    type ElemIter = ElemsIter<'a, C>;
+
+    fn num_nodes(&self) -> usize {
+        self.coords.len()
+    }
+
+    fn num_elems(&self) -> usize {
+        self.elems.len()
+    }
+
+    fn node_iter(&'a self) -> Self::NodeIter {
+        (0..self.num_nodes()).map(NodeIdx)
+    }
+
+    fn elem_iter(&'a self) -> Self::ElemIter {
+        self.elems.iter()
     }
 }

@@ -1,9 +1,9 @@
-use crate::mesh::elem_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point, Point2, RealField, SVector, Vector2, U1, U2};
-use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::line_segment::LineSegmentTopo;
 use crate::cells::node::NodeIdx;
+use crate::cells::topo::{Cell, CellBoundary};
+use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
+use crate::mesh::face_vertex::QuadVertexMesh;
 
 /// A 2d quadrilateral element of topology [`QuadTopo`],
 /// embedded in [`M`]-dimensional space.
