@@ -56,6 +56,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::mesh::face_vertex::QuadVertexMesh;
+    use crate::subd::lin_subd::LinSubd;
 
     #[test]
     fn knots() {
@@ -419,7 +420,10 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let msh = CatmarkMesh::from_quad_mesh(quad_msh);
+        let mut lin_subd = LinSubd(quad_msh);
+        lin_subd.refine();
+        lin_subd.refine();
+        let msh = CatmarkMesh::from_quad_mesh(lin_subd.0);
 
         // Construct basis and space
         let basis = CatmarkBasis(&msh);
