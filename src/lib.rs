@@ -56,6 +56,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::mesh::face_vertex::QuadVertexMesh;
+    use crate::operator::laplace::assemble_laplace;
     use crate::subd::lin_subd::LinSubd;
 
     #[test]
@@ -447,26 +448,42 @@ mod tests {
 
         // todo: implement Mesh for ElementVertexMesh. Then assembly can work
 
-        let mat = assemble_hodge(&msh, &space, quad, |&elem| {
-            elem.clone()
-        });
+        let mass = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let stiffness = assemble_laplace(&msh, &space, quad, |&elem| elem.clone());
 
-        // Print
-        let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
-        for (i, j, &v) in mat.triplet_iter() {
-            dense[(i, j)] = v;
+        // Mass matrix checks
+        let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
+        for (i, j, &v) in mass.triplet_iter() {
+            mass_dense[(i, j)] = v;
         }
-        println!("{}", dense);
+        println!("{}", mass_dense);
         println!(
             "Eigenvalues = {} (should be positive)",
-            dense.eigenvalues().unwrap()
+            mass_dense.eigenvalues().unwrap()
         );
         println!(
             "||M - M^T|| = {} (should be zero)",
-            (dense.clone() - dense.transpose()).norm()
+            (mass_dense.clone() - mass_dense.transpose()).norm()
         );
-        println!("Norm ||M|| = {}", dense.norm());
-        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
+        println!("Norm ||M|| = {}", mass_dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", mass_dense.rank(1e-10), mass_dense.nrows(), mass_dense.ncols());
+
+        // Stiffness matrix checks
+        let mut stiffness_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
+        for (i, j, &v) in stiffness.triplet_iter() {
+            stiffness_dense[(i, j)] = v;
+        }
+        println!("{}", stiffness_dense);
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            stiffness_dense.eigenvalues().unwrap()
+        );
+        println!(
+            "||M - M^T|| = {} (should be zero)",
+            (stiffness_dense.clone() - stiffness_dense.transpose()).norm()
+        );
+        println!("Norm ||M|| = {}", stiffness_dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", stiffness_dense.rank(1e-10), stiffness_dense.nrows(), stiffness_dense.ncols());
     }
 
     #[test]
