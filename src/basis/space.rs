@@ -40,8 +40,30 @@ impl <T: RealField, X, B: Basis, const D: usize> Space<T, X, B, D> {
     }
 }
 
+/// Space of local basis functions of [`LocalBasis::elem_basis`].
+type LocalSpace<T, X, B, const D: usize> = Space<T, X, <B as LocalBasis<T, X>>::ElemBasis, D>;
+
+/// The local space [`LocalSpace`] paired with the indices [`LocalBasis::global_indices`]
+/// of nonzero basis functions.
+type LocalSpaceWithIdx<T, X, B, const D: usize> = (LocalSpace<T, X, B, D>, <B as LocalBasis<T, X>>::GlobalIndices);
+
+impl <T: RealField + Copy, X, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
+    where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+{
+    /// Returns this space restricted to the local element `elem`.
+    pub fn local_space(&self, elem: &B::Elem) -> LocalSpace<T, X, B, D> {
+        Space::new(self.basis.elem_basis(elem))
+    }
+
+    /// Returns this space restricted to the local element `elem`
+    /// as well the indices corresponding to the global numbering of local basis functions.
+    pub fn local_space_with_idx(&self, elem: &B::Elem) -> LocalSpaceWithIdx<T, X, B, D> {
+        (self.local_space(elem), self.basis.global_indices(elem))
+    }
+}
+
 /// The owned matrix of [`Basis::NumComponents`] rows and [`Basis::NumBasis`] columns,
-/// storing the evaluated basis functions of [EvalBasis::eval].
+/// storing the evaluated basis functions of [`EvalBasis::eval`].
 type EvalLocal<T, X, B> = OMatrix<T, <B as Basis>::NumComponents, <<B as LocalBasis<T, X>>::ElemBasis as Basis>::NumBasis>;
 
 /// The basis matrix [`EvalLocal`] paired with the indices [`LocalBasis::global_indices`]
