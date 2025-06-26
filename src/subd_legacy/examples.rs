@@ -10,7 +10,7 @@ pub mod test_ex {
     use crate::subd_legacy::{basis, catmull_clark, patch, plot};
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{center, point, Matrix, Point2, SMatrix};
+    use nalgebra::{center, point, DMatrix, Matrix, Point2, SMatrix};
     use plotly::{Plot, Scatter};
     use std::f64::consts::PI;
     use std::sync::LazyLock;
@@ -109,9 +109,9 @@ pub mod test_ex {
     /// The used quad mesh.
     static MSH: LazyLock<QuadMesh<f64>> = LazyLock::new(|| {
         QuadMesh {
-            nodes: COORDS_PENTAGON.clone(),
+            nodes: COORDS_QUAD.clone(),
             connectivity: TopologicalMesh {
-                faces: FACES_PENTAGON.clone()
+                faces: FACES_QUAD.clone()
             }
         }
     });
@@ -474,18 +474,29 @@ pub mod test_ex {
         let mut msh = MSH.clone();
         msh.lin_subd();
         msh.lin_subd();
-        msh.lin_subd();
+        // msh.lin_subd();
 
         let start = Instant::now();
-        let quad = GaussLegendrePatch::new(2).unwrap();
+        let quad = GaussLegendrePatch::new(5).unwrap();
         let patches = msh.patches().collect_vec();
         let msh_eval = MeshEval::from(&patches, &quad);
         let mat = op_u_v(&msh, &msh_eval);
-        // let mat = op_gradu_gradv(&msh, &msh_eval);
-        // let mat = op_f_v(&msh, &msh_eval, |p| 1.0);
-        let time = start.elapsed();
 
-        println!("Building matrix of size {} took {:?}", mat.nrows(), time);
+        let mut dense = DMatrix::<f64>::zeros(mat.nrows(), mat.ncols());
+        for (i, j, &v) in mat.triplet_iter() {
+            dense[(i, j)] = v;
+        }
+
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            dense.eigenvalues().unwrap()
+        );
+        println!(
+            "||M - M^T|| = {} (should be zero)",
+            (dense.clone() - dense.transpose()).norm()
+        );
+        println!("Norm ||M|| = {}", dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
     }
 
 }

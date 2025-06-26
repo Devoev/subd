@@ -346,27 +346,24 @@ mod tests {
 
     #[test]
     fn iga_assembly() {
-        let n = 3;
-        let p = 1;
+        let n = 5;
+        let p = 2;
+        
+        // Build knots and space (geometry)
         let knots = KnotVec::new_open_uniform(n, p);
         let basis_uni = de_boor::DeBoor::new(knots.clone(), n, p);
         let basis_geo = MultiDeBoor::new([basis_uni.clone(), basis_uni.clone()]);
         let space_geo = Space::new(basis_geo);
-        let c = OMatrix::<f64, Dyn, U2>::from_row_slice(&[
-            0.0, 0.0,
-            0.5, 0.0,
-            1.0, 0.0,
-            0.0, 0.5,
-            0.5, 0.5,
-            1.0, 0.5,
-            0.0, 1.0,
-            0.5, 1.0,
-            1.0, 1.0,
-        ]);
-
+        
+        // Build mapping
+        let grid = lin_space(0.0..=1.0, n);
+        let c = grid.clone().cartesian_product(grid)
+            .flat_map(|(x, y)| [x, y]);
+        let c = OMatrix::<f64, U2, Dyn>::from_iterator(n*n, c).transpose();
         let geo_map = SplineGeo::new(c, &space_geo)
             .unwrap_or_else(|e| panic!("{e}"));
-
+        
+        // Build breaks and space (basis functions)
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
@@ -374,7 +371,8 @@ mod tests {
         let basis = MultiDeBoor::new([basis.clone(), basis]);
         let space = Space::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
+        // Build quadrature
+        let ref_quad = GaussLegendreMulti::with_degrees([5, 5]);
         let quad = BezierQuad::new(ref_quad);
         let mat = assemble_hodge(&msh, &space, quad, |elem| {
             // todo: this should DIRECTLY be implemented in the spline spaces
@@ -396,6 +394,8 @@ mod tests {
             "||M - M^T|| = {} (should be zero)",
             (dense.clone() - dense.transpose()).norm()
         );
+        println!("Norm ||M|| = {}", dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
     }
     #[test]
     fn subd_assembly() {
@@ -412,10 +412,19 @@ mod tests {
             QuadTopo::from_indices(10, 11, 15, 14),
         ];
 
+        let quads_regular = vec![
+            QuadTopo::from_indices(0, 1, 2, 3),
+        ];
+
         // Define coords
         let coords_regular = matrix![
             0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0;
             0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0
+        ].transpose();
+
+        let coords_regular = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
@@ -429,7 +438,7 @@ mod tests {
         let basis = CatmarkBasis(&msh);
         let space = Space::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([5, 2]);
+        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
         let quad = PullbackQuad::new(ref_quad);
 
         // todo: implement Mesh for ElementVertexMesh. Then assembly can work
@@ -452,6 +461,8 @@ mod tests {
             "||M - M^T|| = {} (should be zero)",
             (dense.clone() - dense.transpose()).norm()
         );
+        println!("Norm ||M|| = {}", dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
     }
 
     #[test]
