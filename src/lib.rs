@@ -346,24 +346,28 @@ mod tests {
 
     #[test]
     fn iga_assembly() {
-        let n = 5;
-        let p = 2;
-        
+        // Parameters
+        let n_geo = 2;
+        let p_geo = 1;
+        let n = 6;
+        let p = 3;
+
         // Build knots and space (geometry)
-        let knots = KnotVec::new_open_uniform(n, p);
-        let basis_uni = de_boor::DeBoor::new(knots.clone(), n, p);
+        let knots = KnotVec::new_open_uniform(n_geo, p_geo);
+        let basis_uni = de_boor::DeBoor::new(knots.clone(), n_geo, p_geo);
         let basis_geo = MultiDeBoor::new([basis_uni.clone(), basis_uni.clone()]);
         let space_geo = Space::new(basis_geo);
-        
+
         // Build mapping
-        let grid = lin_space(0.0..=1.0, n);
+        let grid = lin_space(0.0..=1.0, n_geo);
         let c = grid.clone().cartesian_product(grid)
             .flat_map(|(x, y)| [x, y]);
-        let c = OMatrix::<f64, U2, Dyn>::from_iterator(n*n, c).transpose();
+        let c = OMatrix::<f64, U2, Dyn>::from_iterator(n_geo*n_geo, c).transpose();
         let geo_map = SplineGeo::new(c, &space_geo)
             .unwrap_or_else(|e| panic!("{e}"));
-        
-        // Build breaks and space (basis functions)
+
+        // Build knots and space (basis functions)
+        let knots = KnotVec::new_open_uniform(n, p);
         let breaks = Breaks::from_knots(knots.clone());
         let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
         let msh = BezierMesh::new(cart_mesh, geo_map);
@@ -372,7 +376,7 @@ mod tests {
         let space = Space::new(basis);
 
         // Build quadrature
-        let ref_quad = GaussLegendreMulti::with_degrees([5, 5]);
+        let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = BezierQuad::new(ref_quad);
         let mat = assemble_hodge(&msh, &space, quad, |elem| {
             // todo: this should DIRECTLY be implemented in the spline spaces
@@ -386,16 +390,16 @@ mod tests {
             dense[(i, j)] = v;
         }
         println!("{}", dense);
-        println!(
-            "Eigenvalues = {} (should be positive)",
-            dense.eigenvalues().unwrap()
-        );
+        println!("Norm ||M|| = {}", dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
         println!(
             "||M - M^T|| = {} (should be zero)",
             (dense.clone() - dense.transpose()).norm()
         );
-        println!("Norm ||M|| = {}", dense.norm());
-        println!("Rank rk(M) = {} (size is {}x{})", dense.rank(1e-10), dense.nrows(), dense.ncols());
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            dense.eigenvalues().unwrap()
+        );
     }
     #[test]
     fn subd_assembly() {
