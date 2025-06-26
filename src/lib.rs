@@ -47,7 +47,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, OMatrix, RealField, RowSVector, SMatrix, SVector, U2};
+    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowSVector, SMatrix, SVector, U2};
     use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
@@ -56,6 +56,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::mesh::face_vertex::QuadVertexMesh;
+    use crate::operator::function::assemble_function;
     use crate::operator::laplace::assemble_laplace;
     use crate::subd::lin_subd::LinSubd;
 
@@ -446,10 +447,13 @@ mod tests {
         let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
         let quad = PullbackQuad::new(ref_quad);
 
-        // todo: implement Mesh for ElementVertexMesh. Then assembly can work
+        // Load function
+        let f = |p: Point<f64, 2>| Matrix1::new(p.coords.norm_squared());
 
+        // Assembly
         let mass = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
-        let stiffness = assemble_laplace(&msh, &space, quad, |&elem| elem.clone());
+        let stiffness = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let load = assemble_function(&msh, &space, quad, f, |&elem| elem.clone());
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -484,6 +488,10 @@ mod tests {
         );
         println!("Norm ||M|| = {}", stiffness_dense.norm());
         println!("Rank rk(M) = {} (size is {}x{})", stiffness_dense.rank(1e-10), stiffness_dense.nrows(), stiffness_dense.ncols());
+
+        // Load vector checks
+        println!("{}", load);
+        println!("Norm ||f|| = {}", load.norm());
     }
 
     #[test]
