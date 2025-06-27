@@ -1,11 +1,12 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::QuadTopo;
+use crate::cells::quad::{QuadBndTopo, QuadTopo};
 use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
 use crate::cells::geo;
+use crate::cells::line_segment::LineSegmentTopo;
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::basis::CatmarkPatchBasis;
@@ -219,6 +220,24 @@ impl CatmarkPatchNodes {
             CatmarkPatchNodes::Irregular(val, _) => val.as_slice(),
         }
     }
+    
+    /// Returns the quadrilateral in the center of this patch.
+    pub fn center_quad(&self) -> QuadTopo {
+        match self {
+            CatmarkPatchNodes::Regular(val) => {
+                QuadTopo([val[5], val[6], val[10], val[9]])
+            }
+            CatmarkPatchNodes::Boundary(val) => {
+                QuadTopo([val[1], val[2], val[6], val[5]])
+            }
+            CatmarkPatchNodes::Corner(val) => {
+                QuadTopo([val[0], val[1], val[4], val[3]])
+            }
+            CatmarkPatchNodes::Irregular(val, _) => {
+                QuadTopo([val[0], val[5], val[4], val[3]])
+            }
+        }
+    }
 }
 
 impl cells::topo::Cell<U2> for CatmarkPatchNodes {
@@ -226,11 +245,23 @@ impl cells::topo::Cell<U2> for CatmarkPatchNodes {
         self.as_slice()
     }
 
+    // todo: possibly change this
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U2: DimNameSub<M>
     {
-        todo!()
+        self.center_quad().is_connected(&other.center_quad(), dim)
+    }
+}
+
+impl cells::topo::CellBoundary<U2> for CatmarkPatchNodes  {
+    const NUM_SUB_CELLS: usize = 4;
+    type SubCell = LineSegmentTopo;
+    type Boundary = QuadBndTopo;
+
+    // todo: possibly change this
+    fn boundary(&self) -> QuadBndTopo {
+        self.center_quad().boundary()
     }
 }
 
