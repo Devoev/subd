@@ -26,7 +26,7 @@ mod tests {
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::cells::cartesian::CartCell;
-    use crate::cells::geo::Cell;
+    use crate::cells::geo::Cell as GeoCell;
     use crate::cells::quad::QuadTopo;
     use crate::cg::cg;
     use crate::diffgeo::chart::Chart;
@@ -53,13 +53,14 @@ mod tests {
     use crate::subd_legacy;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
-    use itertools::Itertools;
+    use itertools::{iproduct, Itertools};
     use nalgebra::{center, matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, Point2, RealField, RowSVector, SMatrix, SVector, Vector1, U2};
     use nalgebra_sparse::CsrMatrix;
     use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use std::collections::BTreeSet;
     use std::f64::consts::PI;
     use std::hint::black_box;
     use std::iter::zip;
@@ -516,8 +517,8 @@ mod tests {
         let mut lin_msh = LinSubd(quad_msh);
         lin_msh.refine();
         lin_msh.refine();
-        lin_msh.refine();
-        lin_msh.refine();
+        // lin_msh.refine();
+        // lin_msh.refine();
         let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
 
         // Define space
@@ -597,9 +598,6 @@ mod tests {
         let u_dyy = |p: Point2<f64>| eval_deriv(&b, p.x, p.y);
         let f = |p: Point2<f64>| Vector1::new(-u_dxx(p) - u_dyy(p));
 
-        // Define boundary condition
-        let g = |_: Point2<f64>| 0.0;
-
         // Define mesh
         let faces = vec![
             QuadTopo::from_indices(0, 10, 1, 2),
@@ -609,7 +607,8 @@ mod tests {
             QuadTopo::from_indices(0, 8, 9, 10),
         ];
         let quad_msh = QuadVertexMesh::new(coords, faces);
-        let mut lin_msh = LinSubd(quad_msh);
+
+        let mut lin_msh = LinSubd(quad_msh.clone());
         lin_msh.refine();
         lin_msh.refine();
         let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
@@ -627,7 +626,43 @@ mod tests {
         let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
         let m_coo = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
         let k_coo = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let m = CsrMatrix::from(&m_coo);
         let k = CsrMatrix::from(&k_coo);
+
+        // Deflate system (homogeneous BC)
+        let idx = (0..msh.num_nodes()).collect::<BTreeSet<_>>();
+        let idx_bc = msh.boundary_nodes().map(|n| n.0).collect::<BTreeSet<_>>();
+        let idx_dof = idx.difference(&idx_bc).collect::<BTreeSet<_>>();
+
+        // todo: using get_entry is expensive. Implement BC differently
+        let f_dof = DVector::from_iterator(idx_dof.len(), idx_dof.iter().map(|&&i| f[i]));
+        let k_dof_dof = DMatrix::from_iterator(idx_dof.len(), idx_dof.len(), iproduct!(idx_dof.iter(), idx_dof.iter())
+            .map(|(&&i, &&j)| k.get_entry(i, j).unwrap().into_value())
+        );
+        let k_dof_bc = DMatrix::from_iterator(idx_dof.len(), idx_bc.len(), iproduct!(idx_dof.iter(), idx_bc.iter())
+            .map(|(&&i, &j)| k.get_entry(i, j).unwrap().into_value())
+        );
+
+        let f = f_dof;
+        let k = CsrMatrix::from(&k_dof_dof);
+
+        // Solve system
+        let mut uh = DVector::zeros(msh.num_nodes());
+        let uh_dof = cg(&k, &f, f.clone(), f.len(), 1e-10);
+
+        // Inflate system
+        for (i_local, &&i) in idx_dof.iter().enumerate() {
+            uh[i] = uh_dof[i_local];
+        }
+
+        // Calculate error
+        let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p)));
+        let du = &u - uh;
+        let err_l2 = (&m * &du).dot(&du).sqrt();
+        let norm_l2 = (&m * &u).dot(&u).sqrt();
+
+        println!("Absolute L2 error ||u - u_h||_2 = {:.7}", err_l2);
+        println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.5}%", err_l2 / norm_l2 * 100.0);
     }
 
     #[test]
