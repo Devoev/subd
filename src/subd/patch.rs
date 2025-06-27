@@ -4,6 +4,7 @@ use crate::cells::quad::QuadTopo;
 use crate::subd::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
+use num_traits::ToPrimitive;
 use crate::cells::geo;
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -71,7 +72,7 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
+impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
     type RefCell = UnitCube<2>;
     type GeoMap = CatmarkMap<T, M>;
 
