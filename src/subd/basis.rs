@@ -101,7 +101,7 @@ impl <T: RealField + Copy + ToPrimitive> EvalBasis<T, (T, T)> for CatmarkPatchBa
                 let (a, a_bar) = build_extended_mats::<T>(*n);
 
                 // Evaluate regular basis on sub-patch
-                let regular = CatmarkPatchBasis::Boundary;
+                let regular = CatmarkPatchBasis::Regular;
                 let b = regular.eval((u, v));
                 let b_perm = apply_permutation(*n, b, permutation_vec(k, *n));
 
@@ -128,8 +128,9 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
                 let (a, a_bar) = build_extended_mats::<T>(*n);
 
                 // Evaluate regular basis on sub-patch
-                let regular = CatmarkPatchBasis::Boundary;
-                let b_grad = regular.eval_grad((u, v));
+                let regular = CatmarkPatchBasis::Regular;
+                let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
+                let b_grad = regular.eval_grad((u, v)) * pow2;
                 let b_du = b_grad.row(0).clone_owned();
                 let b_dv = b_grad.row(1).clone_owned();
                 let b_du = apply_permutation(*n, b_du, permutation_vec(k, *n));
