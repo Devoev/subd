@@ -220,7 +220,7 @@ impl CatmarkPatchNodes {
             CatmarkPatchNodes::Irregular(val, _) => val.as_slice(),
         }
     }
-    
+
     /// Returns the quadrilateral in the center of this patch.
     pub fn center_quad(&self) -> QuadTopo {
         match self {
@@ -251,6 +251,13 @@ impl cells::topo::Cell<U2> for CatmarkPatchNodes {
         U2: DimNameSub<M>
     {
         self.center_quad().is_connected(&other.center_quad(), dim)
+    }
+    
+    // todo: does it make sense to override the method here? or change signature of trait
+
+    /// Returns `true` if the center face of this patch contains the given node.
+    fn contains_node(&self, node: NodeIdx) -> bool {
+        self.center_quad().contains_node(node)
     }
 }
 
