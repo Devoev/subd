@@ -1,6 +1,6 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::traits::Basis;
-use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, SMatrix, U1, U3, U4};
+use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U3, U4};
 use std::sync::LazyLock;
 
 /// The `4✕4` basis transformation matrix for [`CubicBspline::Smooth`].
@@ -49,6 +49,36 @@ pub enum CubicBspline {
     Interpolating
 }
 
+impl CubicBspline {
+    /// Evaluates the `4` smooth cubic B-Splines at `x`
+    /// as the row-vector `(b[1],b[2],b[3],b[4])`.
+    pub fn eval_smooth<T: RealField + Copy>(x: T) -> RowSVector<T, 4> {
+        let pows = matrix![x.powi(3), x.powi(2), x, T::one()];
+        pows * MAT_SMOOTH.cast()
+    }
+
+    /// Evaluates the `3` interpolating cubic B-Splines at `x`
+    /// as the row-vector `(b[1],b[2],b[3])`.
+    pub fn eval_interpolating<T: RealField + Copy>(x: T) -> RowSVector<T, 3> {
+        let pows = matrix![x.powi(3), x, T::one()];
+        pows * MAT_INTERPOLATING.cast()
+    }
+
+    /// Evaluates the derivatives of the `4` smooth cubic B-Splines at `x`
+    /// as the row-vector `(b[1]',b[2]',b[3]',b[4]')`.
+    pub fn eval_smooth_deriv<T: RealField + Copy>(x: T) -> RowSVector<T, 4> {
+        let pows = matrix![x.powi(2), x, T::one()];
+        pows * MAT_SMOOTH_DERIV.cast()
+    }
+
+    /// Evaluates the derivatives of the `3` interpolating cubic B-Splines at `x`
+    /// as the row-vector `(b[1]',b[2]',b[3]')`.
+    pub fn eval_interpolating_deriv<T: RealField + Copy>(x: T) -> RowSVector<T, 3> {
+        let pows = matrix![x.powi(2), T::one()];
+        pows * MAT_INTERPOLATING_DERIV.cast()
+    }
+}
+
 impl Basis for CubicBspline {
     type NumBasis = Dyn;
     type NumComponents = U1;
@@ -65,14 +95,10 @@ impl <T: RealField + Copy> EvalBasis<T, T> for CubicBspline {
     fn eval(&self, x: T) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         match self {
             CubicBspline::Smooth => {
-                let pows = matrix![x.powi(3), x.powi(2), x, T::one()];
-                let b = pows * MAT_SMOOTH.cast();
-                RowDVector::from_row_slice(b.as_slice())
+                RowDVector::from_row_slice(CubicBspline::eval_smooth(x).as_slice())
             },
             CubicBspline::Interpolating => {
-                let pows = matrix![x.powi(3), x, T::one()];
-                let b = pows * MAT_INTERPOLATING.cast();
-                RowDVector::from_row_slice(b.as_slice())
+                RowDVector::from_row_slice(CubicBspline::eval_interpolating(x).as_slice())
             },
         }
     }
@@ -82,14 +108,10 @@ impl<T: RealField + Copy> EvalGrad<T, T, 1> for CubicBspline {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Self::NumBasis> {
         match self {
             CubicBspline::Smooth => {
-                let pows = matrix![x.powi(2), x, T::one()];
-                let b = pows * MAT_SMOOTH_DERIV.cast();
-                RowDVector::from_row_slice(b.as_slice())
+                RowDVector::from_row_slice(CubicBspline::eval_smooth_deriv(x).as_slice())
             },
             CubicBspline::Interpolating => {
-                let pows = matrix![x.powi(2), T::one()];
-                let b = pows * MAT_INTERPOLATING_DERIV.cast();
-                RowDVector::from_row_slice(b.as_slice())
+                RowDVector::from_row_slice(CubicBspline::eval_interpolating_deriv(x).as_slice())
             },
         }
     }

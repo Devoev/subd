@@ -8,7 +8,7 @@ use crate::subd::matrices::build_extended_mats;
 use crate::subd::mesh::CatmarkMesh;
 use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 use itertools::Itertools;
-use nalgebra::{one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, U1, U2};
+use nalgebra::{one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 use std::vec;
@@ -55,6 +55,9 @@ pub enum CatmarkPatchBasis {
     Irregular(usize) // todo: valence parameter
 }
 
+// todo: remove eval_regular_cases and eval_regular_cases_grad methods (and possibly also bases)
+//  add eval_boundary(_grads) and eval_corner(_grads) method, by using a macro or similar?
+
 impl CatmarkPatchBasis {
     /// Returns a pair of [`CubicBspline`] for both parametric directions.
     fn bases(&self) -> (CubicBspline, CubicBspline) {
@@ -72,6 +75,83 @@ impl CatmarkPatchBasis {
                 todo!()
             }
         }
+    }
+
+    /// Evaluates the basis functions for the three regular cases
+    /// [`CatmarkPatchBasis::Regular`], [`CatmarkPatchBasis::Boundary`] or [`CatmarkPatchBasis::Corner`]
+    /// at `(u,v)`, given the univariate bases for `u`- and `v`-direction.
+    fn eval_regular_cases<T: RealField + Copy>(u: T, v: T, bu: CubicBspline, bv: CubicBspline) -> RowDVector<T> {
+        bv.eval(v).kronecker(&bu.eval(u))
+    }
+
+    /// Evaluates the `16` basis functions in the regular case [`CatmarkPatchBasis::Regular`]
+    /// at `(u,v)`.
+    pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> RowSVector<T, 16> {
+        CubicBspline::eval_smooth(v).kronecker(&CubicBspline::eval_smooth(u))
+    }
+
+    /// Evaluates the `2n+8` basis functions for the irregular case [`CatmarkPatchBasis::Irregular`]
+    /// of valence `n` at `(u,v)`.
+    pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> RowDVector<T> {
+        // Transform (u,v)
+        let (u, v, nsub, k) = transform(u, v);
+
+        // Build subdivision matrices
+        let (a, a_bar) = build_extended_mats::<T>(n);
+
+        // Evaluate regular basis on sub-patch
+        let b = CatmarkPatchBasis::eval_regular(u, v);
+        let b_perm = apply_permutation(n, b, permutation_vec(k, n));
+
+        // Evaluate irregular basis
+        (b_perm * a_bar) * a.pow((nsub - 1) as u32)
+    }
+
+    /// Evaluates the gradients of the basis functions for the three regular cases
+    /// [`CatmarkPatchBasis::Regular`], [`CatmarkPatchBasis::Boundary`] or [`CatmarkPatchBasis::Corner`]
+    /// at `(u,v)`, given the univariate bases for `u`- and `v`-direction.
+    fn eval_regular_cases_grad<T: RealField + Copy>(u: T, v: T, bu: CubicBspline, bv: CubicBspline) -> OMatrix<T, U2, Dyn> {
+        let bu_du = bu.eval_grad(u);
+        let bu = bu.eval(u);
+        let bv_dv = bv.eval_grad(v);
+        let bv = bv.eval(v);
+        let b_du = bv.kronecker(&bu_du);
+        let b_dv = bv_dv.kronecker(&bu);
+        Matrix::from_rows(&[b_du, b_dv])
+    }
+
+    /// Evaluates the gradients of the basis functions for the regular case [`CatmarkPatchBasis::Regular`]
+    /// at `(u,v)`.
+    pub fn eval_regular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T) -> SMatrix<T, 2, 16> {
+        let bu_du = CubicBspline::eval_smooth_deriv(u);
+        let bu = CubicBspline::eval_smooth(u);
+        let bv_dv = CubicBspline::eval_smooth_deriv(v);
+        let bv = CubicBspline::eval_smooth(v);
+        let b_du = bv.kronecker(&bu_du);
+        let b_dv = bv_dv.kronecker(&bu);
+        Matrix::from_rows(&[b_du, b_dv])
+    }
+    
+    /// Evaluates the gradients of the `2n+8` basis functions 
+    /// for the irregular case [`CatmarkPatchBasis::Irregular`] of valence `n` at `(u,v)`.
+    pub fn eval_irregular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> OMatrix<T, U2, Dyn> {
+        // Transform (u,v)
+        let (u, v, nsub, k) = transform(u, v);
+
+        // Build subdivision matrices
+        let (a, a_bar) = build_extended_mats::<T>(n);
+
+        // Evaluate regular basis on sub-patch
+        let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
+        let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow2;
+        let b_du = b_grad.row(0).clone_owned();
+        let b_dv = b_grad.row(1).clone_owned();
+        let b_du = apply_permutation(n, b_du, permutation_vec(k, n));
+        let b_dv = apply_permutation(n, b_dv, permutation_vec(k, n));
+        let b_grad = stack![b_du; b_dv];
+
+        // Evaluate irregular basis
+        (b_grad * a_bar) * a.pow((nsub - 1) as u32)
     }
 }
 
@@ -94,23 +174,11 @@ impl <T: RealField + Copy + ToPrimitive> EvalBasis<T, (T, T)> for CatmarkPatchBa
         let (u, v) = x;
         match self {
             CatmarkPatchBasis::Irregular(n) => {
-                // Transform (u,v)
-                let (u, v, nsub, k) = transform(u, v);
-
-                // Build subdivision matrices
-                let (a, a_bar) = build_extended_mats::<T>(*n);
-
-                // Evaluate regular basis on sub-patch
-                let regular = CatmarkPatchBasis::Regular;
-                let b = regular.eval((u, v));
-                let b_perm = apply_permutation(*n, b, permutation_vec(k, *n));
-
-                // Evaluate irregular basis
-                (b_perm * a_bar) * a.pow((nsub - 1) as u32)
+                CatmarkPatchBasis::eval_irregular(u, v, *n)
             },
             _ => {
                 let (bu, bv) = self.bases();
-                bv.eval(v).kronecker(&bu.eval(u))
+                CatmarkPatchBasis::eval_regular_cases(u, v, bu, bv)
             }
         }
     }
@@ -121,34 +189,11 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
         let (u, v) = x;
         match self {
             CatmarkPatchBasis::Irregular(n) => {
-                // Transform (u,v)
-                let (u, v, nsub, k) = transform(u, v);
-
-                // Build subdivision matrices
-                let (a, a_bar) = build_extended_mats::<T>(*n);
-
-                // Evaluate regular basis on sub-patch
-                let regular = CatmarkPatchBasis::Regular;
-                let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
-                let b_grad = regular.eval_grad((u, v)) * pow2;
-                let b_du = b_grad.row(0).clone_owned();
-                let b_dv = b_grad.row(1).clone_owned();
-                let b_du = apply_permutation(*n, b_du, permutation_vec(k, *n));
-                let b_dv = apply_permutation(*n, b_dv, permutation_vec(k, *n));
-                let b_grad = stack![b_du; b_dv];
-
-                // Evaluate irregular basis
-                (b_grad * a_bar) * a.pow((nsub - 1) as u32)
+                CatmarkPatchBasis::eval_irregular_grad(u, v, *n)
             },
             _ => {
-                let (basis_u, basis_v) = self.bases();
-                let bu = basis_u.eval(u);
-                let bu_du = basis_u.eval_grad(u);
-                let bv = basis_v.eval(v);
-                let bv_dv = basis_v.eval_grad(v);
-                let b_du = bv.kronecker(&bu_du);
-                let b_dv = bv_dv.kronecker(&bu);
-                Matrix::from_rows(&[b_du, b_dv])
+                let (bu, bv) = self.bases();
+                CatmarkPatchBasis::eval_regular_cases_grad(u, v, bu, bv)
             }
         }
     }
@@ -211,10 +256,9 @@ fn permutation_vec(k: usize, n: usize) -> PermutationVec {
     }
 }
 
-// todo: change b to RowSVector
 /// Applies the given permutation `p` to the evaluated basis functions `b`,
 /// mapping them from a regular sub-patch to the irregular patch of valence `n`.
-fn apply_permutation<T: RealField + Copy>(n: usize, b: RowDVector<T>, p: PermutationVec) -> RowDVector<T> {
+fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: PermutationVec) -> RowDVector<T> {
     let mut res = RowDVector::zeros(2*n + 17);
     for (bi, pi) in zip(b.iter(), p) {
         res[pi] = *bi;
