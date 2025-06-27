@@ -13,9 +13,11 @@ pub mod quadrature;
 pub mod subd;
 pub mod diffgeo;
 mod subd_legacy;
+mod cg;
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
     use crate::basis::cart_prod;
     use crate::basis::eval::EvalDerivs;
     use crate::basis::local::LocalBasis;
@@ -47,7 +49,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowSVector, SMatrix, SVector, U2};
+    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, Point2, RealField, RowSVector, SMatrix, SVector, Vector1, U2};
     use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
@@ -55,10 +57,13 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use nalgebra_sparse::CsrMatrix;
+    use crate::cg::cg;
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::operator::function::assemble_function;
     use crate::operator::laplace::assemble_laplace;
     use crate::subd::lin_subd::LinSubd;
+    use crate::subd::space::CatmarkSpace;
 
     #[test]
     fn knots() {
@@ -492,6 +497,56 @@ mod tests {
         // Load vector checks
         println!("{}", load);
         println!("Norm ||f|| = {}", load.norm());
+    }
+
+    #[test]
+    fn subd_dr_neu_square() {
+        // Define problem
+        let u = |p: Point2<f64>| Vector1::new((p.x * PI).cos() * (p.y * PI).cos());
+        let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
+
+        let coords_square = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
+        ].transpose();
+
+        // Define mesh
+        let quads = vec![QuadTopo::from_indices(0, 1, 2, 3)];
+        let quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
+        let mut lin_msh = LinSubd(quad_msh);
+        lin_msh.refine();
+        lin_msh.refine();
+        lin_msh.refine();
+        lin_msh.refine();
+        let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+
+        // Define space
+        let basis = CatmarkBasis(&msh);
+        let space = CatmarkSpace::new(basis);
+
+        // Define quadrature
+        let p = 2;
+        let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+        let quad = PullbackQuad::new(ref_quad);
+
+        // Assemble system
+        let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
+        let m_coo = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let k_coo = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let m = CsrMatrix::from(&m_coo);
+        let k = CsrMatrix::from(&k_coo);
+
+        // Solve system
+        let uh = cg(&(k + &m), &f, f.clone(), f.len(), 1e-10);
+
+        // Calculate error
+        let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
+        let du = &u - uh;
+        let err_l2 = (&m * &du).dot(&du);
+        let norm_l2 = (&m * &u).dot(&u);
+
+        println!("Absolute L2 error ||u - u_h||_2 = {:.7}", err_l2);
+        println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.5}%", err_l2 / norm_l2 * 100.0);
     }
 
     #[test]
