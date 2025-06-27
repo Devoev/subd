@@ -13,6 +13,7 @@ use std::ops::Range;
 /// Element-vertex mesh, with topological connectivity information
 /// of [`K`]-dimensional cells [`C`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
+#[derive(Debug, Clone)]
 pub struct ElemVertexMesh<T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point<T, M>>,
