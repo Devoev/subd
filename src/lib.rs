@@ -17,7 +17,6 @@ mod cg;
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
     use crate::basis::cart_prod;
     use crate::basis::eval::EvalDerivs;
     use crate::basis::local::LocalBasis;
@@ -29,6 +28,7 @@ mod tests {
     use crate::cells::cartesian::CartCell;
     use crate::cells::geo::Cell;
     use crate::cells::quad::QuadTopo;
+    use crate::cg::cg;
     use crate::diffgeo::chart::Chart;
     use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
     use crate::index::multi_index::MultiIndex;
@@ -37,33 +37,33 @@ mod tests {
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
+    use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::traits::{Mesh, MeshTopology};
+    use crate::operator::function::assemble_function;
     use crate::operator::hodge::assemble_hodge;
+    use crate::operator::laplace::assemble_laplace;
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::Quadrature;
     use crate::subd::basis::CatmarkBasis;
+    use crate::subd::lin_subd::LinSubd;
     use crate::subd::mesh::CatmarkMesh;
     use crate::subd::patch::CatmarkPatch;
+    use crate::subd::space::CatmarkSpace;
     use crate::subd_legacy;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, Point2, RealField, RowSVector, SMatrix, SVector, Vector1, U2};
+    use nalgebra::{center, matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, Point2, RealField, RowSVector, SMatrix, SVector, Vector1, U2};
+    use nalgebra_sparse::CsrMatrix;
     use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
+    use std::f64::consts::PI;
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use nalgebra_sparse::CsrMatrix;
-    use crate::cg::cg;
-    use crate::mesh::face_vertex::QuadVertexMesh;
-    use crate::operator::function::assemble_function;
-    use crate::operator::laplace::assemble_laplace;
-    use crate::subd::lin_subd::LinSubd;
-    use crate::subd::space::CatmarkSpace;
 
     #[test]
     fn knots() {
@@ -547,6 +547,87 @@ mod tests {
 
         println!("Absolute L2 error ||u - u_h||_2 = {:.7}", err_l2);
         println!("Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.5}%", err_l2 / norm_l2 * 100.0);
+    }
+
+    #[test]
+    pub fn subd_poisson_dir_pentagon() {
+        // Define geometry
+        let r = 1;
+        let n = 5;
+        let phi = 2.0*PI / n as f64;
+
+        let mut coords = vec![point![0.0, 0.0]];
+
+        for i in 0..n {
+            let phi_i = phi * i as f64;
+            let phi_j = phi * (i + 1) as f64;
+            let pi = point![phi_i.cos(), phi_i.sin()];
+            let pj = point![phi_j.cos(), phi_j.sin()];
+            coords.push(pi);
+            coords.push(center(&pi, &pj));
+        }
+
+        // Define problem
+        let points = coords.iter().skip(1).step_by(2).collect_vec();
+        let xs = points.iter().map(|p| p.x).collect_vec();
+        let ys = points.iter().map(|p| p.y).collect_vec();
+        let a = ys.iter().circular_tuple_windows().map(|(yi, yj)| yi - yj).collect_vec();
+        let b = xs.iter().circular_tuple_windows().map(|(xi, xj)| xi - xj).collect_vec();
+        let c = points.iter().circular_tuple_windows().map(|(pi, pj)| pi.x * pj.y - pj.x * pi.y).collect_vec();
+
+        // Define solution
+        let eval_factor = |i: usize, x: f64, y: f64| a[i]*x + b[i]*y + c[i];
+        let eval_product = |k: usize, j: usize, x: f64, y: f64| {
+            (0..5).filter(|&i| i != k && i != j)
+                .map(|i| eval_factor(i, x, y))
+                .product::<f64>()
+        };
+        let eval_deriv = |coeffs: &Vec<f64>, x: f64, y: f64| {
+            (0..5).cartesian_product(0..5)
+                .filter(|(k, j)| k != j)
+                .map(|(k, j)| eval_product(k, j, x, y) * coeffs[k] * coeffs[j])
+                .sum::<f64>()
+        };
+
+        let u = |p: Point2<f64>| {
+            (0..5).map(|i| eval_factor(i, p.x, p.y)).product::<f64>()
+        };
+
+        let u_dxx = |p: Point2<f64>| eval_deriv(&a, p.x, p.y);
+        let u_dyy = |p: Point2<f64>| eval_deriv(&b, p.x, p.y);
+        let f = |p: Point2<f64>| Vector1::new(-u_dxx(p) - u_dyy(p));
+
+        // Define boundary condition
+        let g = |_: Point2<f64>| 0.0;
+
+        // Define mesh
+        let faces = vec![
+            QuadTopo::from_indices(0, 10, 1, 2),
+            QuadTopo::from_indices(0, 2, 3, 4),
+            QuadTopo::from_indices(0, 4, 5, 6),
+            QuadTopo::from_indices(0, 6, 7, 8),
+            QuadTopo::from_indices(0, 8, 9, 10),
+        ];
+        let quad_msh = QuadVertexMesh::new(coords, faces);
+        let mut lin_msh = LinSubd(quad_msh);
+        lin_msh.refine();
+        lin_msh.refine();
+        let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+
+        // Define space
+        let basis = CatmarkBasis(&msh);
+        let space = CatmarkSpace::new(basis);
+
+        // Define quadrature
+        let p = 2;
+        let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+        let quad = PullbackQuad::new(ref_quad);
+
+        // Assemble system
+        let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
+        let m_coo = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let k_coo = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let k = CsrMatrix::from(&k_coo);
     }
 
     #[test]
