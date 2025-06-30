@@ -1,9 +1,12 @@
 use crate::cells::chain::{Chain, ChainBoundary};
+use crate::cells::geo;
+use crate::cells::lerp::BiLerp;
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary};
-use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
+use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
+use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
 
 /// A 2d quadrilateral element of topology [`QuadTopo`],
 /// embedded in [`M`]-dimensional space.
@@ -30,6 +33,19 @@ impl<T: RealField, const M: usize> Quad<T, M> {
             .map(|p| &p.coords)
             .sum::<SVector<T, M>>() / T::from_f64(4.0).unwrap();
         Point::from(centroid)
+    }
+}
+
+impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for Quad<T, M> {
+    type RefCell = UnitCube<2>;
+    type GeoMap = BiLerp<T, M>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        UnitCube
+    }
+
+    fn geo_map(&self) -> Self::GeoMap {
+        BiLerp::new(self.vertices)
     }
 }
 

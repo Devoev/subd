@@ -2,7 +2,7 @@ use crate::cells::cartesian::CartCell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::unit_cube::UnitCube;
 use crate::diffgeo::chart::Chart;
-use nalgebra::{Matrix, Point, RealField, SMatrix, SVector, Scalar};
+use nalgebra::{stack, Matrix, Point, RealField, SMatrix, SVector, Scalar};
 
 /// **L**inear int**erp**olation (Lerp) in [`M`] dimensional Euclidean space.
 ///
@@ -14,7 +14,7 @@ use nalgebra::{Matrix, Point, RealField, SMatrix, SVector, Scalar};
 /// t ↦ (1 - t) a + t b = (b - a) t + a
 /// ```
 /// where `a` and `b` are the start and end coordinates of the rectangle respectively.
-/// - [`M`]-variate transformation of the [unit cube](UnitCube) `[0,1]^M` to a [`CartCell`] 
+/// - [`M`]-variate transformation of the [unit cube](UnitCube) `[0,1]^M` to a [`CartCell`]
 /// by the component-wise mapping
 /// ```text
 /// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i] .
@@ -80,13 +80,13 @@ impl <T: RealField + Copy, const M: usize> Chart<T, SVector<T, M>, M, M> for Ler
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Chart<T, T, 1, M> for Lerp<T, M> {
+impl <T: RealField, const M: usize> Chart<T, T, 1, M> for Lerp<T, M> {
     fn eval(&self, x: T) -> Point<T, M> {
-        Point::from(self.a.coords * (T::one() - x) + self.b.coords * x)
+        self.a.lerp(&self.b, x)
     }
 
     fn eval_diff(&self, _x: T) -> SMatrix<T, M, 1> {
-        self.b - self.a
+        &self.b - &self.a
     }
 }
 
@@ -95,4 +95,38 @@ impl <T: RealField + Copy, const M: usize> Chart<T, T, 1, M> for Lerp<T, M> {
 /// Bilinear interpolation between 4 vertices in [`M`]-dimensional Euclidean space.
 pub struct BiLerp<T: Scalar, const M: usize> {
     pub vertices: [Point<T, M>; 4]
+}
+
+impl<T: Scalar, const M: usize> BiLerp<T, M> {
+    /// Constructs a new [`Lerp`] from the given array of `vertices`.
+    pub fn new(vertices: [Point<T, M>; 4]) -> Self {
+        BiLerp { vertices }
+    }
+}
+
+impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, M> {
+    fn eval(&self, x: (T, T)) -> Point<T, M> {
+        let [q11, q12, q22, q21] = self.vertices;
+        let (u, v) = x;
+        let l1 = Lerp::new(q11, q12);              // q11.lerp(q12, u);
+        let l2 = Lerp::new(q21, q22);              // q21.lerp(q22, u);
+        let l = Lerp::new(l1.eval(u), l2.eval(u)); // l1.lerp(&l2, v)
+        l.eval(v)
+    }
+
+    #[allow(clippy::toplevel_ref_arg)]
+    fn eval_diff(&self, x: (T, T)) -> SMatrix<T, M, 2> {
+        let [q11, q12, q22, q21] = self.vertices;
+        let (u, v) = x;
+        let l1 = Lerp::new(q11, q12); // let l1 = q11.lerp(q12, u);
+        let l2 = Lerp::new(q21, q22); // let l2 = q21.lerp(q22, u);
+        let l_du = Lerp::new(         // (q12 - q11).lerp(&(q22 - q21), v),
+            Point::from(l1.eval_diff(u)),
+            Point::from(l2.eval_diff(u))
+        );
+        stack![
+            l_du.eval(v).coords,
+            l2.eval(u) - l2.eval(u) // l2 - l1
+        ]
+    }
 }
