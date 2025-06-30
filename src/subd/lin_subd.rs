@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use nalgebra::{center, RealField};
-use crate::cells::line_segment::LineSegmentTopo;
+use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -17,7 +17,7 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
 
     /// Refines this mesh by applying linear subdivision once.
     pub fn refine(&mut self) {
-        let mut edge_midpoints = HashMap::<LineSegmentTopo, NodeIdx>::new();
+        let mut edge_midpoints = HashMap::<NodePair, NodeIdx>::new();
         let mut faces = Vec::<QuadTopo>::new();
 
         // Refine every mesh face

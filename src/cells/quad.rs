@@ -1,5 +1,5 @@
 use crate::cells::chain::{Chain, ChainBoundary};
-use crate::cells::line_segment::LineSegmentTopo;
+use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary};
 use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
@@ -64,9 +64,9 @@ impl QuadTopo {
     /// | + -- 0 -- +
     /// +---> u
     /// ```
-    pub fn edges(&self) -> [LineSegmentTopo; 4] {
+    pub fn edges(&self) -> [NodePair; 4] {
         let [a, b, c, d] = self.0;
-        [LineSegmentTopo([a, b]), LineSegmentTopo([b, c]), LineSegmentTopo([c, d]), LineSegmentTopo([d, a])]
+        [NodePair([a, b]), NodePair([b, c]), NodePair([c, d]), NodePair([d, a])]
     }
 
     // todo: return an intersection result (possibly an enum)
@@ -153,7 +153,7 @@ impl Cell<U2> for QuadTopo {
 
 impl CellBoundary<U2> for QuadTopo {
     const NUM_SUB_CELLS: usize = 4;
-    type SubCell = LineSegmentTopo;
+    type SubCell = NodePair;
     type Boundary = QuadBndTopo;
 
     fn boundary(&self) -> Self::Boundary {
@@ -161,15 +161,15 @@ impl CellBoundary<U2> for QuadTopo {
     }
 }
 
-pub struct QuadBndTopo(pub [LineSegmentTopo; 4]);
+pub struct QuadBndTopo(pub [NodePair; 4]);
 
-impl Chain<U1, LineSegmentTopo> for QuadBndTopo {
-    fn cells(&self) -> &[LineSegmentTopo] {
+impl Chain<U1, NodePair> for QuadBndTopo {
+    fn cells(&self) -> &[NodePair] {
         &self.0
     }
 }
 
-impl ChainBoundary<U1, LineSegmentTopo> for QuadBndTopo {
+impl ChainBoundary<U1, NodePair> for QuadBndTopo {
     type Boundary = ();
 
     fn boundary(&self) -> Self::Boundary { }

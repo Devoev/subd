@@ -1,12 +1,12 @@
-use nalgebra::{Const, DimName, DimNameSub, Point, Point2, RealField, U0, U1};
-use std::cmp::minmax;
-use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
+use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
+use nalgebra::{DimName, DimNameSub, Point, RealField, U0, U1};
+use std::cmp::minmax;
 
-/// A line segment of topology [`LineSegmentTopo`],
-/// embedded in [`M`]-dimensional space.
+/// A line segment, i.e. a straight line bounded by 2 points
+/// in [`M`]-dimensional space.
 pub struct LineSegment<T: RealField, const M: usize> {
     pub vertices: [Point<T, M>; 2]
 }
@@ -19,21 +19,23 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 
     /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: LineSegmentTopo, msh: &QuadVertexMesh<T, M>) -> Self {
+    pub fn from_msh(topology: NodePair, msh: &QuadVertexMesh<T, M>) -> Self {
         LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 }
 
-/// Topology of a line segment, i.e. a straight line bounded by 2 points. The topology is defined as
+/// Pair of 2 nodes, defining an *edge*.
+/// The topological structure is
 /// ```text
 ///    0 --- 1
 /// -+---> u
 /// ```
 /// where `0` is the start and `1` the end node.
+/// Geometrically the pair defines the topology of a [`LineSegment`].
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct LineSegmentTopo(pub [NodeIdx; 2]);
+pub struct NodePair(pub [NodeIdx; 2]);
 
-impl LineSegmentTopo {
+impl NodePair {
 
     /// Returns the start node of this edge.
     pub fn start(&self) -> NodeIdx {
@@ -46,27 +48,27 @@ impl LineSegmentTopo {
     }
 
     /// Returns a sorted copy of this edge such that `self.start() < self.end()`.
-    pub fn sorted(&self) -> LineSegmentTopo {
-        LineSegmentTopo(minmax(self.start(), self.end()))
+    pub fn sorted(&self) -> NodePair {
+        NodePair(minmax(self.start(), self.end()))
     }
 
-    /// Changes the orientation of this edge by calling [`LineSegmentTopo::sorted`] on self.
+    /// Changes the orientation of this edge by calling [`NodePair::sorted`] on self.
     pub fn sort(&mut self) {
         *self = self.sorted();
     }
 
     /// Returns a copy of this edge with reversed orientation.
-    pub fn reversed(&self) -> LineSegmentTopo {
-        LineSegmentTopo([self.end(), self.start()])
+    pub fn reversed(&self) -> NodePair {
+        NodePair([self.end(), self.start()])
     }
 
-    /// Reverses the orientation of this edge by calling [`LineSegmentTopo::reversed`].
+    /// Reverses the orientation of this edge by calling [`NodePair::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
     }
 }
 
-impl Cell<U1> for LineSegmentTopo {
+impl Cell<U1> for NodePair {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -91,7 +93,7 @@ impl Cell<U1> for LineSegmentTopo {
     }
 }
 
-impl CellBoundary<U1> for LineSegmentTopo {
+impl CellBoundary<U1> for NodePair {
     const NUM_SUB_CELLS: usize = 2;
     type SubCell = NodeIdx;
     type Boundary = LineSegmentBndTopo;
@@ -101,9 +103,9 @@ impl CellBoundary<U1> for LineSegmentTopo {
     }
 }
 
-impl OrderedCell<U1> for LineSegmentTopo {
+impl OrderedCell<U1> for NodePair {
     fn sorted(&self) -> Self {
-        LineSegmentTopo(minmax(self.start(), self.end()))
+        NodePair(minmax(self.start(), self.end()))
     }
 }
 
