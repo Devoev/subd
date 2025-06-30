@@ -4,6 +4,9 @@ use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{DimName, DimNameSub, Point, RealField, U0, U1};
 use std::cmp::minmax;
+use crate::cells::geo;
+use crate::cells::lerp::Lerp;
+use crate::cells::unit_cube::UnitCube;
 
 /// A line segment, i.e. a straight line bounded by 2 points
 /// in [`M`]-dimensional space.
@@ -24,6 +27,19 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 }
 
+impl <T: RealField + Copy, const M: usize> geo::Cell<T, T, 1, M> for LineSegment<T, M> {
+    type RefCell = UnitCube<1>;
+    type GeoMap = Lerp<T, M>;
+
+    fn ref_cell(&self) -> Self::RefCell {
+        UnitCube
+    }
+
+    fn geo_map(&self) -> Self::GeoMap {
+        Lerp::new(self.vertices[0], self.vertices[1])
+    }
+}
+
 /// Pair of 2 nodes, defining an *edge*.
 /// The topological structure is
 /// ```text
@@ -36,7 +52,6 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
 pub struct NodePair(pub [NodeIdx; 2]);
 
 impl NodePair {
-
     /// Returns the start node of this edge.
     pub fn start(&self) -> NodeIdx {
         self.0[0]
