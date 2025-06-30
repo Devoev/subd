@@ -89,3 +89,10 @@ impl <T: RealField + Copy, const M: usize> Chart<T, T, 1, M> for Lerp<T, M> {
         self.b - self.a
     }
 }
+
+// todo: possibly remove multivariate transformation of Lerp and add MultiLerp?
+
+/// Bilinear interpolation between 4 vertices in [`M`]-dimensional Euclidean space.
+pub struct BiLerp<T: Scalar, const M: usize> {
+    pub vertices: [Point<T, M>; 4]
+}
