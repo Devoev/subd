@@ -65,6 +65,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
     fn knots() {
@@ -498,6 +499,53 @@ mod tests {
         // Load vector checks
         println!("{}", load);
         println!("Norm ||f|| = {}", load.norm());
+    }
+
+    #[test]
+    fn subd_edge_assembly() {
+        // Define geo
+        let quads_regular = vec![
+            QuadTopo::from_indices(0, 1, 2, 3),
+        ];
+
+        let coords_regular = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
+        ].transpose();
+
+        // Constructs quad mesh and catmark patch mesh (topological)
+        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let mut lin_subd = LinSubd(quad_msh);
+        lin_subd.refine();
+        lin_subd.refine();
+        let msh = CatmarkMesh::from_quad_mesh(lin_subd.0);
+
+        // Construct basis and space
+        let basis = CatmarkEdgeBasis(&msh);
+        let space = Space::<f64, (f64, f64), _, 2>::new(basis);
+
+        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
+        let quad = PullbackQuad::new(ref_quad);
+
+        // Assembly
+        let mass = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
+
+        // Mass matrix checks
+        let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
+        for (i, j, &v) in mass.triplet_iter() {
+            mass_dense[(i, j)] = v;
+        }
+        println!("{}", mass_dense);
+        println!(
+            "Eigenvalues = {} (should be positive)",
+            mass_dense.eigenvalues().unwrap()
+        );
+        println!(
+            "||M - M^T|| = {} (should be zero)",
+            (mass_dense.clone() - mass_dense.transpose()).norm()
+        );
+        println!("Norm ||M|| = {}", mass_dense.norm());
+        println!("Rank rk(M) = {} (size is {}x{})", mass_dense.rank(1e-10), mass_dense.nrows(), mass_dense.ncols());
     }
 
     #[test]
