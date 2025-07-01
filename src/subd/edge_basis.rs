@@ -37,19 +37,31 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for Catmark
         let patch = CatmarkPatch::from_msh(self.0, elem);
         match patch {
             CatmarkPatch::Regular(_) => CatmarkPatchEdgeBasis::Regular,
-            _ => todo!("implement irregular and boundary cases")
+            CatmarkPatch::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
+            CatmarkPatch::Corner(_) => CatmarkPatchEdgeBasis::Corner,
+            _ => todo!("implement irregular")
         }
     }
 
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
-        let indices = elem.nodes().iter().map(|node| node.0).collect_vec();
+        // todo: In order to give global indices for edge basis functions,
+        //  the edges need a global ordering. This isn't implemented yet.
+        //  The code below works, but should probably be updated, 
+        //  because there aren't num_nodes * 2 edges
+        
+        let num_nodes = self.0.num_nodes();
+        let idx_x = elem.nodes().iter().map(|node| node.0);
+        let idx_y = elem.nodes().iter().map(|node| node.0 + num_nodes);
+        let indices = idx_x.chain(idx_y).collect_vec();
         indices.into_iter()
     }
 }
 
 /// Edge basis functions on a Catmull-Clark patch.
 pub enum CatmarkPatchEdgeBasis {
-    Regular
+    Regular,
+    Boundary,
+    Corner
 }
 
 impl Basis for CatmarkPatchEdgeBasis {
@@ -58,7 +70,9 @@ impl Basis for CatmarkPatchEdgeBasis {
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         match self {
-            CatmarkPatchEdgeBasis::Regular => Dyn(32) // todo: should be 24?
+            CatmarkPatchEdgeBasis::Regular => Dyn(32), // todo: should be 24?
+            CatmarkPatchEdgeBasis::Boundary => Dyn(24),
+            CatmarkPatchEdgeBasis::Corner => Dyn(18),
         }
     }
 }
@@ -73,6 +87,31 @@ impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmarkPatchEdgeBasis {
                 let bu = CubicBspline::eval_smooth(u);
                 let bv_dv = CubicBspline::eval_smooth_deriv(v); // replace with Curry-Schoenberg like basis
                 let bv = CubicBspline::eval_smooth(v);
+                let b_du = RowDVector::from_row_slice(bv.kronecker(&bu_du).as_slice());
+                let b_dv = RowDVector::from_row_slice(bv_dv.kronecker(&bu).as_slice());
+                stack![
+                    b_du, 0;
+                    0, b_dv
+                ]
+            },
+            CatmarkPatchEdgeBasis::Boundary => {
+                let bu_du = CubicBspline::eval_smooth_deriv(u); // replace with Curry-Schoenberg like basis
+                let bu = CubicBspline::eval_smooth(u);
+                let bv_dv = CubicBspline::eval_interpolating_deriv(v); // replace with Curry-Schoenberg like basis
+                let bv = CubicBspline::eval_interpolating(v);
+                let b_du = RowDVector::from_row_slice(bv.kronecker(&bu_du).as_slice());
+                let b_dv = RowDVector::from_row_slice(bv_dv.kronecker(&bu).as_slice());
+
+                stack![
+                    b_du, 0;
+                    0, b_dv
+                ]
+            },
+            CatmarkPatchEdgeBasis::Corner => {
+                let bu_du = CubicBspline::eval_interpolating_deriv(u); // replace with Curry-Schoenberg like basis
+                let bu = CubicBspline::eval_interpolating(u);
+                let bv_dv = CubicBspline::eval_interpolating_deriv(v); // replace with Curry-Schoenberg like basis
+                let bv = CubicBspline::eval_interpolating(v);
                 let b_du = RowDVector::from_row_slice(bv.kronecker(&bu_du).as_slice());
                 let b_dv = RowDVector::from_row_slice(bv_dv.kronecker(&bu).as_slice());
 
