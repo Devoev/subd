@@ -65,6 +65,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
@@ -351,6 +352,44 @@ mod tests {
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
+    }
+
+    #[test]
+    fn incidence_mats() {
+        // Define geo
+        let quads_regular = vec![
+            QuadTopo::from_indices(0, 1, 2, 3),
+        ];
+
+        let coords_regular = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
+        ].transpose();
+
+        // Constructs quad mesh and catmark patch mesh (topological)
+        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let mut lin_subd = LinSubd(quad_msh);
+        lin_subd.refine();
+        // lin_subd.refine();
+        let msh = lin_subd.0;
+
+        let g = edge_to_node_incidence(&msh);
+        let c = face_to_edge_incidence(&msh);
+        let mut div = DMatrix::zeros(g.nrows(), g.ncols());
+        for (i, j, &v) in g.triplet_iter() {
+            div[(i, j)] = v;
+        }
+        let mut curl_dual = DMatrix::zeros(c.nrows(), c.ncols());
+        for (i, j, &v) in c.triplet_iter() {
+            curl_dual[(i, j)] = v;
+        }
+        let grad = div.transpose();
+        let curl = curl_dual.transpose();
+
+        println!("Edge-to-node incidence (dual curl): {}", curl_dual);
+        println!("Face-to-edge incidence (div): {}", curl_dual);
+        println!("Product d*c = {}", div * curl_dual);
+        println!("Product c*g = {}", curl * grad);
     }
 
     #[test]

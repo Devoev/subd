@@ -5,3 +5,4 @@ pub mod cartesian;
 pub mod bezier;
 pub mod traits;
 pub mod face_vertex;
+pub mod incidence;
