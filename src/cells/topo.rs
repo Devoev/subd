@@ -52,6 +52,17 @@ pub trait OrderedCell<K: DimName>: Cell<K> {
     fn sorted(&self) -> Self;
 }
 
+// todo: merge ordered and oriented cell maybe?
+
+/// A [topological cell](Cell) with a global orientation (`+1` or `-1`).
+pub trait OrientedCell<K: DimName>: Cell<K> {
+    /// Returns the global orientation of this cell (`+1` or `-1`).
+    fn orientation(&self) -> i8; // todo: update return value with Enum
+
+    /// Returns a copy of this cell with reversed orientation.
+    fn reversed(&self) -> Self;
+}
+
 /// A [topological cell](Cell) with a boundary.
 pub trait CellBoundary<K: DimName + DimNameSub<U1>>: Cell<K> {
     /// Number of [`K`]`-1`-dimensional sub-cells in the boundary of this cell.

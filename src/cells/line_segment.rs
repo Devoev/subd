@@ -1,8 +1,8 @@
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, OrderedCell};
+use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{DimName, DimNameSub, Point, RealField, U0, U1};
+use nalgebra::{clamp, DimName, DimNameSub, Point, RealField, U0, U1};
 use std::cmp::minmax;
 use crate::cells::geo;
 use crate::cells::lerp::Lerp;
@@ -121,6 +121,16 @@ impl CellBoundary<U1> for NodePair {
 impl OrderedCell<U1> for NodePair {
     fn sorted(&self) -> Self {
         NodePair(minmax(self.start(), self.end()))
+    }
+}
+
+impl OrientedCell<U1> for NodePair {
+    fn orientation(&self) -> i8 {
+        clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
+    }
+
+    fn reversed(&self) -> Self {
+        NodePair([self.end(), self.start()])
     }
 }
 

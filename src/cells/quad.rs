@@ -3,7 +3,7 @@ use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary};
+use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
@@ -164,6 +164,21 @@ impl Cell<U2> for QuadTopo {
             0 => num_shared_nodes == 1, // faces share a node
             _ => unreachable!("Dimension `M` (is {dim:?}) should be <= `K` (is 2)"),
         }
+    }
+}
+
+impl OrientedCell<U2> for QuadTopo {
+    fn orientation(&self) -> i8 {
+        todo!("possible orientation:\
+        + smallest node -> 2nd smallest node \
+        - smallest node -> 2nd largest or largest node \
+        ")
+    }
+
+    fn reversed(&self) -> Self {
+        let mut nodes = self.nodes();
+        nodes.reverse();
+        QuadTopo(nodes)
     }
 }
 
