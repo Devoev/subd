@@ -386,8 +386,8 @@ mod tests {
         let grad = div.transpose();
         let curl = curl_dual.transpose();
 
-        println!("Edge-to-node incidence (dual curl): {}", curl_dual);
-        println!("Face-to-edge incidence (div): {}", curl_dual);
+        println!("Edge-to-node incidence (div): {}", div);
+        println!("Face-to-edge incidence (dual curl): {}", curl_dual);
         println!("Product d*c = {}", div * curl_dual);
         println!("Product c*g = {}", curl * grad);
     }

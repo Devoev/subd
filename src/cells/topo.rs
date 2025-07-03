@@ -1,6 +1,6 @@
-use nalgebra::{Const, DimName, DimNameDiff, DimNameSub, U1, U2, U3};
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
+use nalgebra::{DimName, DimNameDiff, DimNameSub, U1, U2, U3};
 
 /// Topology of a [`K`]-dimensional cell inside a mesh.
 pub trait Cell<K: DimName> {
@@ -65,7 +65,10 @@ pub trait OrderedCell<K: DimName>: Cell<K> {
 /// A [topological cell](Cell) with a global orientation (`+1` or `-1`).
 pub trait OrientedCell<K: DimName>: Cell<K> {
     /// Returns the global orientation of this cell (`+1` or `-1`).
-    fn orientation(&self) -> i8; // todo: update return value with Enum
+    fn orientation(&self) -> i8; 
+    // todo: update return value with Enum
+    //  - a global orientation is not needed. Replace with orientation(other: &Self),
+    //      that just checks using orientation_eq
     
     /// Returns true, if the orientation of this and `other` are the same.
     fn orientation_eq(&self, other: &Self) -> bool;

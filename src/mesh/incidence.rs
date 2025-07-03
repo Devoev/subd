@@ -4,7 +4,7 @@ use itertools::Itertools;
 use nalgebra::{DimName, DimNameDiff, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;
 use crate::cells::chain::Chain;
-use crate::cells::topo::{CellBoundary, OrderedCell, SubCell};
+use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell, SubCell};
 // todo: replace this with a generic implementation. For that add
 //  - generic edges, that provide all methods of NodePair (sorted, start, end...)
 //  -
@@ -50,10 +50,10 @@ pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 }
 
 /// Assembles the `K` to `K-1` incidence matrix.
-pub fn incidence<C: CellBoundary<K>, K: DimName + DimNameSub<U1>>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, sub_cells: Vec<SubCell<K, C>>) -> CooMatrix<i8>
-    where SubCell<K, C>: OrderedCell<DimNameDiff<K, U1>> + Eq
-        // todo: OrderedCell is the incorrect trait. Add OrientedCell or similar, that defines an orientation (+ or -)
-        //  that way, one can check if the orientation of the local sub-cell matches the global orientation (instead of sorting the sub-cell)
+pub fn incidence<C, K>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, sub_cells: Vec<SubCell<K, C>>) -> CooMatrix<i8>
+    where C: CellBoundary<K>, 
+          K: DimName + DimNameSub<U1> + DimNameSub<K>,
+          SubCell<K, C>: OrientedCell<DimNameDiff<K, U1>> + Eq, <K as DimNameSub<U1>>::Output: DimNameSub<<K as DimNameSub<U1>>::Output>
 {
     // Build empty incidence matrix
     let mut mat = CooMatrix::new(num_sub_cells, num_cells);
@@ -64,10 +64,14 @@ pub fn incidence<C: CellBoundary<K>, K: DimName + DimNameSub<U1>>(num_cells: usi
 
         // Iteration over K-1-subcells (rows)
         for sub_cell in boundary.cells() {
-            if let Some(sub_idx) = sub_cells.iter().position(|other| *other == *sub_cell) {
-                mat.push(sub_idx, cell_idx, 1);
-            } else if let Some(sub_idx) = sub_cells.iter().position(|other| *other == sub_cell.sorted()) {
-                mat.push(sub_idx, cell_idx, -1);
+            // Find index of `sub_cell` is in the mesh, by topological equality
+            if let Some((sub_idx, other)) = sub_cells.iter().find_position(|other| other.topo_eq(sub_cell)) {
+                // If (global) orientation is positive add +1, else -1
+                if other.orientation_eq(sub_cell) {
+                    mat.push(sub_idx, cell_idx, 1);
+                } else {
+                    mat.push(sub_idx, cell_idx, -1);
+                }
             }
         }
     }
