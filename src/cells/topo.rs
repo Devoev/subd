@@ -38,6 +38,14 @@ pub trait Cell<K: DimName> {
     fn contains_node(&self, node: NodeIdx) -> bool {
         self.nodes().contains(&node)
     }
+    
+    /// Returns `true` if `self` and `other` are topologically equal.
+    /// This is the same as testing `self.is_connected(other, K::name())`.
+    fn topo_eq(&self, other: &Self) -> bool
+        where K: DimNameSub<K>
+    {
+        self.is_connected(other, K::name())
+    }
 }
 
 /// A [topological cell](Cell) with an ordering of its nodes.
@@ -58,6 +66,9 @@ pub trait OrderedCell<K: DimName>: Cell<K> {
 pub trait OrientedCell<K: DimName>: Cell<K> {
     /// Returns the global orientation of this cell (`+1` or `-1`).
     fn orientation(&self) -> i8; // todo: update return value with Enum
+    
+    /// Returns true, if the orientation of this and `other` are the same.
+    fn orientation_eq(&self, other: &Self) -> bool;
 
     /// Returns a copy of this cell with reversed orientation.
     fn reversed(&self) -> Self;

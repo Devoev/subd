@@ -1,3 +1,4 @@
+use std::iter::zip;
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
@@ -173,6 +174,13 @@ impl OrientedCell<U2> for QuadTopo {
         + smallest node -> 2nd smallest node \
         - smallest node -> 2nd largest or largest node \
         ")
+    }
+
+    fn orientation_eq(&self, other: &Self) -> bool {
+        if !self.topo_eq(other) { return false; }
+        let other = other.sorted_by_origin(self.0[0]);
+        zip(self.edges(), other.edges())
+            .all(|(ei, ej)| ei.orientation_eq(&ej))
     }
 
     fn reversed(&self) -> Self {

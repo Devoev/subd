@@ -129,6 +129,10 @@ impl OrientedCell<U1> for NodePair {
         clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
     }
 
+    fn orientation_eq(&self, other: &Self) -> bool {
+        self.start() == other.start() && self.end() == other.end()
+    }
+
     fn reversed(&self) -> Self {
         NodePair([self.end(), self.start()])
     }
