@@ -230,7 +230,7 @@ type PermutationVec = [usize; 16];
 
 /// Builds the permutation vector mapping the control points of the irregular patch of valence `n`
 /// to the control points of the `k`-th sub-patch.
-fn permutation_vec(k: usize, n: usize) -> PermutationVec {
+pub fn permutation_vec(k: usize, n: usize) -> PermutationVec {
     let m = 2 * n;
 
     match k {
@@ -258,7 +258,7 @@ fn permutation_vec(k: usize, n: usize) -> PermutationVec {
 
 /// Applies the given permutation `p` to the evaluated basis functions `b`,
 /// mapping them from a regular sub-patch to the irregular patch of valence `n`.
-fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: PermutationVec) -> RowDVector<T> {
+pub fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: PermutationVec) -> RowDVector<T> {
     let mut res = RowDVector::zeros(2*n + 17);
     for (bi, pi) in zip(b.iter(), p) {
         res[pi] = *bi;
@@ -267,7 +267,7 @@ fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: Per
 }
 
 /// Constructs the permutation matrix from the given permutation vector `p` and valence `n`.
-fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
+pub fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
     let mut mat = DMatrix::<usize>::zeros(16, 2*n + 17);
     for (i, pi) in p.into_iter().enumerate() {
         // Set i-th row and pi-th column to 1

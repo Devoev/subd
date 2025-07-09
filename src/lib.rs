@@ -393,6 +393,29 @@ mod tests {
     }
 
     #[test]
+    fn catmull_clark() {
+        // Define geo
+        let quads_regular = vec![
+            QuadTopo::from_indices(0, 1, 2, 3),
+        ];
+
+        let coords_regular = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
+        ].transpose();
+
+        // Constructs quad mesh and catmark patch mesh (topological)
+        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let mut lin_msh = LinSubd(quad_msh);
+        lin_msh.refine();
+        lin_msh.refine();
+        let mut msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+        msh.refine();
+        
+        // todo: print mesh
+    }
+
+    #[test]
     fn iga_assembly() {
         // Parameters
         let n_geo = 2;
