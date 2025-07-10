@@ -6,3 +6,4 @@ pub mod bezier;
 pub mod traits;
 pub mod face_vertex;
 pub mod incidence;
+pub mod cartesian_with_multiplicity;
