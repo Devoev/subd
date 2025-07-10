@@ -14,6 +14,7 @@ pub mod subd;
 pub mod diffgeo;
 mod subd_legacy;
 mod cg;
+mod plot;
 
 #[cfg(test)]
 mod tests {
@@ -66,6 +67,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
+    use crate::plot::plot_faces;
     use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
@@ -410,9 +412,16 @@ mod tests {
         lin_msh.refine();
         lin_msh.refine();
         let mut msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
-        msh.refine();
+        // msh.refine();
         
-        // todo: print mesh
+        // Convert back to quad mesh
+        let quads = msh.elems.iter()
+            .map(|patch| patch.center_quad())
+            .collect_vec();
+        let msh = QuadVertexMesh::new(msh.coords, quads);
+
+        let plot = plot_faces(&msh, msh.elems.clone().into_iter());
+        plot.show();
     }
 
     #[test]
