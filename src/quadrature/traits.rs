@@ -28,8 +28,8 @@ fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item
 /// 
 /// For efficiency reasons it may make sense to evaluate the function apriori,
 /// and then perform the numerical integration. This can be done by evaluating the function
-/// using [`eval_fn_elem`] on every quadrature node (or simply getting the nodes using `nodes_elem`
-/// and performing the evaluation yourself) 
+/// using [`eval_fn_elem`](Quadrature::eval_fn_elem) on every quadrature node
+/// (or simply getting the nodes using `nodes_elem` and performing the evaluation yourself) 
 /// and then calling [`integrate_elem`](Quadrature::integrate_elem)
 /// to perform the actual integration.
 /// 
