@@ -14,44 +14,57 @@ use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMa
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 
-/// Assembles the discrete Laplace operator (stiffness matrix).
-pub fn assemble_laplace<'a, T, X, E, B, M, Q, const D: usize>(
+/// The discrete Laplace operator.
+pub struct Laplace<'a, T, X, M, B, const D: usize> {
+    /// Mesh defining the geometry discretization.
     msh: &'a M,
-    space: &Space<T, X, B, D>,
-    quad: PullbackQuad<T, X, E, Q, D>,
-    elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem // todo: this function is just temporary
-) -> CooMatrix<T>
-where T: RealField + Copy + Product<T> + Sum<T>,
-      X: Dimensioned<T, D>,
-      E: Cell<T, X, D, D>,
-      M: Mesh<'a, T, X, D, D, GeoElem = E>,
-      B: LocalBasis<T, X, NumComponents = U1>, // todo: add Elem = E::RefCell
-      B::ElemBasis: EvalGrad<T, X, D>,
-      Q: Quadrature<T, X, E::RefCell>,
-      DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
-      Const<D>: DimMin<Const<D>, Output = Const<D>>,
-{
-    // Create empty matrix
-    let mut kij = CooMatrix::<T>::zeros(space.dim(), space.dim());
 
-    // Iteration over all mesh elements
-    for elem in msh.elem_iter() {
-        let sp_elem = elem_to_sp_elem(&elem);
-        let geo_elem = msh.geo_elem(elem);
+    /// Space of discrete basis functions.
+    space: &'a Space<T, X, B, D>
+}
 
-        // Build local space and local stiffness matrix
-        let (sp_local, idx) = space.local_space_with_idx(&sp_elem);
-        let kij_local = assemble_laplace_local(&geo_elem, &sp_local, &quad);
 
-        // Fill global stiffness matrix with local entries
-        let idx_local_global = idx.enumerate();
-        for ((i_local, i), (j_local, j)) in idx_local_global.clone().cartesian_product(idx_local_global) {
-            kij.push(i, j, kij_local[(i_local, j_local)]);
-        }
+impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
+    /// Constructs a new `Laplace` operator from the given `msh` and `space`,
+    pub fn new(msh: &'a M, space: &'a Space<T, X, B, D>) -> Self {
+        Laplace { msh, space }
     }
 
-    kij
+    /// Assembles the discrete Laplace operator (*stiffness matrix*)
+    /// using the given quadrature rule `quad`.
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>, elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem) -> CooMatrix<T>
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          X: Dimensioned<T, D>,
+          E: Cell<T, X, D, D>,
+          M: Mesh<'a, T, X, D, D, GeoElem = E>,
+          B: LocalBasis<T, X, NumComponents = U1>, // todo: add Elem = E::RefCell
+          B::ElemBasis: EvalGrad<T, X, D>,
+          Q: Quadrature<T, X, E::RefCell>,
+          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          Const<D>: DimMin<Const<D>, Output = Const<D>>,
+    {
+        // Create empty matrix
+        let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
+
+        // Iteration over all mesh elements
+        for elem in self.msh.elem_iter() {
+            let sp_elem = elem_to_sp_elem(&elem);
+            let geo_elem = self.msh.geo_elem(elem);
+
+            // Build local space and local stiffness matrix
+            let (sp_local, idx) = self.space.local_space_with_idx(&sp_elem);
+            let kij_local = assemble_laplace_local(&geo_elem, &sp_local, &quad);
+
+            // Fill global stiffness matrix with local entries
+            let idx_local_global = idx.enumerate();
+            for ((i_local, i), (j_local, j)) in idx_local_global.clone().cartesian_product(idx_local_global) {
+                kij.push(i, j, kij_local[(i_local, j_local)]);
+            }
+        }
+
+        kij
+    }
 }
 
 /// Assembles the local discrete Laplace operator.

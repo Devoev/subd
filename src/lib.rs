@@ -41,8 +41,8 @@ mod tests {
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::traits::{Mesh, MeshTopology};
     use crate::operator::function::assemble_function;
-    use crate::operator::hodge::assemble_hodge;
-    use crate::operator::laplace::assemble_laplace;
+    use crate::operator::hodge::{Hodge};
+    use crate::operator::laplace::{Laplace};
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::Quadrature;
@@ -420,6 +420,7 @@ mod tests {
             .collect_vec();
         let msh = QuadVertexMesh::new(msh.coords, quads);
 
+        // Plot
         let plot = plot_faces(&msh, msh.elems.clone().into_iter());
         plot.show();
     }
@@ -458,7 +459,8 @@ mod tests {
         // Build quadrature
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = BezierQuad::new(ref_quad);
-        let mat = assemble_hodge(&msh, &space, quad, |elem| {
+        let hodge = Hodge::new(&msh, &space);
+        let mat = hodge.assemble(quad, |elem| {
             // todo: this should DIRECTLY be implemented in the spline spaces
             let x = msh.geo_elem(*elem).ref_elem.a;
             space.basis.find_elem(x.into_arr())
@@ -529,8 +531,10 @@ mod tests {
         let f = |p: Point<f64, 2>| Matrix1::new(p.coords.norm_squared());
 
         // Assembly
-        let mass = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
-        let stiffness = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let hodge = Hodge::new(&msh, &space);
+        let laplace = Laplace::new(&msh, &space);
+        let mass = hodge.assemble(quad.clone(), |&elem| elem.clone());
+        let stiffness = laplace.assemble(quad.clone(), |&elem| elem.clone());
         let load = assemble_function(&msh, &space, quad, f, |&elem| elem.clone());
 
         // Mass matrix checks
@@ -599,7 +603,8 @@ mod tests {
         let quad = PullbackQuad::new(ref_quad);
 
         // Assembly
-        let mass = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let hodge = Hodge::new(&msh, &space);
+        let mass = hodge.assemble(quad.clone(), |&elem| elem.clone());
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -651,8 +656,10 @@ mod tests {
 
         // Assemble system
         let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
-        let m_coo = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
-        let k_coo = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let hodge = Hodge::new(&msh, &space);
+        let laplace = Laplace::new(&msh, &space);
+        let m_coo = hodge.assemble(quad.clone(), |&elem| elem.clone());
+        let k_coo = laplace.assemble(quad.clone(), |&elem| elem.clone());
         let m = CsrMatrix::from(&m_coo);
         let k = CsrMatrix::from(&k_coo);
 
@@ -742,9 +749,11 @@ mod tests {
         let quad = PullbackQuad::new(ref_quad);
 
         // Assemble system
+        let hodge = Hodge::new(&msh, &space);
+        let laplace = Laplace::new(&msh, &space);
         let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
-        let m_coo = assemble_hodge(&msh, &space, quad.clone(), |&elem| elem.clone());
-        let k_coo = assemble_laplace(&msh, &space, quad.clone(), |&elem| elem.clone());
+        let m_coo = hodge.assemble(quad.clone(), |&elem| elem.clone());
+        let k_coo = laplace.assemble(quad.clone(), |&elem| elem.clone());
         let m = CsrMatrix::from(&m_coo);
         let k = CsrMatrix::from(&k_coo);
 
