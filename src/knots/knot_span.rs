@@ -12,7 +12,8 @@ use crate::knots::error::OutsideKnotRangeError;
 pub struct KnotSpan(pub(crate) usize);
 
 impl KnotSpan {
-    /// Finds the [`KnotSpan`] containing the given parametric value `t`.
+    // todo: only works for open knot vectors, hence the dependence on `n`. change this?
+    /// Finds the **non-empty** [`KnotSpan`] containing the given parametric value `t`.
     ///
     /// # Errors
     /// Will return an error if the parametric value lies outside the given `knots`.
