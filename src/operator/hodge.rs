@@ -13,7 +13,11 @@ use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
 
-/// The discrete Hodge operator.
+/// The weak discrete Hodge operator
+/// ```text
+/// M[i,j] = ∫ b[i] · b[j] dx ,
+/// ```
+/// where the `b[i]` are the basis functions.
 pub struct Hodge<'a, T, X, M, B, const D: usize> {
     /// Mesh defining the geometry discretization.
     msh: &'a M,

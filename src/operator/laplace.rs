@@ -1,4 +1,4 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::eval::EvalGrad;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
@@ -14,7 +14,11 @@ use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMa
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 
-/// The discrete Laplace operator.
+/// The weak discrete Laplace operator
+/// ```text
+/// K[i,j] = ∫ grad b[i] · grad b[j] dx ,
+/// ```
+/// where the `b[i]` are nodal basis functions.
 pub struct Laplace<'a, T, X, M, B, const D: usize> {
     /// Mesh defining the geometry discretization.
     msh: &'a M,
