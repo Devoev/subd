@@ -8,7 +8,7 @@ use crate::knots::error::OutsideKnotRangeError;
 /// 
 /// It is represented by a single index `i`, 
 /// such that `xi[i] <= i < xi[i+1]`.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct KnotSpan(pub(crate) usize);
 
 impl KnotSpan {
@@ -20,8 +20,8 @@ impl KnotSpan {
     ///
     /// # Examples
     /// ```
-    /// use subd::knots::knot_span::KnotSpan;
-    /// use subd::knots::knot_vec::KnotVec;
+    /// # use subd::knots::knot_span::KnotSpan;
+    /// # use subd::knots::knot_vec::KnotVec;
     ///
     /// let xi = KnotVec::new_uniform(10);
     /// let span = KnotSpan::find(&xi, 4, 0.5);
@@ -46,5 +46,42 @@ impl KnotSpan {
     /// which are nonzero in this span.
     pub fn nonzero_indices(&self, p: usize) -> RangeInclusive<usize> {
         self.0 - p..=self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn find_span() {
+        //           indices:     0    1     2    3     4    5    6
+        let knots = KnotVec(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+        let n = 5; // n = 5, p = 1
+
+        // Find span [0.5, 0.75)
+        let idx = KnotSpan::find(&knots, n, 0.5);
+        assert_eq!(idx, Ok(KnotSpan(3)));
+
+        let idx = KnotSpan::find(&knots, n, 0.67);
+        assert_eq!(idx, Ok(KnotSpan(3)));
+
+        // Find span [0.75, 1.0)
+        let idx = KnotSpan::find(&knots, n, 0.75);
+        assert_eq!(idx, Ok(KnotSpan(4)));
+
+        // Find at boundaries
+        let idx = KnotSpan::find(&knots, n, 0.0);
+        assert_eq!(idx, Ok(KnotSpan(1)));
+
+        let idx = KnotSpan::find(&knots, n, 1.0);
+        assert_eq!(idx, Ok(KnotSpan(4)));
+
+        // Outside boundaries
+        let idx = KnotSpan::find(&knots, n, -0.1);
+        assert_eq!(idx, Err(OutsideKnotRangeError));
+
+        let idx = KnotSpan::find(&knots, n, 1.1);
+        assert_eq!(idx, Err(OutsideKnotRangeError));
     }
 }
