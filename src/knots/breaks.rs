@@ -8,11 +8,11 @@ use std::slice::Iter;
 use std::vec;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Breaks<T>(pub Vec<T>);
 
 impl<T: RealField> Breaks<T> {
-    /// Constructs new [`Breaks<T>`] from the given `breaks`.
+    /// Constructs new [`Breaks<T>`] from the given vector of break-points `breaks`.
     ///
     /// # Errors
     /// Will return an error if the breakpoints are not sorted or not unique.
@@ -25,17 +25,23 @@ impl<T: RealField> Breaks<T> {
     /// let breaks_sorted_and_unique = vec![0.0, 0.5, 1.0];
     /// assert!(Breaks::new(breaks_sorted_and_unique).is_ok());
     ///
+    /// // Breakpoints 1.0 and 0.5 are not sorted
     /// let breaks_unsorted = vec![0.0, 1.0, 0.5];
     /// assert_eq!(Breaks::new(breaks_unsorted), Err(FromVecError::UnsortedBreaks));
     ///
+    /// // Breakpoints 0.0 and 1.0 are duplicates
     /// let breaks_duplicate = vec![0.0, 0.0, 0.5, 1.0, 1.0];
     /// assert_eq!(Breaks::new(breaks_duplicate), Err(FromVecError::DuplicateBreaks));
     /// ```
-    pub fn new(mut breaks: Vec<T>) -> Result<Self, FromVecError> {
+    pub fn new(breaks: Vec<T>) -> Result<Self, FromVecError> {
+        // Test if breaks are sorted
         if !breaks.is_sorted() { return Err(FromVecError::UnsortedBreaks) };
-        let num_breaks = breaks.len();
-        breaks.dedup(); // todo: replace this with a function that just checks for the first duplicate
-        if num_breaks != breaks.len() { return Err(FromVecError::DuplicateBreaks) };
+
+        // Test for duplicates
+        for i in 1..breaks.len() {
+            if breaks[i] == breaks[i-1] { return Err(FromVecError::DuplicateBreaks); }
+        }
+
         Ok(Breaks(breaks))
     }
 

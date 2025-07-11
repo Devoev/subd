@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 /// An error returned when a parametric value is outside the range of a [`KnotVec`].
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct OutsideKnotRangeError;
 
 impl Display for OutsideKnotRangeError {
@@ -17,7 +17,7 @@ impl Error for OutsideKnotRangeError {}
 
 /// An error returned during construction of a [`KnotVec`]
 /// if the provided knot values are not sorted.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct UnsortedKnotsError;
 
 impl Display for UnsortedKnotsError {
@@ -29,7 +29,7 @@ impl Display for UnsortedKnotsError {
 impl Error for UnsortedKnotsError {}
 
 /// An error returned when constructing [`Breaks`] from a `Vec`.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FromVecError {
     /// The breakpoints are not sorted.
     UnsortedBreaks,
