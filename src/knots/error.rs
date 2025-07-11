@@ -41,7 +41,7 @@ pub enum FromVecError {
 impl Display for FromVecError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            FromVecError::UnsortedBreaks => write!(f, "provided breakpoints are knot sorted"),
+            FromVecError::UnsortedBreaks => write!(f, "provided breakpoints are not sorted"),
             FromVecError::DuplicateBreaks => write!(f, "provided breakpoints are not unique"),
         }
     }
