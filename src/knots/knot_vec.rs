@@ -1,9 +1,7 @@
 use crate::knots::error::UnsortedKnotsError;
-use core::fmt;
 use iter_num_tools::lin_space;
 use itertools::{chain, Dedup, DedupWithCount, Itertools};
 use nalgebra::RealField;
-use std::fmt::{Display, Formatter};
 use std::ops::{Index, RangeInclusive};
 use std::slice::Iter;
 use std::vec;
@@ -114,7 +112,21 @@ impl<T: RealField + Copy> KnotVec<T> {
         let internal = KnotVec::new_uniform(n - p + 1);
         KnotVec::new_open(internal, p - 1)
     }
+}
 
+impl <T> KnotVec<T> {
+    /// Returns the number of knots.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns `true` if the knot vector is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl <T: Copy> KnotVec<T> {
     /// Returns the first knot.
     pub fn first(&self) -> T {
         self.0[0]
@@ -137,29 +149,19 @@ pub type BreaksIter<'a, T> = Dedup<Iter<'a, T>>;
 /// An iterator that yields the breakpoints with multiplicity of a [`KnotVec`].
 pub type BreaksWithMultiplicityIter<'a, T> = DedupWithCount<Iter<'a, T>>;
 
-impl<T : RealField> KnotVec<T> {
-    /// Returns the number of knots.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns `true` if the knot vector is empty.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
+impl<T: PartialEq> KnotVec<T> {
     /// Returns an iterator over the breaks, i.e. unique knot values.
-    pub fn breaks_iter(&self) -> BreaksIter<T> {
+    pub fn breaks_iter(&self) -> BreaksIter<'_, T> {
         self.0.iter().dedup()
     }
 
     /// Returns an iterator over (multiplicity, break) pairs.
-    pub fn breaks_with_multiplicity_iter(&self) -> BreaksWithMultiplicityIter<T> {
+    pub fn breaks_with_multiplicity_iter(&self) -> BreaksWithMultiplicityIter<'_, T> {
         self.0.iter().dedup_with_count()
     }
 }
 
-impl <T : RealField> Index<usize> for KnotVec<T> {
+impl <T> Index<usize> for KnotVec<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -167,7 +169,7 @@ impl <T : RealField> Index<usize> for KnotVec<T> {
     }
 }
 
-impl <T : RealField + Copy> IntoIterator for KnotVec<T> {
+impl <T> IntoIterator for KnotVec<T> {
     type Item = T;
     type IntoIter = vec::IntoIter<T>;
 
@@ -176,17 +178,11 @@ impl <T : RealField + Copy> IntoIterator for KnotVec<T> {
     }
 }
 
-impl <'a, T : RealField + Copy> IntoIterator for &'a KnotVec<T> {
+impl <'a, T> IntoIterator for &'a KnotVec<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
-    }
-}
-
-impl<T : RealField> Display for KnotVec<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0)
     }
 }
