@@ -48,19 +48,6 @@ impl<T> BreaksWithMultiplicity<T> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
-
-    /// Returns a vector of [knot span indices](KnotSpan),
-    /// associated with this breakpoint vector.
-    pub fn knot_spans(&self) -> Vec<KnotSpan> {
-        let mut acc = 0;
-        let num_spans = self.len() - 1;
-        let mut spans = Vec::with_capacity(num_spans);
-        for (i, (k, _)) in self.into_iter().take(num_spans).enumerate() {
-            acc += k - 1;
-            spans.push(KnotSpan(i + acc));
-        }
-        spans
-    }
 }
 
 impl <T> Index<usize> for BreaksWithMultiplicity<T> {

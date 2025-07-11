@@ -66,6 +66,8 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::knots::increments::Increments;
+    use crate::mesh::knot_mesh::KnotMesh;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::plot::plot_faces;
     use crate::subd::edge_basis::CatmarkEdgeBasis;
@@ -450,7 +452,8 @@ mod tests {
         // Build knots and space (basis functions)
         let knots = KnotVec::new_open_uniform(n, p);
         let breaks = Breaks::from_knots(knots.clone());
-        let cart_mesh = CartMesh::from_breaks([breaks.clone(), breaks]);
+        let cart_mesh = KnotMesh::from_knots([knots.clone(), knots.clone()]);
+        
         let msh = BezierMesh::new(cart_mesh, geo_map);
         let basis = de_boor::DeBoor::new(knots, n, p);
         let basis = MultiDeBoor::new([basis.clone(), basis]);
@@ -461,9 +464,7 @@ mod tests {
         let quad = BezierQuad::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
         let mat = hodge.assemble(quad, |elem| {
-            // todo: this should DIRECTLY be implemented in the spline spaces
-            let x = msh.geo_elem(*elem).ref_elem.a;
-            space.basis.find_elem(x.into_arr())
+            *elem
         });
 
         // Print
@@ -1070,8 +1071,8 @@ mod tests {
         // multiplicity
         let start = Instant::now();
         let breaks_with_multi = BreaksWithMultiplicity::from_knots(knots);
-        let spans_2 = breaks_with_multi.knot_spans()
-            .iter().map(|span| span.0)
+        let spans_2 = Increments::from_multiplicities(breaks_with_multi).span_indices()
+            .map(|span| span.0)
             .collect_vec();
 
         let time_multi = start.elapsed();
