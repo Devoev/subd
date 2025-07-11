@@ -7,7 +7,7 @@ use std::slice::Iter;
 use std::vec;
 
 /// A vector of increasing *knot values* of type [`T`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct KnotVec<T>(pub Vec<T>);
 
 impl<T: RealField + Copy> KnotVec<T> {
@@ -184,5 +184,44 @@ impl <'a, T> IntoIterator for &'a KnotVec<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn construction() {
+        let n = 5;
+        let p = 1;
+        let knots = KnotVec(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+
+        let new = KnotVec::new(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]).unwrap();
+        assert_eq!(new, knots);
+
+        let sorted = KnotVec::from_sorted(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+        assert_eq!(sorted, knots);
+
+        let unsorted = KnotVec::from_unsorted(vec![1.0, 1.0, 0.75, 0.5, 0.25, 0.0, 0.0]);
+        assert_eq!(unsorted, knots);
+
+        let uniform = KnotVec::<f64>::new_uniform(n-p+1);
+        let open = KnotVec::<f64>::new_open(uniform, p-1);
+        assert_eq!(open, knots);
+
+        let open_uniform = KnotVec::<f64>::new_open_uniform(n, p);
+        assert_eq!(open_uniform, knots);
+    }
+
+    #[test]
+    fn breaks_iter() {
+        let knots = KnotVec(vec![0.0, 0.0, 0.25, 0.5, 0.5, 0.5, 0.75, 1.0, 1.0]);
+
+        let breaks = knots.breaks_iter().collect_vec();
+        assert_eq!(breaks, vec![&0.0, &0.25, &0.5, &0.75, &1.0]);
+
+        let breaks_with_multiplicity = knots.breaks_with_multiplicity_iter().collect_vec();
+        assert_eq!(breaks_with_multiplicity, vec![(2, &0.0), (1, &0.25), (3, &0.5), (1, &0.75), (2, &1.0)]);
     }
 }

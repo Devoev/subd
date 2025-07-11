@@ -73,19 +73,6 @@ mod tests {
     use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
-    fn knots() {
-        let n = 5;
-        let p = 1;
-        let uniform = KnotVec::<f64>::new_uniform(n-p+1);
-        let open = KnotVec::<f64>::new_open(uniform.clone(), p-1);
-        let open_uniform = KnotVec::<f64>::new_open_uniform(n, p);
-
-        println!("{uniform:?}");
-        println!("{open:?}");
-        println!("{open_uniform:?}");
-    }
-
-    #[test]
     fn multi_index() {
         const N: usize = 6;
         let p = 2;
