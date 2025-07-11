@@ -19,14 +19,13 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
     msh: &'a M,
     space: &Space<T, X, B, D>,
     quad: PullbackQuad<T, X, E, Q, D>,
-    f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-    elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem // todo: this function is just temporary
+    f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, GeoElem = E>,
-          B: LocalBasis<T, X>, // todo: add Elem = E::RefCell
+          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalBasis<T, X>,
           Q: Quadrature<T, X, E::RefCell>,
           DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           DefaultAllocator: Allocator<B::NumComponents>,
@@ -37,11 +36,9 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
 
     // Iteration over all mesh elements
     for elem in msh.elem_iter() {
-        let sp_elem = elem_to_sp_elem(&elem);
-        let geo_elem = msh.geo_elem(elem);
-
         // Build local space and local stiffness matrix
-        let (sp_local, idx) = space.local_space_with_idx(&sp_elem);
+        let (sp_local, idx) = space.local_space_with_idx(&elem);
+        let geo_elem = msh.geo_elem(elem);
         let fi_local = assemble_function_local(&geo_elem, &sp_local, &quad, &f);
 
         // Fill global stiffness matrix with local entries

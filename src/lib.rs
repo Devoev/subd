@@ -463,9 +463,7 @@ mod tests {
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = BezierQuad::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
-        let mat = hodge.assemble(quad, |elem| {
-            *elem
-        });
+        let mat = hodge.assemble(quad);
 
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -534,9 +532,9 @@ mod tests {
         // Assembly
         let hodge = Hodge::new(&msh, &space);
         let laplace = Laplace::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone(), |&elem| elem.clone());
-        let stiffness = laplace.assemble(quad.clone(), |&elem| elem.clone());
-        let load = assemble_function(&msh, &space, quad, f, |&elem| elem.clone());
+        let mass = hodge.assemble(quad.clone());
+        let stiffness = laplace.assemble(quad.clone());
+        let load = assemble_function(&msh, &space, quad, f);
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -605,7 +603,7 @@ mod tests {
 
         // Assembly
         let hodge = Hodge::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone(), |&elem| elem.clone());
+        let mass = hodge.assemble(quad.clone());
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -656,11 +654,11 @@ mod tests {
         let quad = PullbackQuad::new(ref_quad);
 
         // Assemble system
-        let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
+        let f = assemble_function(&msh, &space, quad.clone(), f);
         let hodge = Hodge::new(&msh, &space);
         let laplace = Laplace::new(&msh, &space);
-        let m_coo = hodge.assemble(quad.clone(), |&elem| elem.clone());
-        let k_coo = laplace.assemble(quad.clone(), |&elem| elem.clone());
+        let m_coo = hodge.assemble(quad.clone());
+        let k_coo = laplace.assemble(quad.clone());
         let m = CsrMatrix::from(&m_coo);
         let k = CsrMatrix::from(&k_coo);
 
@@ -752,9 +750,9 @@ mod tests {
         // Assemble system
         let hodge = Hodge::new(&msh, &space);
         let laplace = Laplace::new(&msh, &space);
-        let f = assemble_function(&msh, &space, quad.clone(), f, |&elem| elem.clone());
-        let m_coo = hodge.assemble(quad.clone(), |&elem| elem.clone());
-        let k_coo = laplace.assemble(quad.clone(), |&elem| elem.clone());
+        let f = assemble_function(&msh, &space, quad.clone(), f);
+        let m_coo = hodge.assemble(quad.clone());
+        let k_coo = laplace.assemble(quad.clone());
         let m = CsrMatrix::from(&m_coo);
         let k = CsrMatrix::from(&k_coo);
 

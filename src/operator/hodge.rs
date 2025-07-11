@@ -34,12 +34,12 @@ impl <'a, T, X, M, B, const D: usize> Hodge<'a, T, X, M, B, D> {
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>, elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               X: Dimensioned<T, D>,
               E: Cell<T, X, D, D>,
-              M: Mesh<'a, T, X, D, D, GeoElem = E>,
-              B: LocalBasis<T, X>, // todo: add Elem = E::RefCell
+              M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
+              B: LocalBasis<T, X>,
               Q: Quadrature<T, X, E::RefCell>,
               DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
               Const<D>: DimMin<Const<D>, Output = Const<D>>
@@ -49,11 +49,9 @@ impl <'a, T, X, M, B, const D: usize> Hodge<'a, T, X, M, B, D> {
 
         // Iteration over all mesh elements
         for elem in self.msh.elem_iter() {
-            let sp_elem = elem_to_sp_elem(&elem);
-            let geo_elem = self.msh.geo_elem(elem);
-
             // Build local space and local mass matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&sp_elem);
+            let (sp_local, idx) = self.space.local_space_with_idx(&elem);
+            let geo_elem = self.msh.geo_elem(elem);
             let mij_local = assemble_hodge_local(&geo_elem, &sp_local, &quad);
 
             // Fill global mass matrix with local entries

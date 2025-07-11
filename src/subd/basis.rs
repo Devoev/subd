@@ -26,7 +26,7 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
 }
 
 impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T, (T, T)> for CatmarkBasis<'a, T, M> {
-    type Elem = CatmarkPatchNodes;
+    type Elem = &'a CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 

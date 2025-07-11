@@ -25,7 +25,7 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
 }
 
 impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for CatmarkEdgeBasis<'a, T, M> {
-    type Elem = CatmarkPatchNodes; // todo: separate EdgePatch struct is required
+    type Elem = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
     type ElemBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 

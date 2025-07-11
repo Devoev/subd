@@ -36,12 +36,12 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>, elem_to_sp_elem: impl Fn(&M::Elem) -> B::Elem) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D>,
           E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, GeoElem = E>,
-          B: LocalBasis<T, X, NumComponents = U1>, // todo: add Elem = E::RefCell
+          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalBasis<T, X, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, X, D>,
           Q: Quadrature<T, X, E::RefCell>,
           DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
@@ -53,11 +53,9 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
 
         // Iteration over all mesh elements
         for elem in self.msh.elem_iter() {
-            let sp_elem = elem_to_sp_elem(&elem);
-            let geo_elem = self.msh.geo_elem(elem);
-
             // Build local space and local stiffness matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&sp_elem);
+            let (sp_local, idx) = self.space.local_space_with_idx(&elem);
+            let geo_elem = self.msh.geo_elem(elem);
             let kij_local = assemble_laplace_local(&geo_elem, &sp_local, &quad);
 
             // Fill global stiffness matrix with local entries
