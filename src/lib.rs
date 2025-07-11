@@ -55,7 +55,7 @@ mod tests {
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::{iproduct, Itertools};
-    use nalgebra::{center, matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, Point2, RealField, RowSVector, SMatrix, SVector, Vector1, U2};
+    use nalgebra::{center, matrix, point, DMatrix, DVector, Dyn, Matrix, Matrix1, OMatrix, Point, Point2, RealField, RowDVector, RowSVector, SMatrix, SVector, Vector1, U2};
     use nalgebra_sparse::CsrMatrix;
     use num_traits::real::Real;
     use plotters::backend::BitMapBackend;
@@ -135,6 +135,25 @@ mod tests {
             Err(error) => { panic!("{}", error) }
         };
         dbg!(curve.eval(0.0));
+    }
+
+    #[test]
+    fn populate_basis() {
+        // Build example space
+        let n = 20;
+        let p = 5;
+        let space = BsplineSpace::new_open_uniform([n], [p]);
+        let dim = space.dim();
+
+        // Populate basis values
+        let mut b = RowDVector::zeros(dim);
+        space.populate_global(&mut b, 0.1);
+        println!("{}", b.transpose());
+
+        // Populate gradients
+        let mut b = RowDVector::zeros(dim);
+        space.populate_grad_global(&mut b, 0.1);
+        println!("{}", b.transpose());
     }
 
     #[test]
