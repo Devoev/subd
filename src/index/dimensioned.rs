@@ -1,8 +1,8 @@
-use std::iter::Map;
-use std::ops::Range;
 use crate::index::multi_index::MultiIndex;
 use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, SVector, Scalar};
+use std::iter::Map;
+use std::ops::Range;
 
 /// Types composed of [`D`] elements of type [`T`],
 /// i.e. a type isomorphic to the fixed-sized array `[T; D]`.
@@ -49,7 +49,7 @@ impl<const D: usize, T: Scalar> Dimensioned<T, D> for Point<T, D> {
 }
 
 /// Shape of a [`D`]-variate array.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct DimShape<const D: usize>(pub [usize; D]);
 
 /// An iterator over the multivariate cartesian product of ranges.
@@ -86,7 +86,7 @@ impl<const D: usize> Dimensioned<usize, D> for DimShape<D> {
 }
 
 /// Strides of a [`D`]-variate array.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
 pub struct Strides<const D: usize>(pub [usize; D]);
 
 impl<const D: usize> Dimensioned<usize, D> for Strides<D> {
@@ -104,5 +104,73 @@ impl <const D: usize> From<DimShape<D>> for Strides<D> {
         });
 
         Strides(value.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup() -> (DimShape<3>, DimShape<4>, DimShape<2>) {
+        let a = DimShape([2, 2, 2]);
+        let b = DimShape([2, 4, 3, 5]);
+        let c = DimShape([0, 1]);
+
+        (a, b, c)
+    }
+
+    #[test]
+    fn len() {
+        let (a, b, c) = setup();
+        assert_eq!(a.len(), 8);
+        assert_eq!(b.len(), 120);
+        assert_eq!(c.len(), 0);
+    }
+
+    #[test]
+    fn multi_range() {
+        let (a, b, c) = setup();
+
+        assert_eq!(
+            a.multi_range::<[usize; 3]>().collect_vec(),
+            vec![
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 1, 0],
+                [0, 1, 1],
+                [1, 0, 0],
+                [1, 0, 1],
+                [1, 1, 0],
+                [1, 1, 1],
+            ]
+        );
+
+        assert_eq!(b.multi_range::<[usize; 4]>().count(), 120);
+
+        assert_eq!(c.multi_range::<[usize; 2]>().collect_vec(), Vec::<[usize; 2]>::new());
+    }
+
+    #[test]
+    fn shrink() {
+        let (mut a, mut b, _) = setup();
+
+        a.shrink(0);
+        assert_eq!(a, DimShape([2, 2, 2]));
+        a.shrink(1);
+        assert_eq!(a, DimShape([1, 1, 1]));
+        a.shrink(1);
+        assert_eq!(a, DimShape([0, 0, 0]));
+
+        b.shrink(2);
+        assert_eq!(b, DimShape([0, 2, 1, 3]));
+    }
+
+    #[test]
+    fn strides() {
+        let (a, b, c) = setup();
+
+        assert_eq!(Strides::from(a), Strides([1, 2, 4]));
+        assert_eq!(Strides::from(b), Strides([1, 2, 8, 24]));
+        assert_eq!(Strides::from(c), Strides([1, 0]));
     }
 }
