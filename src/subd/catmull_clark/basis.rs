@@ -14,7 +14,7 @@ use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 
 /// Basis functions for Catmull-Clark subdivision.
-pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
+pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
 
 impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
     type NumBasis = Dyn;
