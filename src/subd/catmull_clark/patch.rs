@@ -1,7 +1,7 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{QuadBndTopo, QuadTopo};
-use crate::subd::mesh::CatmarkMesh;
+use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
@@ -9,8 +9,8 @@ use crate::cells::geo;
 use crate::cells::line_segment::NodePair;
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::subd::basis::CatmarkPatchBasis;
-use crate::subd::map::CatmarkMap;
+use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
+use crate::subd::catmull_clark::map::CatmarkMap;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]

@@ -4,14 +4,14 @@ use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::cells::topo::Cell;
 use crate::mesh::traits::MeshTopology;
-use crate::subd::matrices::build_extended_mats;
-use crate::subd::mesh::CatmarkMesh;
-use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 use itertools::Itertools;
 use nalgebra::{one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 use std::vec;
+use crate::subd::catmull_clark::matrices::build_extended_mats;
+use crate::subd::catmull_clark::mesh::CatmarkMesh;
+use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);

@@ -46,11 +46,11 @@ mod tests {
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::Quadrature;
-    use crate::subd::basis::CatmarkBasis;
+    use crate::subd::catmull_clark::basis::CatmarkBasis;
     use crate::subd::lin_subd::LinSubd;
-    use crate::subd::mesh::CatmarkMesh;
-    use crate::subd::patch::CatmarkPatch;
-    use crate::subd::space::CatmarkSpace;
+    use crate::subd::catmull_clark::mesh::CatmarkMesh;
+    use crate::subd::catmull_clark::patch::CatmarkPatch;
+    use crate::subd::catmull_clark::space::CatmarkSpace;
     use crate::subd_legacy;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;

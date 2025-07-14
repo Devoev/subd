@@ -5,12 +5,12 @@ use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::mesh::traits::MeshTopology;
-use crate::subd::mesh::CatmarkMesh;
-use crate::subd::patch::{CatmarkPatch, CatmarkPatchNodes};
 use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
 use std::vec;
 use itertools::Itertools;
 use crate::cells::topo::Cell;
+use crate::subd::catmull_clark::mesh::CatmarkMesh;
+use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 
 /// Edge basis functions for Catmull-Clark subdivision.
 pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);

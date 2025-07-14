@@ -1,8 +1,8 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::diffgeo::chart::Chart;
-use crate::subd::patch::CatmarkPatch;
 use nalgebra::{Point, RealField, SMatrix};
 use num_traits::ToPrimitive;
+use crate::subd::catmull_clark::patch::CatmarkPatch;
 // todo: possibly replace with reference to CatmarkPatch or with just CatmarkPatch
 
 /// Parametrization of a [`CatmarkPatch`].
