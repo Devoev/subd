@@ -36,3 +36,42 @@ impl<const D: usize> MultiIndex<usize, D> for [usize; D] {
 }
 
 // todo: implement for Range arrays
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn into_lin() {
+        //            shape = 4x4
+        let strides = Strides([1, 4]);
+        
+        let idx = (2, 0);
+        assert_eq!(idx.into_lin(&strides), 2);
+        let idx = [2, 0];
+        assert_eq!(idx.into_lin(&strides), 2);
+        
+        let idx = (1, 3);
+        assert_eq!(idx.into_lin(&strides), 13);
+        let idx = [1, 3];
+        assert_eq!(idx.into_lin(&strides), 13);
+        
+        //            shape = 3x3x3
+        let strides = Strides([1, 3, 9]);
+
+        let idx = (0, 0, 0);
+        assert_eq!(idx.into_lin(&strides), 0);
+        let idx = [0, 0, 0];
+        assert_eq!(idx.into_lin(&strides), 0);
+
+        let idx = (1, 2, 0);
+        assert_eq!(idx.into_lin(&strides), 7);
+        let idx = [1, 2, 0];
+        assert_eq!(idx.into_lin(&strides), 7);
+
+        let idx = (1, 0, 2);
+        assert_eq!(idx.into_lin(&strides), 19);
+        let idx = [1, 0, 2];
+        assert_eq!(idx.into_lin(&strides), 19);
+    }
+}

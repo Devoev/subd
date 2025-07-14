@@ -73,22 +73,6 @@ mod tests {
     use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
-    fn multi_index() {
-        const N: usize = 6;
-        let p = 2;
-        let t = 0.5;
-
-        let dims = DimShape([3, 3, 3]);
-        let strides = Strides::from(dims);
-        let multi_idx = [2, 2, 2];
-        println!("{:?}", multi_idx);
-        println!("{:?}", multi_idx.into_lin(&strides));
-
-        let space = BsplineSpace::<f64, (f64, f64), 2>::new_open_uniform([N, N], [p, p]);
-        let strides = space.basis.strides();
-    }
-
-    #[test]
     fn splines() {
         let n = 4;
         let p = 2;
