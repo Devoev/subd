@@ -12,7 +12,6 @@ pub mod operator;
 pub mod quadrature;
 pub mod subd;
 pub mod diffgeo;
-mod subd_legacy;
 pub mod cg;
 mod plot;
 
@@ -29,48 +28,39 @@ mod tests {
     use crate::cells::cartesian::CartCell;
     use crate::cells::geo::Cell as GeoCell;
     use crate::cells::quad::QuadTopo;
-    use crate::cg::cg;
     use crate::diffgeo::chart::Chart;
-    use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
-    use crate::index::multi_index::MultiIndex;
     use crate::knots::breaks::Breaks;
     use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
+    use crate::knots::increments::Increments;
     use crate::knots::knot_vec::KnotVec;
     use crate::mesh::bezier::BezierMesh;
     use crate::mesh::cartesian::CartMesh;
     use crate::mesh::face_vertex::QuadVertexMesh;
+    use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
+    use crate::mesh::knot_mesh::KnotMesh;
     use crate::mesh::traits::{Mesh, MeshTopology};
     use crate::operator::function::assemble_function;
-    use crate::operator::hodge::{Hodge};
-    use crate::operator::laplace::{Laplace};
+    use crate::operator::hodge::Hodge;
+    use crate::operator::laplace::Laplace;
+    use crate::plot::plot_faces;
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
     use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use crate::quadrature::traits::Quadrature;
-    use crate::subd::catmull_clark::basis::CatmarkBasis;
-    use crate::subd::lin_subd::LinSubd;
+    use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
     use crate::subd::catmull_clark::patch::CatmarkPatch;
-    use crate::subd::catmull_clark::space::CatmarkSpace;
-    use crate::subd_legacy;
+    use crate::subd::edge_basis::CatmarkEdgeBasis;
+    use crate::subd::lin_subd::LinSubd;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
-    use itertools::{iproduct, Itertools};
-    use nalgebra::{center, matrix, point, DMatrix, DVector, Dyn, Matrix, Matrix1, OMatrix, Point, Point2, RealField, RowDVector, RowSVector, SMatrix, SVector, Vector1, U2};
-    use nalgebra_sparse::CsrMatrix;
-    use num_traits::real::Real;
+    use itertools::Itertools;
+    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowDVector, RowSVector, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
-    use std::collections::BTreeSet;
-    use std::f64::consts::PI;
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::knots::increments::Increments;
-    use crate::mesh::knot_mesh::KnotMesh;
-    use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
-    use crate::plot::plot_faces;
-    use crate::subd::edge_basis::CatmarkEdgeBasis;
 
     #[test]
     fn splines() {
@@ -631,7 +621,7 @@ mod tests {
         // matrix-matrix (for catmull clark)
         let start = Instant::now();
         for (u, v) in grid.clone() {
-            let eval = black_box(subd_legacy::basis::eval_regular(u, v));
+            let _ = black_box(CatmarkPatchBasis::eval_regular(u, v));
             // println!("{}", eval.norm());
         }
         let time_mat_mat = start.elapsed();
