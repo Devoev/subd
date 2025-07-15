@@ -165,14 +165,17 @@ impl<T: RealField + Copy> EvalGrad<T, T, 1> for DeBoorSpan<T> {
     }
 }
 
+// todo: move these to integration tests instead?
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use itertools::izip;
     use nalgebra::dvector;
+    use rand::random_range;
 
-    fn setup() -> ([f64; 10], [DeBoorSpan<f64>; 10]) {
+    fn setup_eval() -> ([f64; 10], [DeBoorSpan<f64>; 10]) {
         // Define knot vector
         let p = 2;
         let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]);
@@ -186,9 +189,30 @@ mod tests {
         (ts, local_bases)
     }
 
+    fn setup_eval_derivs_sum() -> (f64, DeBoorSpan<f64>, DeBoorSpan<f64>) {
+        // Get random parametric value
+        let t = random_range(0.0..=1.0);
+
+        // Define first knot vector
+        let n = 4;
+        let p = 3;
+        let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]);
+        let idx = KnotSpan::find(&xi, n, t).unwrap();
+        let b1 = DeBoorSpan::new(xi, p, idx);
+
+        // Define second knot vector
+        let n = 6;
+        let p = 3;
+        let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.0, 1.0/3.0, 2.0/3.0, 1.0, 1.0, 1.0, 1.0]);
+        let idx = KnotSpan::find(&xi, n, t).unwrap();
+        let b2 = DeBoorSpan::new(xi, p, idx);
+
+        (t, b1, b2)
+    }
+
     #[test]
     fn eval() {
-        let (ts, bs) = setup();
+        let (ts, bs) = setup_eval();
 
         // Exact results of evaluated basis functions
         let evals_exact = [
@@ -204,9 +228,36 @@ mod tests {
             dvector![0.00000, 0.00000, 1.00000],
         ];
 
+        // Test relative equality for each parametric value
         for (t, b, eval_exact) in izip!(ts, bs, evals_exact) {
             let eval = b.eval(t).transpose();
             assert_relative_eq!(eval, eval_exact, epsilon = 1e-5);
+        }
+    }
+
+    #[test]
+    fn eval_derivs_sum() {
+        const NUM_DERIVS: usize = 7;
+        let (t, b1, b2) = setup_eval_derivs_sum();
+
+        // Test if sum of basis values is 1, and sum of derivatives is 0
+        let eval = b1.eval_derivs::<NUM_DERIVS>(t);
+        let basis_sum = eval.row(0).sum();
+        assert_relative_eq!(basis_sum, 1.0, epsilon = 1e-15);
+
+        for eval_deriv in eval.row_iter().skip(1) {
+            let derivs_sum = eval_deriv.sum();
+            assert_relative_eq!(derivs_sum, 0.0, epsilon = 1e-13);
+        }
+
+        // Test the same for second basis
+        let eval = b2.eval_derivs::<NUM_DERIVS>(t);
+        let basis_sum = eval.row(0).sum();
+        assert_relative_eq!(basis_sum, 1.0, epsilon = 1e-15);
+
+        for eval_deriv in eval.row_iter().skip(1) {
+            let derivs_sum = eval_deriv.sum();
+            assert_relative_eq!(derivs_sum, 0.0, epsilon = 1e-13);
         }
     }
 }

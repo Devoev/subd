@@ -10,6 +10,7 @@ itertools = "0.14.0"
 nalgebra = { version = "0.33.2", features = ["rand", "sparse"] }
 nalgebra-sparse = "0.10.0"
 plotters = "0.3.7"
-plotly = "0.12.1"
+plotly = "0.13.3"
 gauss-quad = "0.2.2"
 approx = "0.5.1"
+rand = "0.9.1"
