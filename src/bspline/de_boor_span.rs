@@ -1,9 +1,9 @@
+use crate::basis::eval::{EvalBasis, EvalDerivs, EvalGrad};
 use crate::basis::tensor_prod::MultiProd;
+use crate::basis::traits::Basis;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
-use crate::basis::eval::{EvalBasis, EvalDerivs, EvalGrad};
-use crate::basis::traits::Basis;
 
 /// Scalar univariate B-Spline basis functions, restricted to a local [`KnotSpan`].
 #[derive(Debug, Clone)]
@@ -162,5 +162,51 @@ impl<T: RealField + Copy> EvalGrad<T, T, 1> for DeBoorSpan<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+    use itertools::izip;
+    use nalgebra::dvector;
+
+    fn setup() -> ([f64; 10], [DeBoorSpan<f64>; 10]) {
+        // Define knot vector
+        let p = 2;
+        let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]);
+
+        // Define parametric values and corresponding span indices
+        let ts = [0.0, 1.0/9.0, 2.0/9.0, 3.0/9.0, 4.0/9.0, 5.0/9.0, 6.0/9.0, 7.0/9.0, 8.0/9.0, 1.0];
+        let spans = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3];
+
+        // Constructs local bases
+        let local_bases = spans.map(|idx| DeBoorSpan::new(xi.clone(), p, KnotSpan(idx)));
+        (ts, local_bases)
+    }
+
+    #[test]
+    fn eval() {
+        let (ts, bs) = setup();
+
+        // Exact results of evaluated basis functions
+        let evals_exact = [
+            dvector![1.00000, 0.00000, 0.00000],
+            dvector![0.60494, 0.37037, 0.02469],
+            dvector![0.30864, 0.59259, 0.09877],
+            dvector![0.11111, 0.66667, 0.22222],
+            dvector![0.01235, 0.59259, 0.39506],
+            dvector![0.39506, 0.59259, 0.01235],
+            dvector![0.22222, 0.66667, 0.11111],
+            dvector![0.09877, 0.59259, 0.30864],
+            dvector![0.02469, 0.37037, 0.60494],
+            dvector![0.00000, 0.00000, 1.00000],
+        ];
+
+        for (t, b, eval_exact) in izip!(ts, bs, evals_exact) {
+            let eval = b.eval(t).transpose();
+            assert_relative_eq!(eval, eval_exact, epsilon = 1e-5);
+        }
     }
 }

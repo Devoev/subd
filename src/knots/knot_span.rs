@@ -83,5 +83,22 @@ mod tests {
 
         let idx = KnotSpan::find(&knots, n, 1.1);
         assert_eq!(idx, Err(OutsideKnotRangeError));
+
+        //           indices:     0    1    2    3    4    5    6
+        let knots = KnotVec(vec![0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]);
+        let n = 4;
+
+        // Find for equally 10 equally spaced in [0,1]
+        let t_smaller = [0.0, 1.0/9.0, 2.0/9.0, 3.0/9.0, 4.0/9.0]; // smaller than 0.5
+        let t_larger = [5.0/9.0, 6.0/9.0, 7.0/9.0, 8.0/9.0, 1.0];  // larger than 0.5
+
+        for ti in t_smaller {
+            let idx = KnotSpan::find(&knots, n, ti);
+            assert_eq!(idx, Ok(KnotSpan(2)));
+        }
+        for ti in t_larger {
+            let idx = KnotSpan::find(&knots, n, ti);
+            assert_eq!(idx, Ok(KnotSpan(3)));
+        }
     }
 }
