@@ -22,16 +22,56 @@ fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item
 /// # How to use a quadrature rule
 /// The `Quadrature` trait provides the method [`integrate_fn_elem`](Quadrature::integrate_fn_elem)
 /// which, given an integration domain `elem: Elem` and a function `f: Node -> T`,
-/// performs the numerical integration of `f` on `elem`. This is done by evaluating the function
-/// on every quadrature node, given by [`nodes_elem`](Quadrature::nodes_elem), and multiplying
+/// performs the numerical integration of `f` on `elem`.
+/// For example:
+/// ```
+/// # use approx::assert_relative_eq;
+/// # use gauss_quad::GaussLegendre;
+/// # use subd::cells::cartesian::CartCell;
+/// # use subd::quadrature::traits::Quadrature;
+///
+/// // Construct quadrature rule
+/// let degree = 3;
+/// let quad = GaussLegendre::new(degree).unwrap();
+///
+/// // Define function and interval
+/// let interval = CartCell::new_univariate(-2.0, 2.0);
+/// let f = |x: f64| x.powi(3);
+///
+/// // Perform numerical integration
+/// let int = quad.integrate_fn_elem(&interval, f);
+/// assert_relative_eq!(int, 0.0, epsilon = 1e-13);
+/// ```
+/// The quadrature evaluates the function
+/// on every quadrature node, given by [`nodes_elem`](Quadrature::nodes_elem), and multiplies
 /// the evaluated function values with the weights, given by [`weights_elem`](Quadrature::weights_elem).
-/// 
+///
 /// For efficiency reasons it may make sense to evaluate the function apriori,
-/// and then perform the numerical integration. This can be done by evaluating the function
-/// using [`eval_fn_elem`](Quadrature::eval_fn_elem) on every quadrature node
-/// (or simply getting the nodes using `nodes_elem` and performing the evaluation yourself) 
-/// and then calling [`integrate_elem`](Quadrature::integrate_elem)
-/// to perform the actual integration.
+/// and then perform the numerical integration.
+/// This can be done using [`integrate_elem`](Quadrature::integrate_elem),
+/// for example
+/// ```
+/// # use approx::assert_relative_eq;
+/// # use gauss_quad::GaussLegendre;
+/// # use itertools::Itertools;
+/// # use subd::cells::cartesian::CartCell;
+/// # use subd::quadrature::traits::Quadrature;
+///
+/// # let degree = 3;
+/// # let quad = GaussLegendre::new(degree).unwrap();
+/// # let interval = CartCell::new_univariate(-2.0, 2.0);
+/// # let f = |x: f64| x.powi(3);
+///
+/// // Evaluate function at quadrature nodes
+/// // You can also call `quad.eval_fn_elem` here
+/// let fi = quad.nodes_elem(&interval).map(|node| f(node));
+///
+/// // Perform numerical integration
+/// let int = quad.integrate_elem(&interval, fi);
+/// assert_relative_eq!(int, 0.0, epsilon = 1e-13);
+/// ```
+/// Alternatively you could also use [`eval_fn_elem`](Quadrature::eval_fn_elem)
+/// to evaluate the function on every quadrature node.
 /// 
 /// # Type parameters
 /// - [`T`]: Scalar type.
