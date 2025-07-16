@@ -359,6 +359,8 @@ mod tests {
 
         println!("Edge-to-node incidence (div): {}", div);
         println!("Face-to-edge incidence (dual curl): {}", curl_dual);
+        println!("Node-to-edge incidence (grad): {}", grad);
+        println!("Edge-to-face incidence (curl): {}", curl);
         println!("Product d*c = {}", div * curl_dual);
         println!("Product c*g = {}", curl * grad);
     }
