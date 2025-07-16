@@ -1,12 +1,13 @@
-use std::collections::HashMap;
-use itertools::Itertools;
-use nalgebra::{center, matrix, stack, Const, DefaultAllocator, RealField, SMatrix, SVector, U4, U5};
-use nalgebra::allocator::Allocator;
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::incidence::edge_to_node_incidence;
 use crate::mesh::traits::MeshTopology;
+use itertools::Itertools;
+use nalgebra::{center, matrix, Const, Dyn, OMatrix, RealField};
+use nalgebra_sparse::{CooMatrix, CsrMatrix};
+use std::collections::HashMap;
 
 /// Linear subdivision of a quad-vertex mesh.
 #[derive(Debug, Clone)]
@@ -127,22 +128,49 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             0.25, 0.25, 0.25, 0.25
         ].cast::<T>();
 
-        let mut edge_midpoints = HashMap::<NodePair, NodeIdx>::new();
+        // Get coordinate matrix
+        let rows = self.0.coords.iter()
+            .map(|p| p.coords.transpose())
+            .collect_vec();
+        let c = OMatrix::<T, Dyn, Const<M>>::from_rows(&rows);
 
-        // Refine every mesh face
-        for i in 0..self.0.elems.len() {
-            let face = self.0.elems[i];
-            let quad = Quad::from_msh(face, &self.0);
-            let [a, b, c, d] = quad.vertices;
-            let c = stack![a.coords, b.coords, c.coords, d.coords].transpose();
-            let c = S.clone() * c;
-            let ab = c.row(0);
-            let bc = c.row(1);
-            let cd = c.row(2);
-            let da = c.row(3);
-            let m = c.row(4);
+        // Node to edge matrix
+        let (row_idx, col_idx, val) = edge_to_node_incidence(&self.0).disassemble();
+        let val = val.iter()
+            .map(|v| {
+                T::from_f64(v.abs() as f64 / 2.0).unwrap()
+            })
+            .collect_vec();
+        let node_to_edge = CooMatrix::try_from_triplets(
+            self.0.edges().count(), self.0.num_nodes(), col_idx, row_idx, val
+        ).unwrap();
+        let subd_edges = CsrMatrix::from(&node_to_edge);
 
-            todo!("append nodes to coords array and update face connectivity")
+        // Node to face matrix
+        let mut node_to_face = CooMatrix::new(self.0.num_elems(), self.0.num_nodes());
+        for (i, elem) in self.0.elems.iter().enumerate() {
+            let [a, b, c, d] = elem.nodes();
+            node_to_face.push(i, a.0, T::from_f64(0.25).unwrap());
+            node_to_face.push(i, b.0, T::from_f64(0.25).unwrap());
+            node_to_face.push(i, c.0, T::from_f64(0.25).unwrap());
+            node_to_face.push(i, d.0, T::from_f64(0.25).unwrap());
         }
+        // let (row_idx, col_idx, val) = face_to_edge_incidence(&self.0).disassemble();
+        // let val = val.iter()
+        //     .map(|v| {
+        //         T::from_f64(v.abs() as f64 / 4.0).unwrap()
+        //     })
+        //     .collect_vec();
+        // let edge_to_face = CooMatrix::try_from_triplets(
+        //     self.0.num_elems(), self.0.edges().count(), col_idx, row_idx, val
+        // ).unwrap();
+        let subd_faces = CsrMatrix::from(&node_to_face);
+
+        let edge_points = subd_edges * &c;
+        let face_points = subd_faces * &c;
+        // println!("{edge_points}");
+        // println!("{face_points}");
+
+        todo!("append nodes to coords array and update face connectivity")
     }
 }
