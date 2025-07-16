@@ -46,6 +46,9 @@ impl <T: RealField + Copy + Sum> Quadrature<T, T, CartCell<T, 1>> for GaussLegen
     }
 }
 
+// todo: remove collect and use next().unwrap()
+//  this can be done when the return value of nodes_elem and weights_elem is changed
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
@@ -59,26 +62,21 @@ mod tests {
     fn nodes_elem() {
         let (q2, q4) = setup();
 
-        // Test quadrature of degree 2
+        // Test symmetric unit interval [-1,1]
         let nodes: Vec<f64> = q2.nodes_elem(&SymmetricUnitCube).collect();
         assert_relative_eq!(nodes[0], 0.57735, epsilon = 1e-5);
         assert_relative_eq!(nodes[1], -0.57735, epsilon = 1e-5);
 
-        let nodes: Vec<f64> = q2.nodes_elem(&UnitCube).collect();
-        assert_relative_eq!(nodes[0], 0.788675, epsilon = 1e-5);
-        assert_relative_eq!(nodes[1], 0.211325, epsilon = 1e-5);
-
-        let interval = CartCell::new_univariate(0.5, 1.0);
-        let nodes: Vec<f64> = q2.nodes_elem(&interval).collect();
-        assert_relative_eq!(nodes[0], 0.8943375, epsilon = 1e-5);
-        assert_relative_eq!(nodes[1], 0.6056625, epsilon = 1e-5);
-
-        // Test quadrature of degree 4
         let nodes: Vec<f64> = q4.nodes_elem(&SymmetricUnitCube).collect();
         assert_relative_eq!(nodes[0], 0.861136, epsilon = 1e-5);
         assert_relative_eq!(nodes[1], 0.339981, epsilon = 1e-5);
         assert_relative_eq!(nodes[2], -0.339981, epsilon = 1e-5);
         assert_relative_eq!(nodes[3], -0.861136, epsilon = 1e-5);
+
+        // Test unit interval [0,1]
+        let nodes: Vec<f64> = q2.nodes_elem(&UnitCube).collect();
+        assert_relative_eq!(nodes[0], 0.788675, epsilon = 1e-5);
+        assert_relative_eq!(nodes[1], 0.211325, epsilon = 1e-5);
 
         let nodes: Vec<f64> = q4.nodes_elem(&UnitCube).collect();
         assert_relative_eq!(nodes[0], 0.930568, epsilon = 1e-5);
@@ -86,11 +84,57 @@ mod tests {
         assert_relative_eq!(nodes[2], 0.3300095, epsilon = 1e-5);
         assert_relative_eq!(nodes[3], 0.069432, epsilon = 1e-5);
 
+        // Test interval [0.5,1]
         let interval = CartCell::new_univariate(0.5, 1.0);
+
+        let nodes: Vec<f64> = q2.nodes_elem(&interval).collect();
+        assert_relative_eq!(nodes[0], 0.8943375, epsilon = 1e-5);
+        assert_relative_eq!(nodes[1], 0.6056625, epsilon = 1e-5);
+
         let nodes: Vec<f64> = q4.nodes_elem(&interval).collect();
         assert_relative_eq!(nodes[0], 0.965284, epsilon = 1e-5);
         assert_relative_eq!(nodes[1], 0.83499525, epsilon = 1e-5);
         assert_relative_eq!(nodes[2], 0.66500475, epsilon = 1e-5);
         assert_relative_eq!(nodes[3], 0.534716, epsilon = 1e-5);
+    }
+
+    #[test]
+    fn weights_elem() {
+        let (q2, q4) = setup();
+
+        // Test symmetric unit interval [-1,1]
+        let weights: Vec<f64> = q2.weights_elem(&SymmetricUnitCube).collect();
+        assert_relative_eq!(weights[0], 1.0, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 1.0, epsilon = 1e-5);
+
+        let weights: Vec<f64> = q4.weights_elem(&SymmetricUnitCube).collect();
+        assert_relative_eq!(weights[0], 0.347855, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 0.652145, epsilon = 1e-5);
+        assert_relative_eq!(weights[2], 0.652145, epsilon = 1e-5);
+        assert_relative_eq!(weights[3], 0.347855, epsilon = 1e-5);
+
+        // Test unit interval [0,1]
+        let weights: Vec<f64> = q2.weights_elem(&UnitCube).collect();
+        assert_relative_eq!(weights[0], 0.5, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 0.5, epsilon = 1e-5);
+
+        let weights: Vec<f64> = q4.weights_elem(&UnitCube).collect();
+        assert_relative_eq!(weights[0], 0.1739275, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 0.3260725, epsilon = 1e-5);
+        assert_relative_eq!(weights[2], 0.3260725, epsilon = 1e-5);
+        assert_relative_eq!(weights[3], 0.1739275, epsilon = 1e-5);
+
+        // Test interval [0.5,1]
+        let interval = CartCell::new_univariate(0.5, 1.0);
+
+        let weights: Vec<f64> = q2.weights_elem(&interval).collect();
+        assert_relative_eq!(weights[0], 0.25, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 0.25, epsilon = 1e-5);
+
+        let weights: Vec<f64> = q4.weights_elem(&interval).collect();
+        assert_relative_eq!(weights[0], 0.08696375, epsilon = 1e-5);
+        assert_relative_eq!(weights[1], 0.16303625, epsilon = 1e-5);
+        assert_relative_eq!(weights[2], 0.16303625, epsilon = 1e-5);
+        assert_relative_eq!(weights[3], 0.08696375, epsilon = 1e-5);
     }
 }
