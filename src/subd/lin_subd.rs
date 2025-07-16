@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use itertools::Itertools;
-use nalgebra::{center, RealField};
+use nalgebra::{center, matrix, stack, Const, DefaultAllocator, RealField, SMatrix, SVector, U4, U5};
+use nalgebra::allocator::Allocator;
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
@@ -113,5 +114,35 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             faces.push(QuadTopo([da, m, cd, d]));
         }
         self.0.elems = faces
+    }
+
+    /// Refines the mesh. Refinement is performed using matrix-vector multiplications.
+    pub fn refine_alt_mat(&mut self) {
+        // Define subdivision (?) matrix
+        let S = matrix![
+            0.5, 0.5, 0.0, 0.0;
+            0.0, 0.5, 0.5, 0.0;
+            0.0, 0.0, 0.5, 0.5;
+            0.5, 0.0, 0.0, 0.5;
+            0.25, 0.25, 0.25, 0.25
+        ].cast::<T>();
+
+        let mut edge_midpoints = HashMap::<NodePair, NodeIdx>::new();
+
+        // Refine every mesh face
+        for i in 0..self.0.elems.len() {
+            let face = self.0.elems[i];
+            let quad = Quad::from_msh(face, &self.0);
+            let [a, b, c, d] = quad.vertices;
+            let c = stack![a.coords, b.coords, c.coords, d.coords].transpose();
+            let c = S.clone() * c;
+            let ab = c.row(0);
+            let bc = c.row(1);
+            let cd = c.row(2);
+            let da = c.row(3);
+            let m = c.row(4);
+
+            todo!("append nodes to coords array and update face connectivity")
+        }
     }
 }
