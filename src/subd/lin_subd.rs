@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use itertools::Itertools;
 use nalgebra::{center, RealField};
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
@@ -7,6 +8,7 @@ use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 
 /// Linear subdivision of a quad-vertex mesh.
+#[derive(Debug, Clone)]
 pub struct LinSubd<T: RealField, const M: usize>(pub QuadVertexMesh<T, M>);
 
 impl <T: RealField, const M: usize> LinSubd<T, M> {
@@ -63,6 +65,53 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         }
 
         // Update faces
+        self.0.elems = faces
+    }
+
+    /// Refines this mesh. Instead of iteration over all quads,
+    /// this method first adds new edge-midpoints and then quad-midpoints.
+    pub fn refine_alt(&mut self) {
+        // Create edge-midpoints
+        let mut edge_midpoints = HashMap::<NodePair, NodeIdx>::new();
+        let edges = self.0.edges().collect_vec();
+        for edge in edges {
+            let start = self.0.coords(edge.start());
+            let end = self.0.coords(edge.end());
+            let midpoint = center(start, end);
+            let node = NodeIdx(self.0.num_nodes());
+
+            self.0.coords.push(midpoint);
+            edge_midpoints.insert(edge, node);
+        }
+
+        // Create face-midpoints
+        let mut face_midpoints = HashMap::<QuadTopo, NodeIdx>::new();
+        for i in 0..self.0.num_elems() {
+            let face = self.0.elems[i];
+            let quad = Quad::from_msh(face, &self.0);
+            let midpoint = quad.centroid();
+            let node = NodeIdx(self.0.num_nodes());
+
+            self.0.coords.push(midpoint);
+            face_midpoints.insert(face, node);
+        }
+
+        // Update connectivity
+        let mut faces = Vec::<QuadTopo>::new();
+        for face_idx in 0..self.0.elems.len() {
+            let face = self.0.elems[face_idx];
+            let [a, b, c, d] = face.nodes();
+            let [&ab, &bc, &cd, &da] = face
+                .edges()
+                .map(|edge| edge_midpoints.get(&edge.sorted()).unwrap());
+            let &m = face_midpoints.get(&face).unwrap();
+
+            // Add subdivided faces
+            faces.push(QuadTopo([a, ab, m, da]));
+            faces.push(QuadTopo([ab, b, bc, m]));
+            faces.push(QuadTopo([m, c, c, cd]));
+            faces.push(QuadTopo([da, m, cd, d]));
+        }
         self.0.elems = faces
     }
 }
