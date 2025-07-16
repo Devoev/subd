@@ -59,7 +59,7 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for Quad<T
 /// +---> u
 /// ```
 /// where `0,1,2,3` are the corner nodes of the quadrilateral.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialOrd, PartialEq, Eq, Hash)]
 pub struct QuadTopo(pub [NodeIdx; 4]);
 
 impl QuadTopo {
