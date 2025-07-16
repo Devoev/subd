@@ -115,7 +115,7 @@ impl <T, const D: usize> Quadrature<T, [T; D], CartCell<T, D>> for MultiProd<T, 
 
 #[cfg(test)]
 mod tests {
-    use approx::{assert_abs_diff_eq, assert_relative_eq};
+    use approx::assert_abs_diff_eq;
     use nalgebra::point;
     use super::*;
 
