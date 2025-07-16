@@ -267,19 +267,6 @@ mod tests {
     }
 
     #[test]
-    fn quadrature() {
-        let quad_1d = GaussLegendre::new(2).unwrap();
-        let quad_multi = GaussLegendreMulti::<f64, 2>::new([quad_1d.clone(), quad_1d.clone()]);
-
-        // println!("Quadrature nodes = {:?} (in [-1,1]]", quad_multi.nodes_ref().collect_vec());
-        // println!("Quadrature weights = {:?} (in [-1,1])", quad_multi.weights_ref().collect_vec());
-
-        let elem = CartCell::new(point![0.2, 0.2], point![0.4, 0.4]);
-        println!("Quadrature nodes = {:?} in {:?}", quad_multi.nodes_elem(&elem).collect_vec(), elem);
-        println!("Quadrature weights = {:?} in {:?}", quad_multi.weights_elem(&elem).collect_vec(), elem);
-    }
-
-    #[test]
     fn mesh() {
         // Define quads
         let quads_regular = vec![
