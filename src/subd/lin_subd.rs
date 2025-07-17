@@ -1,3 +1,6 @@
+mod stencil;
+mod mesh;
+
 use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
