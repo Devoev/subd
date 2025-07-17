@@ -13,7 +13,7 @@ pub mod quadrature;
 pub mod subd;
 pub mod diffgeo;
 pub mod cg;
-mod plot;
+pub mod plot;
 
 #[cfg(test)]
 mod tests {

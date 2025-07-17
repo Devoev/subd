@@ -2,10 +2,10 @@ use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::incidence::edge_to_node_incidence;
+use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
 use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;
-use nalgebra::{center, matrix, Const, Dyn, OMatrix, RealField};
+use nalgebra::{center, matrix, Const, DVector, Dyn, OMatrix, Point, RealField, U4};
 use nalgebra_sparse::{CooMatrix, CsrMatrix};
 use std::collections::HashMap;
 
@@ -72,7 +72,7 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
 
     /// Refines this mesh. Instead of iteration over all quads,
     /// this method first adds new edge-midpoints and then quad-midpoints.
-    pub fn refine_alt(&mut self) {
+    fn refine_alt(&mut self) {
         // Create edge-midpoints
         let mut edge_midpoints = HashMap::<NodePair, NodeIdx>::new();
         let edges = self.0.edges().collect_vec();
@@ -103,22 +103,22 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         for face_idx in 0..self.0.elems.len() {
             let face = self.0.elems[face_idx];
             let [a, b, c, d] = face.nodes();
-            let [&ab, &bc, &cd, &da] = face
+            let [ab, bc, cd, da] = face
                 .edges()
-                .map(|edge| edge_midpoints.get(&edge.sorted()).unwrap());
+                .map(|edge| *edge_midpoints.get(&edge.sorted()).unwrap());
             let &m = face_midpoints.get(&face).unwrap();
 
             // Add subdivided faces
             faces.push(QuadTopo([a, ab, m, da]));
             faces.push(QuadTopo([ab, b, bc, m]));
-            faces.push(QuadTopo([m, c, c, cd]));
+            faces.push(QuadTopo([m, bc, c, cd]));
             faces.push(QuadTopo([da, m, cd, d]));
         }
         self.0.elems = faces
     }
 
     /// Refines the mesh. Refinement is performed using matrix-vector multiplications.
-    pub fn refine_alt_mat(&mut self) {
+    fn refine_alt_mat(&mut self) {
         // Define subdivision (?) matrix
         let S = matrix![
             0.5, 0.5, 0.0, 0.0;
@@ -146,6 +146,10 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         ).unwrap();
         let subd_edges = CsrMatrix::from(&node_to_edge);
 
+        // Face to edge adjacency
+        let face_to_edge = face_to_edge_incidence(&self.0);
+        let face_to_edge = CsrMatrix::from(&face_to_edge).transpose();
+
         // Node to face matrix
         let mut node_to_face = CooMatrix::new(self.0.num_elems(), self.0.num_nodes());
         for (i, elem) in self.0.elems.iter().enumerate() {
@@ -155,22 +159,47 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             node_to_face.push(i, c.0, T::from_f64(0.25).unwrap());
             node_to_face.push(i, d.0, T::from_f64(0.25).unwrap());
         }
-        // let (row_idx, col_idx, val) = face_to_edge_incidence(&self.0).disassemble();
-        // let val = val.iter()
-        //     .map(|v| {
-        //         T::from_f64(v.abs() as f64 / 4.0).unwrap()
-        //     })
-        //     .collect_vec();
-        // let edge_to_face = CooMatrix::try_from_triplets(
-        //     self.0.num_elems(), self.0.edges().count(), col_idx, row_idx, val
-        // ).unwrap();
         let subd_faces = CsrMatrix::from(&node_to_face);
 
+        // Add coordinates
         let edge_points = subd_edges * &c;
-        let face_points = subd_faces * &c;
-        // println!("{edge_points}");
-        // println!("{face_points}");
+        let idx_first_edge = self.0.num_nodes();
+        for coords in edge_points.row_iter() {
+            self.0.coords.push(Point::from(coords.into_owned().transpose()));
+        }
 
-        todo!("append nodes to coords array and update face connectivity")
+        let idx_first_face = self.0.num_nodes();
+        let face_points = subd_faces * &c;
+        for coords in face_points.row_iter() {
+            self.0.coords.push(Point::from(coords.into_owned().transpose()));
+        }
+
+        // Update connectivity
+        let mut faces = Vec::<QuadTopo>::new();
+        for face_idx in 0..self.0.num_elems() {
+            let face = self.0.elems[face_idx];
+            let [a, b, c, d] = face.nodes();
+
+            // todo: this doesn't work because the edge indices are not (necessarily) in order ab,bc,cd,da
+            let [ab, bc, cd, da] = face_to_edge.row(face_idx)
+                .col_indices()
+                .iter()
+                .map(|idx| NodeIdx(idx + idx_first_edge))
+                .collect_array()
+                .unwrap();
+
+            // let [ab, bc, cd, da] = face
+            //     .edges()
+            //     .map(|edge| NodeIdx(edge.start().0 + idx_first_edge)); // todo: this is incorrect! Get midpoint index
+
+            let m = NodeIdx(idx_first_face + face_idx);
+            // Add subdivided faces
+            faces.push(QuadTopo([a, ab, m, da]));
+            faces.push(QuadTopo([ab, b, bc, m]));
+            faces.push(QuadTopo([m, bc, c, cd]));
+            faces.push(QuadTopo([da, m, cd, d]));
+        }
+
+        self.0.elems = faces;
     }
 }
