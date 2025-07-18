@@ -2,6 +2,7 @@ use crate::cells::quad::QuadTopo;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::lin_subd::stencil::{EdgeMidpointStencil, FaceMidpointStencil};
 use nalgebra::RealField;
+use crate::cells::line_segment::UndirectedEdge;
 
 /// Linear subdivision of a quad-vertex mesh.
 #[derive(Debug, Clone)]
@@ -31,9 +32,9 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             let edges = face.edges();
 
             // Calculate and add new mid-edge points
-            let midpoints = edges.map(|mut edge| {
+            let midpoints = edges.map(|edge| {
                 // Sort edge, to avoid duplicates
-                edge.sort();
+                let edge = UndirectedEdge::from(edge);
 
                 // Computes the midpoint of the edge.
                 edge_stencil.get_or_refine(quad_msh, edge)

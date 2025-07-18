@@ -1,12 +1,13 @@
 use crate::cells::chain::Chain;
+use crate::cells::geo;
+use crate::cells::lerp::Lerp;
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
+use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{clamp, DimName, DimNameSub, Point, RealField, U0, U1};
 use std::cmp::minmax;
-use crate::cells::geo;
-use crate::cells::lerp::Lerp;
-use crate::cells::unit_cube::UnitCube;
+use std::hash::Hash;
 
 /// A line segment, i.e. a straight line bounded by 2 points
 /// in [`M`]-dimensional space.
@@ -143,5 +144,75 @@ pub struct LineSegmentBndTopo(pub [NodeIdx; 2]);
 impl Chain<U0, NodeIdx> for LineSegmentBndTopo {
     fn cells(&self) -> &[NodeIdx] {
         &self.0
+    }
+}
+
+/// An *undirected* edge between two nodes.
+/// The topological and geometric structure is essentially the same as [`DirectedEdge`],
+/// but the ordering of nodes doesn't matter.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct UndirectedEdge {
+    /// The sorted nodes defining the start and end of the edge.
+    /// The sorting is such that `start < end`.
+    sorted_nodes: [NodeIdx; 2]
+}
+
+impl UndirectedEdge {
+    /// Constructs a new [`UndirectedEdge`] from the given nodes `a` and `b`
+    /// by sorting the nodes such that `start < end`.
+    pub fn new(a: NodeIdx, b: NodeIdx) -> Self {
+        // todo: test for a == b
+        UndirectedEdge { sorted_nodes: minmax(a, b) }
+    }
+
+    /// Attempts to construct a new [`UndirectedEdge`] from the given `start` and `end` nodes.
+    /// If `start >= end` `None` is returned.
+    pub fn try_new(start: NodeIdx, end: NodeIdx) -> Option<Self> {
+        (start < end).then_some(UndirectedEdge { sorted_nodes: [start, end] })
+    }
+
+    /// Returns the array of sorted nodes.
+    pub fn sorted_nodes(&self) -> &[NodeIdx; 2] {
+        &self.sorted_nodes
+    }
+
+    /// Returns the node with the lower index.
+    pub fn first(&self) -> NodeIdx {
+        self.sorted_nodes[0]
+    }
+
+    /// Returns the node with the greater index.
+    pub fn second(&self) -> NodeIdx {
+        self.sorted_nodes[1]
+    }
+}
+
+impl From<DirectedEdge> for UndirectedEdge {
+    fn from(value: DirectedEdge) -> Self {
+        UndirectedEdge::new(value.start(), value.end())
+    }
+}
+
+impl Cell<U1> for UndirectedEdge {
+    fn nodes(&self) -> &[NodeIdx] {
+        &self.sorted_nodes
+    }
+
+    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
+    where
+        U1: DimNameSub<M>
+    {
+        match dim.value() {
+            1 => { // edges are the same
+                self == other
+            },
+            0 => { // edges share a node
+                self.first() == other.first()
+                    || self.first() == other.second()
+                    || self.second() == other.first()
+                    || self.second() == other.second()
+            },
+            _ => unreachable!("Dimension `M` (is {dim:?}) should be <= `K` (is 1)")
+        }
     }
 }

@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use nalgebra::{center, RealField};
-use crate::cells::line_segment::DirectedEdge;
+use crate::cells::line_segment::UndirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
+use nalgebra::{center, RealField};
+use std::collections::HashMap;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text
@@ -13,7 +13,7 @@ use crate::mesh::traits::MeshTopology;
 #[derive(Debug, Clone, Default)]
 pub struct EdgeMidpointStencil {
     /// Edge-to-midpoint map.
-    edge_midpoints: HashMap<DirectedEdge, NodeIdx>
+    edge_midpoints: HashMap<UndirectedEdge, NodeIdx>
 }
 
 impl EdgeMidpointStencil {
@@ -24,7 +24,7 @@ impl EdgeMidpointStencil {
 
     /// Returns the midpoint node corresponding to the given `edge` or `None`,
     /// if the edge is not refined yet.
-    pub fn get(&self, edge: &DirectedEdge) -> Option<&NodeIdx> {
+    pub fn get(&self, edge: &UndirectedEdge) -> Option<&NodeIdx> {
         self.edge_midpoints.get(edge)
     }
 
@@ -33,10 +33,10 @@ impl EdgeMidpointStencil {
     pub fn refine<T: RealField, const M: usize>(
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
-        edge: DirectedEdge,
+        edge: UndirectedEdge,
     ) -> NodeIdx {
-        let a = quad_msh.coords(edge.start());
-        let b = quad_msh.coords(edge.end());
+        let a = quad_msh.coords(edge.first());
+        let b = quad_msh.coords(edge.second());
         let node = NodeIdx(quad_msh.num_nodes());
         quad_msh.coords.push(center(a, b));
         self.edge_midpoints.insert(edge, node);
@@ -48,7 +48,7 @@ impl EdgeMidpointStencil {
     pub fn get_or_refine<T: RealField, const M: usize>(
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
-        edge: DirectedEdge,
+        edge: UndirectedEdge,
     ) -> NodeIdx {
         match self.get(&edge) {
             Some(node) => *node,
