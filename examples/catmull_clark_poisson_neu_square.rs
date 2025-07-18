@@ -22,7 +22,6 @@ use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
-use subd::subd::lin_subd::LinSubd;
 
 pub fn main() {
     // Define problem
@@ -37,12 +36,8 @@ pub fn main() {
     // Define mesh
     let quads = vec![QuadTopo::from_indices(0, 1, 2, 3)];
     let quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
-    let mut lin_msh = LinSubd(quad_msh);
-    lin_msh.refine();
-    lin_msh.refine();
-    // lin_msh.refine();
-    // lin_msh.refine();
-    let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+    let refined = quad_msh.lin_subd().lin_subd().unpack();
+    let msh = CatmarkMesh::from_quad_mesh(refined);
 
     // Define space
     let basis = CatmarkBasis(&msh);

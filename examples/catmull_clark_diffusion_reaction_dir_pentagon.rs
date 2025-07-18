@@ -24,7 +24,6 @@ use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
-use subd::subd::lin_subd::LinSubd;
 
 /// Constructs the center and corner points of a regular `n`-gon of radius `r`.
 fn make_geo(r: f64, n: usize) -> Vec<Point2<f64>> {
@@ -105,11 +104,8 @@ fn main() {
         QuadTopo::from_indices(0, 8, 9, 10),
     ];
     let quad_msh = QuadVertexMesh::new(coords, faces);
-
-    let mut lin_msh = LinSubd(quad_msh.clone());
-    lin_msh.refine();
-    lin_msh.refine();
-    let msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+    let refined = quad_msh.lin_subd().lin_subd().unpack();
+    let msh = CatmarkMesh::from_quad_mesh(refined);
 
     // Define space
     let basis = CatmarkBasis(&msh);

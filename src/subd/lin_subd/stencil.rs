@@ -1,13 +1,65 @@
-use nalgebra::{center, DimName, DimNameSub, Point, RealField, U2};
-use crate::cells::line_segment::{LineSegment, NodePair};
+use std::collections::HashMap;
+use nalgebra::{center, RealField};
+use crate::cells::line_segment::NodePair;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
-use crate::cells::topo;
+use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::traits::MeshTopology;
 
-// todo: does it make sense, to define new elements?
-//  implement Stencils instead, that automatically do the refinement and modify properties of LinSubd
+/// Stencil for a linearly-subdivided edge
+/// ```text
+/// 1/2 --- ○ --- 1/2
+/// ```
+#[derive(Debug, Clone)]
+pub struct EdgeMidpointStencil {
+    /// Edge-to-midpoint map.
+    edge_midpoints: HashMap<NodePair, NodeIdx>
+}
 
-/// A linearly-subdivided quad with subdivision stencil
+impl EdgeMidpointStencil {
+    /// Constructs a new [`EdgeMidpointStencil`].
+    pub fn new() -> Self {
+        EdgeMidpointStencil { edge_midpoints: HashMap::new() }
+    }
+
+    /// Returns the midpoint node corresponding to the given `edge` or `None`,
+    /// if the edge is not refined yet.
+    pub fn get(&self, edge: &NodePair) -> Option<&NodeIdx> {
+        self.edge_midpoints.get(edge)
+    }
+
+    /// Refines the given `edge` and adds the coordinates of the new midpoint to the `quad_msh`.
+    /// The index of the midpoint node is inserted into `edge_midpoints` and returned.
+    pub fn refine<T: RealField, const M: usize>(
+        &mut self,
+        quad_msh: &mut QuadVertexMesh<T, M>,
+        edge: NodePair,
+    ) -> NodeIdx {
+        let a = quad_msh.coords(edge.start());
+        let b = quad_msh.coords(edge.end());
+        let node = NodeIdx(quad_msh.num_nodes());
+        quad_msh.coords.push(center(a, b));
+        self.edge_midpoints.insert(edge, node);
+        node
+    }
+    
+    /// Returns the midpoint node corresponding to the given `edge`.
+    /// If the edge is not refined yet the midpoint is first calculated using [EdgeMidpointStencil::refine].
+    pub fn get_or_refine<T: RealField, const M: usize>(
+        &mut self,
+        quad_msh: &mut QuadVertexMesh<T, M>,
+        edge: NodePair,
+    ) -> NodeIdx {
+        match self.get(&edge) {
+            Some(node) => *node,
+            None => {
+                self.refine(quad_msh, edge)
+            }
+        }
+    }
+}
+
+/// Stencil for a linearly-subdivided quadrilateral face
 /// ```text
 /// 1/4 --- 1/4
 ///  |       |
@@ -15,50 +67,25 @@ use crate::cells::topo;
 ///  |       |
 /// 1/4 --- 1/4
 /// ```
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub struct LinFace(pub QuadTopo);
+#[derive(Debug, Clone)]
+pub struct FaceMidpointStencil;
 
-impl LinFace {
-    /// Returns the nodes as in [`QuadTopo::nodes`].
-    pub fn nodes(&self) -> [NodeIdx; 4] {
-        self.0.0
+impl FaceMidpointStencil {
+    /// Constructs a new [`FaceMidpointStencil`].
+    pub fn new() -> Self {
+        FaceMidpointStencil
     }
 
-    /// Returns the edges as in [`QuadTopo::edges`] as `LinEdge`s.
-    pub fn edges(&self) -> [LinEdge; 4] {
-        self.0.edges().map(LinEdge)
-    }
-
-    /// Linearly subdivides the given `quad` coordinates.
-    pub fn refine<T: RealField, const M: usize>(quad: &Quad<T, M>) -> Point<T, M> {
-        quad.centroid()
-    }
-}
-
-impl topo::Cell<U2> for LinFace {
-    fn nodes(&self) -> &[NodeIdx] {
-        &self.0.0
-    }
-
-    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
-    where
-        U2: DimNameSub<M>
-    {
-        self.0.is_connected(&other.0, dim)
-    }
-}
-
-/// A linearly-subdivided edge with subdivision stencil
-/// ```text
-/// 1/2 --- ○ --- 1/2
-/// ```
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub struct LinEdge(pub(crate) NodePair);
-
-impl LinEdge {
-    /// Linearly subdivision the given `line` coordinates.
-    pub fn refine<T: RealField, const M: usize>(line: &LineSegment<T, M>) -> Point<T, M> {
-        let [a, b] = &line.vertices;
-        center(a, b)
+    /// Refines the given `face` and adds the coordinates of the new midpoint to the `quad_msh`.
+    /// The index of the midpoint node is returned.
+    pub fn refine<T: RealField, const M: usize>(
+        &mut self,
+        quad_msh: &mut QuadVertexMesh<T, M>,
+        face: QuadTopo,
+    ) -> NodeIdx {
+        let quad = Quad::from_msh(face, quad_msh);
+        let center = quad.centroid();
+        quad_msh.coords.push(center);
+        NodeIdx(quad_msh.num_nodes() - 1)
     }
 }

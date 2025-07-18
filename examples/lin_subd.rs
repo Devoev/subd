@@ -3,8 +3,6 @@ use std::hint::black_box;
 use std::time::Instant;
 use subd::cells::quad::QuadTopo;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::plot::plot_faces;
-use subd::subd::lin_subd::LinSubd;
 
 fn main() {
     let num_refine = 11;
@@ -12,7 +10,7 @@ fn main() {
     let mut msh = make_mesh();
     let start = Instant::now();
     for _ in 0..num_refine {
-        black_box(msh.refine());
+        msh = black_box(msh.lin_subd().unpack());
     }
     let time = start.elapsed();
     // let plt = plot_faces(&msh.0, msh.0.elems.clone().into_iter());
@@ -43,13 +41,12 @@ fn main() {
     )
 }
 
-fn make_mesh() -> LinSubd<f64, 2> {
+fn make_mesh() -> QuadVertexMesh<f64, 2> {
     // Define mesh
     let coords_square = matrix![
             0.0, 0.0, 1.0, 1.0;
             0.0, 1.0, 1.0, 0.0
         ].transpose();
     let quads = vec![QuadTopo::from_indices(0, 1, 2, 3)];
-    let quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
-    LinSubd(quad_msh)
+    QuadVertexMesh::from_matrix(coords_square, quads)
 }

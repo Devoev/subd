@@ -50,7 +50,6 @@ mod tests {
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
     use crate::subd::catmull_clark::patch::CatmarkPatch;
     use crate::subd::edge_basis::CatmarkEdgeBasis;
-    use crate::subd::lin_subd::LinSubd;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
@@ -339,10 +338,7 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let mut lin_subd = LinSubd(quad_msh);
-        lin_subd.refine();
-        // lin_subd.refine();
-        let msh = lin_subd.0;
+        let msh = quad_msh.lin_subd().unpack();
 
         let g = edge_to_node_incidence(&msh);
         let c = face_to_edge_incidence(&msh);
@@ -379,10 +375,8 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let mut lin_msh = LinSubd(quad_msh);
-        lin_msh.refine();
-        lin_msh.refine();
-        let mut msh = CatmarkMesh::from_quad_mesh(lin_msh.0);
+        let msh = quad_msh.lin_subd().lin_subd().unpack();
+        let mut msh = CatmarkMesh::from_quad_mesh(msh);
         // msh.refine();
         
         // Convert back to quad mesh
@@ -483,10 +477,8 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let mut lin_subd = LinSubd(quad_msh);
-        lin_subd.refine();
-        lin_subd.refine();
-        let msh = CatmarkMesh::from_quad_mesh(lin_subd.0);
+        let msh = quad_msh.lin_subd().lin_subd().unpack();
+        let msh = CatmarkMesh::from_quad_mesh(msh);
 
         // Construct basis and space
         let basis = CatmarkBasis(&msh);
@@ -558,10 +550,8 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let mut lin_subd = LinSubd(quad_msh);
-        lin_subd.refine();
-        lin_subd.refine();
-        let msh = CatmarkMesh::from_quad_mesh(lin_subd.0);
+        let msh = quad_msh.lin_subd().lin_subd().unpack();
+        let msh = CatmarkMesh::from_quad_mesh(msh);
 
         // Construct basis and space
         let basis = CatmarkEdgeBasis(&msh);
