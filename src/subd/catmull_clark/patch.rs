@@ -347,7 +347,7 @@ impl CatmarkPatchFaces {
             .filter(|other| other.is_touching(center))
             .collect_vec();
 
-        if msh.is_regular(center) || msh.is_boundary_elem(&center) {
+        if msh.is_regular_face(center) || msh.is_boundary_elem(&center) {
             match faces.len() {
                 8 => {
                     let faces: [QuadNodes; 9] = Self::traverse_faces_regular(center, faces).try_into().unwrap();

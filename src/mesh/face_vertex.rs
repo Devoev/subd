@@ -39,8 +39,13 @@ where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
 }
 
 impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
+    /// Returns `true` if the `node` is regular.
+    pub fn is_regular_node(&self, node: NodeIdx) -> bool {
+        self.valence(node) == 4
+    }
+    
     /// Returns `true` if the face is regular.
-    pub fn is_regular(&self, face: QuadNodes) -> bool {
+    pub fn is_regular_face(&self, face: QuadNodes) -> bool {
         face.nodes().iter().all(|node| self.valence(*node) == 4)
     }
 
