@@ -3,6 +3,7 @@ use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::lin_subd::stencil::{EdgeMidpointStencil, FaceMidpointStencil};
 use nalgebra::RealField;
 use crate::cells::line_segment::UndirectedEdge;
+use crate::cells::node::NodeIdx;
 
 /// Linear subdivision of a quad-vertex mesh.
 #[derive(Debug, Clone)]
@@ -22,23 +23,20 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
     fn do_refine(quad_msh: &mut QuadVertexMesh<T, M>) {
         let mut edge_stencil = EdgeMidpointStencil::new();
         let mut face_stencil = FaceMidpointStencil::new();
-        let mut faces = Vec::<QuadNodes>::new();
+
+        let mut refined_faces = Vec::<QuadNodes>::new();
+        let mut add_face_nodes = |a: NodeIdx, b: NodeIdx, c: NodeIdx, d: NodeIdx| {
+            refined_faces.push(QuadNodes([a, b, c, d]))
+        };
 
         // Refine every mesh face
         for i in 0..quad_msh.elems.len() {
             let face = quad_msh.elems[i];
 
-            // Get edges of initial face
-            let edges = face.edges();
-
-            // Calculate and add new mid-edge points
-            let midpoints = edges.map(|edge| {
-                // Sort edge, to avoid duplicates
-                let edge = UndirectedEdge::from(edge);
-
-                // Computes the midpoint of the edge.
-                edge_stencil.get_or_refine(quad_msh, edge)
-            });
+            // Calculate and add new mid-edge points for each edge
+            let midpoints = face
+                .undirected_edges()
+                .map(|edge| edge_stencil.get_or_refine(quad_msh, edge));
 
             // Calculate new center point
             let m = face_stencil.refine(quad_msh, face);
@@ -47,14 +45,14 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             let [a, b, c, d] = face.nodes();
             let [ab, bc, cd, da] = midpoints;
 
-            faces.push(QuadNodes([a, ab, m, da]));
-            faces.push(QuadNodes([ab, b, bc, m]));
-            faces.push(QuadNodes([m, bc, c, cd]));
-            faces.push(QuadNodes([da, m, cd, d]));
+            add_face_nodes(a, ab, m, da);
+            add_face_nodes(ab, b, bc, m);
+            add_face_nodes(m, bc, c, cd);
+            add_face_nodes(da, m, cd, d);
         }
 
         // Update faces
-        quad_msh.elems = faces
+        quad_msh.elems = refined_faces
     }
 
     /// Retrieves the refined quad-vertex mesh.

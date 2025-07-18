@@ -2,7 +2,7 @@ use std::iter::zip;
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
-use crate::cells::line_segment::DirectedEdge;
+use crate::cells::line_segment::{DirectedEdge, UndirectedEdge};
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
@@ -72,7 +72,22 @@ impl QuadNodes {
         self.0
     }
 
-    /// Returns all 4 edges of this quadrilateral face in the following order
+    /// Returns all 4 *directed* edges of this quadrilateral face in the following order
+    /// ```text
+    ///   ← -- 2 -- ↑
+    ///   |         |
+    /// v 3         1
+    /// ^ |         |
+    /// | ↓ -- 0 -- →
+    /// +---> u
+    /// ```
+    /// where the arrows indicate orientation of edges.
+    pub fn edges(&self) -> [DirectedEdge; 4] {
+        let [a, b, c, d] = self.0;
+        [DirectedEdge([a, b]), DirectedEdge([b, c]), DirectedEdge([c, d]), DirectedEdge([d, a])]
+    }
+
+    /// Returns all 4 *undirected* edges of this quadrilateral face in the following order
     /// ```text
     ///   + -- 2 -- +
     ///   |         |
@@ -81,9 +96,8 @@ impl QuadNodes {
     /// | + -- 0 -- +
     /// +---> u
     /// ```
-    pub fn edges(&self) -> [DirectedEdge; 4] {
-        let [a, b, c, d] = self.0;
-        [DirectedEdge([a, b]), DirectedEdge([b, c]), DirectedEdge([c, d]), DirectedEdge([d, a])]
+    pub fn undirected_edges(&self) -> [UndirectedEdge; 4] {
+        self.edges().map(UndirectedEdge::from)
     }
 
     // todo: return an intersection result (possibly an enum)

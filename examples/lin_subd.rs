@@ -6,7 +6,7 @@ use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::plot::plot_faces;
 
 fn main() {
-    let num_refine = 3;
+    let num_refine = 11;
 
     let mut msh = make_mesh();
     let start = Instant::now();
@@ -14,8 +14,8 @@ fn main() {
         msh = black_box(msh.lin_subd().unpack());
     }
     let time = start.elapsed();
-    let plt = plot_faces(&msh, msh.elems.clone().into_iter());
-    plt.show();
+    // let plt = plot_faces(&msh, msh.elems.clone().into_iter());
+    // plt.show();
 
     let mut msh = make_mesh();
     let start = Instant::now();
