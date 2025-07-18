@@ -5,7 +5,7 @@ use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameDiff, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;
-use crate::cells::line_segment::NodePair;
+use crate::cells::line_segment::DirectedEdge;
 use crate::cells::node::NodeIdx;
 // todo: replace this with a generic implementation over the mesh type. For that add
 //  - generic edges, that provide all methods of NodePair (sorted, start, end...)
@@ -18,7 +18,7 @@ pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
     let num_nodes = msh.num_nodes();
 
     assemble_incidence_mat(num_edges, num_nodes, edges.into_iter(), |mat, cell, cell_idx| {
-        let  NodePair([NodeIdx(start_idx), NodeIdx(end_idx)]) = cell;
+        let  DirectedEdge([NodeIdx(start_idx), NodeIdx(end_idx)]) = cell;
         mat.push(start_idx, cell_idx, -1);
         mat.push(end_idx, cell_idx, 1);
     })

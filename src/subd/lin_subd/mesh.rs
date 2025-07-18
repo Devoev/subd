@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use nalgebra::{center, DimName, DimNameSub, Point, RealField, U2};
-use crate::cells::line_segment::{LineSegment, NodePair};
+use crate::cells::line_segment::{LineSegment, DirectedEdge};
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadTopo};
 use crate::cells::topo;
@@ -56,7 +56,7 @@ impl topo::Cell<U2> for LinFace {
 /// 1/2 --- ○ --- 1/2
 /// ```
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-struct LinEdge(pub(crate) NodePair);
+struct LinEdge(pub(crate) DirectedEdge);
 
 impl LinEdge {
     /// Linearly subdivision the given `line` coordinates.

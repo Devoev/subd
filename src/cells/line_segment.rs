@@ -22,7 +22,7 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 
     /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: NodePair, msh: &QuadVertexMesh<T, M>) -> Self {
+    pub fn from_msh(topology: DirectedEdge, msh: &QuadVertexMesh<T, M>) -> Self {
         LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 }
@@ -40,7 +40,7 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T, T, 1, M> for LineSegment
     }
 }
 
-/// Pair of 2 nodes, defining an *edge*.
+/// A *directed* edge between two nodes.
 /// The topological structure is
 /// ```text
 ///    0 --- 1
@@ -49,9 +49,9 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T, T, 1, M> for LineSegment
 /// where `0` is the start and `1` the end node.
 /// Geometrically the pair defines the topology of a [`LineSegment`].
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct NodePair(pub [NodeIdx; 2]);
+pub struct DirectedEdge(pub [NodeIdx; 2]);
 
-impl NodePair {
+impl DirectedEdge {
     /// Returns the start node of this edge.
     pub fn start(&self) -> NodeIdx {
         self.0[0]
@@ -63,27 +63,27 @@ impl NodePair {
     }
 
     /// Returns a sorted copy of this edge such that `self.start() < self.end()`.
-    pub fn sorted(&self) -> NodePair {
-        NodePair(minmax(self.start(), self.end()))
+    pub fn sorted(&self) -> DirectedEdge {
+        DirectedEdge(minmax(self.start(), self.end()))
     }
 
-    /// Changes the orientation of this edge by calling [`NodePair::sorted`] on self.
+    /// Changes the orientation of this edge by calling [`DirectedEdge::sorted`] on self.
     pub fn sort(&mut self) {
         *self = self.sorted();
     }
 
     /// Returns a copy of this edge with reversed orientation.
-    pub fn reversed(&self) -> NodePair {
-        NodePair([self.end(), self.start()])
+    pub fn reversed(&self) -> DirectedEdge {
+        DirectedEdge([self.end(), self.start()])
     }
 
-    /// Reverses the orientation of this edge by calling [`NodePair::reversed`].
+    /// Reverses the orientation of this edge by calling [`DirectedEdge::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
     }
 }
 
-impl Cell<U1> for NodePair {
+impl Cell<U1> for DirectedEdge {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -108,7 +108,7 @@ impl Cell<U1> for NodePair {
     }
 }
 
-impl CellBoundary<U1> for NodePair {
+impl CellBoundary<U1> for DirectedEdge {
     const NUM_SUB_CELLS: usize = 2;
     type SubCell = NodeIdx;
     type Boundary = LineSegmentBndTopo;
@@ -118,13 +118,13 @@ impl CellBoundary<U1> for NodePair {
     }
 }
 
-impl OrderedCell<U1> for NodePair {
+impl OrderedCell<U1> for DirectedEdge {
     fn sorted(&self) -> Self {
-        NodePair(minmax(self.start(), self.end()))
+        DirectedEdge(minmax(self.start(), self.end()))
     }
 }
 
-impl OrientedCell<U1> for NodePair {
+impl OrientedCell<U1> for DirectedEdge {
     fn orientation(&self) -> i8 {
         clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
     }
@@ -134,7 +134,7 @@ impl OrientedCell<U1> for NodePair {
     }
 
     fn reversed(&self) -> Self {
-        NodePair([self.end(), self.start()])
+        DirectedEdge([self.end(), self.start()])
     }
 }
 

@@ -2,7 +2,7 @@ use std::iter::zip;
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
-use crate::cells::line_segment::NodePair;
+use crate::cells::line_segment::DirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
@@ -81,9 +81,9 @@ impl QuadTopo {
     /// | + -- 0 -- +
     /// +---> u
     /// ```
-    pub fn edges(&self) -> [NodePair; 4] {
+    pub fn edges(&self) -> [DirectedEdge; 4] {
         let [a, b, c, d] = self.0;
-        [NodePair([a, b]), NodePair([b, c]), NodePair([c, d]), NodePair([d, a])]
+        [DirectedEdge([a, b]), DirectedEdge([b, c]), DirectedEdge([c, d]), DirectedEdge([d, a])]
     }
 
     // todo: return an intersection result (possibly an enum)
@@ -192,7 +192,7 @@ impl OrientedCell<U2> for QuadTopo {
 
 impl CellBoundary<U2> for QuadTopo {
     const NUM_SUB_CELLS: usize = 4;
-    type SubCell = NodePair;
+    type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;
 
     fn boundary(&self) -> Self::Boundary {
@@ -200,15 +200,15 @@ impl CellBoundary<U2> for QuadTopo {
     }
 }
 
-pub struct QuadBndTopo(pub [NodePair; 4]);
+pub struct QuadBndTopo(pub [DirectedEdge; 4]);
 
-impl Chain<U1, NodePair> for QuadBndTopo {
-    fn cells(&self) -> &[NodePair] {
+impl Chain<U1, DirectedEdge> for QuadBndTopo {
+    fn cells(&self) -> &[DirectedEdge] {
         &self.0
     }
 }
 
-impl ChainBoundary<U1, NodePair> for QuadBndTopo {
+impl ChainBoundary<U1, DirectedEdge> for QuadBndTopo {
     type Boundary = ();
 
     fn boundary(&self) -> Self::Boundary { }

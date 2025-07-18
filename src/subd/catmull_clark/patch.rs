@@ -6,7 +6,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
 use crate::cells::geo;
-use crate::cells::line_segment::NodePair;
+use crate::cells::line_segment::DirectedEdge;
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
@@ -263,7 +263,7 @@ impl cells::topo::Cell<U2> for CatmarkPatchNodes {
 
 impl cells::topo::CellBoundary<U2> for CatmarkPatchNodes  {
     const NUM_SUB_CELLS: usize = 4;
-    type SubCell = NodePair;
+    type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;
 
     // todo: possibly change this
