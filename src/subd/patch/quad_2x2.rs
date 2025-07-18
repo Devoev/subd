@@ -62,11 +62,22 @@ impl QuadNodes2x2 {
         
         if msh.is_boundary_node(center) || msh.is_regular_node(center) { 
             match faces[..] { 
-                [a, b, c, d] => {
+                [q1, q2, q3, q4] => {
                     todo!("implement regular case")
                 }
-                [a, b] => {
-                    todo!("implement boundary case")
+                [mut q1, mut q2] => {
+                    // Get edge 0 -> 4
+                    let shared_edge = q1.shared_edge(*q2).unwrap();
+                    
+                    // If edge is 4 -> 0, change q1 and q2 to fix orientation
+                    if shared_edge.end() == center {
+                        std::mem::swap(&mut q1, &mut q2);
+                    }
+                    
+                    // Sort nodes
+                    let [n0, n1, n4, n3] = q1.sorted_by_node(center, 1).nodes();
+                    let [_, n2, n5, _] = q2.sorted_by_origin(center).nodes();
+                    QuadNodes2x2::Boundary([n0, n1, n2, n3, n4, n5])
                 }
                 [q] => {
                     let [a, b, c, d] = q.sorted_by_origin(center).nodes();

@@ -1,4 +1,5 @@
 use std::iter::zip;
+use itertools::Itertools;
 use crate::cells::chain::{Chain, ChainBoundary};
 use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
@@ -102,7 +103,7 @@ impl QuadNodes {
 
     // todo: return an intersection result (possibly an enum)
     /// Returns the intersection between `self` and `other` as an iterator of the overlapping nodes.
-    pub fn intersection(&self, other: QuadNodes) -> impl Iterator<Item=NodeIdx> {
+    fn intersection(&self, other: QuadNodes) -> impl Iterator<Item=NodeIdx> {
         self.nodes().into_iter().filter(move |n| other.nodes().contains(n))
     }
 
@@ -115,6 +116,19 @@ impl QuadNodes {
     pub fn is_touching(&self, other: QuadNodes) -> bool {
         let count = self.intersection(other).count();
         count == 2 || count == 1
+    }
+
+    /// Returns the directed edge shared by both `self` and `other`.
+    /// If they don't share an edge, `None` is returned.
+    /// The edges orientation is determined by `self`.
+    pub fn shared_edge(&self, other: QuadNodes) -> Option<DirectedEdge> {
+        self.intersection(other).next_array().map(DirectedEdge)
+    }
+
+    /// Returns the (first) node shared by both `self` and `other`.
+    /// If they don't share a node, `None` is returned.
+    pub fn shared_node(&self, other: QuadNodes) -> Option<NodeIdx> {
+        self.intersection(other).next()
     }
 
     /// Returns a sorted copy of this face,
