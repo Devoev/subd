@@ -112,10 +112,10 @@ impl Cell<U1> for DirectedEdge {
 impl CellBoundary<U1> for DirectedEdge {
     const NUM_SUB_CELLS: usize = 2;
     type SubCell = NodeIdx;
-    type Boundary = LineSegmentBndTopo;
+    type Boundary = NodePair;
 
     fn boundary(&self) -> Self::Boundary {
-        LineSegmentBndTopo(self.0)
+        NodePair(self.0)
     }
 }
 
@@ -139,9 +139,10 @@ impl OrientedCell<U1> for DirectedEdge {
     }
 }
 
-pub struct LineSegmentBndTopo(pub [NodeIdx; 2]);
+/// Pair of two disjoint nodes.
+pub struct NodePair(pub [NodeIdx; 2]);
 
-impl Chain<U0, NodeIdx> for LineSegmentBndTopo {
+impl Chain<U0, NodeIdx> for NodePair {
     fn cells(&self) -> &[NodeIdx] {
         &self.0
     }

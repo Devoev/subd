@@ -1,11 +1,11 @@
 use plotly::{Layout, Plot, Scatter};
 use plotly::layout::Annotation;
 use crate::cells::line_segment::LineSegment;
-use crate::cells::quad::{Quad, QuadTopo};
+use crate::cells::quad::{Quad, QuadNodes};
 use crate::mesh::face_vertex::QuadVertexMesh;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
-pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadTopo>) -> Plot {
+pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
     let mut plot = Plot::new();
     let mut layout = Layout::new();
 

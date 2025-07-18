@@ -1,7 +1,7 @@
 use nalgebra::matrix;
 use std::hint::black_box;
 use std::time::Instant;
-use subd::cells::quad::QuadTopo;
+use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::plot::plot_faces;
 
@@ -48,6 +48,6 @@ fn make_mesh() -> QuadVertexMesh<f64, 2> {
             0.0, 0.0, 1.0, 1.0;
             0.0, 1.0, 1.0, 0.0
         ].transpose();
-    let quads = vec![QuadTopo::from_indices(0, 1, 2, 3)];
+    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
     QuadVertexMesh::from_matrix(coords_square, quads)
 }

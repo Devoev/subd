@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use nalgebra::{center, DimName, DimNameSub, Point, RealField, U2};
 use crate::cells::line_segment::{LineSegment, DirectedEdge};
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::{Quad, QuadTopo};
+use crate::cells::quad::{Quad, QuadNodes};
 use crate::cells::topo;
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -19,15 +19,15 @@ use crate::mesh::traits::{Mesh, MeshTopology};
 /// 1/4 --- 1/4
 /// ```
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-struct LinFace(pub QuadTopo);
+struct LinFace(pub QuadNodes);
 
 impl LinFace {
-    /// Returns the nodes as in [`QuadTopo::nodes`].
+    /// Returns the nodes as in [`QuadNodes::nodes`].
     pub fn nodes(&self) -> [NodeIdx; 4] {
         self.0.0
     }
 
-    /// Returns the edges as in [`QuadTopo::edges`] as `LinEdge`s.
+    /// Returns the edges as in [`QuadNodes::edges`] as `LinEdge`s.
     pub fn edges(&self) -> [LinEdge; 4] {
         self.0.edges().map(LinEdge)
     }
@@ -120,10 +120,10 @@ impl <T: RealField + Copy, const M: usize> LinSubdMesh<T, M> {
             let [a, b, c, d] = face.nodes();
             let [ab, bc, cd, da] = midpoints;
 
-            faces.push(LinFace(QuadTopo([a, ab, m, da])));
-            faces.push(LinFace(QuadTopo([ab, b, bc, m])));
-            faces.push(LinFace(QuadTopo([m, bc, c, cd])));
-            faces.push(LinFace(QuadTopo([da, m, cd, d])));
+            faces.push(LinFace(QuadNodes([a, ab, m, da])));
+            faces.push(LinFace(QuadNodes([ab, b, bc, m])));
+            faces.push(LinFace(QuadNodes([m, bc, c, cd])));
+            faces.push(LinFace(QuadNodes([da, m, cd, d])));
         }
 
         // Update faces

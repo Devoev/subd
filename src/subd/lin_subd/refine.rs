@@ -1,4 +1,4 @@
-use crate::cells::quad::QuadTopo;
+use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::lin_subd::stencil::{EdgeMidpointStencil, FaceMidpointStencil};
 use nalgebra::RealField;
@@ -22,7 +22,7 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
     fn do_refine(quad_msh: &mut QuadVertexMesh<T, M>) {
         let mut edge_stencil = EdgeMidpointStencil::new();
         let mut face_stencil = FaceMidpointStencil::new();
-        let mut faces = Vec::<QuadTopo>::new();
+        let mut faces = Vec::<QuadNodes>::new();
 
         // Refine every mesh face
         for i in 0..quad_msh.elems.len() {
@@ -47,21 +47,21 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
             let [a, b, c, d] = face.nodes();
             let [ab, bc, cd, da] = midpoints;
 
-            faces.push(QuadTopo([a, ab, m, da]));
-            faces.push(QuadTopo([ab, b, bc, m]));
-            faces.push(QuadTopo([m, bc, c, cd]));
-            faces.push(QuadTopo([da, m, cd, d]));
+            faces.push(QuadNodes([a, ab, m, da]));
+            faces.push(QuadNodes([ab, b, bc, m]));
+            faces.push(QuadNodes([m, bc, c, cd]));
+            faces.push(QuadNodes([da, m, cd, d]));
         }
 
         // Update faces
         quad_msh.elems = faces
     }
-    
+
     /// Retrieves the refined quad-vertex mesh.
     pub fn unpack(self) -> QuadVertexMesh<T, M> {
         self.refined_mesh
     }
-    
+
     /// Performs linear subdivision again.
     pub fn lin_subd(self) -> LinSubd<T, M> {
         LinSubd::new(self.refined_mesh)

@@ -10,7 +10,7 @@
 use std::f64::consts::PI;
 use nalgebra::{matrix, DVector, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
-use subd::cells::quad::QuadTopo;
+use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
@@ -34,7 +34,7 @@ pub fn main() {
         ].transpose();
 
     // Define mesh
-    let quads = vec![QuadTopo::from_indices(0, 1, 2, 3)];
+    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
     let quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
     let refined = quad_msh.lin_subd().lin_subd().unpack();
     let msh = CatmarkMesh::from_quad_mesh(refined);

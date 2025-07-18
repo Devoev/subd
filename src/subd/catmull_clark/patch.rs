@@ -1,6 +1,6 @@
 use crate::cells;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::{QuadBndTopo, QuadTopo};
+use crate::cells::quad::{QuadBndTopo, QuadNodes};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
@@ -153,7 +153,7 @@ pub enum CatmarkPatchNodes {
 impl CatmarkPatchNodes {
     /// Finds the [`CatmarkPatchNodes`] in the given quad-vertex topology `msh`.
     /// The center face `p` is given by `quad`.
-    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, quad: &QuadTopo) -> Self {
+    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, quad: &QuadNodes) -> Self {
         match CatmarkPatchFaces::find(msh, *quad) {
             CatmarkPatchFaces::Regular(faces) => {
                 let pick = [
@@ -222,19 +222,19 @@ impl CatmarkPatchNodes {
     }
 
     /// Returns the quadrilateral in the center of this patch.
-    pub fn center_quad(&self) -> QuadTopo {
+    pub fn center_quad(&self) -> QuadNodes {
         match self {
             CatmarkPatchNodes::Regular(val) => {
-                QuadTopo([val[5], val[6], val[10], val[9]])
+                QuadNodes([val[5], val[6], val[10], val[9]])
             }
             CatmarkPatchNodes::Boundary(val) => {
-                QuadTopo([val[1], val[2], val[6], val[5]])
+                QuadNodes([val[1], val[2], val[6], val[5]])
             }
             CatmarkPatchNodes::Corner(val) => {
-                QuadTopo([val[0], val[1], val[4], val[3]])
+                QuadNodes([val[0], val[1], val[4], val[3]])
             }
             CatmarkPatchNodes::Irregular(val, _) => {
-                QuadTopo([val[0], val[5], val[4], val[3]])
+                QuadNodes([val[0], val[5], val[4], val[3]])
             }
         }
     }
@@ -288,7 +288,7 @@ pub enum CatmarkPatchFaces {
     /// ```
     /// where `p` is the center face of the patch.
     /// Each face is sorted such that the first node is the lower left one.
-    Regular([QuadTopo; 9]),
+    Regular([QuadNodes; 9]),
 
     /// The regular boundary case of valence `n=3`.
     /// The faces are ordered in lexicographical order
@@ -302,7 +302,7 @@ pub enum CatmarkPatchFaces {
     /// ```
     /// where `p` is the center face of the patch.
     /// Each face is sorted such that the first node is the lower left one.
-    Boundary([QuadTopo; 6]),
+    Boundary([QuadNodes; 6]),
 
     /// The regular corner case of valence `n=2`.
     /// The faces are ordered in lexicographical order
@@ -316,7 +316,7 @@ pub enum CatmarkPatchFaces {
     /// ```
     /// where `p` is the center face of the patch.
     /// Each face is sorted such that the first node is the lower left one.
-    Corner([QuadTopo; 4]),
+    Corner([QuadNodes; 4]),
 
     /// The irregular interior case of valence `n≠4`.
     /// The faces are ordered in the following order
@@ -335,13 +335,13 @@ pub enum CatmarkPatchFaces {
     /// - Face `p`: Sorted such that the irregular node is the lower left one.
     /// - Faces `0..n-1`: Sorted such that the first node is the irregular one.
     /// - Faces `n..n+4`: Sorted such that the first node is the lower left one.
-    Irregular(Vec<QuadTopo>)
+    Irregular(Vec<QuadNodes>)
 }
 
 impl CatmarkPatchFaces {
     // todo: remove T and M arguments. Can we replace QuadVertexMesh argument=?
     /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
-    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadTopo) -> CatmarkPatchFaces {
+    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadNodes) -> CatmarkPatchFaces {
         // Find all faces in the 1-ring neighborhood
         let faces = msh.elems.iter()
             .filter(|other| other.is_touching(center))
@@ -350,7 +350,7 @@ impl CatmarkPatchFaces {
         if msh.is_regular(center) || msh.is_boundary_elem(&center) {
             match faces.len() {
                 8 => {
-                    let faces: [QuadTopo; 9] = Self::traverse_faces_regular(center, faces).try_into().unwrap();
+                    let faces: [QuadNodes; 9] = Self::traverse_faces_regular(center, faces).try_into().unwrap();
                     CatmarkPatchFaces::Regular(faces)
                 },
                 5 => {
@@ -361,7 +361,7 @@ impl CatmarkPatchFaces {
                             (msh.valence(node) == 4 && msh.valence(next_node) != 4).then_some(next_node)
                         }).unwrap();
                     let center_face = center.sorted_by_origin(node_irr);
-                    let faces: [QuadTopo; 6] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
+                    let faces: [QuadNodes; 6] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
                     CatmarkPatchFaces::Boundary(faces)
                 },
                 3 => {
@@ -369,7 +369,7 @@ impl CatmarkPatchFaces {
                         .find(|&n| msh.valence(n) == 2)
                         .unwrap();
                     let center_face = center.sorted_by_origin(node_irr);
-                    let faces: [QuadTopo; 4] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
+                    let faces: [QuadNodes; 4] = Self::traverse_faces_regular(center_face, faces).try_into().unwrap();
                     CatmarkPatchFaces::Corner(faces)
                 },
                 _ => panic!("Possibly add more options for `faces.len()` (is {})", faces.len())
@@ -386,9 +386,9 @@ impl CatmarkPatchFaces {
     /// and returns them in a vector.
     ///
     /// The traversal order is compatible with [`FaceConnectivity::Regular`], [`FaceConnectivity::Boundary`] and [`FaceConnectivity::Corner`].
-    fn traverse_faces_regular(center: QuadTopo, faces: Vec<&QuadTopo>) -> Vec<QuadTopo> {
+    fn traverse_faces_regular(center: QuadNodes, faces: Vec<&QuadNodes>) -> Vec<QuadNodes> {
         let center_edges = center.edges();
-        let mut faces_sorted: Vec<Option<QuadTopo>> = vec![None; 9];
+        let mut faces_sorted: Vec<Option<QuadNodes>> = vec![None; 9];
         faces_sorted[4] = Some(center);
 
         for &face in faces {
@@ -429,7 +429,7 @@ impl CatmarkPatchFaces {
     /// and returns them in a vector.
     ///
     /// The traversal order is compatible with [`FaceConnectivity::Irregular`].
-    fn traverse_faces_irregular(center: QuadTopo, mut faces: Vec<&QuadTopo>) -> Vec<QuadTopo> {
+    fn traverse_faces_irregular(center: QuadNodes, mut faces: Vec<&QuadNodes>) -> Vec<QuadNodes> {
 
         // Find irregular faces 0..n-1
         let mut faces_irregular = vec![center];
@@ -450,7 +450,7 @@ impl CatmarkPatchFaces {
         faces_irregular.rotate_right(1);
 
         // Find regular faces n..n+4
-        let mut faces_regular = vec![QuadTopo([NodeIdx(0); 4]); 5]; // todo: replace with better default value
+        let mut faces_regular = vec![QuadNodes([NodeIdx(0); 4]); 5]; // todo: replace with better default value
 
         // Find faces connected to edges 1 and 2
         for (edge_dix, &edge) in center.edges()[1..=2].iter().enumerate() {
@@ -485,7 +485,7 @@ impl CatmarkPatchFaces {
     }
 
     /// Returns a slice containing the faces.
-    pub fn as_slice(&self) -> &[QuadTopo] {
+    pub fn as_slice(&self) -> &[QuadNodes] {
         match self {
             CatmarkPatchFaces::Regular(val) => val.as_slice(),
             CatmarkPatchFaces::Boundary(val) => val.as_slice(),

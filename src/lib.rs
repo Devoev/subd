@@ -27,7 +27,7 @@ mod tests {
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
     use crate::cells::cartesian::CartCell;
     use crate::cells::geo::Cell as GeoCell;
-    use crate::cells::quad::QuadTopo;
+    use crate::cells::quad::QuadNodes;
     use crate::diffgeo::chart::Chart;
     use crate::knots::breaks::Breaks;
     use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
@@ -269,27 +269,27 @@ mod tests {
     fn mesh() {
         // Define quads
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 5, 4),
-            QuadTopo::from_indices(1, 2, 6, 5),
-            QuadTopo::from_indices(2, 3, 7, 6),
-            QuadTopo::from_indices(4, 5, 9, 8),
-            QuadTopo::from_indices(5, 6, 10, 9),
-            QuadTopo::from_indices(6, 7, 11, 10),
-            QuadTopo::from_indices(8, 9, 13, 12),
-            QuadTopo::from_indices(9, 10, 14, 13),
-            QuadTopo::from_indices(10, 11, 15, 14),
+            QuadNodes::from_indices(0, 1, 5, 4),
+            QuadNodes::from_indices(1, 2, 6, 5),
+            QuadNodes::from_indices(2, 3, 7, 6),
+            QuadNodes::from_indices(4, 5, 9, 8),
+            QuadNodes::from_indices(5, 6, 10, 9),
+            QuadNodes::from_indices(6, 7, 11, 10),
+            QuadNodes::from_indices(8, 9, 13, 12),
+            QuadNodes::from_indices(9, 10, 14, 13),
+            QuadNodes::from_indices(10, 11, 15, 14),
         ];
         let quads_irregular = vec![
-            QuadTopo::from_indices(0, 5, 4, 3),
-            QuadTopo::from_indices(1, 0, 3, 2),
-            QuadTopo::from_indices(2, 3, 16, 17),
-            QuadTopo::from_indices(3, 4, 15, 16),
-            QuadTopo::from_indices(4, 12, 11, 15),
-            QuadTopo::from_indices(5, 13, 12, 4),
-            QuadTopo::from_indices(6, 14, 13, 5),
-            QuadTopo::from_indices(7, 6, 5, 0),
-            QuadTopo::from_indices(8, 7, 0, 9),
-            QuadTopo::from_indices(9, 0, 1, 10),
+            QuadNodes::from_indices(0, 5, 4, 3),
+            QuadNodes::from_indices(1, 0, 3, 2),
+            QuadNodes::from_indices(2, 3, 16, 17),
+            QuadNodes::from_indices(3, 4, 15, 16),
+            QuadNodes::from_indices(4, 12, 11, 15),
+            QuadNodes::from_indices(5, 13, 12, 4),
+            QuadNodes::from_indices(6, 14, 13, 5),
+            QuadNodes::from_indices(7, 6, 5, 0),
+            QuadNodes::from_indices(8, 7, 0, 9),
+            QuadNodes::from_indices(9, 0, 1, 10),
         ];
 
         // Define coords
@@ -328,7 +328,7 @@ mod tests {
     fn incidence_mats() {
         // Define geo
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 2, 3),
+            QuadNodes::from_indices(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![
@@ -365,7 +365,7 @@ mod tests {
     fn catmull_clark() {
         // Define geo
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 2, 3),
+            QuadNodes::from_indices(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![
@@ -449,19 +449,19 @@ mod tests {
     fn subd_assembly() {
         // Define quads
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 5, 4),
-            QuadTopo::from_indices(1, 2, 6, 5),
-            QuadTopo::from_indices(2, 3, 7, 6),
-            QuadTopo::from_indices(4, 5, 9, 8),
-            QuadTopo::from_indices(5, 6, 10, 9),
-            QuadTopo::from_indices(6, 7, 11, 10),
-            QuadTopo::from_indices(8, 9, 13, 12),
-            QuadTopo::from_indices(9, 10, 14, 13),
-            QuadTopo::from_indices(10, 11, 15, 14),
+            QuadNodes::from_indices(0, 1, 5, 4),
+            QuadNodes::from_indices(1, 2, 6, 5),
+            QuadNodes::from_indices(2, 3, 7, 6),
+            QuadNodes::from_indices(4, 5, 9, 8),
+            QuadNodes::from_indices(5, 6, 10, 9),
+            QuadNodes::from_indices(6, 7, 11, 10),
+            QuadNodes::from_indices(8, 9, 13, 12),
+            QuadNodes::from_indices(9, 10, 14, 13),
+            QuadNodes::from_indices(10, 11, 15, 14),
         ];
 
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 2, 3),
+            QuadNodes::from_indices(0, 1, 2, 3),
         ];
 
         // Define coords
@@ -540,7 +540,7 @@ mod tests {
     fn subd_edge_assembly() {
         // Define geo
         let quads_regular = vec![
-            QuadTopo::from_indices(0, 1, 2, 3),
+            QuadNodes::from_indices(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![

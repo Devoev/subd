@@ -9,7 +9,7 @@ use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
 
-/// A 2d quadrilateral element of topology [`QuadTopo`],
+/// A 2d quadrilateral element of topology [`QuadNodes`],
 /// embedded in [`M`]-dimensional space.
 pub struct Quad<T: RealField, const M: usize> {
     pub vertices: [Point<T, M>; 4]
@@ -23,7 +23,7 @@ impl<T: RealField, const M: usize> Quad<T, M> {
     }
 
     /// Constructs a new [`Quad`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: QuadTopo, msh: &QuadVertexMesh<T, M>) -> Self {
+    pub fn from_msh(topology: QuadNodes, msh: &QuadVertexMesh<T, M>) -> Self {
         Quad::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 
@@ -51,21 +51,21 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for Quad<T
 }
 
 
-/// Topology of a 2D quadrilateral. The topology is defined as
+/// Face-to-nodes topology of a 2D quadrilateral given by
 /// ```text
 /// v 3 --- 2
 /// ^ |     |
 /// | 0 --- 1
 /// +---> u
 /// ```
-/// where `0,1,2,3` are the corner nodes of the quadrilateral.
+/// where `0,1,2,3` are the four corner nodes of the quadrilateral.
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct QuadTopo(pub [NodeIdx; 4]);
+pub struct QuadNodes(pub [NodeIdx; 4]);
 
-impl QuadTopo {
-    /// Constructs a new [`QuadTopo`] from the given indices `i,j,k,l` of the corner nodes.
+impl QuadNodes {
+    /// Constructs a new [`QuadNodes`] from the given indices `i,j,k,l` of the corner nodes.
     pub fn from_indices(i: usize, j: usize, k: usize, l: usize) -> Self {
-        QuadTopo([NodeIdx(i), NodeIdx(j), NodeIdx(k), NodeIdx(l)])
+        QuadNodes([NodeIdx(i), NodeIdx(j), NodeIdx(k), NodeIdx(l)])
     }
     /// Returns the corner nodes.
     pub fn nodes(&self) -> [NodeIdx; 4] {
@@ -88,17 +88,17 @@ impl QuadTopo {
 
     // todo: return an intersection result (possibly an enum)
     /// Returns the intersection between `self` and `other` as an iterator of the overlapping nodes.
-    pub fn intersection(&self, other: QuadTopo) -> impl Iterator<Item=NodeIdx> {
+    pub fn intersection(&self, other: QuadNodes) -> impl Iterator<Item=NodeIdx> {
         self.nodes().into_iter().filter(move |n| other.nodes().contains(n))
     }
 
     /// Returns whether `self` and `other` are adjacent, i.e. share an edge.
-    pub fn is_adjacent(&self, other: QuadTopo) -> bool {
+    pub fn is_adjacent(&self, other: QuadNodes) -> bool {
         self.intersection(other).count() == 2
     }
 
     /// Returns whether `self` and `other` are touching, i.e. share an edge or a node.
-    pub fn is_touching(&self, other: QuadTopo) -> bool {
+    pub fn is_touching(&self, other: QuadNodes) -> bool {
         let count = self.intersection(other).count();
         count == 2 || count == 1
     }
@@ -116,7 +116,7 @@ impl QuadTopo {
     /// ```
     /// i.e. the given node `n` moves from the original position `1`
     /// to position `local_idx=3`.
-    pub fn sorted_by_node(&self, node: NodeIdx, local_idx: usize) -> QuadTopo {
+    pub fn sorted_by_node(&self, node: NodeIdx, local_idx: usize) -> QuadNodes {
         let original_idx = self.nodes().iter().position(|&n| n == node).unwrap();
         let mut nodes = self.nodes();
         if local_idx > original_idx {
@@ -124,7 +124,7 @@ impl QuadTopo {
         } else {
             nodes.rotate_left(original_idx - local_idx);
         }
-        QuadTopo(nodes)
+        QuadNodes(nodes)
     }
 
     /// Returns a sorted copy of this face, such that the node `uv_origin` is the first node.
@@ -140,12 +140,12 @@ impl QuadTopo {
     /// +---> u
     /// ```
     /// where `0` is the `uv_origin`.
-    pub fn sorted_by_origin(&self, uv_origin: NodeIdx) -> QuadTopo {
+    pub fn sorted_by_origin(&self, uv_origin: NodeIdx) -> QuadNodes {
         self.sorted_by_node(uv_origin, 0)
     }
 }
 
-impl Cell<U2> for QuadTopo {
+impl Cell<U2> for QuadNodes {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -168,7 +168,7 @@ impl Cell<U2> for QuadTopo {
     }
 }
 
-impl OrientedCell<U2> for QuadTopo {
+impl OrientedCell<U2> for QuadNodes {
     fn orientation(&self) -> i8 {
         todo!("possible orientation:\
         + smallest node -> 2nd smallest node \
@@ -186,11 +186,11 @@ impl OrientedCell<U2> for QuadTopo {
     fn reversed(&self) -> Self {
         let mut nodes = self.nodes();
         nodes.reverse();
-        QuadTopo(nodes)
+        QuadNodes(nodes)
     }
 }
 
-impl CellBoundary<U2> for QuadTopo {
+impl CellBoundary<U2> for QuadNodes {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;

@@ -12,7 +12,7 @@ use nalgebra::{center, point, DMatrix, DVector, Point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::collections::BTreeSet;
 use std::f64::consts::PI;
-use subd::cells::quad::QuadTopo;
+use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
@@ -97,11 +97,11 @@ fn main() {
 
     // Define mesh
     let faces = vec![
-        QuadTopo::from_indices(0, 10, 1, 2),
-        QuadTopo::from_indices(0, 2, 3, 4),
-        QuadTopo::from_indices(0, 4, 5, 6),
-        QuadTopo::from_indices(0, 6, 7, 8),
-        QuadTopo::from_indices(0, 8, 9, 10),
+        QuadNodes::from_indices(0, 10, 1, 2),
+        QuadNodes::from_indices(0, 2, 3, 4),
+        QuadNodes::from_indices(0, 4, 5, 6),
+        QuadNodes::from_indices(0, 6, 7, 8),
+        QuadNodes::from_indices(0, 8, 9, 10),
     ];
     let quad_msh = QuadVertexMesh::new(coords, faces);
     let refined = quad_msh.lin_subd().lin_subd().unpack();

@@ -1,6 +1,6 @@
 use crate::cells::line_segment::UndirectedEdge;
 use crate::cells::node::NodeIdx;
-use crate::cells::quad::{Quad, QuadTopo};
+use crate::cells::quad::{Quad, QuadNodes};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use nalgebra::{center, RealField};
@@ -81,7 +81,7 @@ impl FaceMidpointStencil {
     pub fn refine<T: RealField, const M: usize>(
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
-        face: QuadTopo,
+        face: QuadNodes,
     ) -> NodeIdx {
         let quad = Quad::from_msh(face, quad_msh);
         let center = quad.centroid();
