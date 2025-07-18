@@ -42,7 +42,7 @@ impl EdgeMidpointStencil {
         self.edge_midpoints.insert(edge, node);
         node
     }
-    
+
     /// Returns the midpoint node corresponding to the given `edge`.
     /// If the edge is not refined yet the midpoint is first calculated using [EdgeMidpointStencil::refine].
     pub fn get_or_refine<T: RealField, const M: usize>(
@@ -67,7 +67,7 @@ impl EdgeMidpointStencil {
 ///  |       |
 /// 1/4 --- 1/4
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FaceMidpointStencil;
 
 impl FaceMidpointStencil {
