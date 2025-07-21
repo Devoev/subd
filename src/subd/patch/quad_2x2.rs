@@ -64,7 +64,30 @@ impl QuadNodes2x2 {
         if msh.is_boundary_node(center) || msh.is_regular_node(center) {
             match faces[..] {
                 [q1, q2, q3, q4] => {
-                    todo!("implement regular case")
+                    // In this case, there is no preferred orientation (the patch is rotationally symmetric)
+                    // Hence randomly choose q1 as the lower left face (and sort it)
+                    let q1 = q1.sorted_by_node(center, 2);
+                    let mut nodes = [q1.nodes()[0]; 9];
+
+                    // Find right, top and diagonal faces and update nodes
+                    for &other in [q2, q3, q4] {
+                        match q1.shared_edge(other) {
+                            None => { // no shared edge = diagonal face
+                                let q_diag = other.sorted_by_origin(center);
+                                [nodes[4], nodes[5], nodes[8], nodes[7]] = q_diag.nodes();
+                            }
+                            Some(edge) if edge.end() == center => { // edge 1 -> 4 == right face
+                                let q_right = other.sorted_by_node(center, 3);
+                                [nodes[1], nodes[2], nodes[5], nodes[4]] = q_right.nodes();
+                            },
+                            Some(edge) => { // edge 4 -> 3 == top face
+                                let q_top = other.sorted_by_node(center, 1);
+                                [nodes[3], nodes[4], nodes[7], nodes[6]] = q_top.nodes();
+                            }
+                        }
+                    }
+
+                    QuadNodes2x2::Regular(nodes)
                 }
                 [mut q1, mut q2] => {
                     // Get edge 0 -> 4
@@ -99,7 +122,7 @@ mod tests {
     use crate::cells::quad::QuadNodes;
     use nalgebra::SMatrix;
 
-    /// Constructs the mesh
+    /// Constructs the `3✕3` regular quad mesh
     /// ```text
     ///   6 --- 7 --- 8
     ///   |  1  |  2  |
@@ -107,6 +130,7 @@ mod tests {
     ///   |  3  |  0  |
     ///   0 --- 1 --- 2
     /// ```
+    /// with all-zero control points.
     fn setup() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
             QuadNodes::from_indices(2, 5, 4, 1),
@@ -121,39 +145,52 @@ mod tests {
     #[test]
     fn find() {
         let msh = setup();
+        
+        // Regular case (test against 4 alignments, because this case is rotationally symmetric)
+        let patch = QuadNodes2x2::find(&msh, NodeIdx(4));
+        let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(NodeIdx);
+        let nodes_exp_right_align = [2, 5, 8, 1, 4, 7, 0, 3, 6].map(NodeIdx);
+        let nodes_exp_top_align = [8, 7, 6, 5, 4, 3, 2, 1, 0].map(NodeIdx);
+        let nodes_exp_left_align = [6, 3, 0, 7, 4, 1, 8, 5, 2].map(NodeIdx);
+        assert!(
+            patch == QuadNodes2x2::Regular(nodes_exp_bottom_align)
+            || patch == QuadNodes2x2::Regular(nodes_exp_right_align)
+            || patch == QuadNodes2x2::Regular(nodes_exp_top_align)
+            || patch == QuadNodes2x2::Regular(nodes_exp_left_align)
+        );
 
         // Boundary case
         let patch = QuadNodes2x2::find(&msh, NodeIdx(1));
-        let nodes = [0, 1, 2, 3, 4, 5].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Boundary(nodes));
+        let nodes_exp_bottom_bnd = [0, 1, 2, 3, 4, 5].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Boundary(nodes_exp_bottom_bnd));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(3));
-        let nodes = [6, 3, 0, 7, 4, 1].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Boundary(nodes));
+        let nodes_exp_left_bnd = [6, 3, 0, 7, 4, 1].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Boundary(nodes_exp_left_bnd));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(5));
-        let nodes = [2, 5, 8, 1, 4, 7].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Boundary(nodes));
+        let nodes_exp_right_bnd = [2, 5, 8, 1, 4, 7].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Boundary(nodes_exp_right_bnd));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(7));
-        let nodes = [8, 7, 6, 5, 4, 3].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Boundary(nodes));
+        let nodes_exp_top_bnd = [8, 7, 6, 5, 4, 3].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Boundary(nodes_exp_top_bnd));
 
         // Corner case
         let patch = QuadNodes2x2::find(&msh, NodeIdx(0));
-        let nodes = [0, 1, 3, 4].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Corner(nodes));
+        let nodes_exp_bottom_left_corner = [0, 1, 3, 4].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Corner(nodes_exp_bottom_left_corner));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(2));
-        let nodes = [2, 5, 1, 4].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Corner(nodes));
+        let nodes_exp_bottom_right_corner = [2, 5, 1, 4].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Corner(nodes_exp_bottom_right_corner));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(6));
-        let nodes = [6, 3, 7, 4].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Corner(nodes));
+        let nodes_exp_top_left_corner = [6, 3, 7, 4].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Corner(nodes_exp_top_left_corner));
 
         let patch = QuadNodes2x2::find(&msh, NodeIdx(8));
-        let nodes = [8, 7, 5, 4].map(NodeIdx);
-        assert_eq!(patch, QuadNodes2x2::Corner(nodes));
+        let nodes_exp_top_right_corner = [8, 7, 5, 4].map(NodeIdx);
+        assert_eq!(patch, QuadNodes2x2::Corner(nodes_exp_top_right_corner));
     }
 }
