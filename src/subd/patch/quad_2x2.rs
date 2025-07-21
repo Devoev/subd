@@ -2,6 +2,8 @@ use crate::cells::node::NodeIdx;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use itertools::Itertools;
 use nalgebra::RealField;
+use crate::cells::line_segment::DirectedEdge;
+use crate::cells::quad::QuadNodes;
 
 /// Nodes of 2-by-2 quadrilaterals.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -111,7 +113,47 @@ impl QuadNodes2x2 {
                     Should probably be implemented sometime.")
             }
         } else {
-            todo!("implement irregular case")
+            // As in the regular case, there is preferred orientation, so just choose the first face
+            let n = msh.valence(center);
+            let q1 = faces[0].sorted_by_origin(center);
+            let mut nodes_regular = [q1.nodes()[2]; 8];
+
+            // First find the two regular faces adjacent to q1
+            let mut faces_irregular = Vec::with_capacity(n - 3);
+
+            for &other in faces.into_iter().skip(1) {
+                match q1.shared_edge(other) {
+                    None => { // no shared edge = irregular face
+                        let q_irregular = other.sorted_by_origin(center);
+                        faces_irregular.push(q_irregular);
+                    }
+                    Some(edge) if edge.end() == center => { // edge 3 -> 0 == left face
+                        let q_left = other.sorted_by_node(center, 1);
+                        [nodes_regular[1], nodes_regular[0], nodes_regular[3], nodes_regular[2]] = q_left.nodes();
+                    },
+                    Some(_) => { // edge 0 -> 5 == bottom face
+                        let q_bottom = other.sorted_by_node(center, 3);
+                        [nodes_regular[7], nodes_regular[6], nodes_regular[5], nodes_regular[0]] = q_bottom.nodes();
+                    }
+                }
+            }
+
+            let mut nodes_irregular = Vec::with_capacity(2*n - 6);
+            let mut next_edge = DirectedEdge([nodes_regular[7], center]);
+            while !faces_irregular.is_empty() {
+                let face_idx = faces_irregular.iter()
+                    .position(|face| face.edges().contains(&next_edge))
+                    .expect("No face contains given edge. Check faces argument.");
+
+                let next_face = faces_irregular.swap_remove(face_idx).sorted_by_origin(center);
+                nodes_irregular.push(next_face.nodes()[3]);
+                nodes_irregular.push(next_face.nodes()[2]);
+                next_edge = next_face.edges()[0].reversed();
+            }
+
+            let mut nodes = nodes_regular.to_vec();
+            nodes.extend_from_slice(&nodes_irregular[1..]);
+            QuadNodes2x2::Irregular(nodes, n)
         }
     }
 }
@@ -131,7 +173,7 @@ mod tests {
     ///   0 --- 1 --- 2
     /// ```
     /// with all-zero control points.
-    fn setup() -> QuadVertexMesh<f64, 2> {
+    fn setup_regular() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
             QuadNodes::from_indices(2, 5, 4, 1),
             QuadNodes::from_indices(6, 3, 4, 7),
@@ -142,10 +184,33 @@ mod tests {
         QuadVertexMesh::from_matrix(SMatrix::<f64, 9, 2>::zeros(), faces)
     }
 
+    /// Constructs the irregular quad mesh
+    /// ```text
+    ///   2 --- 3 --- 4
+    ///   |     |     |
+    ///   1 --- 0 --- 5
+    ///  ╱    ╱ |     |
+    /// 10   ╱  7 --- 6
+    ///  ╲  ╱  ╱
+    ///   9 - 8
+    /// ```
+    /// of valence `n=5` with all-zero control points.
+    fn setup_irregular() -> QuadVertexMesh<f64, 2> {
+        let faces = vec![
+            QuadNodes::from_indices(1, 0, 3, 2),
+            QuadNodes::from_indices(0, 5, 4, 3),
+            QuadNodes::from_indices(7, 6, 5, 0),
+            QuadNodes::from_indices(9, 8, 7, 0),
+            QuadNodes::from_indices(9, 0, 1, 10),
+        ];
+
+        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+    }
+
     #[test]
-    fn find() {
-        let msh = setup();
-        
+    fn find_regular() {
+        let msh = setup_regular();
+
         // Regular case (test against 4 alignments, because this case is rotationally symmetric)
         let patch = QuadNodes2x2::find(&msh, NodeIdx(4));
         let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(NodeIdx);
@@ -192,5 +257,20 @@ mod tests {
         let patch = QuadNodes2x2::find(&msh, NodeIdx(8));
         let nodes_exp_top_right_corner = [8, 7, 5, 4].map(NodeIdx);
         assert_eq!(patch, QuadNodes2x2::Corner(nodes_exp_top_right_corner));
+    }
+
+    #[test]
+    pub fn find_irregular() {
+        let msh = setup_irregular();
+
+        // Irregular case (test against 5 alignments, because of rotational symmetry)
+        let patch = QuadNodes2x2::find(&msh, NodeIdx(0));
+        let nodes_exp_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].into_iter().map(NodeIdx).collect();
+        let nodes_exp_2 = [0, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8].into_iter().map(NodeIdx).collect();
+        assert!(
+            patch == QuadNodes2x2::Irregular(nodes_exp_1, 5)
+            || patch == QuadNodes2x2::Irregular(nodes_exp_2, 5)
+        );
+        // todo: implement the other 3 alignments as well
     }
 }
