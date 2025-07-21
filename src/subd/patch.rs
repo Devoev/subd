@@ -1,1 +1,1 @@
-mod quad_2x2;
+mod quad_nodes_one_ring;
