@@ -101,36 +101,6 @@ impl QuadNodes {
         self.edges().map(UndirectedEdge::from)
     }
 
-    // todo: return an intersection result (possibly an enum)
-    /// Returns the intersection between `self` and `other` as an iterator of the overlapping nodes.
-    fn intersection(&self, other: QuadNodes) -> impl Iterator<Item=NodeIdx> {
-        self.nodes().into_iter().filter(move |n| other.nodes().contains(n))
-    }
-
-    /// Returns whether `self` and `other` are adjacent, i.e. share an edge.
-    pub fn is_adjacent(&self, other: QuadNodes) -> bool {
-        self.intersection(other).count() == 2
-    }
-
-    /// Returns whether `self` and `other` are touching, i.e. share an edge or a node.
-    pub fn is_touching(&self, other: QuadNodes) -> bool {
-        let count = self.intersection(other).count();
-        count == 2 || count == 1
-    }
-
-    /// Returns the directed edge shared by both `self` and `other`.
-    /// If they don't share an edge, `None` is returned.
-    /// The edges orientation is determined by `self`.
-    pub fn shared_edge(&self, other: QuadNodes) -> Option<DirectedEdge> {
-        self.intersection(other).next_array().map(DirectedEdge)
-    }
-
-    /// Returns the (first) node shared by both `self` and `other`.
-    /// If they don't share a node, `None` is returned.
-    pub fn shared_node(&self, other: QuadNodes) -> Option<NodeIdx> {
-        self.intersection(other).next()
-    }
-
     /// Returns a sorted copy of this face,
     /// such that the given `node` is at the local node position `local_idx`.
     ///
@@ -170,6 +140,81 @@ impl QuadNodes {
     /// where `0` is the `uv_origin`.
     pub fn sorted_by_origin(&self, uv_origin: NodeIdx) -> QuadNodes {
         self.sorted_by_node(uv_origin, 0)
+    }
+}
+
+/// Common nodes of two quadrilaterals.
+pub enum QuadNodesIntersection {
+    /// No common nodes.
+    Empty,
+
+    /// The single common node.
+    Node(NodeIdx),
+
+    /// The two common, connected nodes of an edge.
+    Edge(NodeIdx, NodeIdx),
+}
+
+impl QuadNodesIntersection {
+    /// Constructs a new [`QuadNodesIntersection`] from the given two quads `q1` and `q2`.
+    pub fn new(q1: &QuadNodes, q2: &QuadNodes) -> Self {
+        let mut common_nodes = q1.nodes()
+            .into_iter()
+            .filter(move |n| q2.nodes().contains(n));
+
+        match [common_nodes.next(), common_nodes.next()] {
+            [None, None] => QuadNodesIntersection::Empty,
+            [Some(a), None] => QuadNodesIntersection::Node(a),
+            [Some(a), Some(b)] => QuadNodesIntersection::Edge(a, b),
+            [None, Some(_)] => unreachable!("It is impossible that the iterator first returns `None` and then `Some`"),
+        }
+    }
+
+    /// Returns the (first) shared node of the two quads `q1` and `q2`.
+    /// If they don't share a node, `None` is returned.
+    pub fn new_shared_node(q1: &QuadNodes, q2: &QuadNodes) -> Option<NodeIdx> {
+        let nodes1 = q1.nodes();
+        let nodes2 = q2.nodes();
+        nodes1.into_iter().find(|n| nodes2.contains(n))
+    }
+
+    /// Returns the shared edge of the two quads `q1` and `q2`.
+    /// The edge's orientation is determined by `q1`.
+    /// If they don't share an edge, `None` is returned.
+    pub fn new_shared_edge(q1: &QuadNodes, q2: &QuadNodes) -> Option<DirectedEdge> {
+        let edges1 = q1.edges();
+        let edges2 = q2.edges();
+        edges1.into_iter().find(|edge| edges2.contains(&edge.reversed()))
+    }
+}
+
+impl QuadNodes {
+    /// Returns the [`QuadNodesIntersection`] between `self` and `other`..
+    fn intersection(&self, other: QuadNodes) -> QuadNodesIntersection {
+        QuadNodesIntersection::new(self, &other)
+    }
+
+    /// Returns whether `self` and `other` are adjacent, i.e. share an edge.
+    pub fn is_adjacent(&self, other: QuadNodes) -> bool {
+        matches!(self.intersection(other), QuadNodesIntersection::Edge(_, _))
+    }
+
+    /// Returns whether `self` and `other` are touching, i.e. share an edge or a node.
+    pub fn is_touching(&self, other: QuadNodes) -> bool {
+        matches!(self.intersection(other), QuadNodesIntersection::Node(_) | QuadNodesIntersection::Edge(_, _))
+    }
+
+    /// Returns the directed edge shared by both `self` and `other`.
+    /// If they don't share an edge, `None` is returned.
+    /// The edges orientation is determined by `self`.
+    pub fn shared_edge(&self, other: QuadNodes) -> Option<DirectedEdge> {
+        QuadNodesIntersection::new_shared_edge(self, &other)
+    }
+
+    /// Returns the (first) node shared by both `self` and `other`.
+    /// If they don't share a node, `None` is returned.
+    pub fn shared_node(&self, other: QuadNodes) -> Option<NodeIdx> {
+        QuadNodesIntersection::new_shared_node(self, &other)
     }
 }
 
