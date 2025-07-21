@@ -27,6 +27,17 @@ where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
             .unique()
     }
 
+    /// Returns an iterator over all *open* edges,
+    /// i.e. edges that are connected to only *one* face.
+    pub fn open_edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
+        self.elems.iter()
+            .flat_map(|face| face.boundary().cells().to_owned())
+            .map(|edge: Edge2<F> | edge.sorted())
+            .counts()
+            .into_iter()
+            .filter_map(|(edge, num)| (num == 1).then_some(edge))
+    }
+
     /// Returns all edges connected to the given `node`.
     pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = Edge2<F>> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
@@ -35,6 +46,13 @@ where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
     pub fn valence(&self, node: NodeIdx) -> usize {
         self.edges_of_node(node).count()
+    }
+
+    // todo: this method is probably inefficient, because it iterates over ALL open edges
+    /// Returns `true` if the given `node` is a boundary node,
+    /// i.e. it is part of an open edge.
+    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
+        self.open_edges().any(|edge| edge.contains_node(node))
     }
 }
 

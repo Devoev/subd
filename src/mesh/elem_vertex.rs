@@ -86,16 +86,18 @@ impl <T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize> E
         self.adjacent_elems(elem).count() < C::NUM_SUB_CELLS
     }
 
-    // todo: is_boundary_node is inefficient. Update this by not calling is_boundary_elem ?
+    // todo: is_boundary_node_general is inefficient. Update this by not calling is_boundary_elem ?
+    // fixme: it is INCORRECT. Consider the case of width 2. The nodes in between the 2 elements
+    //  would be considered boundary nodes by this function.
     /// Returns `true` if the given `node` is a boundary node,
     /// i.e. all elements containing the node are boundary elements.
-    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
+    fn is_boundary_node_general(&self, node: NodeIdx) -> bool {
         self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
     }
 
     /// Returns an iterator over all boundary nodes in this mesh.
     pub fn boundary_nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
-        self.node_iter().filter(|&n| self.is_boundary_node(n))
+        self.node_iter().filter(|&n| self.is_boundary_node_general(n))
     }
 
     // todo: add info about regular/ irregular adjacency
