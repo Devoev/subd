@@ -3,10 +3,10 @@
 
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary};
-use crate::index::dimensioned::Dimensioned;
-use crate::mesh::traits::{Mesh, MeshTopology};
+use crate::mesh::traits::MeshTopology;
+use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, OMatrix, Point, RealField, U1};
+use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, U1};
 use std::iter::Map;
 use std::ops::Range;
 
@@ -57,6 +57,15 @@ impl <T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> ElemVerte
     /// Returns the [`Point`] of the given `node` index.
     pub fn coords(&self, node: NodeIdx) -> &Point<T, M> {
         &self.coords[node.0]
+    }
+
+    /// Constructs the matrix of control points.
+    pub fn coords_matrix(&self) -> OMatrix<T, Dyn, Const<M>> {
+        let rows = self.coords
+            .iter()
+            .map(|point| point.coords.transpose())
+            .collect_vec();
+        OMatrix::from_rows(&rows)
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
