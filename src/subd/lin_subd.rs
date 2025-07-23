@@ -1,3 +1,4 @@
 pub mod stencil;
 pub mod refine;
 mod mesh;
+pub mod matrix;
