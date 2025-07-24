@@ -4,7 +4,7 @@ use crate::cells::chain::Chain;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell};
+use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U1, U2};
@@ -17,7 +17,7 @@ pub type FaceVertexMesh<T, C, const M: usize> = ElemVertexMesh<T, C, 2, M>;
 pub type QuadVertexMesh<T, const M: usize> = FaceVertexMesh<T, QuadNodes, M>;
 
 impl <T: RealField, F: CellBoundary<U2>, const M: usize> FaceVertexMesh<T, F, M>
-where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
+where Edge2<F>: OrderedCell<U1> + OrientedCell<U1> + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
@@ -41,6 +41,15 @@ where Edge2<F>: OrderedCell<U1> + Clone + Eq + Hash
     /// Returns all edges connected to the given `node`.
     pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = Edge2<F>> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
+    }
+
+    /// Returns all faces connected to the given (undirected) `edge`.
+    pub fn faces_of_edge(&self, edge: Edge2<F>) -> impl Iterator<Item = &F> + '_ {
+        self.elems.iter()
+            .filter(move |face| {
+                let edges = face.boundary().cells().to_owned();
+                edges.contains(&edge) || edges.contains(&edge.reversed())
+            })
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
@@ -88,5 +97,87 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
     /// Returns an iterator over all faces in this mesh.
     pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
         self.elems.iter().map(|&face| Quad::from_msh(face, self))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use nalgebra::SMatrix;
+    use crate::cells::line_segment::DirectedEdge;
+    use super::*;
+
+
+    /// Constructs the (irregular) quad mesh
+    /// ```text
+    ///   2 --- 3 --- 4
+    ///   |  0  |  1  |
+    ///   1 --- 0 --- 5
+    ///  ╱    ╱ |  2  |
+    /// 10 4 ╱3 7 --- 6
+    ///  ╲  ╱  ╱
+    ///   9 - 8
+    /// ```
+    /// of valence `n=5` with all-zero control points.
+    fn setup() -> QuadVertexMesh<f64, 2> {
+        let faces = vec![
+            QuadNodes::from_indices(1, 0, 3, 2),
+            QuadNodes::from_indices(0, 5, 4, 3),
+            QuadNodes::from_indices(7, 6, 5, 0),
+            QuadNodes::from_indices(9, 8, 7, 0),
+            QuadNodes::from_indices(9, 0, 1, 10),
+        ];
+
+        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+    }
+
+    #[test]
+    fn faces_of_edge() {
+        let msh = setup();
+
+        // Edge 0 -> 5 and 5 -> 0
+        let faces_exp = HashSet::from([&msh.elems[1], &msh.elems[2]]);
+        let edge = DirectedEdge([NodeIdx(0), NodeIdx(5)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+        
+        let edge = DirectedEdge([NodeIdx(5), NodeIdx(0)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+        
+        // Edge 0 -> 9 and 9 -> 0
+        let faces_exp = HashSet::from([&msh.elems[3], &msh.elems[4]]);
+        let edge = DirectedEdge([NodeIdx(0), NodeIdx(9)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+
+        let edge = DirectedEdge([NodeIdx(9), NodeIdx(0)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+        
+        // Edge 7 -> 6 and 6 -> 7
+        let faces_exp = HashSet::from([&msh.elems[2]]);
+        let edge = DirectedEdge([NodeIdx(7), NodeIdx(6)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+
+        let edge = DirectedEdge([NodeIdx(6), NodeIdx(7)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+        
+        // Edge 1 -> 2 and 2 -> 1
+        let faces_exp = HashSet::from([&msh.elems[0]]);
+        let edge = DirectedEdge([NodeIdx(1), NodeIdx(2)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+
+        let edge = DirectedEdge([NodeIdx(2), NodeIdx(1)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert_eq!(faces, faces_exp);
+        
+        // Edge 4 -> 0 (non existent)
+        let edge = DirectedEdge([NodeIdx(4), NodeIdx(0)]);
+        let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
+        assert!(faces.is_empty());
     }
 }
