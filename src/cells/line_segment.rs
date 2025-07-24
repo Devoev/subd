@@ -194,6 +194,12 @@ impl From<DirectedEdge> for UndirectedEdge {
     }
 }
 
+impl From<UndirectedEdge> for DirectedEdge {
+    fn from(value: UndirectedEdge) -> Self {
+        DirectedEdge(value.sorted_nodes)
+    }
+}
+
 impl Cell<U1> for UndirectedEdge {
     fn nodes(&self) -> &[NodeIdx] {
         &self.sorted_nodes
