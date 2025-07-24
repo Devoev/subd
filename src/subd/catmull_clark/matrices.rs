@@ -1,6 +1,13 @@
 use nalgebra::{matrix, DMatrix, DVector, Dyn, RealField, RowDVector, SMatrix, Schur};
 use std::iter::once;
 use std::sync::LazyLock;
+use itertools::Itertools;
+use nalgebra_sparse::CooMatrix;
+use crate::cells::node::NodeIdx;
+use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::traits::MeshTopology;
+use crate::subd::patch::quad_nodes_edge_one_ring::QuadNodesEdgeOneRing;
+use crate::subd::patch::quad_nodes_one_ring::QuadNodesOneRing;
 
 /// The `7✕8` matrix `S11` for extended catmull clark subdivision.
 /// Taken from "Stam 1998" without trailing zeroes.
@@ -173,4 +180,74 @@ pub fn build_extended_mats<T: RealField>(n: usize) -> (DMatrix<T>, DMatrix<T>) {
     a_bar.fixed_view_mut::<9, 7>(2*n + 8, 2*n + 1).copy_from(&S22.cast());
 
     (a, a_bar)
+}
+
+/// Assembles the global subdivision matrix for the given `quad_msh`.
+pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> CooMatrix<f64> {
+    let edges = quad_msh.edges().collect_vec();
+    let num_nodes = quad_msh.num_nodes();
+    let mut mat = CooMatrix::new(quad_msh.num_elems() + edges.len() + num_nodes, num_nodes);
+
+    // Apply node smoothing stencil
+    for node_idx in 0..num_nodes {
+        let one_ring = QuadNodesOneRing::find(quad_msh, NodeIdx(node_idx));
+        match one_ring {
+            QuadNodesOneRing::Regular([n0, n1, n2, n3, n4, n5, n6, n7, n8]) => {
+                mat.push(node_idx, n0.0, 0.0625);
+                mat.push(node_idx, n2.0, 0.0625);
+                mat.push(node_idx, n6.0, 0.0625);
+                mat.push(node_idx, n8.0, 0.0625);
+                mat.push(node_idx, n1.0, 0.125);
+                mat.push(node_idx, n3.0, 0.125);
+                mat.push(node_idx, n5.0, 0.125);
+                mat.push(node_idx, n7.0, 0.125);
+                mat.push(node_idx, n4.0, 0.25);
+            }
+            QuadNodesOneRing::Boundary([n0, n1, n2, ..]) => {
+                // Interpolatory smoothing
+                mat.push(node_idx, n0.0, 0.125);
+                mat.push(node_idx, n1.0, 0.75);
+                mat.push(node_idx, n2.0, 0.125);
+            }
+            QuadNodesOneRing::Corner(_) => {
+                // No smoothing
+                mat.push(node_idx, node_idx, 1.0)
+            }
+            QuadNodesOneRing::Irregular(_, _) => {
+                todo!("")
+            }
+        }
+    }
+
+    // Apply face-midpoint stencil
+    let mut idx_offset = num_nodes;
+    for (face_idx, face) in quad_msh.elems.iter().enumerate() {
+        let [NodeIdx(a), NodeIdx(b), NodeIdx(c), NodeIdx(d)] = face.nodes();
+        mat.push(face_idx + idx_offset, a, 0.25);
+        mat.push(face_idx + idx_offset, b, 0.25);
+        mat.push(face_idx + idx_offset, c, 0.25);
+        mat.push(face_idx + idx_offset, d, 0.25);
+    }
+
+    // Apply edge-midpoint stencil
+    idx_offset += quad_msh.num_elems();
+    for (edge_idx, edge) in edges.into_iter().enumerate() {
+        let one_ring = QuadNodesEdgeOneRing::find(quad_msh, edge);
+        match one_ring {
+            QuadNodesEdgeOneRing::Regular([n0, n1, n2, n3, n4, n5]) => {
+                mat.push(edge_idx + idx_offset, n0.0, 0.0625);
+                mat.push(edge_idx + idx_offset, n1.0, 0.0625);
+                mat.push(edge_idx + idx_offset, n2.0, 0.375);
+                mat.push(edge_idx + idx_offset, n3.0, 0.375);
+                mat.push(edge_idx + idx_offset, n4.0, 0.0625);
+                mat.push(edge_idx + idx_offset, n5.0, 0.0625);
+            }
+            QuadNodesEdgeOneRing::Boundary([a, b]) => {
+                mat.push(edge_idx + idx_offset, a.0, 0.5);
+                mat.push(edge_idx + idx_offset, b.0, 0.5);
+            }
+        }
+    }
+
+    mat
 }
