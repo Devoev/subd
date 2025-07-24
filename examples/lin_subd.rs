@@ -3,7 +3,7 @@ use std::hint::black_box;
 use std::time::Instant;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::plot::plot_faces;
+use subd::subd::lin_subd::refine::LinSubd;
 
 fn main() {
     let num_refine = 11;
@@ -20,11 +20,11 @@ fn main() {
     let mut msh = make_mesh();
     let start = Instant::now();
     for _ in 0..num_refine {
-        // todo!("This test is disabled currently")
-        // black_box(msh.refine_alt());
+        LinSubd::do_refine_mat(&mut msh);
+        black_box(());
     }
     let time_alt = start.elapsed();
-    // let plt = plot_faces(&msh.0, msh.0.elems.clone().into_iter());
+    // let plt = plot_faces(&msh, msh.elems.clone().into_iter());
     // plt.show();
 
     println!(
@@ -32,7 +32,7 @@ fn main() {
         time
     );
     println!(
-        "Took {:?} for {num_refine} linear mesh refinements (alt method).",
+        "Took {:?} for {num_refine} linear mesh refinements (matrix-vector algorithm).",
         time_alt
     );
     println!(
