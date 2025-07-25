@@ -53,4 +53,9 @@ impl DirichletBcHom {
         }
         u
     }
+    
+    /// Returns the number of DOFs.
+    pub fn num_dof(&self) -> usize {
+        self.idx_dof.len()
+    }
 }
