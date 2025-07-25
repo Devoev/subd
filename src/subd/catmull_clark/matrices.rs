@@ -1,9 +1,12 @@
+use std::collections::HashMap;
 use nalgebra::{matrix, DMatrix, DVector, Dyn, RealField, RowDVector, SMatrix, Schur};
 use std::iter::once;
 use std::sync::LazyLock;
 use itertools::Itertools;
 use nalgebra_sparse::CooMatrix;
+use crate::cells::line_segment::UndirectedEdge;
 use crate::cells::node::NodeIdx;
+use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use crate::subd::patch::quad_nodes_edge_one_ring::QuadNodesEdgeOneRing;
@@ -182,11 +185,19 @@ pub fn build_extended_mats<T: RealField>(n: usize) -> (DMatrix<T>, DMatrix<T>) {
     (a, a_bar)
 }
 
+/// Edge to midpoint index map.
+type EdgeMidpoints = HashMap<UndirectedEdge, NodeIdx>;
+
+/// Face to midpoint index map.
+type FaceMidpoints = HashMap<QuadNodes, NodeIdx>;
+
 /// Assembles the global subdivision matrix for the given `quad_msh`.
-pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> CooMatrix<f64> {
+pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> (CooMatrix<f64>, FaceMidpoints, EdgeMidpoints) {
     let edges = quad_msh.edges().collect_vec();
     let num_nodes = quad_msh.num_nodes();
     let mut mat = CooMatrix::new(quad_msh.num_elems() + edges.len() + num_nodes, num_nodes);
+    let mut edge_midpoints: EdgeMidpoints = HashMap::new();
+    let mut face_midpoints: FaceMidpoints = HashMap::new();
 
     // Apply node smoothing stencil
     for node_idx in 0..num_nodes {
@@ -214,7 +225,7 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
                 mat.push(node_idx, node_idx, 1.0)
             }
             QuadNodesOneRing::Irregular(_, _) => {
-                todo!("")
+                todo!("implement irregular case")
             }
         }
     }
@@ -227,6 +238,7 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
         mat.push(face_idx + idx_offset, b, 0.25);
         mat.push(face_idx + idx_offset, c, 0.25);
         mat.push(face_idx + idx_offset, d, 0.25);
+        face_midpoints.insert(*face, NodeIdx(face_idx + idx_offset));
     }
 
     // Apply edge-midpoint stencil
@@ -247,7 +259,8 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
                 mat.push(edge_idx + idx_offset, b.0, 0.5);
             }
         }
+        edge_midpoints.insert(edge.into(), NodeIdx(edge_idx + idx_offset));
     }
 
-    mat
+    (mat, face_midpoints, edge_midpoints)
 }
