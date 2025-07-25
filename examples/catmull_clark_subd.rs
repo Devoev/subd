@@ -3,7 +3,6 @@ use std::f64::consts::PI;
 use std::time::Instant;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::subd::catmull_clark::refine::do_refine;
 
 fn main() {
     let num_refine = 5;
@@ -11,7 +10,7 @@ fn main() {
     let mut msh = make_mesh();
     let start = Instant::now();
     for _ in 0..num_refine {
-        do_refine(&mut msh);
+        msh = msh.catmark_subd().unpack();
     }
     let time = start.elapsed();
     // let plt = plot_faces(&msh, msh.elems.clone().into_iter());
