@@ -16,6 +16,7 @@ use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
+use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
@@ -126,30 +127,14 @@ fn main() {
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let idx = (0..msh.num_nodes()).collect::<BTreeSet<_>>();
-    let idx_bc = msh.boundary_nodes().map(|n| n.0).collect::<BTreeSet<_>>();
-    let idx_dof = idx.difference(&idx_bc).collect::<BTreeSet<_>>();
-
-    // todo: using get_entry is expensive. Implement BC differently
-    let f_dof = DVector::from_iterator(idx_dof.len(), idx_dof.iter().map(|&&i| f[i]));
-    let k_dof_dof = DMatrix::from_iterator(idx_dof.len(), idx_dof.len(), iproduct!(idx_dof.iter(), idx_dof.iter())
-        .map(|(&&i, &&j)| k.get_entry(i, j).unwrap().into_value())
-    );
-    let k_dof_bc = DMatrix::from_iterator(idx_dof.len(), idx_bc.len(), iproduct!(idx_dof.iter(), idx_bc.iter())
-        .map(|(&&i, &j)| k.get_entry(i, j).unwrap().into_value())
-    );
-
-    let f = f_dof;
-    let k = CsrMatrix::from(&k_dof_dof);
+    let dirichlet = DirichletBcHom::from_mesh(&msh);
+    let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system
-    let mut uh = DVector::zeros(msh.num_nodes());
     let uh_dof = cg(&k, &f, f.clone(), f.len(), 1e-10);
 
     // Inflate system
-    for (i_local, &&i) in idx_dof.iter().enumerate() {
-        uh[i] = uh_dof[i_local];
-    }
+    let uh = dirichlet.inflate(uh_dof);
 
     // Calculate error
     let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p)));
