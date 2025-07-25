@@ -4,6 +4,7 @@ use nalgebra::Point;
 use nalgebra_sparse::CsrMatrix;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadNodes;
+use crate::mesh::traits::MeshTopology;
 
 /// Refines the given `quad_msh` using the global subdivision matrix.
 pub fn do_refine<const M: usize>(quad_msh: &mut QuadVertexMesh<f64, M>) {
@@ -15,12 +16,13 @@ pub fn do_refine<const M: usize>(quad_msh: &mut QuadVertexMesh<f64, M>) {
 
     // Update coords
     quad_msh.coords.clear();
+    quad_msh.coords.reserve(c_subd.len());
     for point_coords in c_subd.row_iter() {
         quad_msh.coords.push(Point::from(point_coords.transpose()));
     }
-    
+
     // Update connectivity
-    let mut refined_faces = Vec::<QuadNodes>::new();
+    let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.num_elems() * 4);
     let mut add_face_nodes = |a: NodeIdx, b: NodeIdx, c: NodeIdx, d: NodeIdx| {
         refined_faces.push(QuadNodes([a, b, c, d]))
     };

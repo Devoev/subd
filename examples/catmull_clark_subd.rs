@@ -1,17 +1,22 @@
+use nalgebra::{center, point};
 use std::f64::consts::PI;
-use nalgebra::{center, matrix, point, DMatrix};
+use std::time::Instant;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::plot::plot_faces;
 use subd::subd::catmull_clark::refine::do_refine;
 
 fn main() {
-    // Catmull Clark subdivision
+    let num_refine = 5;
+
     let mut msh = make_mesh();
-    do_refine(&mut msh);
-    do_refine(&mut msh);
-    let plt = plot_faces(&msh, msh.elems.clone().into_iter());
-    plt.show();
+    let start = Instant::now();
+    for _ in 0..num_refine {
+        do_refine(&mut msh);
+    }
+    let time = start.elapsed();
+    // let plt = plot_faces(&msh, msh.elems.clone().into_iter());
+    // plt.show();
+    println!("Took {:?} for {num_refine} Catmull-Clark subdivision.", time);
 }
 
 fn make_mesh() -> QuadVertexMesh<f64, 2> {
