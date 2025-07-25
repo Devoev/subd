@@ -153,20 +153,25 @@ pub enum QuadNodesIntersection {
 
     /// The two common, connected nodes of an edge.
     Edge(NodeIdx, NodeIdx),
+
+    /// The four common nodes, i.e. the same face.
+    Face(NodeIdx, NodeIdx, NodeIdx, NodeIdx),
 }
 
 impl QuadNodesIntersection {
     /// Constructs a new [`QuadNodesIntersection`] from the given two quads `q1` and `q2`.
     pub fn new(q1: &QuadNodes, q2: &QuadNodes) -> Self {
-        let mut common_nodes = q1.nodes()
+        let common_nodes = q1.nodes()
             .into_iter()
-            .filter(move |n| q2.nodes().contains(n));
+            .filter(move |n| q2.nodes().contains(n))
+            .collect_vec();
 
-        match [common_nodes.next(), common_nodes.next()] {
-            [None, None] => QuadNodesIntersection::Empty,
-            [Some(a), None] => QuadNodesIntersection::Node(a),
-            [Some(a), Some(b)] => QuadNodesIntersection::Edge(a, b),
-            [None, Some(_)] => unreachable!("It is impossible that the iterator first returns `None` and then `Some`"),
+        match common_nodes[..] {
+            [] => QuadNodesIntersection::Empty,
+            [a] => QuadNodesIntersection::Node(a),
+            [a, b] => QuadNodesIntersection::Edge(a, b),
+            [a, b, c, d] => QuadNodesIntersection::Face(a, b, c, d),
+            _ => unreachable!("It is impossible that two quadrilateral faces share only 3 nodes, or more than 4 nodes."),
         }
     }
 
