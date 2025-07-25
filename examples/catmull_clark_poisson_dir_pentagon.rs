@@ -11,6 +11,9 @@ use itertools::Itertools;
 use nalgebra::{center, point, DVector, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
+use std::io;
+use std::iter::zip;
+use std::process::Command;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::mesh::face_vertex::QuadVertexMesh;
@@ -28,7 +31,7 @@ use subd::subd::catmull_clark::space::CatmarkSpace;
 /// Number of refinements for the convergence study.
 const NUM_REFINE: u8 = 5;
 
-fn main() {
+fn main() -> io::Result<()> {
     // Define geometry
     let coords = make_geo(1.0, 5);
 
@@ -63,15 +66,33 @@ fn main() {
         // Solve problem
         let (n_dof, err_l2, norm_l2) = solve(&msh, u, f);
 
-        // Save and print error
+        // Save and print
         n_dofs.push(n_dof);
         errs.push(err_l2);
         println!("  Absolute L2 error ||u - u_h||_2 = {:.7}", err_l2);
         println!("  Relative L2 error ||u - u_h||_2 / ||u||_2 = {:.5}%", err_l2 / norm_l2 * 100.0);
     }
-    
+
+    // Print and write
     println!("Number of dofs {n_dofs:?}");
     println!("L2 error values {errs:?}");
+
+    let mut writer = csv::Writer::from_path("examples/err_catmull_clark.csv")?;
+    writer.write_record(&["n_dofs", "err_l2"])?;
+    for data in zip(n_dofs, errs) {
+        writer.serialize(data)?;
+    }
+    writer.flush()?;
+
+    // Call octave plotting function
+    Command::new("octave")
+        // .arg("--persist")
+        .arg("error_plot.m")
+        // .args(&["--persist", "error_plot.m"])
+        .current_dir("examples/")
+        .output()?;
+
+    Ok(())
 }
 
 /// Solves the problem with right hand side `f` and solution `u` on the given `msh`.
