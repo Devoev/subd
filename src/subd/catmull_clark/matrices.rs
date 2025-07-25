@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use nalgebra::{matrix, DMatrix, DVector, Dyn, RealField, RowDVector, SMatrix, Schur};
 use std::iter::once;
 use std::sync::LazyLock;
@@ -224,8 +224,24 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
                 // No smoothing
                 mat.push(node_idx, node_idx, 1.0)
             }
-            QuadNodesOneRing::Irregular(_, _) => {
-                todo!("implement irregular case")
+            QuadNodesOneRing::Irregular(nodes, n) => {
+                let beta = 3.0 / (2.0 * n as f64);
+                let gamma = 1.0 / (4.0 * n as f64);
+                let mut nodes = VecDeque::from(nodes);
+
+                // Set weight for vertex node
+                let v = nodes.pop_front().unwrap();
+                mat.push(node_idx, v.0, 1.0 - beta - gamma);
+
+                // Set weights for edge nodes
+                for e in nodes.iter().step_by(2) {
+                    mat.push(node_idx, e.0, beta / (n as f64));
+                }
+
+                // Set weights for face nodes
+                for f in nodes.iter().skip(1).step_by(2) {
+                    mat.push(node_idx, f.0, gamma / (n as f64));
+                }
             }
         }
     }

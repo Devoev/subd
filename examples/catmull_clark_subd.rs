@@ -6,11 +6,9 @@ use subd::plot::plot_faces;
 use subd::subd::catmull_clark::refine::do_refine;
 
 fn main() {
-    // Linear quad mesh
-    let mut msh = make_mesh();
-    msh = msh.lin_subd().unpack();
-    
     // Catmull Clark subdivision
+    let mut msh = make_mesh();
+    do_refine(&mut msh);
     do_refine(&mut msh);
     let plt = plot_faces(&msh, msh.elems.clone().into_iter());
     plt.show();
