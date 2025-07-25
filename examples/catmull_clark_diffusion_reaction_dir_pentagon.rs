@@ -104,7 +104,7 @@ fn main() {
         QuadNodes::from_indices(0, 8, 9, 10),
     ];
     let quad_msh = QuadVertexMesh::new(coords, faces);
-    let refined = quad_msh.lin_subd().lin_subd().unpack();
+    let refined = quad_msh.catmark_subd().catmark_subd().unpack();
     let msh = CatmarkMesh::from_quad_mesh(refined);
 
     // Define space

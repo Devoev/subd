@@ -36,7 +36,7 @@ pub fn main() {
     // Define mesh
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
     let quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
-    let refined = quad_msh.lin_subd().lin_subd().unpack();
+    let refined = quad_msh.catmark_subd().catmark_subd().unpack();
     let msh = CatmarkMesh::from_quad_mesh(refined);
 
     // Define space
