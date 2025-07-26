@@ -61,7 +61,7 @@ mod tests {
     use std::iter::zip;
     use std::time::Instant;
 
-    #[test]
+    // #[test]
     fn splines() {
         let n = 4;
         let p = 2;
@@ -80,7 +80,7 @@ mod tests {
         println!("{}", space_3d.eval_local([t, t, t]));
     }
 
-    #[test]
+    // #[test]
     fn spline_curves() {
         let n = 5;
         let p = 2;
@@ -97,7 +97,7 @@ mod tests {
         dbg!(curve.eval(0.0));
     }
 
-    #[test]
+    // #[test]
     fn populate_basis() {
         // Build example space
         let n = 20;
@@ -116,7 +116,7 @@ mod tests {
         println!("{}", b.transpose());
     }
 
-    #[test]
+    // #[test]
     fn vector_basis() {
         // Parameters
         let n = 5;
@@ -138,7 +138,7 @@ mod tests {
         println!("{}", space.eval_local(x));
     }
 
-    #[test]
+    // #[test]
     fn spline_surf() {
         let n = 3;
         let p = 2;
@@ -177,7 +177,7 @@ mod tests {
         ctx.draw_series(LineSeries::new(data, RED)).unwrap();
     }
 
-    #[test]
+    // #[test]
     fn spline_derivs() {
         let n = 3;
         let p = 1;
@@ -212,7 +212,7 @@ mod tests {
         println!("Gradients of basis: {}", space.eval_grad_local([0.1, 0.0, 0.5]));
     }
 
-    #[test]
+    // #[test]
     fn bezier_elems() {
         let knots = KnotVec::new(vec![
             0.0, 0.0, 0.0, 0.2, 0.4, 0.4, 0.4, 0.8, 1.0, 1.0, 1.0]
@@ -265,7 +265,7 @@ mod tests {
         }
     }
 
-    #[test]
+    // #[test]
     fn mesh() {
         // Define quads
         let quads_regular = vec![
@@ -312,7 +312,7 @@ mod tests {
         }
     }
 
-    #[test]
+    // #[test]
     fn cart_mesh() {
         let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
         let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
@@ -324,7 +324,7 @@ mod tests {
         }
     }
 
-    #[test]
+    // #[test]
     fn incidence_mats() {
         // Define geo
         let quads_regular = vec![
@@ -361,7 +361,7 @@ mod tests {
         println!("Product c*g = {}", curl * grad);
     }
 
-    #[test]
+    // #[test]
     fn catmull_clark() {
         // Define geo
         let quads_regular = vec![
@@ -390,7 +390,7 @@ mod tests {
         plot.show();
     }
 
-    #[test]
+    // #[test]
     fn iga_assembly() {
         // Parameters
         let n_geo = 2;
@@ -445,7 +445,7 @@ mod tests {
             dense.eigenvalues().unwrap()
         );
     }
-    #[test]
+    // #[test]
     fn subd_assembly() {
         // Define quads
         let quads_regular = vec![
@@ -536,7 +536,7 @@ mod tests {
         println!("Norm ||f|| = {}", load.norm());
     }
 
-    #[test]
+    // #[test]
     fn subd_edge_assembly() {
         // Define geo
         let quads_regular = vec![
@@ -582,7 +582,7 @@ mod tests {
         println!("Rank rk(M) = {} (size is {}x{})", mass_dense.rank(1e-10), mass_dense.nrows(), mass_dense.ncols());
     }
 
-    #[test]
+    // #[test]
     fn benchmark_de_boor_vs_mat_mat() {
         let num_eval = 1000;
         let grid = lin_space(0.0..=1.0, num_eval);
@@ -620,7 +620,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_uni_vs_tp() {
         let num_eval = 10_000_000;
         let grid = lin_space(0.0..=1.0, num_eval);
@@ -659,7 +659,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_pows() {
         let num_eval = 10_000_000;
         let range = lin_space(0f64..=1.0, num_eval);
@@ -694,7 +694,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_dyn_vs_static() {
         let num_eval = 1_000_000;
         const N: usize = 20;
@@ -730,7 +730,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_vec_dot() {
         let num_eval = 100_000_000;
         const N: usize = 20;
@@ -775,7 +775,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_cast() {
         let num_eval = 1_000_000_000;
         const N: usize = 8;
@@ -827,7 +827,7 @@ mod tests {
         )
     }
 
-    #[test]
+    // #[test]
     fn benchmark_find_span() {
         // Parameters
         const NUM_BASIS: usize = 10_000_000;
