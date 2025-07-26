@@ -41,6 +41,6 @@ fn mass_matrix_properties() {
         let eigenvalues = mass_matrix.eigenvalues()
             .expect("Can't compute eigenvalues of mass matrix");
         assert!(eigenvalues.iter().all(|&e| e > 0.0),
-                "Mass matrix is not positive-definite. Some eigenvalues are non-positive.");
+                "Mass matrix is not positive-definite. Some eigenvalues (are {eigenvalues}) are non-positive.");
     }
 }
