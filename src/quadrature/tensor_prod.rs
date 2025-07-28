@@ -119,6 +119,8 @@ mod tests {
     use nalgebra::point;
     use super::*;
 
+    /// Returns a 2D Gauss-Legendre quadrature with degree `2` in `x`-direction 
+    /// and degree `4` in `y`-direction.
     fn setup() -> GaussLegendreMulti<f64, 2> {
         GaussLegendreMulti {
             quads: [GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap()],

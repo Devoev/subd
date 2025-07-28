@@ -78,3 +78,57 @@ where T: RealField + Sum + Product + Copy,
         res.into_iter()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_abs_diff_eq;
+    use gauss_quad::GaussLegendre;
+    use nalgebra::{matrix, point, Point2};
+    use crate::bspline::space::BsplineSpace;
+    use crate::bspline::spline_geo::SplineGeo;
+    use crate::cells::cartesian::CartCell;
+    use super::*;
+
+    /// Returns a 2D Gauss-Legendre quadrature with degree `2`
+    /// in both `x`-direction and `y`-direction.
+    fn setup() -> GaussLegendreMulti<f64, 2> {
+        GaussLegendreMulti::new([GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()])
+    }
+
+    #[test]
+    fn nodes_elem() {
+        let ref_quad = setup();
+
+        // Test flat element [-1,1]^2
+        let quad = PullbackQuad::new(ref_quad.clone());
+        let cell = CartCell::new(point![-1.0, -1.0], point![1.0, 1.0]);
+        let nodes: Vec<Point2<f64>> = quad.nodes_elem(&cell).collect();
+        assert_abs_diff_eq!(nodes[0], point![0.57735, 0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[1], point![0.57735, -0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[2], point![-0.57735, 0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[3], point![-0.57735, -0.57735], epsilon = 1e-5);
+
+        // Test flat Bezier element
+        let space_geo = BsplineSpace::new_open_uniform([2, 2], [1, 1]);
+        let control_points = matrix![
+            0.0, 0.0;
+            1.0, 0.0;
+            0.0, 1.0;
+            1.0, 1.0
+        ];
+        let map = SplineGeo::from_matrix(control_points, &space_geo).expect("Failed to B-Spline mapping");
+
+        let quad = PullbackQuad::new(ref_quad);
+        let cell = CartCell::new(point![0.0, 0.0], point![1.0, 1.0]);
+        let bezier_elem = BezierElem::new(cell, &map);
+
+        let nodes: Vec<Point2<f64>> = quad.nodes_elem(&bezier_elem).collect();
+        assert_abs_diff_eq!(nodes[0], point![0.788675, 0.788675], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[1], point![0.788675, 0.211325], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[2], point![0.211325, 0.788675], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes[3], point![0.211325, 0.211325], epsilon = 1e-5);
+
+        // Test curved Bezier element
+
+    }
+}
