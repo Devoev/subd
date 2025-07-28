@@ -3,10 +3,11 @@
 //! - Symmetric: `M = Mᐪ`
 //! - Positive definite: `ꟛ(M) > 0`
 
-use std::error::Error;
-use approx::{assert_relative_eq, relative_eq};
-use nalgebra::{matrix, DMatrix, RealField};
+use crate::common::make_pentagon_mesh;
+use approx::relative_eq;
+use nalgebra::{matrix, DMatrix};
 use nalgebra_sparse::CooMatrix;
+use std::error::Error;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
@@ -19,7 +20,6 @@ use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
-use crate::common::make_pentagon_mesh;
 
 #[test]
 fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
