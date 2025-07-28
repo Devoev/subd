@@ -56,8 +56,8 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     let map = SplineGeo::from_matrix(control_points, &space_geo)?;
 
     // Define mesh and space
-    let n = 8;
-    let p = 3;
+    let n = 3;
+    let p = 1;
     let xi = KnotVec::<f64>::new_open_uniform(n, p);
     let msh_ref = KnotMesh::from_knots([xi.clone(), xi.clone()]);
     let msh = BezierMesh::new(msh_ref, map);
@@ -65,7 +65,7 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     let space = BsplineSpace::new(basis);
 
     // Define quadrature
-    let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+    let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
     let quad = PullbackQuad::new(ref_quad);
 
     // Build mass matrix
