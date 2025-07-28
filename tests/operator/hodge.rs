@@ -49,8 +49,8 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     let space_geo = BsplineSpace::new_open_uniform([2, 2], [1, 1]);
     let control_points = matrix![
         0.0, 0.0;
-        0.0, 1.0;
         1.0, 0.0;
+        0.0, 1.0;
         1.0, 1.0
     ];
     let map = SplineGeo::from_matrix(control_points, &space_geo)?;
