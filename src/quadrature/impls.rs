@@ -52,8 +52,11 @@ impl <T: RealField + Copy + Sum> Quadrature<T, T, CartCell<T, 1>> for GaussLegen
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
+    use itertools::Itertools;
+    use num_traits::Pow;
     use super::*;
 
+    /// Returns a 2-point and 4-point Gauss-Legendre rule.
     fn setup() -> (GaussLegendre, GaussLegendre) {
         (GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap())
     }
@@ -136,5 +139,44 @@ mod tests {
         assert_relative_eq!(weights[1], 0.16303625, epsilon = 1e-5);
         assert_relative_eq!(weights[2], 0.16303625, epsilon = 1e-5);
         assert_relative_eq!(weights[3], 0.08696375, epsilon = 1e-5);
+    }
+
+    #[test]
+    fn integrate_exact() {
+        // q2: n = 2 is exact to degree 2n-1 = 3
+        // q4: n = 4 is exact to degree 2n-1 = 7
+        let (q2, q4) = setup();
+
+        // Integrate x^3 - x on [-5,-3]
+        let interval = CartCell::new_univariate(-5.0, -3.0);
+        let f = |x: f64| x.powi(3) - x;
+
+        let int = q2.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, -128.0, epsilon = 1e-13);
+        let int = q4.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, -128.0, epsilon = 1e-13);
+
+        // Integrate 2x^3 + 2x^2 - 5 on [-1,6]
+        let interval = CartCell::new_univariate(-1.0, 6.0);
+        let f = |x: f64| 2.0*x.powi(3) + 2.0*x.powi(2) - 5.0;
+
+        let int = q2.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, 4543.0 / 6.0, epsilon = 1e-13);
+        let int = q4.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, 4543.0 / 6.0, epsilon = 1e-13);
+
+        // Integrate x^7 on [-2,4]
+        let interval = CartCell::new_univariate(-2.0, 4.0);
+        let f = |x: f64| x.powi(7);
+
+        let int = q4.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, 8160.0, epsilon = 1e-13);
+
+        // Integrate -x^7 + 5x^5 + 2(x - 1)^2 on [-1,1]
+        let interval = CartCell::new_univariate(-1.0, 1.0);
+        let f = |x: f64| -x.powi(7) + 5.0*x.powi(5) + 2.0*(x - 1.0).powi(2);
+
+        let int = q4.integrate_fn_elem(&interval, f);
+        assert_relative_eq!(int, 16.0 / 3.0, epsilon = 1e-13);
     }
 }
