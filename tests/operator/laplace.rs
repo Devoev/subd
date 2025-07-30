@@ -1,6 +1,6 @@
-//! Tests for properties of the Galerkin discretized Hodge operator, i.e *mass matrix*.
-//! The mass matrix should be
-//! - Symmetric: `M = Mᐪ`
+//! Tests for properties of the Galerkin discretized Laplace operator, i.e *stiffness matrix*.
+//! The stiffness matrix should be
+//! - Symmetric: `K = Kᐪ`
 //! - Positive definite: `ꟛ(M) > 0`
 
 use crate::common::mesh_examples::make_pentagon_mesh;
@@ -13,7 +13,7 @@ use subd::bspline::spline_geo::SplineGeo;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::operator::hodge::Hodge;
+use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
@@ -21,7 +21,7 @@ use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 #[test]
-fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
+fn catmark_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
     let msh = make_pentagon_mesh().catmark_subd().unpack();
     let msh = CatmarkMesh::from_quad_mesh(msh);
 
@@ -35,17 +35,17 @@ fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     let quad = PullbackQuad::new(ref_quad);
 
     // Build mass matrix
-    let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = into_dense(hodge.assemble(quad));
+    let laplace = Laplace::new(&msh, &space);
+    let stiff_matrix = into_dense(laplace.assemble(quad));
 
     // Do tests
-    assert_is_symmetric(&mass_matrix, 1e-13);
-    assert_is_positive_definite(&mass_matrix)?;
+    assert_is_symmetric(&stiff_matrix, 1e-13);
+    assert_is_positive_definite(&stiff_matrix)?;
     Ok(())
 }
 
 #[test]
-fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
+fn bspline_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
     // Define (lowest order) geometrical mapping
     let space_geo = BsplineSpace::new_open_uniform([2, 2], [1, 1]);
     let control_points = matrix![
@@ -69,12 +69,12 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
     let quad = PullbackQuad::new(ref_quad);
 
-    // Build mass matrix
-    let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = into_dense(hodge.assemble(quad));
+    // Build stiffness matrix
+    let laplace = Laplace::new(&msh, &space);
+    let stiff_matrix = into_dense(laplace.assemble(quad));
 
     // Do tests
-    assert_is_symmetric(&mass_matrix, 1e-13);
-    assert_is_positive_definite(&mass_matrix)?;
+    assert_is_symmetric(&stiff_matrix, 1e-13);
+    assert_is_positive_definite(&stiff_matrix)?;
     Ok(())
 }
