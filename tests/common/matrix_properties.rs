@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::ops::AddAssign;
 use approx::{relative_eq, RelativeEq};
 use itertools::izip;
 use nalgebra::{DMatrix, RealField, Scalar};
@@ -7,11 +8,11 @@ use num_traits::Zero;
 
 // todo: make this a trait with blanket impl
 /// Converts the given [`CooMatrix`] `matrix` into a dense [`DMatrix`].
-pub fn into_dense<T: Scalar + Zero>(matrix: CooMatrix<T>) -> DMatrix<T> {
+pub fn into_dense<T: Scalar + Zero + AddAssign>(matrix: CooMatrix<T>) -> DMatrix<T> {
     let mut mat = DMatrix::zeros(matrix.nrows(), matrix.ncols());
     let (row_idx, col_idx, val) = matrix.disassemble();
     for (i, j, v) in izip!(row_idx, col_idx, val) {
-        mat[(i, j)] = v;
+        mat[(i, j)] += v;
     }
     mat
 }

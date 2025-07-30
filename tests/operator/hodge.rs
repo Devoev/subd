@@ -3,8 +3,8 @@
 //! - Symmetric: `M = Mᐪ`
 //! - Positive definite: `ꟛ(M) > 0`
 
-use crate::common::mesh_examples::make_pentagon_mesh;
 use crate::common::matrix_properties::{assert_is_positive_definite, assert_is_symmetric, into_dense};
+use crate::common::mesh_examples::make_pentagon_mesh;
 use nalgebra::matrix;
 use std::error::Error;
 use subd::bspline::de_boor::MultiDeBoor;
