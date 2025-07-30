@@ -72,7 +72,7 @@ type EvalLocal<T, X, B> = OMatrix<T, <B as Basis>::NumComponents, <<B as LocalBa
 /// of nonzero basis functions.
 type EvalLocalWithIdx<T, X, B> = (EvalLocal<T, X, B>, <B as LocalBasis<T, X>>::GlobalIndices);
 
-impl <T: RealField + Copy, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
+impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
     where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
     /// Evaluates only the local basis functions at the parametric point `x`.

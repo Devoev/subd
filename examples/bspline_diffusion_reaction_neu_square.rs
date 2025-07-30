@@ -117,13 +117,6 @@ fn solve(
     let uh = space.linear_combination(uh)
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
-    // todo: LinCombination should implement this directly, but doesn't right now
-    let eval_uh = |x: [f64; 2]| -> f64 {
-        let (b, idx) = space.eval_local_with_idx(x);
-        let c = uh.coeffs.select_rows(idx.collect_vec().iter());
-        (b * c).x
-    };
-
     // Calculate error
     let geo_elems = msh.elem_iter()
         .map(|elem| msh.geo_elem(elem))
@@ -136,7 +129,7 @@ fn solve(
 
     let err_l2 = geo_elems.iter()
         .map(|e| {
-            let uh = quad.nodes_ref(&e.ref_elem).map(|node| eval_uh(node));
+            let uh = quad.nodes_ref(&e.ref_elem).map(|node| uh.eval_local(node).x);
             let u = quad.nodes_elem(e).map(|p| u(p).x);
             let du = zip(uh, u).map(|(uh, u)| (uh - u).powi(2));
             quad.integrate_elem(e, du)
