@@ -270,3 +270,84 @@ pub fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
     }
     mat
 }
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_abs_diff_eq;
+    use itertools::izip;
+    use nalgebra::dvector;
+    use rand::random_range;
+    use super::*;
+
+    #[test]
+    fn eval_regular() {
+        let basis = CatmarkPatchBasis::Regular;
+
+        // Test exact values
+        let uvs = [(0.0, 0.0), (0.2, 0.0), (0.4, 0.0),];
+        let evals_exact = [
+            dvector![
+                0.027777778, 0.111111111, 0.027777778, 0.0,
+                0.111111111, 0.444444444, 0.111111111, 0.0,
+                0.027777778, 0.111111111, 0.027777778, 0.0,
+                0.0, 0.0, 0.0, 0.0
+            ],
+            dvector![
+                1.42222222222222e-02, 1.05111111111112e-01, 4.71111111111117e-02, 2.22222222222217e-04,
+                5.68888888888887e-02, 4.20444444444447e-01, 1.88444444444447e-01, 8.88888888888870e-04,
+                1.42222222222222e-02, 1.05111111111112e-01, 4.71111111111117e-02, 2.22222222222217e-04,
+                0.0, 0.0, 0.0, 0.0
+            ],
+            dvector![
+                6e-03, 8.9777777777778e-02, 6.91111111111113e-02, 1.77777777777779e-03,
+                2.4e-02, 3.59111111111112e-01, 2.76444444444445e-01, 7.11111111111114e-03,
+                6e-03, 8.9777777777778e-02, 6.91111111111113e-02, 1.77777777777779e-03,
+                0.0, 0.0, 0.0, 0.0
+            ]
+        ];
+
+        for (uv, eval_exact) in izip!(uvs, evals_exact) {
+            let eval = basis.eval(uv).transpose();
+            assert_abs_diff_eq!(eval, eval_exact, epsilon = 1e-8);
+        }
+        
+        // Test if sum equals 1
+        let u = random_range(0.0..=1.0);
+        let v = random_range(0.0..=1.0);
+        let eval_sum = basis.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+    }
+
+    #[test]
+    fn eval_boundary() {
+        let basis = CatmarkPatchBasis::Boundary;
+
+        // Test if sum equals 1
+        let u = random_range(0.0..=1.0);
+        let v = random_range(0.0..=1.0);
+        let eval_sum = basis.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+    }
+
+    #[test]
+    fn eval_corner() {
+        let basis = CatmarkPatchBasis::Corner;
+
+        // Test if sum equals 1
+        let u = random_range(0.0..=1.0);
+        let v = random_range(0.0..=1.0);
+        let eval_sum = basis.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+    }
+
+    #[test]
+    fn eval_irregular() {
+        let basis = CatmarkPatchBasis::Irregular(5);
+
+        // Test if sum equals 1
+        let u = random_range(0.0..=1.0);
+        let v = random_range(0.0..=1.0);
+        let eval_sum = basis.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+    }
+}
