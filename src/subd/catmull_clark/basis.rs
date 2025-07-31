@@ -29,7 +29,7 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T, (T, T
     type Elem = &'a CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
-    
+
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         // todo: move this to `elem` function on CellTopo or else
         let patch = CatmarkPatch::from_msh(self.0, elem);
@@ -45,9 +45,16 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T, (T, T
 
 /// Basis functions on a Catmull-Clark patch.
 pub enum CatmarkPatchBasis {
+    /// See [`CatmarkPatchNodes::Regular`].
     Regular,
+
+    /// See [`CatmarkPatchNodes::Boundary`].
     Boundary,
+
+    /// See [`CatmarkPatchNodes::Corner`].
     Corner,
+
+    /// See [`CatmarkPatchNodes::Irregular`].
     Irregular(usize) // todo: valence parameter
 }
 
