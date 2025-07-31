@@ -30,7 +30,7 @@ use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::quadrature::traits::Quadrature;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 7;
+const NUM_REFINE: u8 = 6;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -118,21 +118,21 @@ fn solve(
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let geo_elems = msh.elem_iter()
-        .map(|elem| msh.geo_elem(elem))
+    let elem_pairs = msh.elem_iter()
+        .map(|elem| (elem, msh.geo_elem(elem)))
         .collect_vec();
 
-    let norm_l2 = geo_elems.iter()
-        .map(|e| quad.integrate_fn_elem(e, |p| u(p).x.powi(2)))
+    let norm_l2 = elem_pairs.iter()
+        .map(|(_, bezier)| quad.integrate_fn_elem(bezier, |p| u(p).x.powi(2)))
         .sum::<f64>()
         .sqrt();
 
-    let err_l2 = geo_elems.iter()
-        .map(|e| {
-            let uh = quad.nodes_ref(&e.ref_elem).map(|node| uh.eval_local(node).x);
-            let u = quad.nodes_elem(e).map(|p| u(p).x);
+    let err_l2 = elem_pairs.iter()
+        .map(|(spans, bezier)| {
+            let uh = quad.nodes_ref(&bezier.ref_elem).map(|node| uh.eval_on_elem(spans, node).x);
+            let u = quad.nodes_elem(bezier).map(|p| u(p).x);
             let du = zip(uh, u).map(|(uh, u)| (uh - u).powi(2));
-            quad.integrate_elem(e, du)
+            quad.integrate_elem(bezier, du)
         })
         .sum::<f64>()
         .sqrt();

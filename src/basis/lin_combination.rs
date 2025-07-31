@@ -61,4 +61,11 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
         let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
         b.map(|bi| T::from_real(bi)) * c
     }
+
+    /// Evaluates the linear combination on the given `elem` at the parametric point `x`.
+    pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> OVector<T, B::NumComponents> {
+        let (b, idx) = self.space.eval_on_elem_with_idx(elem, x);
+        let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
+        b.map(|bi| T::from_real(bi)) * c
+    }
 }

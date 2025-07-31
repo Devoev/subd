@@ -77,18 +77,27 @@ impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B,
 {
     /// Evaluates only the local basis functions at the parametric point `x`.
     pub fn eval_local(&self, x: X) -> EvalLocal<T, X, B> {
-        let elem = self.basis.find_elem(x);
-        let local_basis = self.basis.elem_basis(&elem);
+        self.eval_on_elem(&self.basis.find_elem(x), x)
+    }
+
+    /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
+    pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> EvalLocal<T, X, B> {
+        let local_basis = self.basis.elem_basis(elem);
         local_basis.eval(x)
     }
 
     /// Evaluates only the local basis functions at the parametric point `x`.
     /// Returns the evaluated functions as well the indices corresponding to the global numbering.
     pub fn eval_local_with_idx(&self, x: X) -> EvalLocalWithIdx<T, X, B> {
-        let elem = self.basis.find_elem(x);
-        let local_basis = self.basis.elem_basis(&elem);
+        self.eval_on_elem_with_idx(&self.basis.find_elem(x), x)
+    }
+
+    /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
+    /// Returns the evaluated functions as well the indices corresponding to the global numbering.
+    pub fn eval_on_elem_with_idx(&self, elem: &B::Elem, x: X) -> EvalLocalWithIdx<T, X, B> {
+        let local_basis = self.basis.elem_basis(elem);
         let b = local_basis.eval(x);
-        let idx = self.basis.global_indices(&elem);
+        let idx = self.basis.global_indices(elem);
         (b, idx)
     }
 
