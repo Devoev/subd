@@ -59,31 +59,13 @@ pub enum CatmarkPatchBasis {
 //  add eval_boundary(_grads) and eval_corner(_grads) method, by using a macro or similar?
 
 impl CatmarkPatchBasis {
-    /// Returns a pair of [`CubicBspline`] for both parametric directions.
-    fn bases(&self) -> (CubicBspline, CubicBspline) {
-        match self {
-            CatmarkPatchBasis::Regular => {
-                (CubicBspline::Smooth, CubicBspline::Smooth)
-            }
-            CatmarkPatchBasis::Boundary => {
-                (CubicBspline::Smooth, CubicBspline::Interpolating)
-            }
-            CatmarkPatchBasis::Corner => {
-                (CubicBspline::Interpolating, CubicBspline::Interpolating)
-            }
-            CatmarkPatchBasis::Irregular(_) => {
-                todo!()
-            }
-        }
-    }
-
-    /// Evaluates the basis functions for the three regular cases
-    /// [`CatmarkPatchBasis::Regular`], [`CatmarkPatchBasis::Boundary`] or [`CatmarkPatchBasis::Corner`]
-    /// at `(u,v)`, given the univariate bases for `u`- and `v`-direction.
-    fn eval_regular_cases<T: RealField + Copy>(u: T, v: T, bu: CubicBspline, bv: CubicBspline) -> RowDVector<T> {
+    // todo: move this to a separate struct
+    /// Evaluates the basis functions of the tensor product basis `bu ⊗ bv` at `(u,v)`.
+    fn eval_tensor_product<T: RealField + Copy>(bu: CubicBspline, bv: CubicBspline, u: T, v: T) -> RowDVector<T> {
         bv.eval(v).kronecker(&bu.eval(u))
     }
 
+    // todo: merge with eval_tensor_product. possibly using macros?
     /// Evaluates the `16` basis functions in the regular case [`CatmarkPatchBasis::Regular`]
     /// at `(u,v)`.
     pub fn eval_regular<T: RealField + Copy>(u: T, v: T) -> RowSVector<T, 16> {
@@ -107,10 +89,9 @@ impl CatmarkPatchBasis {
         (b_perm * a_bar) * a.pow((nsub - 1) as u32)
     }
 
-    /// Evaluates the gradients of the basis functions for the three regular cases
-    /// [`CatmarkPatchBasis::Regular`], [`CatmarkPatchBasis::Boundary`] or [`CatmarkPatchBasis::Corner`]
-    /// at `(u,v)`, given the univariate bases for `u`- and `v`-direction.
-    fn eval_regular_cases_grad<T: RealField + Copy>(u: T, v: T, bu: CubicBspline, bv: CubicBspline) -> OMatrix<T, U2, Dyn> {
+    // todo: move this to a separate struct
+    /// Evaluates the gradients of the basis functions of the tensor product basis `bu ⊗ bv` at `(u,v)`.
+    fn eval_tensor_product_grad<T: RealField + Copy>(bu: CubicBspline, bv: CubicBspline, u: T, v: T) -> OMatrix<T, U2, Dyn> {
         let bu_du = bu.eval_grad(u);
         let bu = bu.eval(u);
         let bv_dv = bv.eval_grad(v);
@@ -120,6 +101,7 @@ impl CatmarkPatchBasis {
         Matrix::from_rows(&[b_du, b_dv])
     }
 
+    // todo: merge with eval_tensor_product_grad. possibly using macros?
     /// Evaluates the gradients of the basis functions for the regular case [`CatmarkPatchBasis::Regular`]
     /// at `(u,v)`.
     pub fn eval_regular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T) -> SMatrix<T, 2, 16> {
@@ -173,12 +155,17 @@ impl <T: RealField + Copy + ToPrimitive> EvalBasis<T, (T, T)> for CatmarkPatchBa
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {
+            CatmarkPatchBasis::Regular => {
+                Self::eval_tensor_product(CubicBspline::Smooth, CubicBspline::Smooth, u, v)
+            }
+            CatmarkPatchBasis::Boundary => {
+                Self::eval_tensor_product(CubicBspline::Smooth, CubicBspline::Interpolating, u, v)
+            }
+            CatmarkPatchBasis::Corner => {
+                Self::eval_tensor_product(CubicBspline::Interpolating, CubicBspline::Interpolating, u, v)
+            }
             CatmarkPatchBasis::Irregular(n) => {
-                CatmarkPatchBasis::eval_irregular(u, v, *n)
-            },
-            _ => {
-                let (bu, bv) = self.bases();
-                CatmarkPatchBasis::eval_regular_cases(u, v, bu, bv)
+                Self::eval_irregular(u, v, *n)
             }
         }
     }
@@ -188,12 +175,17 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
     fn eval_grad(&self, x: (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         let (u, v) = x;
         match self {
+            CatmarkPatchBasis::Regular => {
+                Self::eval_tensor_product_grad(CubicBspline::Smooth, CubicBspline::Smooth, u, v)
+            }
+            CatmarkPatchBasis::Boundary => {
+                Self::eval_tensor_product_grad(CubicBspline::Smooth, CubicBspline::Interpolating, u, v)
+            }
+            CatmarkPatchBasis::Corner => {
+                Self::eval_tensor_product_grad(CubicBspline::Interpolating, CubicBspline::Interpolating, u, v)
+            }
             CatmarkPatchBasis::Irregular(n) => {
                 CatmarkPatchBasis::eval_irregular_grad(u, v, *n)
-            },
-            _ => {
-                let (bu, bv) = self.bases();
-                CatmarkPatchBasis::eval_regular_cases_grad(u, v, bu, bv)
             }
         }
     }
