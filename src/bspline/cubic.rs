@@ -1,6 +1,6 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::traits::Basis;
-use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U3, U4};
+use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1};
 use std::sync::LazyLock;
 
 /// The `4✕4` basis transformation matrix for [`CubicBspline::Smooth`].
@@ -114,5 +114,70 @@ impl<T: RealField + Copy> EvalGrad<T, T, 1> for CubicBspline {
                 RowDVector::from_row_slice(CubicBspline::eval_interpolating_deriv(x).as_slice())
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use approx::{assert_abs_diff_eq};
+    use itertools::izip;
+    use nalgebra::dvector;
+    use rand::random_range;
+    use super::*;
+
+    #[test]
+    fn eval_smooth() {
+        let basis = CubicBspline::Smooth;
+
+        // Test exact values
+        let ts = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+        let evals_exact = [
+            dvector![0.166666666666667, 0.666666666666667, 0.166666666666667, 0.0],
+            dvector![8.5333333333333e-02, 6.3066666666667e-01, 2.8266666666667e-01, 1.3333333333333e-03],
+            dvector![3.6e-02, 5.38666666666667e-01, 4.14666666666667e-01, 1.06666666666667e-02],
+            dvector![1.06666666666667e-02, 4.14666666666667e-01, 5.38666666666667e-01, 3.6e-02],
+            dvector![1.3333333333333e-03, 2.82666666666667e-01, 6.30666666666667e-01, 8.53333333333333e-02],
+            dvector![0.0, 0.166666666666667, 0.666666666666667, 0.166666666666667],
+        ];
+
+        for (t, eval_exact) in izip!(ts, evals_exact) {
+            let eval = basis.eval(t).transpose();
+            assert_abs_diff_eq!(eval, eval_exact, epsilon = 1e-13);
+        }
+
+        // Test if sum equals 1
+        let t = random_range(0.0..=1.0);
+        let eval_sum = basis.eval(t).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0);
+    }
+
+    #[test]
+    fn eval_interpolating() {
+        let basis = CubicBspline::Interpolating;
+
+        // Test if sum equals 1
+        let t = random_range(0.0..=1.0);
+        let eval_sum = basis.eval(t).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0);
+    }
+
+    #[test]
+    fn test_smooth_deriv() {
+        let basis = CubicBspline::Smooth;
+
+        // Test if sum equals 0
+        let t = random_range(0.0..=1.0);
+        let eval_sum = basis.eval_grad(t).sum();
+        assert_abs_diff_eq!(eval_sum, 0.0);
+    }
+
+    #[test]
+    fn test_interpolating_deriv() {
+        let basis = CubicBspline::Interpolating;
+
+        // Test if sum equals 0
+        let t = random_range(0.0..=1.0);
+        let eval_sum = basis.eval_grad(t).sum();
+        assert_abs_diff_eq!(eval_sum, 0.0);
     }
 }
