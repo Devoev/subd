@@ -29,10 +29,6 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for Catmark
     type ElemBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
-    fn find_elem(&self, x: (T, T)) -> Self::Elem {
-        todo!()
-    }
-
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         let patch = CatmarkPatch::from_msh(self.0, elem);
         match patch {

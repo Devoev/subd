@@ -23,14 +23,19 @@ pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
     /// Iterator over linear global indices.
     type GlobalIndices: Iterator<Item = usize> + Clone;
 
-    // todo: possibly change to Result<Self::Elem, ...>
-    /// Finds the [`Self::Elem`] containing the given parametric value `x`.
-    fn find_elem(&self, x: X) -> Self::Elem;
-
     /// Returns the [`Self::ElemBasis`] for the given `elem`,
     /// i.e. the restriction of this basis to the element.
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis;
 
     /// Returns an iterator over all global indices of the local basis of `elem`.
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices;
+}
+
+/// Local basis functions that can find the local element by parametric value.
+pub trait FindElem<T: RealField, X>: LocalBasis<T, X>
+    where DefaultAllocator: Allocator<Self::NumComponents, <Self::ElemBasis as Basis>::NumBasis>
+{
+    // todo: possibly change to Result<Self::Elem, ...>
+    /// Finds the [`Self::Elem`] containing the given parametric value `x`.
+    fn find_elem(&self, x: X) -> Self::Elem;
 }

@@ -1,7 +1,7 @@
 use std::iter::zip;
 use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::traits::Basis;
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::allocator::Allocator;
@@ -75,21 +75,10 @@ type EvalLocalWithIdx<T, X, B> = (EvalLocal<T, X, B>, <B as LocalBasis<T, X>>::G
 impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
     where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
-    /// Evaluates only the local basis functions at the parametric point `x`.
-    pub fn eval_local(&self, x: X) -> EvalLocal<T, X, B> {
-        self.eval_on_elem(&self.basis.find_elem(x), x)
-    }
-
     /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
     pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> EvalLocal<T, X, B> {
         let local_basis = self.basis.elem_basis(elem);
         local_basis.eval(x)
-    }
-
-    /// Evaluates only the local basis functions at the parametric point `x`.
-    /// Returns the evaluated functions as well the indices corresponding to the global numbering.
-    pub fn eval_local_with_idx(&self, x: X) -> EvalLocalWithIdx<T, X, B> {
-        self.eval_on_elem_with_idx(&self.basis.find_elem(x), x)
     }
 
     /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
@@ -99,6 +88,21 @@ impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B,
         let b = local_basis.eval(x);
         let idx = self.basis.global_indices(elem);
         (b, idx)
+    }
+}
+
+impl <T: RealField, X: Copy, B: FindElem<T, X>, const D: usize> Space<T, X, B, D>
+    where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+{
+    /// Evaluates only the local basis functions at the parametric point `x`.
+    pub fn eval_local(&self, x: X) -> EvalLocal<T, X, B> {
+        self.eval_on_elem(&self.basis.find_elem(x), x)
+    }
+
+    /// Evaluates only the local basis functions at the parametric point `x`.
+    /// Returns the evaluated functions as well the indices corresponding to the global numbering.
+    pub fn eval_local_with_idx(&self, x: X) -> EvalLocalWithIdx<T, X, B> {
+        self.eval_on_elem_with_idx(&self.basis.find_elem(x), x)
     }
 
     /// Populates the global basis matrix `global` with the local basis values evaluated at `x`.
@@ -121,7 +125,7 @@ type EvalGradLocalWithIdx<T, X, B, const D: usize> = (EvalGradLocal<T, X, B, D>,
 impl <T, X, B, const D: usize> Space<T, X, B, D>
     where T: RealField + Copy,
           X: Dimensioned<T, D> + Copy,
-          B: LocalBasis<T, X>,
+          B: FindElem<T, X>,
           B::ElemBasis: EvalGrad<T, X, D>,
           DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,

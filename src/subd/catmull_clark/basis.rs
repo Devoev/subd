@@ -29,11 +29,7 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T, (T, T
     type Elem = &'a CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
-
-    fn find_elem(&self, x: (T, T)) -> Self::Elem {
-        todo!()
-    }
-
+    
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         // todo: move this to `elem` function on CellTopo or else
         let patch = CatmarkPatch::from_msh(self.0, elem);

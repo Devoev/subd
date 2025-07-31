@@ -1,5 +1,5 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::traits::Basis;
 use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
 use crate::index::multi_index::MultiIndex;
@@ -117,23 +117,16 @@ impl<T, X, B, const D: usize> EvalGrad<T, X, D> for MultiProd<T, B, D>
 
 // todo: also implement DiffBasis and HgradBasis
 
-impl<T, X, BElem, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
+impl<T, X, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
     where T: RealField + Copy,
           X: Dimensioned<T, D>,
-          BElem: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn>, // todo: NumBasis = Dyn is not generic enough!
-          B: LocalBasis<T, T, ElemBasis=BElem, NumComponents = U1, NumBasis = Dyn>,
-          // DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+          B: LocalBasis<T, T, NumComponents = U1, NumBasis = Dyn>,
+          B::ElemBasis: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
     type Elem = [B::Elem; D]; // todo: possibly change to MultiProd<B::Elem>
     type ElemBasis = MultiProd<T, B::ElemBasis, D>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
-
-    fn find_elem(&self, x: X) -> Self::Elem {
-        zip(&self.bases, x.into_arr())
-            .map( |(bi, xi)| bi.find_elem(xi))
-            .collect_array().unwrap()
-    }
-
+    
     // todo: update this implementation by making HyperRectangle actually a MultiProd<Interval>
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         let bases = zip(&self.bases, elem)
@@ -149,5 +142,18 @@ impl<T, X, BElem, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
             .multi_cartesian_product()
             .map(|i| TryInto::<[usize; D]>::try_into(i).unwrap())
             .map(move |i| i.into_lin(&strides))
+    }
+}
+
+impl<T, X, B, const D: usize> FindElem<T, X> for MultiProd<T, B, D>
+    where T: RealField + Copy,
+          X: Dimensioned<T, D>,
+          B: FindElem<T, T, NumComponents = U1, NumBasis = Dyn>,
+          B::ElemBasis: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
+{
+    fn find_elem(&self, x: X) -> Self::Elem {
+        zip(&self.bases, x.into_arr())
+            .map( |(bi, xi)| bi.find_elem(xi))
+            .collect_array().unwrap()
     }
 }

@@ -1,5 +1,5 @@
 use crate::basis::eval::EvalBasis;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{stack, DefaultAllocator, DimAdd, DimSum, OMatrix, RealField, U1, U2};
@@ -76,11 +76,6 @@ where T: RealField,
     type ElemBasis = Prod<T, B1::ElemBasis, B2::ElemBasis>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
-    fn find_elem(&self, x: X) -> Self::Elem {
-        let (b1, b2) = &self.bases;
-        (b1.find_elem(x), b2.find_elem(x))
-    }
-
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
         let (b1, b2) = &self.bases;
         Prod::new((b1.elem_basis(&elem.0), b2.elem_basis(&elem.1)))
@@ -89,6 +84,25 @@ where T: RealField,
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
         // todo: implement this!
         once(0)
+    }
+}
+
+impl <T, X, B1, B2> FindElem<T, X> for Prod<T, B1, B2>
+where T: RealField,
+      X: Copy,
+      B1: FindElem<T, X, NumComponents = U1>,
+      B2: FindElem<T, X, NumComponents = U1>,
+      B1::NumBasis: DimAdd<B2::NumBasis>,
+      B1::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
+      B2::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
+      <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<B1::NumComponents, <B1::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<B2::NumComponents, <B2::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<U2, <<B1::ElemBasis as Basis>::NumBasis as DimAdd<<B2::ElemBasis as Basis>::NumBasis>>::Output>
+{
+    fn find_elem(&self, x: X) -> Self::Elem {
+        let (b1, b2) = &self.bases;
+        (b1.find_elem(x), b2.find_elem(x))
     }
 }
 

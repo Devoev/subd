@@ -1,6 +1,6 @@
 use crate::basis::error::CoeffsSpaceDimError;
 use crate::basis::eval::EvalBasis;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use itertools::Itertools;
@@ -31,7 +31,7 @@ impl <'a, T: ComplexField, X, B: Basis, const D: usize> LinCombination<'a, T, X,
 }
 
 impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
-    where T: ComplexField, // todo: replace this with ComplexField and fix c * b in eval
+    where T: ComplexField,
           B: EvalBasis<T::RealField, X, NumBasis=Dyn>,
           DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
           DefaultAllocator: Allocator<B::NumComponents>,
@@ -47,24 +47,33 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
 }
 
 impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
-    where T: ComplexField, // todo: replace this with ComplexField and fix c * b in eval
+    where T: ComplexField,
           X: Copy,
           B: LocalBasis<T::RealField, X>,
           B::ElemBasis: Basis<NumBasis=Dyn>,
           DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           DefaultAllocator: Allocator<B::NumComponents>,
 {
+    /// Evaluates the linear combination on the given `elem` at the parametric point `x`.
+    pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> OVector<T, B::NumComponents> {
+        let (b, idx) = self.space.eval_on_elem_with_idx(elem, x);
+        let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
+        b.map(|bi| T::from_real(bi)) * c
+    }
+}
+
+impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
+where T: ComplexField,
+      X: Copy,
+      B: FindElem<T::RealField, X>,
+      B::ElemBasis: Basis<NumBasis=Dyn>,
+      DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<B::NumComponents>,
+{
     /// Evaluates the linear combination at the parametric point `x`.
     /// This is done by finding the local element in which `x` is, which can potentially be expensive.
     pub fn eval_local(&self, x: X) -> OVector<T, B::NumComponents>{
         let (b, idx) = self.space.eval_local_with_idx(x);
-        let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
-        b.map(|bi| T::from_real(bi)) * c
-    }
-
-    /// Evaluates the linear combination on the given `elem` at the parametric point `x`.
-    pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> OVector<T, B::NumComponents> {
-        let (b, idx) = self.space.eval_on_elem_with_idx(elem, x);
         let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
         b.map(|bi| T::from_real(bi)) * c
     }

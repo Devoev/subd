@@ -19,7 +19,7 @@ pub mod plot;
 mod tests {
     use crate::basis::cart_prod;
     use crate::basis::eval::EvalDerivs;
-    use crate::basis::local::LocalBasis;
+    use crate::basis::local::{FindElem, LocalBasis};
     use crate::basis::space::Space;
     use crate::bspline::de_boor;
     use crate::bspline::de_boor::MultiDeBoor;
