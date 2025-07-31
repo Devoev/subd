@@ -162,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn test_smooth_deriv() {
+    fn eval_smooth_deriv() {
         let basis = CubicBspline::Smooth;
 
         // Test if sum equals 0
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_interpolating_deriv() {
+    fn eval_interpolating_deriv() {
         let basis = CubicBspline::Interpolating;
 
         // Test if sum equals 0
