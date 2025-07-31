@@ -74,7 +74,7 @@ pub fn main() -> io::Result<()> {
     }
 
     // Write data
-    let mut writer = csv::Writer::from_path("examples/err_bspline.csv")?;
+    let mut writer = csv::Writer::from_path("examples/err_l2.csv")?;
     writer.write_record(&["n_dofs", "err_l2"])?;
     for data in zip(n_dofs, errs) {
         writer.serialize(data)?;
