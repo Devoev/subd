@@ -1,7 +1,17 @@
-data = csvread("err_bspline.csv", 1, 0);
+clear
+
+%% Parse data
+data = csvread("err_catmull_clark.csv", 1, 0);
 n_dof_sqrt = sqrt(data(:,1));
 err_l2 = data(:,2);
 
+%% Calculate approximate convergence rate
+x = log(n_dof_sqrt);
+y = log(err_l2);
+q =  (y(6) - y(5)) / (x(6) - x(5));
+fprintf('Approximated order of convergence: q = %.6f', -q);
+
+%% Plot
 figure()
 loglog(n_dof_sqrt, err_l2, 'x-')
 hold on

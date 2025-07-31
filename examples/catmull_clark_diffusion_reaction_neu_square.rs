@@ -13,21 +13,24 @@ use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
+use itertools::Itertools;
+use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::MeshTopology;
+use subd::mesh::traits::{Mesh, MeshTopology};
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::traits::Quadrature;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 5;
+const NUM_REFINE: u8 = 6;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -89,7 +92,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let space = CatmarkSpace::new(basis);
 
     // Define quadrature
-    let p = 2;
+    let p = 4;
     let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
     let quad = PullbackQuad::new(ref_quad);
 
@@ -103,12 +106,35 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let k = CsrMatrix::from(&k_coo);
 
     // Solve system
-    let uh = cg(&(k + &m), &f, f.clone(), f.len(), 1e-10);
+    let uh = cg(&(k + &m), &f, f.clone(), f.len(), 1e-13);
+    let uh = space.linear_combination(uh)
+        .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
-    let du = &u - uh;
-    let err_l2 = (&m * &du).dot(&du).sqrt();
-    let norm_l2 = (&m * &u).dot(&u).sqrt();
-    (msh.num_nodes(), err_l2, norm_l2)
+    let elem_pairs = msh.elem_iter()
+        .map(|elem| (elem, msh.geo_elem(elem)))
+        .collect_vec();
+
+    let norm_l2 = elem_pairs.iter()
+        .map(|(_, patch)| quad.integrate_fn_elem(patch, |p| u(p).x.powi(2)))
+        .sum::<f64>()
+        .sqrt();
+
+    let err_l2 = elem_pairs.iter()
+        .map(|(elem, patch)| {
+            let uh = quad.nodes_ref(&patch.ref_cell()).map(|node| uh.eval_on_elem(elem, node).x).collect_vec();
+            let u = quad.nodes_elem(patch).map(|p| u(p).x);
+            let du = zip(uh, u).map(|(uh, u)| (uh - u).powi(2));
+            quad.integrate_elem(patch, du)
+        })
+        .sum::<f64>()
+        .sqrt();
+
+    // old way to compute the error using mass matrix
+    // let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
+    // let du = &u - uh;
+    // let err_l2 = (&m * &du).dot(&du).sqrt();
+    // let norm_l2 = (&m * &u).dot(&u).sqrt();
+
+    (space.dim(), err_l2, norm_l2)
 }
