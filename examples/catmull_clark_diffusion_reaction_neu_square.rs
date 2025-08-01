@@ -37,6 +37,19 @@ pub fn main() -> io::Result<()> {
     let u = |p: Point2<f64>| Vector1::new((p.x * PI).cos() * (p.y * PI).cos());
     let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
 
+    // Define alt problems
+    // let u = |p: Point2<f64>| Vector1::new((2.0 * p.x * PI).cos() + (2.0 * p.y * PI).cos());
+    // let f = |p: Point2<f64>| (4.0 * PI.powi(2) + 1.0) * u(p);
+    //
+    // let u = |p: Point2<f64>| Vector1::new(
+    //     (p.x.powi(4) - 2.0*p.x.powi(3) + p.x.powi(2)) * (p.y.powi(4) - 2.0*p.y.powi(3) + p.y.powi(2))
+    // );
+    // let f = |p: Point2<f64>| {
+    //     let a = (12.0*p.x.powi(2) - 12.0*p.x + 2.0) * (p.y.powi(4) - 2.0*p.y.powi(3) + p.y.powi(2));
+    //     let b = (12.0*p.y.powi(2) - 12.0*p.y + 2.0) * (p.x.powi(4) - 2.0*p.x.powi(3) + p.x.powi(2));
+    //     u(p) - Vector1::new(a + b)
+    // };
+
     let coords_square = matrix![
             0.0, 0.0, 1.0, 1.0;
             0.0, 1.0, 1.0, 0.0
