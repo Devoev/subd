@@ -111,7 +111,7 @@ impl <T: RealField + Copy, const M: usize> LinSubdMesh<T, M> {
             });
 
             // Calculate new center point
-            let quad = self.geo_elem(&face);
+            let quad = self.geo_elem(&&face);
             let center = LinFace::refine(&quad);
             let m = NodeIdx(self.num_nodes());
             self.coords.push(center);
@@ -140,7 +140,7 @@ impl <T: RealField + Copy, const M: usize> LinSubdMesh<T, M> {
 impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, (T, T), 2, M> for LinSubdMesh<T, M> {
     type GeoElem = Quad<T, M>;
 
-    fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
+    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         Quad::new(elem.nodes().map(|n| *self.coords(n)))
     }
 }

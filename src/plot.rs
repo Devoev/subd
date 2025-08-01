@@ -74,7 +74,7 @@ pub fn plot_solution_elem(msh: &CatmarkMesh<f64, 2>, elem: &CatmarkPatchNodes, u
     let mut y = vec![vec![0.0; num]; num];
     let mut z = vec![vec![0.0; num]; num];
 
-    let mapping = msh.geo_elem(elem).geo_map();
+    let mapping = msh.geo_elem(&elem).geo_map();
     for (i, u) in u_range.clone().enumerate() {
         for (j, v) in v_range.clone().enumerate() {
             // Evaluate patch

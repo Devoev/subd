@@ -65,7 +65,7 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology<'a, 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, [T; D], D, M> for BezierMesh<'a, T, D, M> {
     type GeoElem = BezierElem<'a, T, D, M>;
 
-    fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
+    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         let cell = self.ref_mesh.geo_elem(elem);
         BezierElem::new(cell, &self.geo_map)
     }

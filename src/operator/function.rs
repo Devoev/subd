@@ -38,7 +38,7 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
     for elem in msh.elem_iter() {
         // Build local space and local stiffness matrix
         let (sp_local, idx) = space.local_space_with_idx(&elem);
-        let geo_elem = msh.geo_elem(elem);
+        let geo_elem = msh.geo_elem(&elem);
         let fi_local = assemble_function_local(&geo_elem, &sp_local, &quad, &f);
 
         // Fill global stiffness matrix with local entries

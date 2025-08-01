@@ -38,7 +38,7 @@ impl<'a, M> L2Norm<'a, M> {
         self.msh.elem_iter()
             .map(|elem| {
                 // Get geometrical and reference element
-                let geo_elem = self.msh.geo_elem(elem);
+                let geo_elem = self.msh.geo_elem(&elem);
 
                 // Evaluate function at quadrature nodes of element
                 let u = quad.nodes_elem(&geo_elem).map(|p| u(p));
@@ -59,7 +59,6 @@ impl<'a, M> L2Norm<'a, M> {
           M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
           M::GeoElem: Cell<T, X, D, D>,
           B: LocalBasis<T, X>,
-          B::Elem: Clone, // todo: this can be removed, if msh.geo_elem would take a reference
           B::ElemBasis: Basis<NumBasis=Dyn>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
@@ -70,7 +69,7 @@ impl<'a, M> L2Norm<'a, M> {
         self.msh.elem_iter()
             .map(|elem| {
                 // Get geometrical and reference element
-                let geo_elem = self.msh.geo_elem(elem.clone());
+                let geo_elem = self.msh.geo_elem(&elem);
                 let ref_elem = geo_elem.ref_cell();
 
                 // Evaluate functions at quadrature nodes of element

@@ -33,7 +33,7 @@ pub trait Mesh<'a, T: RealField, X: Dimensioned<T, K>, const K: usize, const M: 
     type GeoElem: geo::Cell<T, X, K, M>;
 
     /// Returns the geometric element corresponding to the given topological `elem`.
-    fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem;
+    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem;
 }
 
 // todo: update signature of elems and add more methods

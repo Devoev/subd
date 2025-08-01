@@ -229,7 +229,7 @@ mod tests {
         println!("--- Finding span indices with `breaks` and `find_span` ---");
         for idx in msh.elems() {
             let elem_idx = idx.0[0];
-            let elem = msh.geo_elem(idx);
+            let elem = msh.geo_elem(&idx);
             let span = basis.find_span(elem.a.x).unwrap();
             let span_idx = span.0;
 
@@ -319,7 +319,7 @@ mod tests {
         let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
 
         for idx in msh.elems() {
-            let elem = msh.geo_elem(idx);
+            let elem = msh.geo_elem(&idx);
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
@@ -848,7 +848,7 @@ mod tests {
         let msh = CartMesh::from_breaks([breaks.clone()]);
         let mut spans_1 = vec![0; breaks.len() - 1];
         for idx in msh.elems() {
-            let elem = msh.geo_elem(idx);
+            let elem = msh.geo_elem(&idx);
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 

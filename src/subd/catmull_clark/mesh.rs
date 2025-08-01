@@ -29,7 +29,7 @@ impl <T: RealField, const M: usize> CatmarkMesh<T, M> {
 impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> Mesh<'a, T, (T, T), 2, M> for CatmarkMesh<T, M> {
     type GeoElem = CatmarkPatch<T, M>;
 
-    fn geo_elem(&'a self, elem: Self::Elem) -> Self::GeoElem {
+    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         CatmarkPatch::from_msh(self, elem)
     }
 }

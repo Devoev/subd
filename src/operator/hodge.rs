@@ -51,7 +51,7 @@ impl <'a, T, X, M, B, const D: usize> Hodge<'a, T, X, M, B, D> {
         for elem in self.msh.elem_iter() {
             // Build local space and local mass matrix
             let (sp_local, idx) = self.space.local_space_with_idx(&elem);
-            let geo_elem = self.msh.geo_elem(elem);
+            let geo_elem = self.msh.geo_elem(&elem);
             let mij_local = assemble_hodge_local(&geo_elem, &sp_local, &quad);
 
             // Fill global mass matrix with local entries

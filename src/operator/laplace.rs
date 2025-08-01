@@ -55,7 +55,7 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
         for elem in self.msh.elem_iter() {
             // Build local space and local stiffness matrix
             let (sp_local, idx) = self.space.local_space_with_idx(&elem);
-            let geo_elem = self.msh.geo_elem(elem);
+            let geo_elem = self.msh.geo_elem(&elem);
             let kij_local = assemble_laplace_local(&geo_elem, &sp_local, &quad);
 
             // Fill global stiffness matrix with local entries
