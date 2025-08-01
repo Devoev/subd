@@ -121,7 +121,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let l2 = L2Norm::new(msh, &space);
+    let l2 = L2Norm::new(msh);
     let err_l2 = l2.error(&uh, &u, quad.clone());
     let norm_l2 = l2.norm(&u, quad.clone());
 

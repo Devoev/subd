@@ -116,7 +116,7 @@ fn solve(
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let l2 = L2Norm::new(&msh, &space);
+    let l2 = L2Norm::new(&msh);
     let err_l2 = l2.error(&uh, &u, quad.clone());
     let norm_l2 = l2.norm(&u, quad.clone());
 
