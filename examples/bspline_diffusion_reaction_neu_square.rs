@@ -7,7 +7,6 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use itertools::Itertools;
 use nalgebra::{matrix, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
@@ -18,16 +17,15 @@ use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
 use subd::cg::cg;
+use subd::error::l2_error::L2Norm;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::mesh::traits::{Mesh, MeshTopology};
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
-use subd::quadrature::traits::Quadrature;
 
 /// Number of refinements for the convergence study.
 const NUM_REFINE: u8 = 6;
@@ -118,24 +116,9 @@ fn solve(
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let elem_pairs = msh.elem_iter()
-        .map(|elem| (elem, msh.geo_elem(elem)))
-        .collect_vec();
-
-    let norm_l2 = elem_pairs.iter()
-        .map(|(_, bezier)| quad.integrate_fn_elem(bezier, |p| u(p).x.powi(2)))
-        .sum::<f64>()
-        .sqrt();
-
-    let err_l2 = elem_pairs.iter()
-        .map(|(spans, bezier)| {
-            let uh = quad.nodes_ref(&bezier.ref_elem).map(|node| uh.eval_on_elem(spans, node).x);
-            let u = quad.nodes_elem(bezier).map(|p| u(p).x);
-            let du = zip(uh, u).map(|(uh, u)| (uh - u).powi(2));
-            quad.integrate_elem(bezier, du)
-        })
-        .sum::<f64>()
-        .sqrt();
+    let l2 = L2Norm::new(&msh, &space);
+    let err_l2 = l2.error(&uh, &u, quad.clone());
+    let norm_l2 = l2.norm(&u, quad.clone());
 
     (space.dim(),  err_l2, norm_l2)
 }

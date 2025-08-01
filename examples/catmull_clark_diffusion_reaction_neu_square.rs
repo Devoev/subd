@@ -7,24 +7,21 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use nalgebra::{matrix, DVector, Point2, Vector1};
+use nalgebra::{matrix, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
-use itertools::Itertools;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
+use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::{Mesh, MeshTopology};
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
-use subd::quadrature::traits::Quadrature;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
@@ -124,24 +121,9 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let elem_pairs = msh.elem_iter()
-        .map(|elem| (elem, msh.geo_elem(elem)))
-        .collect_vec();
-
-    let norm_l2 = elem_pairs.iter()
-        .map(|(_, patch)| quad.integrate_fn_elem(patch, |p| u(p).x.powi(2)))
-        .sum::<f64>()
-        .sqrt();
-
-    let err_l2 = elem_pairs.iter()
-        .map(|(elem, patch)| {
-            let uh = quad.nodes_ref(&patch.ref_cell()).map(|node| uh.eval_on_elem(elem, node).x).collect_vec();
-            let u = quad.nodes_elem(patch).map(|p| u(p).x);
-            let du = zip(uh, u).map(|(uh, u)| (uh - u).powi(2));
-            quad.integrate_elem(patch, du)
-        })
-        .sum::<f64>()
-        .sqrt();
+    let l2 = L2Norm::new(msh, &space);
+    let err_l2 = l2.error(&uh, &u, quad.clone());
+    let norm_l2 = l2.norm(&u, quad.clone());
 
     // old way to compute the error using mass matrix
     // let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));

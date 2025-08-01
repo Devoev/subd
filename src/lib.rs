@@ -14,6 +14,7 @@ pub mod subd;
 pub mod diffgeo;
 pub mod cg;
 pub mod plot;
+pub mod error;
 
 #[cfg(test)]
 mod tests {
