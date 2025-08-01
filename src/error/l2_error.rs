@@ -17,14 +17,14 @@ pub struct L2Norm<'a, M> {
 }
 
 impl<'a, M> L2Norm<'a, M> {
-    /// Constructs a new [`L2Norm`] from the given `msh` and `space`,
+    /// Constructs a new [`L2Norm`] on the given `msh`. 
     pub fn new(msh: &'a M) -> Self {
         L2Norm { msh }
     }
 
-    /// Calculates the L2 norm between the given exact solution `u`
+    /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, X, D, D>,
@@ -53,7 +53,7 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, X, D, D, Elem = B::Elem>,

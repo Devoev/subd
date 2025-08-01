@@ -117,8 +117,8 @@ fn solve(
 
     // Calculate error
     let l2 = L2Norm::new(&msh);
-    let err_l2 = l2.error(&uh, &u, quad.clone());
-    let norm_l2 = l2.norm(&u, quad.clone());
+    let err_l2 = l2.error(&uh, &u, &quad);
+    let norm_l2 = l2.norm(&u, &quad);
 
     (space.dim(),  err_l2, norm_l2)
 }
