@@ -103,6 +103,7 @@ impl<T: Scalar, const M: usize> BiLerp<T, M> {
         BiLerp { vertices }
     }
 }
+// todo: add tests and check if this is correctly implemented. Especially eval_diff
 
 impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, M> {
     fn eval(&self, x: (T, T)) -> Point<T, M> {
