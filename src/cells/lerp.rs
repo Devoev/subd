@@ -103,7 +103,7 @@ impl<T: Scalar, const M: usize> BiLerp<T, M> {
         BiLerp { vertices }
     }
 }
-// todo: add tests and check if this is correctly implemented. Especially eval_diff
+// todo: replace implementation using lowest order nodal basis interpolation
 
 impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, M> {
     fn eval(&self, x: (T, T)) -> Point<T, M> {
@@ -127,7 +127,76 @@ impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, 
         );
         stack![
             l_du.eval(v).coords,
-            l2.eval(u) - l2.eval(u) // l2 - l1
+            l2.eval(u) - l1.eval(u) // l2 - l1
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_abs_diff_eq;
+    use nalgebra::{matrix, point, vector};
+    use rand::random_range;
+    use super::*;
+
+    #[test]
+    fn eval_lerp() {
+        // Get random parametric value
+        let t = random_range(0.0..=1.0);
+
+        let phi = Lerp::new(point![2.0], point![4.0]);
+        assert_abs_diff_eq!(phi.eval(0.0), point![2.0]);
+        assert_abs_diff_eq!(phi.eval(0.25), point![2.5]);
+        assert_abs_diff_eq!(phi.eval(0.5), point![3.0]);
+        assert_abs_diff_eq!(phi.eval(0.75), point![3.5]);
+        assert_abs_diff_eq!(phi.eval(1.0), point![4.0]);
+        assert_abs_diff_eq!(phi.eval(t), point![(1.0 - t) * 2.0 + t * 4.0]);
+
+        let phi = Lerp::new(point![-1.0, 0.0], point![1.0, 5.0]);
+        assert_abs_diff_eq!(phi.eval(0.0), point![-1.0, 0.0]);
+        assert_abs_diff_eq!(phi.eval(0.25), point![-0.5, 1.25]);
+        assert_abs_diff_eq!(phi.eval(0.5), point![0.0, 2.5]);
+        assert_abs_diff_eq!(phi.eval(0.75), point![0.5, 3.75]);
+        assert_abs_diff_eq!(phi.eval(1.0), point![1.0, 5.0]);
+        assert_abs_diff_eq!(phi.eval(t), point![-(1.0 - t) + t, 5.0 * t]);
+    }
+
+    #[test]
+    fn eval_diff_lerp() {
+        // Get random parametric value
+        let t = random_range(0.0..=1.0);
+
+        let phi = Lerp::new(point![2.0], point![4.0]);
+        assert_abs_diff_eq!(phi.eval_diff(t), vector![2.0]);
+
+        let phi = Lerp::new(point![-1.0, 0.0], point![1.0, 5.0]);
+        assert_abs_diff_eq!(phi.eval_diff(t), vector![2.0, 5.0]);
+    }
+
+    #[test]
+    fn eval_bi_lerp() {
+        // Get random parametric values
+        let u = random_range(0.0..=1.0);
+        let v = random_range(0.0..=1.0);
+
+        let phi = BiLerp::new([point![0.0, 0.0], point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]]);
+        assert_abs_diff_eq!(phi.eval((0.0, 0.0)), point![0.0, 0.0]);
+        assert_abs_diff_eq!(phi.eval((1.0, 0.0)), point![1.0, 0.0]);
+        assert_abs_diff_eq!(phi.eval((1.0, 1.0)), point![1.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval((0.0, 1.0)), point![0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval((u, v)), point![u, v]);
+    }
+
+    #[test]
+    fn eval_diff_bi_lerp() {
+        let phi = BiLerp::new([point![0.0, 0.0], point![1.0, 0.0], point![1.0, 1.0], point![0.0, 1.0]]);
+        assert_abs_diff_eq!(phi.eval_diff((0.0, 0.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((0.5, 0.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((1.0, 0.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((1.0, 0.5)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((1.0, 1.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((0.5, 1.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((0.0, 1.0)), matrix![1.0, 0.0; 0.0, 1.0]);
+        assert_abs_diff_eq!(phi.eval_diff((0.0, 0.5)), matrix![1.0, 0.0; 0.0, 1.0]);
     }
 }
