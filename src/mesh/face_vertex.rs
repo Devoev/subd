@@ -9,6 +9,7 @@ use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U1, U2};
 use std::hash::Hash;
+use crate::mesh::traits::Mesh;
 
 /// A face-vertex mesh with `2`-dimensional faces [`C`].
 pub type FaceVertexMesh<T, C, const M: usize> = ElemVertexMesh<T, C, 2, M>;
@@ -97,6 +98,14 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
     /// Returns an iterator over all faces in this mesh.
     pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
         self.elems.iter().map(|&face| Quad::from_msh(face, self))
+    }
+}
+
+impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, (T, T), 2, M> for QuadVertexMesh<T, M> {
+    type GeoElem = Quad<T, M>;
+
+    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
+        Quad::from_msh(**elem, self)
     }
 }
 

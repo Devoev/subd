@@ -12,6 +12,7 @@ use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
 
 /// A 2d quadrilateral element of topology [`QuadNodes`],
 /// embedded in [`M`]-dimensional space.
+#[derive(Debug, Clone, Copy)]
 pub struct Quad<T: RealField, const M: usize> {
     pub vertices: [Point<T, M>; 4]
 }
