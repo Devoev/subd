@@ -7,7 +7,7 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use nalgebra::{matrix, Point2, Vector1};
+use nalgebra::{matrix, DVector, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
@@ -17,6 +17,7 @@ use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
+use subd::mesh::traits::MeshTopology;
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
@@ -108,13 +109,16 @@ fn solve(
     // let uh = space.linear_combination(uh)
     //     .expect("Number of coefficients doesn't match dimension of discrete space");
 
-    todo!("calculating the error does only work for NumBasis = Dyn, as of now");
+    // todo: fix error calculation using L2Norm
     // Calculate error
     // let l2 = L2Norm::new(&msh);
     // let err_l2 = l2.error(&uh, &u, &quad);
     // let norm_l2 = l2.norm(&u, &quad);
-    let err_l2 = uh.norm();
-    let norm_l2 = uh.len() as f64;
+
+    let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
+    let du = &u - &uh;
+    let err_l2 = (&m * &du).dot(&du).sqrt();
+    let norm_l2 = (&m * &u).dot(&u).sqrt();
 
     (space.dim(), err_l2, norm_l2)
 }
