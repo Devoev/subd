@@ -41,7 +41,7 @@ impl<'a, M> L2Norm<'a, M> {
                 let geo_elem = self.msh.geo_elem(&elem);
 
                 // Evaluate function at quadrature nodes of element
-                let u = quad.nodes_elem(&geo_elem).map(|p| u(p));
+                let u = quad.nodes_elem(&geo_elem).map(&u);
 
                 // Calculate L2 error on element
                 let u_norm_squared = u.map(|u| u.norm_squared());
@@ -59,10 +59,11 @@ impl<'a, M> L2Norm<'a, M> {
           M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
           M::GeoElem: Cell<T, X, D, D>,
           B: LocalBasis<T, X>,
-          B::ElemBasis: Basis<NumBasis=Dyn>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
           DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
         // Iterate over every element and calculate error element-wise
@@ -74,7 +75,7 @@ impl<'a, M> L2Norm<'a, M> {
 
                 // Evaluate functions at quadrature nodes of element
                 let uh = quad.nodes_ref(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
-                let u = quad.nodes_elem(&geo_elem).map(|p| u(p));
+                let u = quad.nodes_elem(&geo_elem).map(u);
 
                 // Calculate L2 error on element
                 let du_norm_squared = zip(uh, u).map(|(uh, u)| (uh - u).norm_squared());

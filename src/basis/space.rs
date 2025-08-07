@@ -49,7 +49,7 @@ type LocalSpace<T, X, B, const D: usize> = Space<T, X, <B as LocalBasis<T, X>>::
 /// of nonzero basis functions.
 type LocalSpaceWithIdx<T, X, B, const D: usize> = (LocalSpace<T, X, B, D>, <B as LocalBasis<T, X>>::GlobalIndices);
 
-impl <T: RealField + Copy, X, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
+impl <T: RealField, X, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
     where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
 {
     /// Returns this space restricted to the local element `elem`.

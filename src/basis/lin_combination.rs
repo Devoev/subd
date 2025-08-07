@@ -5,7 +5,7 @@ use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{ComplexField, DVector, DefaultAllocator, Dyn, OVector};
+use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, Scalar, U1};
 
 /// Linear combination of coefficients with basis functions.
 pub struct LinCombination<'a, T: ComplexField, X, B, const D: usize> {
@@ -46,18 +46,33 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
     }
 }
 
+// todo: move elsewhere
+/// Same as [`Matrix::select_rows`] but generic.
+fn select_rows_generic<T: Scalar + Clone, R: Dim, C: Dim, I: Dim>(mat: &OMatrix<T, R, C>, idx: OVector<usize, I>) -> OMatrix<T, I, C>
+    where DefaultAllocator: Allocator<R, C>,
+          DefaultAllocator: Allocator<I>,
+          DefaultAllocator: Allocator<I, C>
+{
+    let (_, ncols) = mat.shape_generic();
+    let (nrows, _) = idx.shape_generic();
+    let mat = mat.select_rows(idx.iter());
+    Matrix::from_iterator_generic(nrows, ncols, mat.iter().cloned())
+}
+
 impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
     where T: ComplexField,
           X: Copy,
           B: LocalBasis<T::RealField, X>,
-          B::ElemBasis: Basis<NumBasis=Dyn>,
           DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
           DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
 {
     /// Evaluates the linear combination on the given `elem` at the parametric point `x`.
     pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> OVector<T, B::NumComponents> {
+        let local_space = self.space.local_space(elem); // todo: this can be removed, once the output of 'idx' is changed to a Vector directly
         let (b, idx) = self.space.eval_on_elem_with_idx(elem, x);
-        let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
+        let idx = OVector::from_iterator_generic(local_space.basis.num_basis_generic(), U1, idx);
+        let c = select_rows_generic(&self.coeffs, idx);
         b.map(|bi| T::from_real(bi)) * c
     }
 }
@@ -66,15 +81,18 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
 where T: ComplexField,
       X: Copy,
       B: FindElem<T::RealField, X>,
-      B::ElemBasis: Basis<NumBasis=Dyn>,
       DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
       DefaultAllocator: Allocator<B::NumComponents>,
+      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
 {
     /// Evaluates the linear combination at the parametric point `x`.
     /// This is done by finding the local element in which `x` is, which can potentially be expensive.
     pub fn eval_local(&self, x: X) -> OVector<T, B::NumComponents>{
-        let (b, idx) = self.space.eval_local_with_idx(x);
-        let c = self.coeffs.select_rows(idx.collect_vec().iter()); // todo: remove collect
+        let elem = self.space.basis.find_elem(x);
+        let local_space = self.space.local_space(&elem); // todo: this can be removed, once the output of 'idx' is changed to a Vector directly
+        let (b, idx) = self.space.eval_on_elem_with_idx(&elem, x);
+        let idx = OVector::from_iterator_generic(local_space.basis.num_basis_generic(), U1, idx);
+        let c = select_rows_generic(&self.coeffs, idx);
         b.map(|bi| T::from_real(bi)) * c
     }
 }
