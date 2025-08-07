@@ -106,19 +106,19 @@ fn solve(
 
     // Solve system
     let uh = cg(&(k + &m), &f, f.clone(), f.len(), 1e-15);
-    // let uh = space.linear_combination(uh)
-    //     .expect("Number of coefficients doesn't match dimension of discrete space");
+    let uh = space.linear_combination(uh)
+        .expect("Number of coefficients doesn't match dimension of discrete space");
 
-    // todo: fix error calculation using L2Norm
     // Calculate error
-    // let l2 = L2Norm::new(&msh);
-    // let err_l2 = l2.error(&uh, &u, &quad);
-    // let norm_l2 = l2.norm(&u, &quad);
+    let l2 = L2Norm::new(msh);
+    let err_l2 = l2.error(&uh, &u, &quad);
+    let norm_l2 = l2.norm(&u, &quad);
 
-    let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
-    let du = &u - &uh;
-    let err_l2 = (&m * &du).dot(&du).sqrt();
-    let norm_l2 = (&m * &u).dot(&u).sqrt();
+    // old way to compute the error using mass matrix
+    // let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));
+    // let du = &u - &uh;
+    // let err_l2 = (&m * &du).dot(&du).sqrt();
+    // let norm_l2 = (&m * &u).dot(&u).sqrt();
 
     (space.dim(), err_l2, norm_l2)
 }
