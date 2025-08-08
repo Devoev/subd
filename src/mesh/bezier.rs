@@ -22,6 +22,7 @@ use nalgebra::RealField;
 /// +------------------>
 /// ```
 /// where `F` is the geometrical mapping.
+#[derive(Debug, Clone)]
 pub struct BezierMesh<'a, T: RealField + Copy, const D: usize, const M: usize> {
     /// The cartesian mesh of the parametric domain.
     pub ref_mesh: KnotMesh<T, D>,

@@ -15,6 +15,7 @@ use crate::knots::increments::Increments;
 
 /// Cartesian mesh built by tensor product of [`KnotVec<T>`].
 /// Same as [`CartMesh`] but with additional information about multiplicities of breakpoints.
+#[derive(Debug, Clone)]
 pub struct KnotMesh<T, const D: usize> {
     /// Knots for each parametric direction.
     pub knots: [KnotVec<T>; D],
