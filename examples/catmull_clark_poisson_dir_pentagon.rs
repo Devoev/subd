@@ -8,7 +8,7 @@
 //! with `Ω` being the pentagon of radius `1`.
 
 use itertools::Itertools;
-use nalgebra::{center, point, DVector, Point2, Vector1};
+use nalgebra::{center, point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
@@ -16,8 +16,8 @@ use std::iter::zip;
 use std::process::Command;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
+use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::MeshTopology;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
@@ -37,7 +37,7 @@ fn main() -> io::Result<()> {
 
     // Define solution
     let coeffs = calc_coeffs(&coords);
-    let u = |p: Point2<f64>| eval_product(&coeffs, p);
+    let u = |p: Point2<f64>| Vector1::new(eval_product(&coeffs, p));
     let u_dxx = |p: Point2<f64>| eval_deriv(&coeffs.0, &coeffs, p.x, p.y);
     let u_dyy = |p: Point2<f64>| eval_deriv(&coeffs.1, &coeffs, p.x, p.y);
     let f = |p: Point2<f64>| Vector1::new(-u_dxx(p) - u_dyy(p));
@@ -78,7 +78,7 @@ fn main() -> io::Result<()> {
     println!("L2 error values {errs:?}");
 
     let mut writer = csv::Writer::from_path("examples/err_l2.csv")?;
-    writer.write_record(&["n_dofs", "err_l2"])?;
+    writer.write_record(["n_dofs", "err_l2"])?;
     for data in zip(n_dofs, errs) {
         writer.serialize(data)?;
     }
@@ -97,7 +97,7 @@ fn main() -> io::Result<()> {
 
 /// Solves the problem with right hand side `f` and solution `u` on the given `msh`.
 /// Returns the number of DOFs, the L2 error, and the relative L2 error.
-fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> f64, f: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64, f64) {
+fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64, f64) {
     // Define space
     let basis = CatmarkBasis(msh);
     let space = CatmarkSpace::new(basis);
@@ -108,12 +108,9 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> f64, f: impl Fn(P
     let quad = PullbackQuad::new(ref_quad);
 
     // Assemble system
-    let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
     let f = assemble_function(msh, &space, quad.clone(), f);
-    let m_coo = hodge.assemble(quad.clone());
     let k_coo = laplace.assemble(quad.clone());
-    let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
@@ -125,12 +122,13 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> f64, f: impl Fn(P
 
     // Inflate system
     let uh = dirichlet.inflate(uh_dof);
+    let uh = space.linear_combination(uh)
+        .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p)));
-    let du = &u - uh;
-    let err_l2 = (&m * &du).dot(&du).sqrt();
-    let norm_l2 = (&m * &u).dot(&u).sqrt();
+    let l2 = L2Norm::new(msh);
+    let err_l2 = l2.error(&uh, &u, &quad);
+    let norm_l2 = l2.norm(&u, &quad);
     (dirichlet.num_dof(), err_l2, norm_l2)
 }
 
