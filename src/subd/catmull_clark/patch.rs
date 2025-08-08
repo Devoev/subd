@@ -1,16 +1,16 @@
 use crate::cells;
-use crate::cells::node::NodeIdx;
-use crate::cells::quad::{QuadBndTopo, QuadNodes};
-use crate::subd::catmull_clark::mesh::CatmarkMesh;
-use itertools::Itertools;
-use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
-use num_traits::ToPrimitive;
 use crate::cells::geo;
 use crate::cells::line_segment::DirectedEdge;
+use crate::cells::node::NodeIdx;
+use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
 use crate::subd::catmull_clark::map::CatmarkMap;
+use crate::subd::catmull_clark::mesh::CatmarkMesh;
+use itertools::Itertools;
+use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
+use num_traits::ToPrimitive;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]
@@ -70,6 +70,24 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
             .map(|&point| point.coords.transpose())
             .collect_vec();
         OMatrix::from_rows(&points)
+    }
+
+    /// Returns the quadrilateral in the center of this patch.
+    pub fn center_quad(&self) -> Quad<T, M> {
+        match self {
+            CatmarkPatch::Regular(val) => {
+                Quad::new([val[5], val[6], val[10], val[9]])
+            }
+            CatmarkPatch::Boundary(val) => {
+                Quad::new([val[1], val[2], val[6], val[5]])
+            }
+            CatmarkPatch::Corner(val) => {
+                Quad::new([val[0], val[1], val[4], val[3]])
+            }
+            CatmarkPatch::Irregular(val, _) => {
+                Quad::new([val[0], val[5], val[4], val[3]])
+            }
+        }
     }
 }
 
