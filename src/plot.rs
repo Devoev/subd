@@ -1,9 +1,14 @@
 use iter_num_tools::lin_space;
 use itertools::Itertools;
+use nalgebra::{DefaultAllocator, U1};
+use nalgebra::allocator::Allocator;
 use plotly::{Layout, Plot, Scatter, Surface};
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
+use crate::basis::eval::EvalBasis;
 use crate::basis::lin_combination::LinCombination;
+use crate::basis::local::LocalBasis;
+use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
@@ -65,7 +70,13 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=NodeId
 
 /// Plots the discrete solution function `uh` on the given `elem`  of the `msh`
 /// using `num` evaluation points per parametric direction.
-pub fn plot_solution_elem(msh: &CatmarkMesh<f64, 2>, elem: &CatmarkPatchNodes, uh: &LinCombination<f64, (f64, f64), CatmarkBasis<f64, 2>, 2>, num: usize) -> Plot {
+pub fn plot_solution_elem<'a, M, B>(msh: &'a M, elem: &M::Elem, uh: &LinCombination<f64, (f64, f64), B, 2>, num: usize) -> Plot
+    where M: Mesh<'a, f64, (f64, f64), 2, 2>,
+          B: LocalBasis<f64, (f64, f64), NumComponents = U1, Elem = M::Elem>,
+          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+{
     let mut plot = Plot::new();
     let u_range = lin_space(0.0..=1.0, num);
     let v_range = u_range.clone();
@@ -74,7 +85,7 @@ pub fn plot_solution_elem(msh: &CatmarkMesh<f64, 2>, elem: &CatmarkPatchNodes, u
     let mut y = vec![vec![0.0; num]; num];
     let mut z = vec![vec![0.0; num]; num];
 
-    let mapping = msh.geo_elem(&elem).geo_map();
+    let mapping = msh.geo_elem(elem).geo_map();
     for (i, u) in u_range.clone().enumerate() {
         for (j, v) in v_range.clone().enumerate() {
             // Evaluate patch
@@ -83,7 +94,7 @@ pub fn plot_solution_elem(msh: &CatmarkMesh<f64, 2>, elem: &CatmarkPatchNodes, u
             // Set coordinates
             x[i][j] = pos.x;
             y[i][j] = pos.y;
-            z[i][j] = uh.eval_on_elem(&elem, (u, v)).x;
+            z[i][j] = uh.eval_on_elem(elem, (u, v)).x;
         }
     }
 
@@ -96,11 +107,17 @@ pub fn plot_solution_elem(msh: &CatmarkMesh<f64, 2>, elem: &CatmarkPatchNodes, u
 
 /// Plots the discrete solution function `uh` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_solution(msh: &CatmarkMesh<f64, 2>, uh: &LinCombination<f64, (f64, f64), CatmarkBasis<f64, 2>, 2>, num: usize) -> Plot {
+pub fn plot_solution<'a, M, B>(msh: &'a M, uh: &LinCombination<f64, (f64, f64), B, 2>, num: usize) -> Plot
+    where M: Mesh<'a, f64, (f64, f64), 2, 2>,
+          B: LocalBasis<f64, (f64, f64), NumComponents = U1, Elem = M::Elem>,
+          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+{
     let mut plot = Plot::new();
 
-    for elem in &msh.elems {
-        let elem_plt = plot_solution_elem(msh, elem, uh, num);
+    for elem in msh.elem_iter() {
+        let elem_plt = plot_solution_elem(msh, &elem, uh, num);
         plot.add_traces(elem_plt.data().iter().cloned().collect_vec());
     }
 
