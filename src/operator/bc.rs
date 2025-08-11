@@ -1,11 +1,12 @@
-use std::collections::BTreeSet;
+use crate::bspline::space::BsplineSpace;
+use crate::cells::topo::CellBoundary;
+use crate::mesh::elem_vertex::ElemVertexMesh;
+use crate::mesh::traits::MeshTopology;
 use itertools::iproduct;
 use nalgebra::{Const, DMatrix, DVector, DimNameDiff, DimNameSub, RealField, Scalar, U1};
 use nalgebra_sparse::CsrMatrix;
 use num_traits::Zero;
-use crate::cells::topo::CellBoundary;
-use crate::mesh::elem_vertex::ElemVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use std::collections::{BTreeSet, HashSet};
 
 /// Homogeneous Dirichlet boundary conditions on nodes.
 pub struct DirichletBcHom {
@@ -25,6 +26,16 @@ impl DirichletBcHom {
         let num_nodes = msh.num_nodes();
         let idx = (0..num_nodes).collect::<BTreeSet<_>>();
         let idx_bc = msh.boundary_nodes().map(|n| n.0).collect::<BTreeSet<_>>();
+        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
+        DirichletBcHom { num_nodes, idx_dof }
+    }
+
+    // todo: merge with `from_mesh`
+    /// Same as [`Self::from_mesh`], but for a B-Spline space.
+    pub fn from_bspline_space<T: RealField + Copy, X, const D: usize>(space: &BsplineSpace<T, X, D>) -> Self {
+        let num_nodes = space.dim();
+        let idx = (0..num_nodes).collect::<HashSet<_>>();
+        let idx_bc = space.boundary_indices();
         let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
         DirichletBcHom { num_nodes, idx_dof }
     }

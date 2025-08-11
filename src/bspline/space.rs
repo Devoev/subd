@@ -1,9 +1,12 @@
-use std::iter::zip;
+use crate::basis::space::Space;
+use crate::bspline::de_boor::{DeBoor, DeBoorVec2d, MultiDeBoor};
+use crate::index::dimensioned::{DimShape, MultiRange, Strides};
+use crate::index::multi_index::MultiIndex;
+use crate::knots::knot_vec::KnotVec;
 use itertools::Itertools;
 use nalgebra::RealField;
-use crate::basis::space::Space;
-use crate::bspline::de_boor::{DeBoor, MultiDeBoor, DeBoorVec2d};
-use crate::knots::knot_vec::KnotVec;
+use std::collections::HashSet;
+use std::iter::zip;
 
 // todo: the vector valued spaces are not special cases. Change this somehow?
 
@@ -37,6 +40,30 @@ impl<T, X, const D: usize> BsplineSpace<T, X, D> {
     /// Returns an array of the knot vectors for each parametric direction.
     pub fn knots(&self) -> [&KnotVec<T>; D] {
         self.basis.bases.iter().map(|b| &b.knots).collect_array().unwrap()
+    }
+
+    /// Returns the [`DimShape`] for the basis function indexing.
+    pub fn dim_shape(&self) -> DimShape<D> {
+        let dims = self.basis.bases.iter()
+            .map(|b| b.num_basis)
+            .collect_array()
+            .unwrap();
+        DimShape(dims)
+    }
+
+    /// Returns an iterator over all multi-indices of basis functions.
+    pub fn basis_indices(&self) -> MultiRange<[usize; D]> {
+        self.dim_shape().multi_range()
+    }
+
+    /// Returns a set over all linear indices corresponding to functions at the boundary.
+    pub fn boundary_indices(&self) -> HashSet<usize> {
+        let shape = self.dim_shape();
+        let strides = Strides::from(shape);
+        shape.boundary_indices()
+            .iter()
+            .map(|idx| idx.into_lin(&strides))
+            .collect()
     }
 }
 
