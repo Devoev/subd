@@ -89,6 +89,15 @@ impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B,
         let idx = self.basis.global_indices(elem);
         (b, idx)
     }
+
+    /// Populates the global basis matrix `global` 
+    /// with the local basis values on `elem` evaluated at `x`.
+    pub fn populate_global_on_elem(&self, global: &mut OMatrix<T, B::NumComponents, B::NumBasis>, elem: &B::Elem, x: X) {
+        let (b, idx) = self.eval_on_elem_with_idx(elem, x);
+        for (i_global, bi) in zip(idx, b.column_iter()) {
+            global.column_mut(i_global).add_assign(bi) // todo: should this be replace with copy_from?
+        }
+    }
 }
 
 impl <T: RealField, X: Copy, B: FindElem<T, X>, const D: usize> Space<T, X, B, D>
