@@ -1,24 +1,15 @@
-use iter_num_tools::lin_space;
-use itertools::Itertools;
-use nalgebra::{DefaultAllocator, U1};
-use nalgebra::allocator::Allocator;
-use plotly::{Layout, Plot, Scatter, Surface};
-use plotly::common::{ColorScale, ColorScalePalette};
-use plotly::layout::Annotation;
-use crate::basis::eval::EvalBasis;
-use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::LocalBasis;
-use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::diffgeo::chart::Chart;
+use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
-use crate::subd::catmull_clark::basis::CatmarkBasis;
-use crate::subd::catmull_clark::mesh::CatmarkMesh;
-use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use itertools::Itertools;
+use plotly::common::{ColorScale, ColorScalePalette};
+use plotly::layout::Annotation;
+use plotly::{Layout, Plot, Scatter, Surface};
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -68,29 +59,31 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=NodeId
     plot
 }
 
-/// Plots the function `f` on the given `elem`  of the chart `phi`
+/// Plots the function `f` on the given `elem`/`patch`
 /// using `num` evaluation points per parametric direction.
-pub fn plot_fn_elem<Map, Elem, F>(phi: &Map, elem: &Elem, f: &F, num: usize) -> Plot
-    where Map: Chart<f64, (f64, f64), 2, 2>,
-          F: Fn(&Elem, (f64, f64)) -> f64,
+pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num: usize, mesh_grid: &D) -> Plot
+    where X: Dimensioned<f64, 2> + From<(f64, f64)>,
+          Patch: Cell<f64, X, 2, 2>,
+          F: Fn(&Elem, X) -> f64,
+          D: Fn(&Patch, usize) -> (Vec<f64>, Vec<f64>)
 {
     let mut plot = Plot::new();
-    let u_range = lin_space(0.0..=1.0, num);
-    let v_range = u_range.clone();
+    let phi = cell.geo_map();
+    let (u_range, v_range) = mesh_grid(cell, num);
 
     let mut x = vec![vec![0.0; num]; num];
     let mut y = vec![vec![0.0; num]; num];
     let mut z = vec![vec![0.0; num]; num];
 
-    for (i, u) in u_range.clone().enumerate() {
-        for (j, v) in v_range.clone().enumerate() {
+    for (i, &u) in u_range.iter().enumerate() {
+        for (j, &v) in v_range.iter().enumerate() {
             // Evaluate patch
-            let pos = phi.eval((u, v));
+            let pos = phi.eval((u, v).into());
 
             // Set coordinates
             x[i][j] = pos.x;
             y[i][j] = pos.y;
-            z[i][j] = f(elem, (u, v));
+            z[i][j] = f(elem, (u, v).into());
         }
     }
 
@@ -103,16 +96,17 @@ pub fn plot_fn_elem<Map, Elem, F>(phi: &Map, elem: &Elem, f: &F, num: usize) -> 
 
 /// Plots the function `f` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_fn_msh<'a, M, F>(msh: &'a M, f: &F, num: usize) -> Plot
-    where M: Mesh<'a, f64, (f64, f64), 2, 2>,
-          F: Fn(&M::Elem, (f64, f64)) -> f64,
+pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid: D) -> Plot
+    where X: Dimensioned<f64, 2> + From<(f64, f64)>,
+          Msh: Mesh<'a, f64, X, 2, 2>,
+          F: Fn(&Msh::Elem, X) -> f64,
+          D: Fn(&Msh::GeoElem, usize) -> (Vec<f64>, Vec<f64>)
 {
     let mut plot = Plot::new();
     let elems = msh.elem_iter().collect_vec();
 
     for elem in elems {
-        let phi = msh.geo_elem(&elem).geo_map();
-        let elem_plt = plot_fn_elem(&phi, &elem, f, num);
+        let elem_plt = plot_fn_elem(&msh.geo_elem(&elem), &elem, f, num, &mesh_grid);
         plot.add_traces(elem_plt.data().iter().cloned().collect_vec());
     }
 

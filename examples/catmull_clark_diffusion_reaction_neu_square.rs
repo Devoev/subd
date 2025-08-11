@@ -13,6 +13,8 @@ use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
+use iter_num_tools::lin_space;
+use itertools::Itertools;
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
@@ -32,7 +34,7 @@ use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 5;
+const NUM_REFINE: u8 = 4;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -131,12 +133,15 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let norm_l2 = l2.norm(&u, &quad);
 
     // Plot error
-    // let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
-    //     let patch = msh.geo_elem(elem);
-    //     let p = patch.geo_map().eval(x);
-    //     u(p).x - uh.eval_on_elem(elem, x).x
-    // };
-    // plot_fn_msh(msh, &err_fn, 10).show();
+    let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
+        let patch = msh.geo_elem(elem);
+        let p = patch.geo_map().eval(x);
+        u(p).x - uh.eval_on_elem(elem, x).x
+    };
+    plot_fn_msh(msh, &err_fn, 10, |_, num| {
+        let grid = lin_space(0.0..=1.0, num).collect_vec();
+        (grid.clone(), grid)
+    }).show();
 
     // old way to compute the error using mass matrix
     // let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));

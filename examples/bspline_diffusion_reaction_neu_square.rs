@@ -13,22 +13,29 @@ use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
+use iter_num_tools::lin_space;
+use itertools::Itertools;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
+use subd::cells::geo::Cell;
 use subd::cg::cg;
+use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
+use subd::knots::knot_span::KnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
+use subd::mesh::traits::Mesh;
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 6;
+const NUM_REFINE: u8 = 4;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -120,5 +127,16 @@ fn solve(
     let err_l2 = l2.error(&uh, &u, &quad);
     let norm_l2 = l2.norm(&u, &quad);
 
-    (space.dim(),  err_l2, norm_l2)
+    // Plot error
+    let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
+        let patch = msh.geo_elem(elem);
+        let p = patch.geo_map().eval(x);
+        u(p).x - uh.eval_on_elem(elem, x).x
+    };
+    plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
+        let [u_range, v_range] = patch.ref_elem.ranges();
+        (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
+    }).show();
+
+    (space.dim(), err_l2, norm_l2)
 }
