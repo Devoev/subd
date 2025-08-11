@@ -13,21 +13,26 @@ use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
+use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
+use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
+use subd::mesh::traits::Mesh;
 use subd::operator::function::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
+use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 6;
+const NUM_REFINE: u8 = 5;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -124,6 +129,14 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let l2 = L2Norm::new(msh);
     let err_l2 = l2.error(&uh, &u, &quad);
     let norm_l2 = l2.norm(&u, &quad);
+
+    // Plot error
+    // let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
+    //     let patch = msh.geo_elem(elem);
+    //     let p = patch.geo_map().eval(x);
+    //     u(p).x - uh.eval_on_elem(elem, x).x
+    // };
+    // plot_fn_msh(msh, &err_fn, 10).show();
 
     // old way to compute the error using mass matrix
     // let u = DVector::from_iterator(msh.num_nodes(), msh.coords.iter().map(|&p| u(p).x));

@@ -68,14 +68,11 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=NodeId
     plot
 }
 
-/// Plots the discrete solution function `uh` on the given `elem`  of the `msh`
+/// Plots the function `f` on the given `elem`  of the chart `phi`
 /// using `num` evaluation points per parametric direction.
-pub fn plot_solution_elem<'a, M, B>(msh: &'a M, elem: &M::Elem, uh: &LinCombination<f64, (f64, f64), B, 2>, num: usize) -> Plot
-    where M: Mesh<'a, f64, (f64, f64), 2, 2>,
-          B: LocalBasis<f64, (f64, f64), NumComponents = U1, Elem = M::Elem>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+pub fn plot_fn_elem<Map, Elem, F>(phi: &Map, elem: &Elem, f: &F, num: usize) -> Plot
+    where Map: Chart<f64, (f64, f64), 2, 2>,
+          F: Fn(&Elem, (f64, f64)) -> f64,
 {
     let mut plot = Plot::new();
     let u_range = lin_space(0.0..=1.0, num);
@@ -85,16 +82,15 @@ pub fn plot_solution_elem<'a, M, B>(msh: &'a M, elem: &M::Elem, uh: &LinCombinat
     let mut y = vec![vec![0.0; num]; num];
     let mut z = vec![vec![0.0; num]; num];
 
-    let mapping = msh.geo_elem(elem).geo_map();
     for (i, u) in u_range.clone().enumerate() {
         for (j, v) in v_range.clone().enumerate() {
             // Evaluate patch
-            let pos = mapping.eval((u, v));
+            let pos = phi.eval((u, v));
 
             // Set coordinates
             x[i][j] = pos.x;
             y[i][j] = pos.y;
-            z[i][j] = uh.eval_on_elem(elem, (u, v)).x;
+            z[i][j] = f(elem, (u, v));
         }
     }
 
@@ -105,19 +101,18 @@ pub fn plot_solution_elem<'a, M, B>(msh: &'a M, elem: &M::Elem, uh: &LinCombinat
     plot
 }
 
-/// Plots the discrete solution function `uh` on the entire `msh`
+/// Plots the function `f` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_solution<'a, M, B>(msh: &'a M, uh: &LinCombination<f64, (f64, f64), B, 2>, num: usize) -> Plot
+pub fn plot_fn_msh<'a, M, F>(msh: &'a M, f: &F, num: usize) -> Plot
     where M: Mesh<'a, f64, (f64, f64), 2, 2>,
-          B: LocalBasis<f64, (f64, f64), NumComponents = U1, Elem = M::Elem>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+          F: Fn(&M::Elem, (f64, f64)) -> f64,
 {
     let mut plot = Plot::new();
+    let elems = msh.elem_iter().collect_vec();
 
-    for elem in msh.elem_iter() {
-        let elem_plt = plot_solution_elem(msh, &elem, uh, num);
+    for elem in elems {
+        let phi = msh.geo_elem(&elem).geo_map();
+        let elem_plt = plot_fn_elem(&phi, &elem, f, num);
         plot.add_traces(elem_plt.data().iter().cloned().collect_vec());
     }
 
