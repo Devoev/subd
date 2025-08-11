@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::index::multi_index::MultiIndex;
 use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, SVector, Scalar};
@@ -77,6 +78,41 @@ impl<const D: usize> DimShape<D> {
     pub fn shrink(&mut self, num: usize) {
         self.0.iter_mut().for_each(|n| *n -= num);
     }
+
+    /// Contracts this range by setting the length of the dimension at `dim_idx` to `1`.
+    pub fn contract(&mut self, dim_idx: usize) {
+        self.0[dim_idx] = 1;
+    }
+
+    /// Returns a vector of all multi-indices in the boundary of this shape.
+    pub fn boundary_indices(&self) -> HashSet<[usize; D]> {
+        // Reserve capacity for n^D - (n-2)^D boundary indices
+        let num = self.len();
+        let num_interior = self.0.iter().map(|i| i - 2).product::<usize>();
+
+        if num_interior == 0 {
+            return self.multi_range().collect()
+        }
+
+        // Iteration over each dimension
+        let mut idx = HashSet::with_capacity(num - num_interior);
+        for dim_idx in 0..D {
+            // Contract along dimension
+            let mut shape = *self;
+            let n_dim = shape.0[dim_idx];
+            shape.contract(dim_idx);
+
+            // Calculate left and right indices
+            for mut left in shape.multi_range::<[usize; D]>() {
+                let mut right = left;
+                left[dim_idx] = 0;
+                right[dim_idx] = n_dim - 1;
+                idx.insert(left);
+                idx.insert(right);
+            }
+        }
+        idx
+    }
 }
 
 impl<const D: usize> Dimensioned<usize, D> for DimShape<D> {
@@ -111,25 +147,27 @@ impl <const D: usize> From<DimShape<D>> for Strides<D> {
 mod tests {
     use super::*;
 
-    fn setup() -> (DimShape<3>, DimShape<4>, DimShape<2>) {
+    fn setup() -> (DimShape<3>, DimShape<4>, DimShape<2>, DimShape<2>) {
         let a = DimShape([2, 2, 2]);
         let b = DimShape([2, 4, 3, 5]);
         let c = DimShape([0, 1]);
+        let d = DimShape([4, 4]);
 
-        (a, b, c)
+        (a, b, c, d)
     }
 
     #[test]
     fn len() {
-        let (a, b, c) = setup();
+        let (a, b, c, d) = setup();
         assert_eq!(a.len(), 8);
         assert_eq!(b.len(), 120);
         assert_eq!(c.len(), 0);
+        assert_eq!(d.len(), 16);
     }
 
     #[test]
     fn multi_range() {
-        let (a, b, c) = setup();
+        let (a, b, c, d) = setup();
 
         assert_eq!(
             a.multi_range::<[usize; 3]>().collect_vec(),
@@ -148,11 +186,33 @@ mod tests {
         assert_eq!(b.multi_range::<[usize; 4]>().count(), 120);
 
         assert_eq!(c.multi_range::<[usize; 2]>().collect_vec(), Vec::<[usize; 2]>::new());
+
+        assert_eq!(
+            d.multi_range::<[usize; 2]>().collect_vec(),
+            vec![
+                [0, 0],
+                [0, 1],
+                [0, 2],
+                [0, 3],
+                [1, 0],
+                [1, 1],
+                [1, 2],
+                [1, 3],
+                [2, 0],
+                [2, 1],
+                [2, 2],
+                [2, 3],
+                [3, 0],
+                [3, 1],
+                [3, 2],
+                [3, 3],
+            ]
+        );
     }
 
     #[test]
     fn shrink() {
-        let (mut a, mut b, _) = setup();
+        let (mut a, mut b, _, _) = setup();
 
         a.shrink(0);
         assert_eq!(a, DimShape([2, 2, 2]));
@@ -166,11 +226,63 @@ mod tests {
     }
 
     #[test]
+    fn contract() {
+        let (mut a, _, _, _) = setup();
+
+        a.contract(2);
+        assert_eq!(a, DimShape([2, 2, 1]));
+
+        assert_eq!(
+            a.multi_range::<[usize; 3]>().collect_vec(),
+            vec![
+                [0, 0, 0],
+                [0, 1, 0],
+                [1, 0, 0],
+                [1, 1, 0],
+            ]
+        );
+    }
+
+    #[test]
+    fn boundary_indices() {
+        let (a, b, _, d) = setup();
+
+        assert_eq!(
+            a.boundary_indices(),
+            a.multi_range().collect::<HashSet<[usize; 3]>>()
+        );
+
+        assert_eq!(
+            b.boundary_indices(),
+            b.multi_range().collect::<HashSet<[usize; 4]>>()
+        );
+
+        assert_eq!(
+            d.boundary_indices(),
+            HashSet::from([
+                [0, 0],
+                [0, 1],
+                [0, 2],
+                [0, 3],
+                [3, 0],
+                [3, 1],
+                [3, 2],
+                [3, 3],
+                [1, 0],
+                [2, 0],
+                [1, 3],
+                [2, 3],
+            ])
+        );
+    }
+
+    #[test]
     fn strides() {
-        let (a, b, c) = setup();
+        let (a, b, c, d) = setup();
 
         assert_eq!(Strides::from(a), Strides([1, 2, 4]));
         assert_eq!(Strides::from(b), Strides([1, 2, 8, 24]));
         assert_eq!(Strides::from(c), Strides([1, 0]));
+        assert_eq!(Strides::from(d), Strides([1, 4]));
     }
 }
