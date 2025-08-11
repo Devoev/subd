@@ -1,9 +1,9 @@
-//! This example numerically solves the *diffusion-reaction* problem with homogeneous Dirichlet boundary conditions
+//! This example numerically solves the *Poisson* problem with homogeneous Dirichlet boundary conditions
 //! using isogeometric analysis with (regular) Catmull-Clark basis functions.
 //! The problem ist defined as
 //! ```text
-//! -div grad u + u = f   in Ω
-//!               u = 0   on ∂Ω
+//! -div grad u = f   in Ω
+//!           u = 0   on ∂Ω
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
@@ -40,7 +40,7 @@ const NUM_REFINE: u8 = 6;
 pub fn main() -> io::Result<()> {
     // Define problem
     let u = |p: Point2<f64>| Vector1::new((p.x * PI).sin() * (p.y * PI).sin());
-    let f = |p: Point2<f64>| (2.0 * PI.powi(2) + 1.0) * u(p);
+    let f = |p: Point2<f64>| 2.0 * PI.powi(2) * u(p);
 
     let coords_square = matrix![
             0.0, 0.0, 1.0, 1.0;
@@ -102,21 +102,17 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let quad = PullbackQuad::new(ref_quad);
 
     // Assemble system
-    let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
     let f = assemble_function(msh, &space, quad.clone(), f);
-    let m_coo = hodge.assemble(quad.clone());
     let k_coo = laplace.assemble(quad.clone());
-    let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
-    let a = k + m;
 
     // Deflate system (homogeneous BC)
     let dirichlet = DirichletBcHom::from_mesh(msh);
-    let (a, f) = dirichlet.deflate(a, f);
+    let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system
-    let uh_dof = cg(&a, &f, f.clone(), f.len(), 1e-13);
+    let uh_dof = cg(&k, &f, f.clone(), f.len(), 1e-13);
 
     // Inflate system
     let uh = dirichlet.inflate(uh_dof);

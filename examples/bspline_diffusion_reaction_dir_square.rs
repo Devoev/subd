@@ -3,7 +3,7 @@
 //! The problem ist defined as
 //! ```text
 //! -div grad u + u = f   in Ω
-//!      grad u · n = 0   on ∂Ω
+//!               u = 0   on ∂Ω
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
