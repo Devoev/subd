@@ -1,6 +1,7 @@
 use crate::cells::cartesian::CartCell;
 use crate::index::dimensioned::{DimShape, Strides};
 use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
+use crate::knots::increments::Increments;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use crate::mesh::cartesian::{CartMesh, NodesIter};
@@ -9,7 +10,6 @@ use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, RealField};
 use std::iter::{zip, Map};
 use std::vec::IntoIter;
-use crate::knots::increments::Increments;
 
 // todo: this is in huge parts copied from cartesian.rs. Merge the two implementations
 
