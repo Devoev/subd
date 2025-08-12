@@ -20,7 +20,6 @@ use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
-use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
@@ -29,7 +28,7 @@ use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 5;
+const NUM_REFINE: u8 = 2;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -124,6 +123,23 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let uh = dirichlet.inflate(uh_dof);
     let uh = space.linear_combination(uh)
         .expect("Number of coefficients doesn't match dimension of discrete space");
+
+    // Dump plotting info to console
+    // println!("Coords");
+    // for p in &msh.coords {
+    //     println!("{} {}", p.x, p.y);
+    // }
+    //
+    // println!("Elems");
+    // for patch in &msh.elems {
+    //     let [a, b, c, d] = patch.center_quad().nodes();
+    //     println!("{} {} {} {}", a.0, b.0, c.0, d.0);
+    // }
+    //
+    // println!("(Coords, Solution)");
+    // for (p, uh) in zip(&msh.coords, uh.coeffs.iter()){
+    //     println!("{} {} {}", p.x, p.y, uh);
+    // }
 
     // Calculate error
     let l2 = L2Norm::new(msh);
