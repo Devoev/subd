@@ -11,6 +11,7 @@ use itertools::Itertools;
 use nalgebra::{center, point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
+use std::fs::File;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
@@ -21,6 +22,7 @@ use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
+use subd::plot::{write_connectivity, write_coords, write_coords_with_fn};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
@@ -28,7 +30,7 @@ use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 2;
+const NUM_REFINE: u8 = 4;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -124,22 +126,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let uh = space.linear_combination(uh)
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
-    // Dump plotting info to console
-    // println!("Coords");
-    // for p in &msh.coords {
-    //     println!("{} {}", p.x, p.y);
-    // }
-    //
-    // println!("Elems");
-    // for patch in &msh.elems {
-    //     let [a, b, c, d] = patch.center_quad().nodes();
-    //     println!("{} {} {} {}", a.0, b.0, c.0, d.0);
-    // }
-    //
-    // println!("(Coords, Solution)");
-    // for (p, uh) in zip(&msh.coords, uh.coeffs.iter()){
-    //     println!("{} {} {}", p.x, p.y, uh);
-    // }
+    // Write to file
+    write_coords(msh.coords.iter().copied(), &mut File::create("examples/verts.dat").unwrap()).unwrap();
+    write_connectivity(msh.elems.iter().map(|c| c.center_quad()), &mut File::create("examples/conn.dat").unwrap()).unwrap();
+    write_coords_with_fn(msh.coords.iter().copied(), uh.coeffs.iter().copied(), &mut File::create("examples/solution.dat").unwrap()).unwrap();
 
     // Calculate error
     let l2 = L2Norm::new(msh);

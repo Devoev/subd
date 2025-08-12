@@ -1,3 +1,8 @@
+use std::fmt::Display;
+use std::fs;
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::iter::zip;
 use crate::cells::geo::Cell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
@@ -7,9 +12,11 @@ use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
 use itertools::Itertools;
+use nalgebra::{Dim, DimName, DimNameSub, Point, Scalar};
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
+use crate::cells::topo;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -111,4 +118,32 @@ pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid:
     }
 
     plot
+}
+
+/// Writes the coordinates of control points `coords` into a `file`.
+pub fn write_coords<T: Scalar + Display, const D: usize>(coords: impl Iterator<Item = Point<T, D>>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    for p in coords {
+        let str = p.coords.iter().map(|n| n.to_string()).collect_vec().join(" ");
+        writeln!(file, "{str}")?;
+    }
+    Ok(())
+}
+
+/// Writes the element connectivity of `elems` into a `file`.
+pub fn write_connectivity<C: topo::Cell<K>, K: DimName>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    for elem in elems {
+        let str = elem.nodes().iter().map(|n| n.0.to_string()).collect_vec().join(" ");
+        writeln!(file, "{str}")?;
+    }
+    Ok(())
+}
+
+/// Writes all `(x,f(x))` pairs into a `file`,
+/// where `x` are the coordinates `coords` and `f` a function.
+pub fn write_coords_with_fn<T: Scalar + Display, const D: usize>(coords: impl Iterator<Item = Point<T, D>>, f: impl Iterator<Item = T>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+    for (p, f) in zip(coords, f) {
+        let coord = p.coords.iter().map(|n| n.to_string()).collect_vec().join(" ");
+        writeln!(file, "{coord} {f}")?;
+    }
+    Ok(())
 }
