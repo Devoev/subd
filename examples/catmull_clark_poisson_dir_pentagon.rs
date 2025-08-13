@@ -15,22 +15,27 @@ use std::fs::File;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
+use iter_num_tools::lin_space;
+use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
+use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
+use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::{write_connectivity, write_coords, write_coords_with_fn};
+use subd::plot::{plot_fn_msh, write_connectivity, write_coords, write_coords_with_fn};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
+use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 4;
+const NUM_REFINE: u8 = 2;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -130,6 +135,17 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     write_coords(msh.coords.iter().copied(), &mut File::create("examples/verts.dat").unwrap()).unwrap();
     write_connectivity(msh.elems.iter().map(|c| c.center_quad()), &mut File::create("examples/conn.dat").unwrap()).unwrap();
     write_coords_with_fn(msh.coords.iter().copied(), uh.coeffs.iter().copied(), &mut File::create("examples/solution.dat").unwrap()).unwrap();
+
+    // Plot error
+    let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
+        let patch = msh.geo_elem(elem);
+        let p = patch.geo_map().eval(x);
+        (u(p).x - uh.eval_on_elem(elem, x).x).abs()
+    };
+    plot_fn_msh(msh, &err_fn, 20, |_, num| {
+        let grid = lin_space((1.0..0.0), num).collect_vec();
+        (grid.clone(), grid)
+    }).show();
 
     // Calculate error
     let l2 = L2Norm::new(msh);
