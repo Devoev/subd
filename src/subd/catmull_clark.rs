@@ -5,3 +5,4 @@ pub mod basis;
 pub mod space;
 pub mod map;
 pub mod refine;
+pub mod quadrature;
