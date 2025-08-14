@@ -5,7 +5,7 @@ use crate::bspline::cubic::CubicBspline;
 use crate::cells::topo::Cell;
 use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;
-use nalgebra::{one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
+use nalgebra::{dvector, one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
 use std::iter::zip;
 use std::vec;
@@ -78,6 +78,12 @@ impl CatmarkPatchBasis {
     /// Evaluates the `2n+8` basis functions for the irregular case [`CatmarkPatchBasis::Irregular`]
     /// of valence `n` at `(u,v)`.
     pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> RowDVector<T> {
+        // For u,v = 0, return // todo: what should be returned?
+        if u.is_zero() && v.is_zero() {
+            // fixme: this is currently hardcoded, but seems to be the limit value. why?
+            return dvector![0.5, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].cast().transpose()
+        }
+
         // Transform (u,v)
         let (u, v, nsub, k) = transform(u, v);
 
