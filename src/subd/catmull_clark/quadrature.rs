@@ -160,7 +160,7 @@ mod tests {
         let gauss_quad = setup();
         let id = |_| 1.0;
 
-        // m_max = 0 segments, i.e. entire (regular) quad
+        // m_max = 0 segments, i.e. entire (regular) square
         let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 0);
         assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 1.0);
 
@@ -171,5 +171,9 @@ mod tests {
         // m_max = 2 segments
         let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 2);
         assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 0.9375);
+
+        // m_max = 100, i.e. very close to the entire square
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 100);
+        assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 1.0, epsilon = 1e-10);
     }
 }
