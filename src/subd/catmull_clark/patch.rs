@@ -11,6 +11,7 @@ use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
+use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]
@@ -92,11 +93,14 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
 }
 
 impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
-    type RefCell = UnitCube<2>;
+    type RefCell = SubdUnitSquare;
     type GeoMap = CatmarkMap<T, M>;
 
     fn ref_cell(&self) -> Self::RefCell {
-        UnitCube
+        match self {
+            CatmarkPatch::Irregular(_, _) => SubdUnitSquare::Irregular,
+            _ => SubdUnitSquare::Regular
+        }
     }
 
     fn geo_map(&self) -> Self::GeoMap {

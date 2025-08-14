@@ -32,6 +32,7 @@ use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
+use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
@@ -99,7 +100,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     // Define quadrature
     let p = 4;
     let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
-    let quad = PullbackQuad::new(ref_quad);
+    let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 1));
 
     // Assemble system
     let hodge = Hodge::new(msh, &space);

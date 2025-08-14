@@ -1,41 +1,43 @@
-use std::iter::{Product, Sum};
-use itertools::Itertools;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::subd::catmull_clark::patch::CatmarkPatch;
-use nalgebra::{one, Point2, RealField};
-use num_traits::ToPrimitive;
 use crate::cells::unit_cube::UnitCube;
 use crate::quadrature::traits::Quadrature;
+use crate::subd::patch::subd_unit_square::SubdUnitSquare;
+use itertools::Itertools;
+use nalgebra::RealField;
+use std::iter::Sum;
+use std::marker::PhantomData;
 
-/// Quadrature rule on [Catmull-Clark patches](CatmarkPatch).
-struct CatmarkQuad<T: RealField, Q, const M: usize> {
-    /// Regular quadrature rule.
-    quad_reg: PullbackQuad<T, (T, T), CatmarkPatch<T, M>, Q, 2>,
+/// Quadrature rule on the unit square in [subdivision form](SubdUnitSquare).
+#[derive(Clone, Copy, Debug)]
+pub struct SubdUnitSquareQuad<T: RealField, Q, const M: usize> {
+    /// Regular quadrature rule on the unit square.
+    quad_reg: Q,
 
-    /// Maximum number of sub-rings to evaluate during quadrature of an irregular patch.
+    /// Maximum number of sub-segments to evaluate during quadrature of an irregular patch.
     m_max: usize,
+
+    _phantom: PhantomData<T>,
 }
 
-impl <T: RealField, Q, const M: usize> CatmarkQuad<T, Q, M> {
-    /// Constructs a new [`CatmarkQuad`] from the given
+impl <T: RealField, Q, const M: usize> SubdUnitSquareQuad<T, Q, M> {
+    /// Constructs a new [`SubdUnitSquareQuad`] from the given
     /// quadrature rule `ref_quad` on the reference domain.
     pub fn new(ref_quad: Q, m_max: usize) -> Self {
-        CatmarkQuad { quad_reg: PullbackQuad::new(ref_quad), m_max }
+        SubdUnitSquareQuad { quad_reg: ref_quad, m_max, _phantom: Default::default() }
     }
 }
 
-impl <T, Q> CatmarkQuad<T, Q, 2>
-    where T: RealField + Sum + Product + Copy + ToPrimitive,
+impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
+    where T: RealField + Sum + Copy,
           Q: Quadrature<T, (T, T), UnitCube<2>>
 {
     /// Returns an iterator over all nodes in the regular reference domain (unit square).
     pub fn nodes_ref_regular(&self) -> impl Iterator<Item = (T, T)> + '_ {
-        self.quad_reg.nodes_ref(&UnitCube)
+        self.quad_reg.nodes_elem(&UnitCube)
     }
 
     /// Returns an iterator over all weights in the regular reference domain (unit square).
     pub fn weights_ref_regular(&self) -> impl Iterator<Item=T> + '_ {
-        self.quad_reg.weights_ref(&UnitCube)
+        self.quad_reg.weights_elem(&UnitCube)
     }
 
     /// Returns an iterator over all nodes in the irregular reference domain.
@@ -84,35 +86,31 @@ impl <T, Q> CatmarkQuad<T, Q, 2>
     }
 }
 
-impl <T, Q> Quadrature<T, Point2<T>, CatmarkPatch<T, 2>> for CatmarkQuad<T, Q, 2>
-where T: RealField + Sum + Product + Copy + ToPrimitive,
+impl <T, Q> Quadrature<T, (T, T), SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
+where T: RealField + Sum + Copy,
       Q: Quadrature<T, (T, T), UnitCube<2>>
 {
-    fn nodes_elem(&self, elem: &CatmarkPatch<T, 2>) -> impl Iterator<Item=Point2<T>> {
+    fn nodes_elem(&self, elem: &SubdUnitSquare) -> impl Iterator<Item=(T, T)> {
         match elem {
-            CatmarkPatch::Irregular(_, _) => {
-                todo!("This can be implemented later, since only the reference nodes are usually needed")
-            }
-            _ => self.quad_reg.nodes_elem(elem),
+            SubdUnitSquare::Regular => self.nodes_ref_regular().collect_vec().into_iter(),
+            SubdUnitSquare::Irregular => self.nodes_ref_irregular().into_iter()
         }
     }
 
-    fn weights_elem(&self, elem: &CatmarkPatch<T, 2>) -> impl Iterator<Item=T> {
+    fn weights_elem(&self, elem: &SubdUnitSquare) -> impl Iterator<Item=T> {
         match elem {
-            CatmarkPatch::Irregular(_, _) => {
-                todo!("Implement nodes_ref_irregular and add weights_ref_irregular")
-            }
-            _ => self.quad_reg.weights_elem(elem),
+            SubdUnitSquare::Regular => self.weights_ref_regular().collect_vec().into_iter(),
+            SubdUnitSquare::Irregular => self.weights_ref_irregular().into_iter()
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::quadrature::tensor_prod::GaussLegendreMulti;
     use approx::{abs_diff_eq, assert_abs_diff_eq};
     use gauss_quad::GaussLegendre;
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
-    use super::*;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.
@@ -123,7 +121,7 @@ mod tests {
     #[test]
     fn nodes_ref_irregular() {
         let gauss_quad = setup();
-        let quad = CatmarkQuad::<f64, _, 2>::new(gauss_quad, 1);
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad, 1);
 
         let nodes = quad.nodes_ref_irregular().iter().map(|&(u, v)| [u, v]).collect_vec();
         assert_eq!(nodes.len(), 12);
@@ -144,7 +142,7 @@ mod tests {
     #[test]
     fn weights_ref_irregular() {
         let gauss_quad = setup();
-        let quad = CatmarkQuad::<f64, _, 2>::new(gauss_quad, 1);
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad, 1);
 
         let weights = quad.weights_ref_irregular();
         assert_eq!(weights.len(), 12);
