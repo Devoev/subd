@@ -154,4 +154,22 @@ mod tests {
         assert_eq!(weights.len(), 12);
         assert!(weights.iter().all(|&wi| abs_diff_eq!(wi, 0.0625, epsilon = 1e-13)));
     }
+
+    #[test]
+    fn area() {
+        let gauss_quad = setup();
+        let id = |_| 1.0;
+
+        // m_max = 0 segments, i.e. entire (regular) quad
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 0);
+        assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 1.0);
+
+        // m_max = 1 segment
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 1);
+        assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 0.75);
+
+        // m_max = 2 segments
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 2);
+        assert_abs_diff_eq!(quad.integrate_fn_elem(&SubdUnitSquare::Irregular, id), 0.9375);
+    }
 }
