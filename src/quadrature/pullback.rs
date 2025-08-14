@@ -58,23 +58,22 @@ where T: RealField + Sum + Product + Copy,
 {
 
     fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Point<T, D>> {
-        // todo: remove collect
         let res = self
             .nodes_ref(&elem.ref_cell())
-            .map(|xi| Point::from(elem.geo_map().eval(xi)))
-            .collect_vec();
+            .map(|xi| elem.geo_map().eval(xi))
+            .collect_vec(); // todo: remove collect
         res.into_iter()
     }
 
     fn weights_elem(&self, elem: &E) -> impl Iterator<Item=T> {
-        // todo: remove collect
         let ref_elem = elem.ref_cell();
+        let geo_map = elem.geo_map();
         let res = zip(self.weights_ref(&ref_elem), self.nodes_ref(&ref_elem))
             .map(|(wi, xi)| {
-                let d_phi = elem.geo_map().eval_diff(xi);
+                let d_phi = geo_map.eval_diff(xi);
                 wi * d_phi.determinant().abs()
             })
-            .collect_vec();
+            .collect_vec(); // todo: remove collect
         res.into_iter()
     }
 }
