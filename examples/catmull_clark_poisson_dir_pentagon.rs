@@ -7,6 +7,7 @@
 //! ```
 //! with `Ω` being the pentagon of radius `1`.
 
+use iter_num_tools::lin_space;
 use itertools::Itertools;
 use nalgebra::{center, point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
@@ -15,7 +16,6 @@ use std::fs::File;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
@@ -143,8 +143,8 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
         let p = patch.geo_map().eval(x);
         (u(p).x - uh.eval_on_elem(elem, x).x).abs()
     };
-    plot_fn_msh(msh, &err_fn, 20, |_, num| {
-        let grid = lin_space((1.0..0.0), num).collect_vec();
+    plot_fn_msh(msh, &err_fn, 2, |_, num| {
+        let grid = lin_space(0.0..=1.0, num).collect_vec();
         (grid.clone(), grid)
     }).show();
 
