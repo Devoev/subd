@@ -61,6 +61,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 
     // #[test]
     fn splines() {
@@ -486,7 +487,7 @@ mod tests {
         let space = Space::new(basis);
 
         let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
-        let quad = PullbackQuad::new(ref_quad);
+        let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Load function
         let f = |p: Point<f64, 2>| Matrix1::new(p.coords.norm_squared());
@@ -559,7 +560,7 @@ mod tests {
         let space = Space::<f64, (f64, f64), _, 2>::new(basis);
 
         let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
-        let quad = PullbackQuad::new(ref_quad);
+        let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Assembly
         let hodge = Hodge::new(&msh, &space);

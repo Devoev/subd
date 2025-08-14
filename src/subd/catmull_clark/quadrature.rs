@@ -74,11 +74,11 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
 
         let mut weights = vec![];
 
-        let two = T::from_i8(2).unwrap();
+        let four = T::from_i8(4).unwrap();
         let mut scale = T::one();
         for _ in 0..self.m_max {
             // Calculate scaled weights
-            scale *= two;
+            scale *= four;
             let weights_scaled = weights_unit_square.iter()
                 .map(|&wi| wi / scale);
 
@@ -152,6 +152,6 @@ mod tests {
 
         let weights = quad.weights_ref_irregular();
         assert_eq!(weights.len(), 12);
-        assert!(weights.iter().all(|&wi| abs_diff_eq!(wi, 0.125, epsilon = 1e-13)));
+        assert!(weights.iter().all(|&wi| abs_diff_eq!(wi, 0.0625, epsilon = 1e-13)));
     }
 }

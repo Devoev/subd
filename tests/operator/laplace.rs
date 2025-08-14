@@ -18,6 +18,7 @@ use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
+use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 #[test]
@@ -31,8 +32,9 @@ fn catmark_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Define quadrature
     let p = 3;
+    let m_max = 0; // todo: pick different value?
     let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
-    let quad = PullbackQuad::new(ref_quad);
+    let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, m_max));
 
     // Build mass matrix
     let laplace = Laplace::new(&msh, &space);
