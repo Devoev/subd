@@ -43,6 +43,9 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     /// Returns an iterator over all nodes in the irregular reference domain.
     pub fn nodes_ref_irregular(&self) -> Vec<(T, T)> {
         let nodes_unit_square = self.nodes_ref_regular().collect_vec();
+
+        if self.m_max == 0 { return nodes_unit_square }
+
         let mut nodes = vec![];
 
         let two = T::from_i8(2).unwrap();
@@ -66,6 +69,9 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     /// Returns a vector of weights in the irregular reference domain (tiled unit square).
     pub fn weights_ref_irregular(&self) -> Vec<T> {
         let weights_unit_square = self.weights_ref_regular().collect_vec();
+
+        if self.m_max == 0 { return weights_unit_square }
+
         let mut weights = vec![];
 
         let two = T::from_i8(2).unwrap();
