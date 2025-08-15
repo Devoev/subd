@@ -1,7 +1,8 @@
 //! This example visualizes the quadrature rule in the irregular subdivision setting,
 //! by plotting the quadrature nodes in a truncated series of segments (see [SubdUnitSquare]).
 
-use plotly::layout::Annotation;
+use itertools::Itertools;
+use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter};
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::quadrature::traits::Quadrature;
@@ -18,18 +19,47 @@ fn main() {
     // Get irregular nodes
     let nodes_irr = subd_quad.nodes_elem(&SubdUnitSquare::Irregular);
     let mut plot = Plot::new();
-    let mut layout = Layout::new();
+    let mut layout = Layout::new()
+        .x_axis(Axis::new().range(vec![0, 1]))
+        .y_axis(Axis::new().range(vec![0, 1]));
 
-    for (num, (x, y)) in nodes_irr.enumerate() {
-        let pos_trace = Scatter::new(vec![x], vec![y]);
-        plot.add_trace(pos_trace);
+    // Iteration over all quadrature nodes, chunked in into segments
+    for (m, nodes_segment) in nodes_irr.chunks(3*p*p).into_iter().enumerate() {
 
-        let text = Annotation::new()
-            .text(num.to_string())
-            .show_arrow(false)
-            .x(x)
-            .y(y + 0.05);
-        layout.add_annotation(text);
+        // Iteration of nodes inside the 3 quads inside one segment
+        for (k, nodes_quad) in nodes_segment.chunks(p*p).into_iter().enumerate() {
+
+            // Iteration over nodes inside on sub-quad
+            for (i,(u, v)) in nodes_quad.enumerate() {
+                // Add parameter point (u,v)
+                let pos_trace = Scatter::new(vec![u], vec![v]);
+                plot.add_trace(pos_trace);
+
+                // Add node label
+                let text = Annotation::new()
+                    .text(format!("n^({k},{m})_{i}"))
+                    .show_arrow(false)
+                    .x(u)
+                    .y(v + 0.05);
+                layout.add_annotation(text);
+            }
+        }
+    }
+
+    // Add segment lines
+    for m in 0..=m_max {
+        let z0 = 2f32.powi(-(m as i32) + 1);
+        let z1 = 2f32.powi(-(m as i32));
+        let vert_line = Shape::new().shape_type(ShapeType::Line)
+            .x0(z1).y0(0.0)
+            .x1(z1).y1(z0);
+        let hor_line = Shape::new().shape_type(ShapeType::Line)
+            .x0(0.0).y0(z1)
+            .x1(z0).y1(z1);
+
+
+        layout.add_shape(vert_line);
+        layout.add_shape(hor_line);
     }
 
     plot.set_layout(layout);
