@@ -128,8 +128,9 @@ mod tests {
     #[test]
     fn nodes_ref_irregular() {
         let gauss_quad = setup();
-        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad, 1);
 
+        // m = 1 sub-level
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 1);
         let nodes = quad.nodes_ref_irregular().iter().map(|&(u, v)| [u, v]).collect_vec();
         assert_eq!(nodes.len(), 12);
         assert_abs_diff_eq!(nodes[0].as_slice(), [0.394337567297406 + 0.5, 0.394337567297406].as_slice(), epsilon = 1e-10);
@@ -144,16 +145,41 @@ mod tests {
         assert_abs_diff_eq!(nodes[9].as_slice(), [0.394337567297406, 0.105662432702594 + 0.5].as_slice(), epsilon = 1e-10);
         assert_abs_diff_eq!(nodes[10].as_slice(), [0.105662432702594, 0.394337567297406 + 0.5].as_slice(), epsilon = 1e-10);
         assert_abs_diff_eq!(nodes[11].as_slice(), [0.105662432702594, 0.105662432702594 + 0.5].as_slice(), epsilon = 1e-10);
+
+        // m = 2 sub-levels
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 2);
+        let nodes = quad.nodes_ref_irregular().iter().map(|&(u, v)| [u, v]).collect_vec();
+        assert_eq!(nodes.len(), 24);
+        assert_abs_diff_eq!(nodes[12].as_slice(), [0.197168783648703 + 0.25, 0.197168783648703].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[13].as_slice(), [0.197168783648703 + 0.25, 0.052831216351297].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[14].as_slice(), [0.052831216351297 + 0.25, 0.197168783648703].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[15].as_slice(), [0.052831216351297 + 0.25, 0.052831216351297].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[16].as_slice(), [0.197168783648703 + 0.25, 0.197168783648703 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[17].as_slice(), [0.197168783648703 + 0.25, 0.052831216351297 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[18].as_slice(), [0.052831216351297 + 0.25, 0.197168783648703 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[19].as_slice(), [0.052831216351297 + 0.25, 0.052831216351297 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[20].as_slice(), [0.197168783648703, 0.197168783648703 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[21].as_slice(), [0.197168783648703, 0.052831216351297 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[22].as_slice(), [0.052831216351297, 0.197168783648703 + 0.25].as_slice(), epsilon = 1e-10);
+        assert_abs_diff_eq!(nodes[23].as_slice(), [0.052831216351297, 0.052831216351297 + 0.25].as_slice(), epsilon = 1e-10);
     }
 
     #[test]
     fn weights_ref_irregular() {
         let gauss_quad = setup();
-        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad, 1);
 
+        // m = 1 sub-level
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 1);
         let weights = quad.weights_ref_irregular();
         assert_eq!(weights.len(), 12);
         assert!(weights.iter().all(|&wi| abs_diff_eq!(wi, 0.0625, epsilon = 1e-13)));
+
+        // m = 2 sub-levels
+        let quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), 2);
+        let weights = quad.weights_ref_irregular();
+        assert_eq!(weights.len(), 24);
+        assert!(weights.iter().take(12).all(|&wi| abs_diff_eq!(wi, 0.0625, epsilon = 1e-13)));
+        assert!(weights.iter().skip(12).all(|&wi| abs_diff_eq!(wi, 0.015625, epsilon = 1e-13)));
     }
 
     #[test]
