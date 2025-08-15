@@ -12,7 +12,7 @@ use subd::subd::patch::subd_unit_square::SubdUnitSquare;
 fn main() {
     // Define quadrature
     let p = 2;
-    let m_max = 1;
+    let m_max = 5;
     let gauss_quad = GaussLegendreMulti::<f64, 2>::with_degrees([p, p]);
     let subd_quad = SubdUnitSquareQuad::new(gauss_quad.clone(), m_max);
 
@@ -35,13 +35,16 @@ fn main() {
                 let pos_trace = Scatter::new(vec![u], vec![v]);
                 plot.add_trace(pos_trace);
 
-                // Add node label
-                let text = Annotation::new()
-                    .text(format!("n^({k},{m})_{i}"))
-                    .show_arrow(false)
-                    .x(u)
-                    .y(v + 0.05);
-                layout.add_annotation(text);
+                // Add node label. Only draw for first 2 sublevels,
+                // otherwise, labels are way too large.
+                if m < 2 {
+                    let text = Annotation::new()
+                        .text(format!("n^({k},{m})_{i}"))
+                        .show_arrow(false)
+                        .x(u)
+                        .y(v + 0.05);
+                    layout.add_annotation(text);
+                }
             }
         }
     }
