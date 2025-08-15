@@ -9,7 +9,7 @@ use nalgebra::{dvector, one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, Ro
 use num_traits::ToPrimitive;
 use std::iter::zip;
 use std::vec;
-use crate::subd::catmull_clark::matrices::build_extended_mats;
+use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 
@@ -87,15 +87,24 @@ impl CatmarkPatchBasis {
         // Transform (u,v)
         let (u, v, nsub, k) = transform(u, v);
 
-        // Build subdivision matrices
-        let (a, a_bar) = build_extended_mats::<T>(n);
-
         // Evaluate regular basis on sub-patch
         let b = CatmarkPatchBasis::eval_regular(u, v);
         let b_perm = apply_permutation(n, b, permutation_vec(k, n));
 
-        // Evaluate irregular basis
-        (b_perm * a_bar) * a.pow((nsub - 1) as u32)
+        // Build subdivision matrices
+        let (a, a_bar) = build_extended_mats::<T>(n);
+
+        if n == 5 {
+            // Get eigenvalue decomposition
+            let (v, e, v_inv) = EV5.clone();
+            let e_pows = e.map_diagonal(|ev| ev.powi((nsub - 1) as i32)).cast::<T>();
+
+            // Evaluate irregular basis
+            (b_perm * a_bar) * (v.cast::<T>() * &DMatrix::from_diagonal(&e_pows) * v_inv.cast())
+        } else {
+            // Evaluate irregular basis
+            (b_perm * a_bar) * a.pow((nsub - 1) as u32)
+        }
     }
 
     // todo: move this to a separate struct
@@ -141,8 +150,17 @@ impl CatmarkPatchBasis {
         let b_dv = apply_permutation(n, b_dv, permutation_vec(k, n));
         let b_grad = stack![b_du; b_dv];
 
-        // Evaluate irregular basis
-        (b_grad * a_bar) * a.pow((nsub - 1) as u32)
+        if n == 5 {
+            // Get eigenvalue decomposition
+            let (v, e, v_inv) = EV5.clone();
+            let e_pows = e.map_diagonal(|ev| ev.powi((nsub - 1) as i32)).cast::<T>();
+
+            // Evaluate irregular basis
+            (b_grad * a_bar) * (v.cast::<T>() * &DMatrix::from_diagonal(&e_pows) * v_inv.cast())
+        } else {
+            // Evaluate irregular basis
+            (b_grad * a_bar) * a.pow((nsub - 1) as u32)
+        }
     }
 }
 
