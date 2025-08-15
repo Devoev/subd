@@ -49,8 +49,8 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
         let mut nodes = vec![];
 
         let two = T::from_i8(2).unwrap();
-        let half = T::from_f64(0.5).unwrap();
         let mut scale = T::one();
+        let mut shift = T::one();
         for _ in 0..self.m_max {
             // Calculate scaled nodes
             scale *= two;
@@ -58,9 +58,10 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
                 .map(|&(u, v)| (u / scale, v / scale));
 
             // Transform nodes into all 3 squares in L-shape
-            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + half, v)));
-            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + half, v + half)));
-            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u, v + half)));
+            shift /= two;
+            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + shift, v)));
+            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + shift, v + shift)));
+            nodes.extend(nodes_scaled.clone().map(|(u, v)| (u, v + shift)));
         }
 
         nodes
