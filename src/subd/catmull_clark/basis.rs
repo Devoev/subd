@@ -100,7 +100,7 @@ impl CatmarkPatchBasis {
             let e_pows = e.map_diagonal(|ev| ev.powi((nsub - 1) as i32)).cast::<T>();
 
             // Evaluate irregular basis
-            (b_perm * a_bar) * (v.cast::<T>() * &DMatrix::from_diagonal(&e_pows) * v_inv.cast())
+            (b_perm * a_bar) * (v.cast::<T>() * DMatrix::from_diagonal(&e_pows) * v_inv.cast())
         } else {
             // Evaluate irregular basis
             (b_perm * a_bar) * a.pow((nsub - 1) as u32)
@@ -156,7 +156,7 @@ impl CatmarkPatchBasis {
             let e_pows = e.map_diagonal(|ev| ev.powi((nsub - 1) as i32)).cast::<T>();
 
             // Evaluate irregular basis
-            (b_grad * a_bar) * (v.cast::<T>() * &DMatrix::from_diagonal(&e_pows) * v_inv.cast())
+            (b_grad * a_bar) * (v.cast::<T>() * DMatrix::from_diagonal(&e_pows) * v_inv.cast())
         } else {
             // Evaluate irregular basis
             (b_grad * a_bar) * a.pow((nsub - 1) as u32)
