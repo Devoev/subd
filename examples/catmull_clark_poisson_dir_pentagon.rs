@@ -111,8 +111,9 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
 
     // Define quadrature
     let p = 2;
+    let m_max = 10;
     let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
-    let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
+    let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, m_max));
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
@@ -138,15 +139,15 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     write_coords_with_fn(msh.coords.iter().copied(), uh.coeffs.iter().copied(), &mut File::create("examples/solution.dat").unwrap()).unwrap();
 
     // Plot error
-    let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        (u(p).x - uh.eval_on_elem(elem, x).x).abs()
-    };
-    plot_fn_msh(msh, &err_fn, 2, |_, num| {
-        let grid = lin_space(0.0..=1.0, num).collect_vec();
-        (grid.clone(), grid)
-    }).show();
+    // let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
+    //     let patch = msh.geo_elem(elem);
+    //     let p = patch.geo_map().eval(x);
+    //     (u(p).x - uh.eval_on_elem(elem, x).x).abs()
+    // };
+    // plot_fn_msh(msh, &err_fn, 2, |_, num| {
+    //     let grid = lin_space(0.0..=1.0, num).collect_vec();
+    //     (grid.clone(), grid)
+    // }).show();
 
     // Calculate error
     let l2 = L2Norm::new(msh);
