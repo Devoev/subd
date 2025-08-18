@@ -5,6 +5,7 @@ use itertools::Itertools;
 use nalgebra::RealField;
 use std::iter::Sum;
 use std::marker::PhantomData;
+use numeric_literals::replace_float_literals;
 
 /// Quadrature rule on the unit square in [subdivision form](SubdUnitSquare).
 #[derive(Clone, Copy, Debug)]
@@ -41,6 +42,7 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     }
 
     /// Returns an iterator over all nodes in the irregular reference domain.
+    #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
     pub fn nodes_ref_irregular(&self) -> Vec<(T, T)> {
         let nodes_unit_square = self.nodes_ref_regular().collect_vec();
 
@@ -49,16 +51,16 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
         let mut nodes = vec![];
 
         let two = T::from_i8(2).unwrap();
-        let mut scale = T::one();
-        let mut shift = T::one();
+        let mut scale = 1.0;
+        let mut shift = 1.0;
         for _ in 0..self.m_max {
             // Calculate scaled nodes
-            scale *= two;
+            scale *= 2.0;
             let nodes_scaled = nodes_unit_square.iter()
                 .map(|&(u, v)| (u / scale, v / scale));
 
             // Transform nodes into all 3 squares in L-shape
-            shift /= two;
+            shift /= 2.0;
             nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + shift, v)));
             nodes.extend(nodes_scaled.clone().map(|(u, v)| (u + shift, v + shift)));
             nodes.extend(nodes_scaled.clone().map(|(u, v)| (u, v + shift)));
@@ -68,6 +70,7 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     }
 
     /// Returns a vector of weights in the irregular reference domain (tiled unit square).
+    #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
     pub fn weights_ref_irregular(&self) -> Vec<T> {
         let weights_unit_square = self.weights_ref_regular().collect_vec();
 
@@ -75,11 +78,10 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
 
         let mut weights = vec![];
 
-        let four = T::from_i8(4).unwrap();
-        let mut scale = T::one();
+        let mut scale = 1.0;
         for _ in 0..self.m_max {
             // Calculate scaled weights
-            scale *= four;
+            scale *= 4.0;
             let weights_scaled = weights_unit_square.iter()
                 .map(|&wi| wi / scale);
 
