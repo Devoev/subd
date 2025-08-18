@@ -1,5 +1,6 @@
-use nalgebra::RealField;
-use num_traits::ToPrimitive;
+use std::iter::zip;
+use nalgebra::{DMatrix, RealField, RowDVector, RowSVector, Scalar};
+use num_traits::{ToPrimitive, Zero};
 use numeric_literals::replace_float_literals;
 
 /// Subdivision form of the unit square `(0,1) × (0,1)`.
@@ -65,10 +66,10 @@ impl SubdUnitSquare {
 ///      v ^
 ///        |
 ///     1  +---------------+
-///        |               |
+///        |       |       |
 ///        |  (2)     (1)  |
-///        |               |
-///        +-------+       |
+///        |       |       |
+///        +-------+--   --|
 ///        |       |       |
 ///        |       |  (0)  |
 ///        |       |       |
@@ -107,4 +108,70 @@ impl SubdCell {
             SubdCell::Third => (u*2.0, v*2.0 - 1.0),
         }
     }
+}
+
+// todo: replace with Index vector or dedicated Permutation vector newtype
+
+/// A permutation vector to map control points from an irregular patch to a sub-patch.
+type PermutationVec = [usize; 16];
+
+impl SubdCell {
+    /// Builds the permutation vector mapping the control points of the irregular patch of valence `n`
+    /// to the control points of this regular subdivided patch.
+    pub fn permutation_vec(&self, n: usize) -> PermutationVec {
+        let m = 2 * n;
+
+        match self {
+            SubdCell::First => [
+                7, 6, m + 4, m + 12,
+                0, 5, m + 3, m + 11,
+                3, 4, m + 2, m + 10,
+                m + 6, m + 5, m + 1, m + 9
+            ],
+            SubdCell::Second => [
+                0, 5, m + 3, m + 11,
+                3, 4, m + 2, m + 10,
+                m + 6, m + 5, m + 1, m + 9,
+                m + 15, m + 14, m + 13, m + 8
+            ],
+            SubdCell::Third => [
+                1, 0, 5, m + 3,
+                2, 3, 4, m + 2,
+                m + 7, m + 6, m + 5, m + 1,
+                m + 16, m + 15, m + 14, m + 13
+            ]
+        }
+    }
+
+    /// Maps the evaluated local basis functions `b`
+    /// from this regular sub-patch to the irregular patch of valence `n`.
+    pub fn permute_basis<T: Scalar + Zero + Copy>(&self, n: usize, b: RowSVector<T, 16>) -> RowDVector<T> {
+        let mut res = RowDVector::zeros(2*n + 17);
+        for (bi, idx_global) in zip(b.iter(), self.permutation_vec(n)) {
+            res[idx_global] = *bi;
+        }
+        res
+    }
+}
+
+// todo: move this to possible permutation vec file
+
+/// Applies the given permutation `p` to the evaluated basis functions `b`,
+/// mapping them from a regular sub-patch to the irregular patch of valence `n`.
+pub fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: PermutationVec) -> RowDVector<T> {
+    let mut res = RowDVector::zeros(2*n + 17);
+    for (bi, pi) in zip(b.iter(), p) {
+        res[pi] = *bi;
+    }
+    res
+}
+
+/// Constructs the permutation matrix from the given permutation vector `p` and valence `n`.
+pub fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
+    let mut mat = DMatrix::<usize>::zeros(16, 2*n + 17);
+    for (i, pi) in p.into_iter().enumerate() {
+        // Set i-th row and pi-th column to 1
+        mat[(i, pi)] = 1;
+    }
+    mat
 }

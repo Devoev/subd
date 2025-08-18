@@ -4,16 +4,14 @@ use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::cells::topo::Cell;
 use crate::mesh::traits::MeshTopology;
-use itertools::Itertools;
-use nalgebra::{dvector, one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
-use num_traits::ToPrimitive;
-use std::iter::zip;
-use std::vec;
-use numeric_literals::replace_float_literals;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
-use crate::subd::patch::subd_unit_square::{SubdCell, SubdUnitSquare};
+use crate::subd::patch::subd_unit_square::SubdUnitSquare;
+use itertools::Itertools;
+use nalgebra::{dvector, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
+use num_traits::ToPrimitive;
+use std::vec;
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
@@ -91,7 +89,7 @@ impl CatmarkPatchBasis {
 
         // Evaluate regular basis on sub-patch
         let b = CatmarkPatchBasis::eval_regular(u, v);
-        let b_perm = apply_permutation(n, b, permutation_vec(k, n));
+        let b_perm = k.permute_basis(n, b);
 
         // Build subdivision matrices
         let (a, a_bar) = build_extended_mats::<T>(n);
@@ -150,8 +148,8 @@ impl CatmarkPatchBasis {
         let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow;
         let b_du = b_grad.row(0).clone_owned();
         let b_dv = b_grad.row(1).clone_owned();
-        let b_du = apply_permutation(n, b_du, permutation_vec(k, n));
-        let b_dv = apply_permutation(n, b_dv, permutation_vec(k, n));
+        let b_du = k.permute_basis(n, b_du);
+        let b_dv = k.permute_basis(n, b_dv);
         let b_grad = stack![b_du; b_dv];
 
         if n == 5 {
@@ -222,65 +220,13 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
     }
 }
 
-// todo: move this elsewhere + refactor
-
-/// A permutation vector to map control points from an irregular patch to a sub-patch.
-type PermutationVec = [usize; 16];
-
-/// Builds the permutation vector mapping the control points of the irregular patch of valence `n`
-/// to the control points of the `k`-th sub-patch.
-pub fn permutation_vec(k: SubdCell, n: usize) -> PermutationVec {
-    let m = 2 * n;
-
-    match k {
-        SubdCell::First => [
-            7, 6, m + 4, m + 12,
-            0, 5, m + 3, m + 11,
-            3, 4, m + 2, m + 10,
-            m + 6, m + 5, m + 1, m + 9
-        ],
-        SubdCell::Second => [
-            0, 5, m + 3, m + 11,
-            3, 4, m + 2, m + 10,
-            m + 6, m + 5, m + 1, m + 9,
-            m + 15, m + 14, m + 13, m + 8
-        ],
-        SubdCell::Third => [
-            1, 0, 5, m + 3,
-            2, 3, 4, m + 2,
-            m + 7, m + 6, m + 5, m + 1,
-            m + 16, m + 15, m + 14, m + 13
-        ]
-    }
-}
-
-/// Applies the given permutation `p` to the evaluated basis functions `b`,
-/// mapping them from a regular sub-patch to the irregular patch of valence `n`.
-pub fn apply_permutation<T: RealField + Copy>(n: usize, b: RowSVector<T, 16>, p: PermutationVec) -> RowDVector<T> {
-    let mut res = RowDVector::zeros(2*n + 17);
-    for (bi, pi) in zip(b.iter(), p) {
-        res[pi] = *bi;
-    }
-    res
-}
-
-/// Constructs the permutation matrix from the given permutation vector `p` and valence `n`.
-pub fn permutation_matrix(p: PermutationVec, n: usize) -> DMatrix<usize> {
-    let mut mat = DMatrix::<usize>::zeros(16, 2*n + 17);
-    for (i, pi) in p.into_iter().enumerate() {
-        // Set i-th row and pi-th column to 1
-        mat[(i, pi)] = 1;
-    }
-    mat
-}
-
 #[cfg(test)]
 mod tests {
+    use super::*;
     use approx::assert_abs_diff_eq;
     use itertools::izip;
     use nalgebra::dvector;
     use rand::random_range;
-    use super::*;
 
     #[test]
     fn eval_regular() {
