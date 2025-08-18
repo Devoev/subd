@@ -1,5 +1,5 @@
 //! This example numerically solves the *Poisson* problem with homogeneous Dirichlet boundary conditions
-//! using isogeometric analysis with Catmull-Clark basis functions.
+//! using standard FE piecewise-linear basis functions.
 //! The problem ist defined as
 //! ```text
 //! -div grad u = f   in Ω
@@ -11,7 +11,6 @@ use itertools::Itertools;
 use nalgebra::{center, point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
-use std::fs::File;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
@@ -26,17 +25,13 @@ use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::{plot_fn_msh, write_connectivity, write_coords, write_coords_with_fn};
+use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
-use subd::subd::catmull_clark::basis::CatmarkBasis;
-use subd::subd::catmull_clark::mesh::CatmarkMesh;
-use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
-use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
-use subd::subd::catmull_clark::space::CatmarkSpace;
+use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 4;
+const NUM_REFINE: u8 = 3;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -57,7 +52,7 @@ fn main() -> io::Result<()> {
         QuadNodes::from_indices(0, 6, 7, 8),
         QuadNodes::from_indices(0, 8, 9, 10),
     ];
-    let mut quad_msh = QuadVertexMesh::new(coords, faces);
+    let mut msh = QuadVertexMesh::new(coords, faces);
 
     // Convergence study
     let mut n_dofs = vec![];
@@ -66,9 +61,8 @@ fn main() -> io::Result<()> {
         // Print info
         println!("Iteration {} / {NUM_REFINE}", i+1);
 
-        // Refine and construct Catmark mesh
-        quad_msh = quad_msh.catmark_subd().unpack();
-        let msh = CatmarkMesh::from_quad_mesh(quad_msh.clone());
+        // Refine mesh
+        msh = msh.lin_subd().unpack();
 
         // Solve problem
         let (n_dof, err_l2, norm_l2) = solve(&msh, u, f);
@@ -104,16 +98,14 @@ fn main() -> io::Result<()> {
 
 /// Solves the problem with right hand side `f` and solution `u` on the given `msh`.
 /// Returns the number of DOFs, the L2 error, and the relative L2 error.
-fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64, f64) {
+fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64, f64) {
     // Define space
-    let basis = CatmarkBasis(msh);
-    let space = CatmarkSpace::new(basis);
+    let basis = PlBasisQuad(msh);
+    let space = PlSpaceQuad::new(basis);
 
     // Define quadrature
-    let p = 2;
-    let m_max = 10;
-    let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
-    let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, m_max));
+    let ref_quad = GaussLegendreMulti::with_degrees([2, 2]);
+    let quad = PullbackQuad::new(ref_quad);
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
@@ -133,21 +125,16 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let uh = space.linear_combination(uh)
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
-    // Write to file
-    write_coords(msh.coords.iter().copied(), &mut File::create("examples/verts.dat").unwrap()).unwrap();
-    write_connectivity(msh.elems.iter().map(|c| c.center_quad()), &mut File::create("examples/conn.dat").unwrap()).unwrap();
-    write_coords_with_fn(msh.coords.iter().copied(), uh.coeffs.iter().copied(), &mut File::create("examples/solution.dat").unwrap()).unwrap();
-
     // Plot error
-    // let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
-    //     let patch = msh.geo_elem(elem);
-    //     let p = patch.geo_map().eval(x);
-    //     (u(p).x - uh.eval_on_elem(elem, x).x).abs()
-    // };
-    // plot_fn_msh(msh, &err_fn, 2, |_, num| {
-    //     let grid = lin_space(0.0..=1.0, num).collect_vec();
-    //     (grid.clone(), grid)
-    // }).show();
+    let err_fn = |elem: &&QuadNodes, x: (f64, f64)| {
+        let patch = msh.geo_elem(elem);
+        let p = patch.geo_map().eval(x);
+        (u(p).x - uh.eval_on_elem(elem, x).x).abs()
+    };
+    plot_fn_msh(msh, &err_fn, 2, |_, num| {
+        let grid = lin_space(0.0..=1.0, num).collect_vec();
+        (grid.clone(), grid)
+    }).show();
 
     // Calculate error
     let l2 = L2Norm::new(msh);
