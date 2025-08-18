@@ -73,11 +73,18 @@ impl <T: RealField + Copy, X, const D: usize> BsplineSpace<T, X, D> {
     ///
     /// # Examples
     /// ```
+    /// # use approx::assert_abs_diff_eq;
     /// # use subd::bspline::space::BsplineSpace;
+    /// # use subd::knots::knot_vec::KnotVec;
     ///
     /// let n = [5, 4, 6];
     /// let p = [1, 2, 2];
-    /// let space = BsplineSpace::new_open_uniform(n, p);
+    /// let space = BsplineSpace::<f64, [f64; 3], 3>::new_open_uniform(n, p);
+    ///
+    /// let [KnotVec(xi_1), KnotVec(xi_2), KnotVec(xi_3)] = &space.knots();
+    /// assert_abs_diff_eq!(xi_1.as_slice(), [0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0].as_slice());
+    /// assert_abs_diff_eq!(xi_2.as_slice(), [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0].as_slice());
+    /// assert_abs_diff_eq!(xi_3.as_slice(), [0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0].as_slice());
     /// ```
     pub fn new_open_uniform(n: [usize; D], p: [usize; D]) -> Self {
         let bases = zip(n, p).map(|(n, p)| {

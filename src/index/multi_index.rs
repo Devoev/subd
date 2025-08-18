@@ -17,7 +17,7 @@ impl MultiIndex<usize, 1> for usize {
 
 impl MultiIndex<usize, 2> for (usize, usize) {
     fn into_lin(self, strides: &Strides<2>) -> usize {
-        let strides = strides.0;;
+        let strides = strides.0;
         self.0 * strides[0] + self.1 * strides[1]
     }
 }
