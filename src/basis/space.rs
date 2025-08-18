@@ -132,8 +132,41 @@ type EvalGradLocal<T, X, B, const D: usize> = OMatrix<T, Const<D>, <<B as LocalB
 type EvalGradLocalWithIdx<T, X, B, const D: usize> = (EvalGradLocal<T, X, B, D>, <B as LocalBasis<T, X>>::GlobalIndices);
 
 impl <T, X, B, const D: usize> Space<T, X, B, D>
-    where T: RealField + Copy,
-          X: Dimensioned<T, D> + Copy,
+    where T: RealField,
+          B: LocalBasis<T, X>,
+          B::ElemBasis: EvalGrad<T, X, D>,
+          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+{
+    /// Evaluates the gradients of only local basis functions on the given `elem` at the parametric point `x`.
+    pub fn eval_grad_on_elem(&self, elem: &B::Elem, x: X) -> EvalGradLocal<T, X, B, D> {
+        let local_basis = self.basis.elem_basis(elem);
+        local_basis.eval_grad(x)
+    }
+
+    /// valuates the gradients of only local basis functions at the parametric point `x`.
+    /// Returns the evaluated gradients as well the indices corresponding to the global numbering.
+    pub fn eval_grad_on_elem_with_idx(&self, elem: &B::Elem, x: X) -> EvalGradLocalWithIdx<T, X, B, D> {
+        let local_basis = self.basis.elem_basis(elem);
+        let b = local_basis.eval_grad(x);
+        let idx = self.basis.global_indices(elem);
+        (b, idx)
+    }
+
+    /// Populates the global basis gradient matrix `global`
+    /// with the local basis gradient values evaluated at `x`.
+    pub fn populate_grad_global_on_elem(&self, global: &mut OMatrix<T, Const<D>, B::NumBasis>, elem: &B::Elem, x: X) {
+        let (b, idx) = self.eval_grad_on_elem_with_idx(elem, x);
+        for (i_global, bi) in zip(idx, b.column_iter()) {
+            global.column_mut(i_global).add_assign(bi) // todo: should this be replace with copy_from?
+        }
+    }
+}
+
+impl <T, X, B, const D: usize> Space<T, X, B, D>
+    where T: RealField,
+          X: Copy,
           B: FindElem<T, X>,
           B::ElemBasis: EvalGrad<T, X, D>,
           DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
@@ -142,19 +175,13 @@ impl <T, X, B, const D: usize> Space<T, X, B, D>
 {
     /// Evaluates the gradients of only local basis functions at the parametric point `x`.
     pub fn eval_grad_local(&self, x: X) -> EvalGradLocal<T, X, B, D> {
-        let elem = self.basis.find_elem(x);
-        let local_basis = self.basis.elem_basis(&elem);
-        local_basis.eval_grad(x)
+        self.eval_grad_on_elem(&self.basis.find_elem(x), x)
     }
 
     /// valuates the gradients of only local basis functions at the parametric point `x`.
     /// Returns the evaluated gradients as well the indices corresponding to the global numbering.
     pub fn eval_grad_local_with_idx(&self, x: X) -> EvalGradLocalWithIdx<T, X, B, D> {
-        let elem = self.basis.find_elem(x);
-        let local_basis = self.basis.elem_basis(&elem);
-        let b = local_basis.eval_grad(x);
-        let idx = self.basis.global_indices(&elem);
-        (b, idx)
+        self.eval_grad_on_elem_with_idx(&self.basis.find_elem(x), x)
     }
 
     /// Populates the global basis gradient matrix `global`

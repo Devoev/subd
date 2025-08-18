@@ -1,10 +1,11 @@
 use crate::basis::error::CoeffsSpaceDimError;
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, Scalar, U1};
+use nalgebra::{ComplexField, Const, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
+use crate::index::dimensioned::Dimensioned;
 
 /// Linear combination of coefficients with basis functions.
 pub struct LinCombination<'a, T: ComplexField, X, B, const D: usize> {
@@ -88,11 +89,42 @@ where T: ComplexField,
     /// Evaluates the linear combination at the parametric point `x`.
     /// This is done by finding the local element in which `x` is, which can potentially be expensive.
     pub fn eval_local(&self, x: X) -> OVector<T, B::NumComponents>{
-        let elem = self.space.basis.find_elem(x);
-        let local_space = self.space.local_space(&elem); // todo: this can be removed, once the output of 'idx' is changed to a Vector directly
-        let (b, idx) = self.space.eval_on_elem_with_idx(&elem, x);
+        self.eval_on_elem(&self.space.basis.find_elem(x), x)
+    }
+}
+
+impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
+where T: ComplexField,
+      X: Copy,
+      B: LocalBasis<T::RealField, X, NumComponents = U1>,
+      B::ElemBasis: EvalGrad<T::RealField, X, D>,
+      DefaultAllocator: Allocator<U1>,
+      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+{
+    /// Evaluates the gradient of the linear combination on the given `elem` at the parametric point `x`.
+    pub fn eval_grad_on_elem(&self, elem: &B::Elem, x: X) -> SVector<T, D> {
+        let local_space = self.space.local_space(elem); // todo: this can be removed, once the output of 'idx' is changed to a Vector directly
+        let (b, idx) = self.space.eval_grad_on_elem_with_idx(elem, x);
         let idx = OVector::from_iterator_generic(local_space.basis.num_basis_generic(), U1, idx);
         let c = select_rows_generic(&self.coeffs, idx);
         b.map(|bi| T::from_real(bi)) * c
+    }
+}
+
+impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
+where T: ComplexField,
+      X: Copy,
+      B: FindElem<T::RealField, X, NumComponents = U1>,
+      B::ElemBasis: EvalGrad<T::RealField, X, D>,
+      DefaultAllocator: Allocator<U1>,
+      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+{
+    /// Evaluates the gradient of the linear combination at the parametric point `x`.
+    pub fn eval_grad_local(&self, x: X) -> SVector<T, D> {
+        self.eval_grad_on_elem(&self.space.basis.find_elem(x), x)
     }
 }
