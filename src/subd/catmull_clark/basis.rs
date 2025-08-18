@@ -13,7 +13,7 @@ use numeric_literals::replace_float_literals;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
-use crate::subd::patch::subd_unit_square::{SubCell, SubdUnitSquare};
+use crate::subd::patch::subd_unit_square::{SubdCell, SubdUnitSquare};
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
@@ -227,23 +227,23 @@ type PermutationVec = [usize; 16];
 
 /// Builds the permutation vector mapping the control points of the irregular patch of valence `n`
 /// to the control points of the `k`-th sub-patch.
-pub fn permutation_vec(k: SubCell, n: usize) -> PermutationVec {
+pub fn permutation_vec(k: SubdCell, n: usize) -> PermutationVec {
     let m = 2 * n;
 
     match k {
-        SubCell::First => [
+        SubdCell::First => [
             7, 6, m + 4, m + 12,
             0, 5, m + 3, m + 11,
             3, 4, m + 2, m + 10,
             m + 6, m + 5, m + 1, m + 9
         ],
-        SubCell::Second => [
+        SubdCell::Second => [
             0, 5, m + 3, m + 11,
             3, 4, m + 2, m + 10,
             m + 6, m + 5, m + 1, m + 9,
             m + 15, m + 14, m + 13, m + 8
         ],
-        SubCell::Third => [
+        SubdCell::Third => [
             1, 0, 5, m + 3,
             2, 3, 4, m + 2,
             m + 7, m + 6, m + 5, m + 1,

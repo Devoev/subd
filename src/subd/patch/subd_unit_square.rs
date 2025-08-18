@@ -21,7 +21,7 @@ use numeric_literals::replace_float_literals;
 ///     0 -+---+---+-------+---->
 ///        0               1   u
 /// ```
-/// The three [subcells](SubCell) of the first regular segment
+/// The three [subcells](SubdCell) of the first regular segment
 /// are labeled `(1,0)`, `(1,1)` and `(1,2)`,
 /// where the first number `n=1` is the level of subdivision
 /// and the second one `k=0,1,2` is the index of the subcell.
@@ -41,7 +41,7 @@ impl SubdUnitSquare {
     /// Transforms the given parametric values `(u,v) ∈ (0,1)²` (from the unit square)
     /// to the `k`-th *regular* subcell `(n,k)` of the `n`-th subdivided segment.
     #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
-    pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, SubCell) {
+    pub fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, SubdCell) {
         // Determine number of required subdivisions
         // For u,v = 1, set the value to 1 still
         let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
@@ -53,7 +53,7 @@ impl SubdUnitSquare {
         // Transform (u,v) to regular sub-cell
         u *= pow;
         v *= pow;
-        let k = SubCell::from_parameters_in_segment(u, v);
+        let k = SubdCell::from_parameters_in_segment(u, v);
         let (u, v) = k.transform_inv(u, v);
         (u, v, n, k)
     }
@@ -76,35 +76,35 @@ impl SubdUnitSquare {
 ///        0               1   u
 /// ```
 #[derive(Debug, Copy, Clone)]
-pub enum SubCell {
-    /// First subcell (`k = 0`), corresponding to the parametric range `(u,v) ∈ (0.5, 1) × (0,0.5)`
+pub enum SubdCell {
+    /// First cell (`k = 0`), corresponding to the parametric range `(u,v) ∈ (0.5, 1) × (0,0.5)`
     First = 0,
 
-    /// Second subcell (`k = 1`), corresponding to the parametric range `(u,v) ∈ (0.5, 1) × (0.5,1)`
+    /// Second cell (`k = 1`), corresponding to the parametric range `(u,v) ∈ (0.5, 1) × (0.5,1)`
     Second = 1,
 
-    /// Third subcell (`k = 3`), corresponding to the parametric range `(u,v) ∈ (0,0.5) × (0.5, 1)`
+    /// Third cell (`k = 3`), corresponding to the parametric range `(u,v) ∈ (0,0.5) × (0.5, 1)`
     Third = 2,
 }
 
-impl SubCell {
-    /// Gets the subcell the given parameters `(u,v)` of a regular segment are in.
+impl SubdCell {
+    /// Gets the subdivided cell the given parameters `(u,v)` of a regular segment are in.
     #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
-    pub fn from_parameters_in_segment<T: RealField>(u: T, v: T) -> SubCell {
-        if v < 0.5 { SubCell::First }
-        else if u < 0.5 { SubCell::Third }
-        else { SubCell::Second }
+    pub fn from_parameters_in_segment<T: RealField>(u: T, v: T) -> SubdCell {
+        if v < 0.5 { SubdCell::First }
+        else if u < 0.5 { SubdCell::Third }
+        else { SubdCell::Second }
     }
 
     /// Evaluates the inverse parametrization aka. the chart.
     ///
-    /// Transforms the parameters `(u,v)` from this regular subcell to the unit square.
+    /// Transforms the parameters `(u,v)` from this regular subdivided cell to the unit square.
     #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
     pub fn transform_inv<T: RealField>(&self, u:T, v: T) -> (T, T) {
         match self {
-            SubCell::First => (u*2.0 - 1.0, v*2.0),
-            SubCell::Second => (u*2.0 - 1.0, v*2.0 - 1.0),
-            SubCell::Third => (u*2.0, v*2.0 - 1.0),
+            SubdCell::First => (u*2.0 - 1.0, v*2.0),
+            SubdCell::Second => (u*2.0 - 1.0, v*2.0 - 1.0),
+            SubdCell::Third => (u*2.0, v*2.0 - 1.0),
         }
     }
 }
