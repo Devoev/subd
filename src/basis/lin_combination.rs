@@ -3,7 +3,6 @@ use crate::basis::eval::EvalBasis;
 use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
-use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, Scalar, U1};
 
@@ -23,10 +22,11 @@ impl <'a, T: ComplexField, X, B: Basis, const D: usize> LinCombination<'a, T, X,
     /// Will return an error if the number of rows of `coeffs`
     /// does not match the dimension of `space`.
     pub fn new(coeffs: DVector<T>, space: &'a Space<T::RealField, X, B, D>) -> Result<Self, CoeffsSpaceDimError> {
-        match coeffs.nrows() == space.dim() {
-            true => Ok(LinCombination { coeffs, space }),
-            false => Err(CoeffsSpaceDimError { num_coeffs: coeffs.nrows(), dim_space: space.dim() })
+        if coeffs.nrows() != space.dim() {
+            return Err(CoeffsSpaceDimError { num_coeffs: coeffs.nrows(), dim_space: space.dim() });
         }
+
+        Ok(LinCombination { coeffs, space })
     }
 }
 
