@@ -5,9 +5,8 @@
 //! -div grad u = f   in Ω
 //!           u = 0   on ∂Ω
 //! ```
-//! with `Ω` being the pentagon of radius `1`.
+//! with `Ω` being the pentagon of circumradius `1`.
 
-use iter_num_tools::lin_space;
 use itertools::Itertools;
 use nalgebra::{center, point, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
@@ -16,22 +15,18 @@ use std::fs::File;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
-use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::{plot_fn_msh, write_connectivity, write_coords, write_coords_with_fn};
+use subd::plot::{write_connectivity, write_coords, write_coords_with_fn};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
-use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
