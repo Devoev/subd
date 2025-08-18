@@ -13,7 +13,7 @@ use numeric_literals::replace_float_literals;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
-use crate::subd::patch::subd_unit_square::SubdUnitSquare;
+use crate::subd::patch::subd_unit_square::{SubCell, SubdUnitSquare};
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
@@ -91,7 +91,7 @@ impl CatmarkPatchBasis {
 
         // Evaluate regular basis on sub-patch
         let b = CatmarkPatchBasis::eval_regular(u, v);
-        let b_perm = apply_permutation(n, b, permutation_vec(k as usize, n));
+        let b_perm = apply_permutation(n, b, permutation_vec(k, n));
 
         // Build subdivision matrices
         let (a, a_bar) = build_extended_mats::<T>(n);
@@ -148,8 +148,8 @@ impl CatmarkPatchBasis {
         let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow2;
         let b_du = b_grad.row(0).clone_owned();
         let b_dv = b_grad.row(1).clone_owned();
-        let b_du = apply_permutation(n, b_du, permutation_vec(k as usize, n));
-        let b_dv = apply_permutation(n, b_dv, permutation_vec(k as usize, n));
+        let b_du = apply_permutation(n, b_du, permutation_vec(k, n));
+        let b_dv = apply_permutation(n, b_dv, permutation_vec(k, n));
         let b_grad = stack![b_du; b_dv];
 
         if n == 5 {
@@ -227,29 +227,28 @@ type PermutationVec = [usize; 16];
 
 /// Builds the permutation vector mapping the control points of the irregular patch of valence `n`
 /// to the control points of the `k`-th sub-patch.
-pub fn permutation_vec(k: usize, n: usize) -> PermutationVec {
+pub fn permutation_vec(k: SubCell, n: usize) -> PermutationVec {
     let m = 2 * n;
 
     match k {
-        0 => [
+        SubCell::First => [
             7, 6, m + 4, m + 12,
             0, 5, m + 3, m + 11,
             3, 4, m + 2, m + 10,
             m + 6, m + 5, m + 1, m + 9
         ],
-        1 => [
+        SubCell::Second => [
             0, 5, m + 3, m + 11,
             3, 4, m + 2, m + 10,
             m + 6, m + 5, m + 1, m + 9,
             m + 15, m + 14, m + 13, m + 8
         ],
-        2 => [
+        SubCell::Third => [
             1, 0, 5, m + 3,
             2, 3, 4, m + 2,
             m + 7, m + 6, m + 5, m + 1,
             m + 16, m + 15, m + 14, m + 13
-        ],
-        _ => panic!("Value of k must be between 0 and 2.")
+        ]
     }
 }
 

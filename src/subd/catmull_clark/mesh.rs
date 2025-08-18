@@ -1,13 +1,9 @@
-use itertools::Itertools;
-use nalgebra::{DMatrix, DVector, Point, RealField};
-use num_traits::ToPrimitive;
-use crate::cells::node::NodeIdx;
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
-use crate::subd::catmull_clark::basis::{permutation_matrix, permutation_vec};
-use crate::subd::catmull_clark::matrices::build_extended_mats;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use nalgebra::RealField;
+use num_traits::ToPrimitive;
 
 /// Catmull-Clark mesh.
 pub type CatmarkMesh<T, const M: usize> = ElemVertexMesh<T, CatmarkPatchNodes, 2, M>;
