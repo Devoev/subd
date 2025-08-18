@@ -9,6 +9,7 @@ use nalgebra::{dvector, one, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, Ro
 use num_traits::ToPrimitive;
 use std::iter::zip;
 use std::vec;
+use numeric_literals::replace_float_literals;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
@@ -221,26 +222,25 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
 // todo: move this elsewhere + refactor
 
 /// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
+#[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
 fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
     // Determine number of required subdivisions
     // For u,v = 1, set the value to 1 still
     let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
         .map(|n| if n == 0 { 1 } else { n }).unwrap();
 
-    // Transform (u,v) to regular sub-patch
-    let mid = T::from_f64(0.5).unwrap();
-    let two = T::from_i32(2).unwrap();
-    let pow = two.powi((n - 1) as i32);
+    // Calculate 2^(n-1) using left bit shifts
+    let pow = T::from_i32(1 << (n - 1)).unwrap();
 
+    // Transform (u,v) to regular sub-patch
     u *= pow;
     v *= pow;
-
-    if v < mid {
-        (u*two - one(), v*two, n, 0)
-    } else if u < mid {
-        (u*two, v*two - one(), n, 2)
+    if v < 0.5 {
+        (u*2.0 - 1.0, v*2.0, n, 0)
+    } else if u < 0.5 {
+        (u*2.0, v*2.0 - 1.0, n, 2)
     } else {
-        (u*two - one(), v*two - one(), n, 1)
+        (u*2.0 - 1.0, v*2.0 - 1.0, n, 1)
     }
 }
 
