@@ -3,9 +3,9 @@
 //! - Symmetric: `M = Mᐪ`
 //! - Positive definite: `ꟛ(M) > 0`
 
-use crate::common::matrix_properties::{assert_is_positive_definite, assert_is_symmetric, into_dense};
+use crate::common::matrix_properties::{assert_is_positive_definite, assert_is_symmetric};
 use crate::common::mesh_examples::make_pentagon_mesh;
-use nalgebra::matrix;
+use nalgebra::{matrix, DMatrix};
 use std::error::Error;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
@@ -38,7 +38,7 @@ fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = into_dense(hodge.assemble(quad));
+    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);
@@ -73,7 +73,7 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = into_dense(hodge.assemble(quad));
+    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);

@@ -3,9 +3,9 @@
 //! - Symmetric: `K = Kᐪ`
 //! - Positive definite: `ꟛ(M) > 0`
 
+use crate::common::matrix_properties::{assert_is_positive_definite, assert_is_symmetric};
 use crate::common::mesh_examples::make_pentagon_mesh;
-use crate::common::matrix_properties::{assert_is_positive_definite, assert_is_symmetric, into_dense};
-use nalgebra::matrix;
+use nalgebra::{matrix, DMatrix};
 use std::error::Error;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
@@ -38,7 +38,7 @@ fn catmark_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = into_dense(laplace.assemble(quad));
+    let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
 
     // Do tests
     assert_is_symmetric(&stiff_matrix, 1e-13);
@@ -73,7 +73,7 @@ fn bspline_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build stiffness matrix
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = into_dense(laplace.assemble(quad));
+    let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
 
     // Do tests
     assert_is_symmetric(&stiff_matrix, 1e-13);

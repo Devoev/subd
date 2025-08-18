@@ -6,17 +6,6 @@ use nalgebra::{DMatrix, RealField, Scalar};
 use nalgebra_sparse::CooMatrix;
 use num_traits::Zero;
 
-// todo: make this a trait with blanket impl
-/// Converts the given [`CooMatrix`] `matrix` into a dense [`DMatrix`].
-pub fn into_dense<T: Scalar + Zero + AddAssign>(matrix: CooMatrix<T>) -> DMatrix<T> {
-    let mut mat = DMatrix::zeros(matrix.nrows(), matrix.ncols());
-    let (row_idx, col_idx, val) = matrix.disassemble();
-    for (i, j, v) in izip!(row_idx, col_idx, val) {
-        mat[(i, j)] += v;
-    }
-    mat
-}
-
 /// Asserts that the given `matrix` is symmetric within the given tolerance `epsilon`.
 pub fn assert_is_symmetric<T: Scalar + RelativeEq>(matrix: &DMatrix<T>, epsilon: T::Epsilon) where T::Epsilon: Clone {
     assert!(relative_eq!(*matrix, matrix.transpose(), epsilon = epsilon), "Mass matrix is not symmetric");
