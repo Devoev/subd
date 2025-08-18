@@ -8,6 +8,7 @@ use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use nalgebra::{matrix, Dyn, OMatrix, RealField, U1, U2, U4};
+use numeric_literals::replace_float_literals;
 use crate::basis::space::Space;
 
 /// Space spanned by piecewise-linear basis functions on a quad mesh.
@@ -54,12 +55,13 @@ impl Basis for LinBasisQuad {
 }
 
 impl <T: RealField + Copy> EvalBasis<T, (T, T)> for LinBasisQuad {
+    #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
     fn eval(&self, (u, v): (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         matrix![
-            (T::one() - u) * (T::one() - v), // (1-u)(1-v)
-            u              * (T::one() - v), //     u(1-v)
-            u              * v,              //     uv
-            (T::one() - u) * v               // (1-u)v
+            (1.0 - u) * (1.0 - v), // (1-u)(1-v)
+            u         * (1.0 - v), //     u(1-v)
+            u         * v,         //     uv
+            (1.0 - u) * v          // (1-u)v
         ]
     }
 }
