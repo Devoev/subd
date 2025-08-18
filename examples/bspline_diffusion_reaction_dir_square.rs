@@ -86,7 +86,7 @@ pub fn main() -> io::Result<()> {
     }
 
     // Write data
-    let mut writer = csv::Writer::from_path("errs.csv")?;
+    let mut writer = csv::Writer::from_path("examples/errs.csv")?;
     writer.write_record(["n_dofs", "err_l2", "err_h1"])?;
     for data in izip!(n_dofs, errs_l2, errs_h1) {
         writer.serialize(data)?;
