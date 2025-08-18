@@ -13,6 +13,7 @@ use numeric_literals::replace_float_literals;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 
 /// Basis functions for Catmull-Clark subdivision.
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
@@ -86,11 +87,11 @@ impl CatmarkPatchBasis {
         }
 
         // Transform (u,v)
-        let (u, v, nsub, k) = transform(u, v);
+        let (u, v, nsub, k) = SubdUnitSquare::transform(u, v);
 
         // Evaluate regular basis on sub-patch
         let b = CatmarkPatchBasis::eval_regular(u, v);
-        let b_perm = apply_permutation(n, b, permutation_vec(k, n));
+        let b_perm = apply_permutation(n, b, permutation_vec(k as usize, n));
 
         // Build subdivision matrices
         let (a, a_bar) = build_extended_mats::<T>(n);
@@ -137,7 +138,7 @@ impl CatmarkPatchBasis {
     /// for the irregular case [`CatmarkPatchBasis::Irregular`] of valence `n` at `(u,v)`.
     pub fn eval_irregular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> OMatrix<T, U2, Dyn> {
         // Transform (u,v)
-        let (u, v, nsub, k) = transform(u, v);
+        let (u, v, nsub, k) = SubdUnitSquare::transform(u, v);
 
         // Build subdivision matrices
         let (a, a_bar) = build_extended_mats::<T>(n);
@@ -147,8 +148,8 @@ impl CatmarkPatchBasis {
         let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow2;
         let b_du = b_grad.row(0).clone_owned();
         let b_dv = b_grad.row(1).clone_owned();
-        let b_du = apply_permutation(n, b_du, permutation_vec(k, n));
-        let b_dv = apply_permutation(n, b_dv, permutation_vec(k, n));
+        let b_du = apply_permutation(n, b_du, permutation_vec(k as usize, n));
+        let b_dv = apply_permutation(n, b_dv, permutation_vec(k as usize, n));
         let b_grad = stack![b_du; b_dv];
 
         if n == 5 {
@@ -220,29 +221,6 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatch
 }
 
 // todo: move this elsewhere + refactor
-
-/// Transforms the given parametric values `(u,v)` to a regular sub-patch `(n,k)`.
-#[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
-fn transform<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T) -> (T, T, usize, usize) {
-    // Determine number of required subdivisions
-    // For u,v = 1, set the value to 1 still
-    let n = (-u.log2()).min(-v.log2()).ceil().to_usize()
-        .map(|n| if n == 0 { 1 } else { n }).unwrap();
-
-    // Calculate 2^(n-1) using left bit shifts
-    let pow = T::from_i32(1 << (n - 1)).unwrap();
-
-    // Transform (u,v) to regular sub-patch
-    u *= pow;
-    v *= pow;
-    if v < 0.5 {
-        (u*2.0 - 1.0, v*2.0, n, 0)
-    } else if u < 0.5 {
-        (u*2.0, v*2.0 - 1.0, n, 2)
-    } else {
-        (u*2.0 - 1.0, v*2.0 - 1.0, n, 1)
-    }
-}
 
 /// A permutation vector to map control points from an irregular patch to a sub-patch.
 type PermutationVec = [usize; 16];
