@@ -143,9 +143,11 @@ impl CatmarkPatchBasis {
         // Build subdivision matrices
         let (a, a_bar) = build_extended_mats::<T>(n);
 
+        // Calculate 2^(n-1) using left bit shifts
+        let pow = T::from_i32(1 << nsub).unwrap();
+
         // Evaluate regular basis on sub-patch
-        let pow2 = T::from_i32(2).unwrap().powi(nsub as i32);
-        let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow2;
+        let b_grad = CatmarkPatchBasis::eval_regular_grad(u, v) * pow;
         let b_du = b_grad.row(0).clone_owned();
         let b_dv = b_grad.row(1).clone_owned();
         let b_du = apply_permutation(n, b_du, permutation_vec(k, n));
