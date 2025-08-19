@@ -1,7 +1,7 @@
 clear
 
 %% Parse data
-data = csvread("err_l2.csv", 1, 0);
+data = csvread("errs.csv", 1, 0);
 n_dof_sqrt = sqrt(data(:,1));
 err_l2 = data(:,2);
 
