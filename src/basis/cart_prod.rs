@@ -1,7 +1,6 @@
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::traits::Basis;
-use nalgebra::allocator::Allocator;
 use nalgebra::{stack, DefaultAllocator, DimAdd, DimSum, OMatrix, RealField, U1, U2};
 use std::iter::once;
 use std::marker::PhantomData;
@@ -45,9 +44,7 @@ where T: RealField,
       B1: EvalBasis<T, X, NumComponents = U1>,
       B2: EvalBasis<T, X, NumComponents = U1>,
       B1::NumBasis: DimAdd<B2::NumBasis>,
-      DefaultAllocator: Allocator<B1::NumComponents, B1::NumBasis>,
-      DefaultAllocator: Allocator<B2::NumComponents, B2::NumBasis>,
-      DefaultAllocator: Allocator<Self::NumComponents, Self::NumBasis>,
+      DefaultAllocator: EvalBasisAllocator<B1> + EvalBasisAllocator<B2> + EvalBasisAllocator<Self>,
 {
     fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let b1 = self.bases.0.eval(x);
@@ -65,12 +62,8 @@ where T: RealField,
       B1: LocalBasis<T, X, NumComponents = U1>,
       B2: LocalBasis<T, X, NumComponents = U1>,
       B1::NumBasis: DimAdd<B2::NumBasis>,
-      B1::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
-      B2::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
       <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<B1::NumComponents, <B1::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<B2::NumComponents, <B2::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<U2, <<B1::ElemBasis as Basis>::NumBasis as DimAdd<<B2::ElemBasis as Basis>::NumBasis>>::Output>
+      DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
 {
     type Elem = (B1::Elem, B2::Elem); // todo: possibly change to Prod<..,..>
     type ElemBasis = Prod<T, B1::ElemBasis, B2::ElemBasis>;
@@ -93,12 +86,9 @@ where T: RealField,
       B1: FindElem<T, X, NumComponents = U1>,
       B2: FindElem<T, X, NumComponents = U1>,
       B1::NumBasis: DimAdd<B2::NumBasis>,
-      B1::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
-      B2::ElemBasis: EvalBasis<T, X, NumComponents = U1>,
       <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<B1::NumComponents, <B1::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<B2::NumComponents, <B2::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<U2, <<B1::ElemBasis as Basis>::NumBasis as DimAdd<<B2::ElemBasis as Basis>::NumBasis>>::Output>
+      DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
+
 {
     fn find_elem(&self, x: X) -> Self::Elem {
         let (b1, b2) = &self.bases;
