@@ -3,7 +3,7 @@ use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::{Const, Dim, DimMin, Point, RealField};
+use nalgebra::{Const, Dim, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
 use crate::cells::bezier_elem::BezierElem;
@@ -52,6 +52,8 @@ where T: RealField + Sum + Product + Copy,
 // todo: should this trait be really used? maybe hide behind other trait?
 /// Constrains that the [`DimMin::min`] of `Self` with `Self` is `Self`,
 /// i.e. `DimMin<Self, Output = Self>`.
+///
+/// This is required for example in [`SquareMatrix::determinant`].
 pub trait DimMinSelf: Dim + DimMin<Self, Output = Self> {}
 
 impl <D: Dim + DimMin<Self, Output = Self>> DimMinSelf for D {}
