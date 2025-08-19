@@ -22,9 +22,9 @@ impl<'a, M> L2Norm<'a, M> {
         L2Norm { msh }
     }
 
-    /// Calculates the L2 norm of the given exact solution `u`
+    /// Calculates the squared L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm_squared<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, X, D, D>,
@@ -48,12 +48,26 @@ impl<'a, M> L2Norm<'a, M> {
                 quad.integrate_elem(&geo_elem, u_norm_squared)
             })
             .sum::<T>()
-            .sqrt()
     }
 
-    /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
+    /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn error<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          X: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, X, D, D>,
+          M::GeoElem: Cell<T, X, D, D>,
+          U: Fn(Point<T, D>) -> OVector<T, N>,
+          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          DefaultAllocator: Allocator<N>,
+          Const<D>: DimMin<Const<D>, Output = Const<D>>
+    {
+        self.norm_squared(u, quad).sqrt()
+    }
+
+    /// Calculates the squared L2 error between the given discrete solution `uh` and the exact one `u`
+    /// using the quadrature rule `quad`.
+    pub fn error_squared<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
@@ -82,6 +96,23 @@ impl<'a, M> L2Norm<'a, M> {
                 quad.integrate_elem(&geo_elem, du_norm_squared)
             })
             .sum::<T>()
-            .sqrt()
+    }
+
+    /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
+    /// using the quadrature rule `quad`.
+    pub fn error<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          X: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, X, D, D>,
+          B: LocalBasis<T, X>,
+          U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
+          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
+          Const<D>: DimMin<Const<D>, Output = Const<D>>
+    {
+        self.error_squared(uh, u, quad).sqrt()
     }
 }
