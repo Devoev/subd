@@ -24,10 +24,16 @@ impl <T, B1, B2> Prod<T, B1, B2> {
     }
 }
 
+/// Constrains that [`Self::NumBasis`] and [`Other::NumBasis`] can be added, i.e.
+/// `Self::NumBasis: DimAdd<Other::NumBasis>`.
+pub trait NumBasisAdd<Other: Basis>: Basis<NumBasis: DimAdd<Other::NumBasis>> {}
+
+impl<B1: Basis, B2: Basis> NumBasisAdd<B2> for B1
+    where B1::NumBasis: DimAdd<B2::NumBasis> {}
+
 impl<T, B1, B2> Basis for Prod<T, B1, B2>
-where B1: Basis<NumComponents = U1>,
+where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
       B2: Basis<NumComponents = U1>,
-      B1::NumBasis: DimAdd<B2::NumBasis>
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
@@ -41,9 +47,8 @@ where B1: Basis<NumComponents = U1>,
 impl <T, X, B1, B2> EvalBasis<T, X> for Prod<T, B1, B2>
 where T: RealField,
       X: Copy,
-      B1: EvalBasis<T, X, NumComponents = U1>,
+      B1: EvalBasis<T, X, NumComponents = U1> + NumBasisAdd<B2>,
       B2: EvalBasis<T, X, NumComponents = U1>,
-      B1::NumBasis: DimAdd<B2::NumBasis>,
       DefaultAllocator: EvalBasisAllocator<B1> + EvalBasisAllocator<B2> + EvalBasisAllocator<Self>,
 {
     fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
@@ -59,10 +64,9 @@ where T: RealField,
 impl <T, X, B1, B2> LocalBasis<T, X> for Prod<T, B1, B2>
 where T: RealField,
       X: Copy,
-      B1: LocalBasis<T, X, NumComponents = U1>,
+      B1: LocalBasis<T, X, NumComponents = U1> + NumBasisAdd<B2>,
       B2: LocalBasis<T, X, NumComponents = U1>,
-      B1::NumBasis: DimAdd<B2::NumBasis>,
-      <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
+      B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
       DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
 {
     type Elem = (B1::Elem, B2::Elem); // todo: possibly change to Prod<..,..>
@@ -83,10 +87,9 @@ where T: RealField,
 impl <T, X, B1, B2> FindElem<T, X> for Prod<T, B1, B2>
 where T: RealField,
       X: Copy,
-      B1: FindElem<T, X, NumComponents = U1>,
+      B1: FindElem<T, X, NumComponents = U1> + NumBasisAdd<B2>,
       B2: FindElem<T, X, NumComponents = U1>,
-      B1::NumBasis: DimAdd<B2::NumBasis>,
-      <B1::ElemBasis as Basis>::NumBasis: DimAdd<<B2::ElemBasis as Basis>::NumBasis>,
+      B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
       DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
 
 {
