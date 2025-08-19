@@ -1,16 +1,15 @@
 // todo: rename
 
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
+use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DVector, DefaultAllocator, DimMin, OMatrix, OVector, Point, RealField};
 use std::iter::{zip, Product, Sum};
 
@@ -27,8 +26,7 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
           M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T, X>,
           Q: Quadrature<T, X, E::RefCell>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
     // Create empty matrix
@@ -63,8 +61,7 @@ pub fn assemble_function_local<T, X, E, B, Q, const D: usize>(
           E: Cell<T, X, D, D>,
           B: EvalBasis<T, X>,
           Q: Quadrature<T, X, E::RefCell>,
-          DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
     // Evaluate all basis functions at every quadrature point

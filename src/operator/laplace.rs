@@ -1,7 +1,6 @@
-use crate::basis::eval::EvalGrad;
+use crate::basis::eval::{EvalGrad, EvalGradAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
@@ -9,7 +8,6 @@ use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMatrix, U1};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
@@ -44,8 +42,7 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
           B: LocalBasis<T, X, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, X, D>,
           Q: Quadrature<T, X, E::RefCell>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
     {
         // Create empty matrix
@@ -80,8 +77,7 @@ where T: RealField + Copy + Product<T> + Sum<T>,
       E: Cell<T, X, D, D>,
       B: EvalGrad<T, X, D>,
       Q: Quadrature<T, X, E::RefCell>,
-      DefaultAllocator: Allocator<U1, B::NumBasis>,
-      DefaultAllocator: Allocator<Const<D>, B::NumBasis>,
+      DefaultAllocator: EvalGradAllocator<B, D>,
       Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
     // Evaluate all basis functions and inverse gram matrices at every quadrature point
