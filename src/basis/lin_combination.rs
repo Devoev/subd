@@ -5,9 +5,9 @@ use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, Const, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
-use crate::index::dimensioned::Dimensioned;
 
 /// Linear combination of coefficients with basis functions.
+#[derive(Clone, Debug)]
 pub struct LinCombination<'a, T: ComplexField, X, B, const D: usize> {
     /// Coefficients vector.
     pub coeffs: DVector<T>,
