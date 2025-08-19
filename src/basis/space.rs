@@ -1,14 +1,12 @@
-use std::iter::zip;
-use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::error::CoeffsSpaceDimError;
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::basis::lin_combination::LinCombination;
 use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::traits::Basis;
-use crate::index::dimensioned::Dimensioned;
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DVector, DefaultAllocator, MatrixView, MatrixViewMut, OMatrix, RealField, Vector, VectorView, U1};
+use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, RealField};
+use std::iter::zip;
 use std::marker::PhantomData;
 use std::ops::AddAssign;
-use crate::basis::error::CoeffsSpaceDimError;
 
 /// Function space spanned by a set of basis functions of type [`B`]
 /// as `V = span{b[1],...,b[n]}`.
@@ -50,7 +48,7 @@ type LocalSpace<T, X, B, const D: usize> = Space<T, X, <B as LocalBasis<T, X>>::
 type LocalSpaceWithIdx<T, X, B, const D: usize> = (LocalSpace<T, X, B, D>, <B as LocalBasis<T, X>>::GlobalIndices);
 
 impl <T: RealField, X, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
-    where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+    where DefaultAllocator: EvalBasisAllocator<B::ElemBasis>
 {
     /// Returns this space restricted to the local element `elem`.
     pub fn local_space(&self, elem: &B::Elem) -> LocalSpace<T, X, B, D> {
@@ -73,7 +71,7 @@ type EvalLocal<T, X, B> = OMatrix<T, <B as Basis>::NumComponents, <<B as LocalBa
 type EvalLocalWithIdx<T, X, B> = (EvalLocal<T, X, B>, <B as LocalBasis<T, X>>::GlobalIndices);
 
 impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B, D>
-    where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+    where DefaultAllocator: EvalBasisAllocator<B::ElemBasis>
 {
     /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
     pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> EvalLocal<T, X, B> {
@@ -101,7 +99,7 @@ impl <T: RealField, X: Copy, B: LocalBasis<T, X>, const D: usize> Space<T, X, B,
 }
 
 impl <T: RealField, X: Copy, B: FindElem<T, X>, const D: usize> Space<T, X, B, D>
-    where DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>
+    where DefaultAllocator: EvalBasisAllocator<B::ElemBasis>
 {
     /// Evaluates only the local basis functions at the parametric point `x`.
     pub fn eval_local(&self, x: X) -> EvalLocal<T, X, B> {
@@ -135,9 +133,7 @@ impl <T, X, B, const D: usize> Space<T, X, B, D>
     where T: RealField,
           B: LocalBasis<T, X>,
           B::ElemBasis: EvalGrad<T, X, D>,
-          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Evaluates the gradients of only local basis functions on the given `elem` at the parametric point `x`.
     pub fn eval_grad_on_elem(&self, elem: &B::Elem, x: X) -> EvalGradLocal<T, X, B, D> {
@@ -169,9 +165,7 @@ impl <T, X, B, const D: usize> Space<T, X, B, D>
           X: Copy,
           B: FindElem<T, X>,
           B::ElemBasis: EvalGrad<T, X, D>,
-          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Evaluates the gradients of only local basis functions at the parametric point `x`.
     pub fn eval_grad_local(&self, x: X) -> EvalGradLocal<T, X, B, D> {

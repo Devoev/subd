@@ -1,7 +1,7 @@
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dyn, RealField};
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
 
@@ -11,7 +11,7 @@ use crate::basis::eval::EvalBasis;
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
 pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
-    where DefaultAllocator: Allocator<Self::NumComponents, <Self::ElemBasis as Basis>::NumBasis>
+    where DefaultAllocator: EvalBasisAllocator<Self::ElemBasis>
 {
     /// Element type.
     type Elem;
@@ -33,7 +33,7 @@ pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
 
 /// Local basis functions that can find the local element by parametric value.
 pub trait FindElem<T: RealField, X>: LocalBasis<T, X>
-    where DefaultAllocator: Allocator<Self::NumComponents, <Self::ElemBasis as Basis>::NumBasis>
+    where DefaultAllocator: EvalBasisAllocator<Self::ElemBasis>
 {
     // todo: possibly change to Result<Self::Elem, ...>
     /// Finds the [`Self::Elem`] containing the given parametric value `x`.
