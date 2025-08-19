@@ -1,4 +1,4 @@
-use crate::basis::lin_combination::LinCombination;
+use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
@@ -9,6 +9,7 @@ use crate::quadrature::traits::Quadrature;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, DimMin, DimName, Dyn, OVector, Point, RealField};
 use std::iter::{zip, Product, Sum};
+use crate::basis::eval::EvalBasisAllocator;
 
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, M> {
@@ -75,9 +76,7 @@ impl<'a, M> L2Norm<'a, M> {
           B: LocalBasis<T, X>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-          DefaultAllocator: Allocator<B::NumComponents>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
         // Iterate over every element and calculate error element-wise
@@ -108,9 +107,7 @@ impl<'a, M> L2Norm<'a, M> {
           B: LocalBasis<T, X>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-          DefaultAllocator: Allocator<B::NumComponents>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
         self.error_squared(uh, u, quad).sqrt()

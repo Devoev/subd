@@ -1,16 +1,15 @@
-use crate::basis::lin_combination::LinCombination;
+use crate::basis::eval::{EvalGrad, EvalGradAllocator};
+use crate::basis::grad::GradBasis;
+use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalBasis;
-use crate::basis::traits::Basis;
 use crate::cells::geo::Cell;
 use crate::error::l2_error::L2Norm;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
-use nalgebra::{Const, DefaultAllocator, DimMin, Dyn, OVector, Point, RealField, SVector, U1};
-use std::iter::{zip, Product, Sum};
-use nalgebra::allocator::Allocator;
-use crate::basis::eval::EvalGrad;
+use nalgebra::{Const, DefaultAllocator, DimMin, OVector, Point, RealField, SVector, U1};
+use std::iter::{Product, Sum};
 
 /// H1-norm on a mesh.
 pub struct H1Norm<'a, M>(L2Norm<'a, M>);
@@ -67,10 +66,8 @@ impl<'a, M> H1Norm<'a, M> {
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
-          DefaultAllocator: Allocator<U1>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
+          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
         // Compute gradient of uh (todo: possibly add as input argument?)
         let grad_space = uh.space.clone().grad();
@@ -94,10 +91,8 @@ impl<'a, M> H1Norm<'a, M> {
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
-          DefaultAllocator: Allocator<U1>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
+          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
         self.error_squared(uh, u, u_grad, quad).sqrt()
     }
