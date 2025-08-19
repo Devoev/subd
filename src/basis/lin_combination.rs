@@ -1,10 +1,10 @@
 use crate::basis::error::CoeffsSpaceDimError;
-use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use nalgebra::{ComplexField, Const, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
+use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
 
 /// Linear combination of coefficients with basis functions.
 #[derive(Clone, Debug)]
@@ -31,11 +31,18 @@ impl <'a, T: ComplexField, X, B: Basis, const D: usize> LinCombination<'a, T, X,
     }
 }
 
+// todo: possibly rename
+
+/// Allocator for the vector of [`B::NumComponents`] evaluated function components.
+pub trait EvalFunctionAllocator<B: Basis>: Allocator<B::NumComponents> {}
+
+impl <B: Basis> EvalFunctionAllocator<B> for DefaultAllocator
+    where DefaultAllocator: Allocator<B::NumComponents>{}
+
 impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
     where T: ComplexField,
           B: EvalBasis<T::RealField, X, NumBasis=Dyn>,
-          DefaultAllocator: Allocator<B::NumComponents, B::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
+          DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>
 {
     /// Evaluates this linear combination at the parametric point `x`,
     /// by calculating `c[0] * b[0](x) + ... + c[n] * b[n](x)`.
@@ -46,6 +53,16 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
         b.map(|bi| T::from_real(bi)) * &self.coeffs
     }
 }
+
+// todo: make this more generic, e.g. for control points?
+//  and why is Allocator<U1/Dyn> really necessary? Seems to be for self.coeffs
+/// Allocator for selection of [`B::NumBasis`] (local) coefficients
+/// and [`Dyn`] (global) coefficients.
+pub trait SelectCoeffsAllocator<B: Basis>: Allocator<B::NumBasis> + Allocator<Dyn> {}
+
+impl <B: Basis> SelectCoeffsAllocator<B> for DefaultAllocator
+    where DefaultAllocator: Allocator<Dyn>,
+          DefaultAllocator: Allocator<B::NumBasis> {}
 
 // todo: move elsewhere
 /// Same as [`Matrix::select_rows`] but generic.
@@ -64,9 +81,7 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
     where T: ComplexField,
           X: Copy,
           B: LocalBasis<T::RealField, X>,
-          DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
-          DefaultAllocator: Allocator<B::NumComponents>,
-          DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>
 {
     /// Evaluates the linear combination on the given `elem` at the parametric point `x`.
     pub fn eval_on_elem(&self, elem: &B::Elem, x: X) -> OVector<T, B::NumComponents> {
@@ -82,9 +97,7 @@ impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
 where T: ComplexField,
       X: Copy,
       B: FindElem<T::RealField, X>,
-      DefaultAllocator: Allocator<B::NumComponents, <B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<B::NumComponents>,
-      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>
+      DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>
 {
     /// Evaluates the linear combination at the parametric point `x`.
     /// This is done by finding the local element in which `x` is, which can potentially be expensive.
@@ -98,10 +111,7 @@ where T: ComplexField,
       X: Copy,
       B: LocalBasis<T::RealField, X, NumComponents = U1>,
       B::ElemBasis: EvalGrad<T::RealField, X, D>,
-      DefaultAllocator: Allocator<U1>,
-      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>
 {
     /// Evaluates the gradient of the linear combination on the given `elem` at the parametric point `x`.
     pub fn eval_grad_on_elem(&self, elem: &B::Elem, x: X) -> SVector<T, D> {
@@ -118,10 +128,7 @@ where T: ComplexField,
       X: Copy,
       B: FindElem<T::RealField, X, NumComponents = U1>,
       B::ElemBasis: EvalGrad<T::RealField, X, D>,
-      DefaultAllocator: Allocator<U1>,
-      DefaultAllocator: Allocator<<B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<U1, <B::ElemBasis as Basis>::NumBasis>,
-      DefaultAllocator: Allocator<Const<D>, <B::ElemBasis as Basis>::NumBasis>,
+      DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>
 {
     /// Evaluates the gradient of the linear combination at the parametric point `x`.
     pub fn eval_grad_local(&self, x: X) -> SVector<T, D> {
