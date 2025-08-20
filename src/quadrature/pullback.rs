@@ -54,9 +54,9 @@ where T: RealField + Sum + Product + Copy,
 /// i.e. `DimMin<Self, Output = Self>`.
 ///
 /// This is required for example in [`SquareMatrix::determinant`].
-pub trait DimMinSelf: Dim + DimMin<Self, Output = Self> {}
+pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
-impl <D: Dim + DimMin<Self, Output = Self>> DimMinSelf for D {}
+impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
 impl <T, X, E, Q, const D: usize> Quadrature<T, Point<T, D>, E> for PullbackQuad<T, X, E, Q, D>
 where T: RealField + Sum + Product + Copy,
