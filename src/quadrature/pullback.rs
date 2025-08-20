@@ -3,10 +3,9 @@ use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::{Const, Dim, DimMin, Point, RealField, SquareMatrix};
+use nalgebra::{Const, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
-use approx::AbsDiffEq;
 use crate::cells::bezier_elem::BezierElem;
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
 
@@ -112,6 +111,7 @@ mod tests {
         // Test flat element [-1,1]^2
         let quad = PullbackQuad::new(ref_quad.clone());
         let cell = CartCell::new(point![-1.0, -1.0], point![1.0, 1.0]);
+        
         let mut nodes = quad.nodes_elem(&cell);
         assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, 0.57735], epsilon = 1e-5);
         assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, -0.57735], epsilon = 1e-5);
