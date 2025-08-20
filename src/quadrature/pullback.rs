@@ -89,10 +89,9 @@ where T: RealField + Sum + Product + Copy,
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
     use approx::assert_abs_diff_eq;
     use gauss_quad::GaussLegendre;
-    use nalgebra::{matrix, point, Point2};
+    use nalgebra::{matrix, point};
     use crate::bspline::space::BsplineSpace;
     use crate::bspline::spline_geo::SplineGeo;
     use crate::cells::cartesian::CartCell;
@@ -111,7 +110,7 @@ mod tests {
         // Test flat element [-1,1]^2
         let quad = PullbackQuad::new(ref_quad.clone());
         let cell = CartCell::new(point![-1.0, -1.0], point![1.0, 1.0]);
-        
+
         let mut nodes = quad.nodes_elem(&cell);
         assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, 0.57735], epsilon = 1e-5);
         assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, -0.57735], epsilon = 1e-5);
