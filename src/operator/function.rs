@@ -14,18 +14,18 @@ use nalgebra::{Const, DVector, DefaultAllocator, DimMin, OMatrix, OVector, Point
 use std::iter::{zip, Product, Sum};
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
+pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
     msh: &'a M,
-    space: &Space<T, X, B, D>,
-    quad: PullbackQuad<T, X, E, Q, D>,
+    space: &Space<T, B, D>,
+    quad: PullbackQuad<T, B::Coord<T>, E, Q, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T, X>,
-          Q: Quadrature<T, X, E::RefCell>,
+          B::Coord<T>: Dimensioned<T, D>,
+          E: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalBasis<T>,
+          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
@@ -50,17 +50,17 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
 }
 
 /// Assembles a local discrete function vector.
-pub fn assemble_function_local<T, X, E, B, Q, const D: usize>(
+pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     elem: &E,
-    sp_local: &Space<T, X, B, D>,
-    quad: &PullbackQuad<T, X, E, Q, D>,
+    sp_local: &Space<T, B, D>,
+    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
     f: &impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          B: EvalBasis<T, X>,
-          Q: Quadrature<T, X, E::RefCell>,
+          B::Coord<T>: Dimensioned<T, D>,
+          E: Cell<T, B::Coord<T>, D, D>,
+          B: EvalBasis<T>,
+          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

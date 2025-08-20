@@ -106,7 +106,7 @@ pub fn main() -> io::Result<()> {
 /// Returns the number of DOFs, the H1 error and norm, and the L2 error norm.
 fn solve(
     msh: BezierMesh<f64, 2, 2>,
-    space: BsplineSpace<f64,  [f64; 2], 2>,
+    space: BsplineSpace<f64, 2>,
     u: impl Fn(Point2<f64>) -> Vector1<f64>,
     u_grad: impl Fn(Point2<f64>) -> Vector2<f64>,
     f: impl Fn(Point2<f64>) -> Vector1<f64>

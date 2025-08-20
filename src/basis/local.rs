@@ -1,6 +1,6 @@
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, Dyn, RealField};
+use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar};
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
@@ -10,14 +10,14 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 /// # Type parameters
 /// - [`T`] : Real scalar type.
 /// - [`X`] : Type of parametric values in the reference domain.
-pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
+pub trait LocalBasis<T: Scalar>: Basis<NumBasis = Dyn>
     where DefaultAllocator: EvalBasisAllocator<Self::ElemBasis>
 {
     /// Element type.
     type Elem;
     
     /// Restriction of the local basis on an element.
-    type ElemBasis: EvalBasis<T, X, NumComponents = Self::NumComponents>;
+    type ElemBasis: EvalBasis<T, NumComponents = Self::NumComponents, Coord<T> = Self::Coord<T>>;
 
     // todo: possibly change to IntoIterator or separate trait/ struct all together
     /// Iterator over linear global indices.
@@ -32,10 +32,10 @@ pub trait LocalBasis<T: RealField, X>: Basis<NumBasis = Dyn>
 }
 
 /// Local basis functions that can find the local element by parametric value.
-pub trait FindElem<T: RealField, X>: LocalBasis<T, X>
+pub trait FindElem<T: Scalar>: LocalBasis<T>
     where DefaultAllocator: EvalBasisAllocator<Self::ElemBasis>
 {
     // todo: possibly change to Result<Self::Elem, ...>
     /// Finds the [`Self::Elem`] containing the given parametric value `x`.
-    fn find_elem(&self, x: X) -> Self::Elem;
+    fn find_elem(&self, x: Self::Coord<T>) -> Self::Elem;
 }

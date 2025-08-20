@@ -10,6 +10,9 @@ pub trait Basis {
     /// for vector valued functions equal to the dimension of the parametric domain.
     type NumComponents: DimName;
 
+    /// Coordinate of a parametric point over type [`T`].
+    type Coord<T>;
+
     /// Returns the number of basis functions wrapped into [`Self::NumBasis`] (`Const` or `Dyn`).
     fn num_basis_generic(&self) -> Self::NumBasis;
 

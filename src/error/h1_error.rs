@@ -55,16 +55,16 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`, using the quadrature rule `quad`.
-    pub fn error_squared<T, X, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, X, D>,
+          B::Coord<T>: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          B: LocalBasis<T, NumComponents=U1> + Clone,
+          B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
@@ -80,16 +80,16 @@ impl<'a, M> H1Norm<'a, M> {
     /// Calculates the H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`,
     /// using the quadrature rule `quad`.
-    pub fn error<T, X, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, X, D>,
+          B::Coord<T>: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          B: LocalBasis<T, NumComponents=U1> + Clone,
+          B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?

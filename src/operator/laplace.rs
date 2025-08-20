@@ -17,31 +17,31 @@ use std::iter::{zip, Product, Sum};
 /// K[i,j] = ∫ grad b[i] · grad b[j] dx ,
 /// ```
 /// where the `b[i]` are nodal basis functions.
-pub struct Laplace<'a, T, X, M, B, const D: usize> {
+pub struct Laplace<'a, T, M, B, const D: usize> {
     /// Mesh defining the geometry discretization.
     msh: &'a M,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, X, B, D>
+    space: &'a Space<T, B, D>
 }
 
 
-impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
+impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     /// Constructs a new `Laplace` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, X, B, D>) -> Self {
+    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
         Laplace { msh, space }
     }
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T, X, NumComponents = U1>,
-          B::ElemBasis: EvalGrad<T, X, D>,
-          Q: Quadrature<T, X, E::RefCell>,
+          B::Coord<T>: Dimensioned<T, D>,
+          E: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalBasis<T, NumComponents = U1>,
+          B::ElemBasis: EvalGrad<T, D>,
+          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
     {
@@ -67,16 +67,16 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
 }
 
 /// Assembles the local discrete Laplace operator.
-pub fn assemble_laplace_local<T, X, E, B, Q, const D: usize>(
+pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
     elem: &E,
-    sp_local: &Space<T, X, B, D>,
-    quad: &PullbackQuad<T, X, E, Q, D>,
+    sp_local: &Space<T, B, D>,
+    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
-      X: Dimensioned<T, D>,
-      E: Cell<T, X, D, D>,
-      B: EvalGrad<T, X, D>,
-      Q: Quadrature<T, X, E::RefCell>,
+      B::Coord<T>: Dimensioned<T, D>,
+      E: Cell<T, B::Coord<T>, D, D>,
+      B: EvalGrad<T, D>,
+      Q: Quadrature<T, B::Coord<T>, E::RefCell>,
       DefaultAllocator: EvalGradAllocator<B, D>,
       Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

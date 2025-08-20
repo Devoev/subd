@@ -32,7 +32,7 @@ impl DirichletBcHom {
 
     // todo: merge with `from_mesh`
     /// Same as [`Self::from_mesh`], but for a B-Spline space.
-    pub fn from_bspline_space<T: RealField + Copy, X, const D: usize>(space: &BsplineSpace<T, X, D>) -> Self {
+    pub fn from_bspline_space<T: RealField + Copy, const D: usize>(space: &BsplineSpace<T, D>) -> Self {
         let num_nodes = space.dim();
         let idx = (0..num_nodes).collect::<HashSet<_>>();
         let idx_bc = space.boundary_indices();

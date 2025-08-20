@@ -34,6 +34,7 @@ impl DooSabinPatchBasis {
 impl Basis for DooSabinPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         match self {
@@ -45,7 +46,7 @@ impl Basis for DooSabinPatchBasis {
     }
 }
 
-impl <T: RealField + Copy> EvalBasis<T, (T, T)> for DooSabinPatchBasis {
+impl <T: RealField + Copy> EvalBasis<T> for DooSabinPatchBasis {
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {

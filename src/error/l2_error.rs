@@ -68,14 +68,14 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the squared L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error_squared<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X>,
+          B::Coord<T>: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -99,14 +99,14 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error<T, X, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X>,
+          B::Coord<T>: Dimensioned<T, D> + Copy,
+          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {

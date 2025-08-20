@@ -16,29 +16,29 @@ use std::iter::{Product, Sum};
 /// M[i,j] = ∫ b[i] · b[j] dx ,
 /// ```
 /// where the `b[i]` are the basis functions.
-pub struct Hodge<'a, T, X, M, B, const D: usize> {
+pub struct Hodge<'a, T, M, B, const D: usize> {
     /// Mesh defining the geometry discretization.
     msh: &'a M,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, X, B, D>
+    space: &'a Space<T, B, D>
 }
 
-impl <'a, T, X, M, B, const D: usize> Hodge<'a, T, X, M, B, D> {
+impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
     /// Constructs a new `Hodge` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, X, B, D>) -> Self {
+    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
         Hodge { msh, space }
     }
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
-              X: Dimensioned<T, D>,
-              E: Cell<T, X, D, D>,
-              M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
-              B: LocalBasis<T, X>,
-              Q: Quadrature<T, X, E::RefCell>,
+              B::Coord<T>: Dimensioned<T, D>,
+              E: Cell<T, B::Coord<T>, D, D>,
+              M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+              B: LocalBasis<T>,
+              Q: Quadrature<T, B::Coord<T>, E::RefCell>,
               DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
               Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -64,16 +64,16 @@ impl <'a, T, X, M, B, const D: usize> Hodge<'a, T, X, M, B, D> {
 }
 
 /// Assembles the local discrete Hodge operator.
-pub fn assemble_hodge_local<T, X, E, B, Q, const D: usize>(
+pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
     elem: &E,
-    sp_local: &Space<T, X, B, D>,
-    quad: &PullbackQuad<T, X, E, Q, D>,
+    sp_local: &Space<T, B, D>,
+    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          B: EvalBasis<T, X>,
-          Q: Quadrature<T, X, E::RefCell>,
+          B::Coord<T>: Dimensioned<T, D>,
+          E: Cell<T, B::Coord<T>, D, D>,
+          B: EvalBasis<T>,
+          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

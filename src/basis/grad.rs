@@ -11,6 +11,7 @@ pub struct GradBasis<B, const D: usize>(B);
 impl<B: Basis<NumComponents = U1>, const D: usize> Basis for GradBasis<B, D> {
     type NumBasis = B::NumBasis;
     type NumComponents = Const<D>;
+    type Coord<T> = B::Coord<T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.0.num_basis_generic()
@@ -18,19 +19,19 @@ impl<B: Basis<NumComponents = U1>, const D: usize> Basis for GradBasis<B, D> {
 }
 
 /// Implement [`EvalBasis`] if `B` implements [`EvalBasis`].
-impl <T: RealField, X, B: EvalGrad<T, X, D>, const D: usize> EvalBasis<T, X> for GradBasis<B, D>
+impl <T: RealField, B: EvalGrad<T, D>, const D: usize> EvalBasis<T> for GradBasis<B, D>
     where DefaultAllocator: EvalGradAllocator<B, D>
 {
-    fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
+    fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         self.0.eval_grad(x)
     }
 }
 
 /// Implement [`LocalBasis`] if `B` is also a local basis.
-impl <T, X, B, const D: usize> LocalBasis<T, X> for GradBasis<B, D>
+impl <T, B, const D: usize> LocalBasis<T> for GradBasis<B, D>
 where T: RealField,
-      B: LocalBasis<T, X, NumComponents = U1>,
-      B::ElemBasis: EvalGrad<T, X, D>,
+      B: LocalBasis<T, NumComponents = U1>,
+      B::ElemBasis: EvalGrad<T, D>,
       DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     type Elem = B::Elem;
@@ -47,29 +48,29 @@ where T: RealField,
 }
 
 /// Space of gradients of basis functions in `B`.
-pub type GradSpace<T, X, B, const D: usize> = Space<T, X, GradBasis<B, D>, D>;
+pub type GradSpace<T, B, const D: usize> = Space<T, GradBasis<B, D>, D>;
 
-impl <T, X, B, const D: usize> Space<T, X, B, D>
+impl <T, B, const D: usize> Space<T, B, D>
 where T: RealField,
-      B: LocalBasis<T, X, NumComponents = U1>,
-      B::ElemBasis: EvalGrad<T, X, D>,
+      B: LocalBasis<T, NumComponents = U1>,
+      B::ElemBasis: EvalGrad<T, D>,
       DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Returns the gradient of this space.
-    pub fn grad(self) -> GradSpace<T, X, B, D> {
+    pub fn grad(self) -> GradSpace<T, B, D> {
         let basis = self.basis;
         Space::new(GradBasis(basis))
     }
 }
 
-impl <'a, T, X, B, const D: usize> LinCombination<'a, T, X, B, D>
+impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
     where T: ComplexField,
-          B: LocalBasis<T::RealField, X, NumComponents = U1>,
-          B::ElemBasis: EvalGrad<T::RealField, X, D>,
+          B: LocalBasis<T::RealField, NumComponents = U1>,
+          B::ElemBasis: EvalGrad<T::RealField, D>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Returns the gradient of this linear combination in the space `grad_space`.
-    pub fn grad(self, grad_space: &'a GradSpace<T::RealField, X, B, D>) -> LinCombination<'a, T, X, GradBasis<B, D>, D> {
+    pub fn grad(self, grad_space: &'a GradSpace<T::RealField, B, D>) -> LinCombination<'a, T, GradBasis<B, D>, D> {
         LinCombination::new(self.coeffs, grad_space).unwrap()
     }
 }

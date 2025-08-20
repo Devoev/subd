@@ -33,10 +33,11 @@ impl<B1: Basis, B2: Basis> NumBasisAdd<B2> for B1
 
 impl<T, B1, B2> Basis for Prod<T, B1, B2>
 where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
-      B2: Basis<NumComponents = U1>,
+      B2: Basis<NumComponents = U1, Coord<T> = B1::Coord<T>>,
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
+    type Coord<_T> = B1::Coord<_T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.bases.0.num_basis_generic().add(self.bases.1.num_basis_generic())
@@ -44,14 +45,14 @@ where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
 }
 
 #[allow(clippy::toplevel_ref_arg)]
-impl <T, X, B1, B2> EvalBasis<T, X> for Prod<T, B1, B2>
+impl <T, B1, B2> EvalBasis<T> for Prod<T, B1, B2>
 where T: RealField,
-      X: Copy,
-      B1: EvalBasis<T, X, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: EvalBasis<T, X, NumComponents = U1>,
+      B1: EvalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
+      B2: EvalBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>, 
+      B1::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1> + EvalBasisAllocator<B2> + EvalBasisAllocator<Self>,
 {
-    fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
+    fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let b1 = self.bases.0.eval(x);
         let b2= self.bases.1.eval(x);
         stack![
@@ -61,12 +62,12 @@ where T: RealField,
     }
 }
 
-impl <T, X, B1, B2> LocalBasis<T, X> for Prod<T, B1, B2>
+impl <T, B1, B2> LocalBasis<T> for Prod<T, B1, B2>
 where T: RealField,
-      X: Copy,
-      B1: LocalBasis<T, X, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: LocalBasis<T, X, NumComponents = U1>,
+      B1: LocalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
+      B2: LocalBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
       B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
+      B1::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
 {
     type Elem = (B1::Elem, B2::Elem); // todo: possibly change to Prod<..,..>
@@ -84,16 +85,16 @@ where T: RealField,
     }
 }
 
-impl <T, X, B1, B2> FindElem<T, X> for Prod<T, B1, B2>
+impl <T, B1, B2> FindElem<T> for Prod<T, B1, B2>
 where T: RealField,
-      X: Copy,
-      B1: FindElem<T, X, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: FindElem<T, X, NumComponents = U1>,
+      B1: FindElem<T, NumComponents = U1> + NumBasisAdd<B2>,
+      B2: FindElem<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
       B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
+      Self::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
 
 {
-    fn find_elem(&self, x: X) -> Self::Elem {
+    fn find_elem(&self, x: Self::Coord<T>) -> Self::Elem {
         let (b1, b2) = &self.bases;
         (b1.find_elem(x), b2.find_elem(x))
     }

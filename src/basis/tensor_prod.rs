@@ -53,7 +53,7 @@ impl<T, B: Basis, const D: usize> MultiProd<T, B, D> {
     }
 }
 
-impl<T: RealField, B: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn>, const D: usize> MultiProd<T, B, D> {
+impl<T: RealField, B: EvalBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>, const D: usize> MultiProd<T, B, D> {
     /// Computes the evaluated tensor product basis using [`Matrix::kronecker`],
     /// given an iterator `b` of univariate basis functions for each parametric direction.
     fn compute_multi_prod(&self, b: impl Iterator<Item = RowDVector<T>>) -> RowDVector<T> {
@@ -62,7 +62,7 @@ impl<T: RealField, B: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn>, const
     }
 }
 
-impl<T: RealField, B: EvalGrad<T, T, 1, NumBasis = Dyn>, const D: usize> MultiProd<T, B, D> {
+impl<T: RealField, B: EvalGrad<T, 1, NumBasis = Dyn, Coord<T> = T>, const D: usize> MultiProd<T, B, D> {
     // todo: move this to separate trait or Hgrad trait
     /// Evaluates the partial derivatives of all basis functions with respect to the `i`-th direction
     /// at the parametric point `x` as the column-wise vector `(b[1],...,b[i]/dx[i]...,b[n])`.
@@ -86,30 +86,28 @@ impl<T: RealField, B: EvalGrad<T, T, 1, NumBasis = Dyn>, const D: usize> MultiPr
 impl<T: RealField, B: Basis<NumComponents = U1, NumBasis = Dyn>, const D: usize> Basis for MultiProd<T, B, D> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<_T> = [_T; D];
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.shape().len())
     }
 }
 
-impl<T, X, B, const D: usize> EvalBasis<T, X> for MultiProd<T, B, D>
+impl<T, B, const D: usize> EvalBasis<T> for MultiProd<T, B, D>
     where T: RealField,
-          X: Dimensioned<T, D>,
-          B: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn>
+          B: EvalBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>
 {
-    fn eval(&self, x: X) -> OMatrix<T, Const<1>, Dyn> {
+    fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Const<1>, Dyn> {
         let b = zip(&self.bases, x.into_arr()).map(|(b, xi)| b.eval(xi));
         self.compute_multi_prod(b)
     }
 }
 
-impl<T, X, B, const D: usize> EvalGrad<T, X, D> for MultiProd<T, B, D>
+impl<T, B, const D: usize> EvalGrad<T, D> for MultiProd<T, B, D>
     where T: RealField + Copy,
-          X: Dimensioned<T, D>,
-          B: EvalGrad<T, T, 1, NumBasis = Dyn>
+          B: EvalGrad<T, 1, NumBasis = Dyn, Coord<T> = T>
 {
-    fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Dyn> {
-        let x = x.into_arr();
+    fn eval_grad(&self, x: Self::Coord<T>) -> OMatrix<T, Const<D>, Dyn> {
         let partial_derivs = (0..D).map(|i| self.eval_partial_deriv(x, i)).collect_vec();
         Matrix::from_rows(&partial_derivs)
     }
@@ -117,11 +115,10 @@ impl<T, X, B, const D: usize> EvalGrad<T, X, D> for MultiProd<T, B, D>
 
 // todo: also implement DiffBasis and HgradBasis
 
-impl<T, X, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
+impl<T, B, const D: usize> LocalBasis<T> for MultiProd<T, B, D>
     where T: RealField + Copy,
-          X: Dimensioned<T, D>,
-          B: LocalBasis<T, T, NumComponents = U1, NumBasis = Dyn>,
-          B::ElemBasis: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
+          B: LocalBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>,
+          B::ElemBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
     type Elem = [B::Elem; D]; // todo: possibly change to MultiProd<B::Elem>
     type ElemBasis = MultiProd<T, B::ElemBasis, D>;
@@ -145,14 +142,13 @@ impl<T, X, B, const D: usize> LocalBasis<T, X> for MultiProd<T, B, D>
     }
 }
 
-impl<T, X, B, const D: usize> FindElem<T, X> for MultiProd<T, B, D>
+impl<T, B, const D: usize> FindElem<T> for MultiProd<T, B, D>
     where T: RealField + Copy,
-          X: Dimensioned<T, D>,
-          B: FindElem<T, T, NumComponents = U1, NumBasis = Dyn>,
-          B::ElemBasis: EvalBasis<T, T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
+          B: FindElem<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>,
+          B::ElemBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
-    fn find_elem(&self, x: X) -> Self::Elem {
-        zip(&self.bases, x.into_arr())
+    fn find_elem(&self, x: Self::Coord<T>) -> Self::Elem {
+        zip(&self.bases, x)
             .map( |(bi, xi)| bi.find_elem(xi))
             .collect_array().unwrap()
     }

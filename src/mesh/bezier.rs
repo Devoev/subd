@@ -31,12 +31,12 @@ pub struct BezierMesh<'a, T: RealField + Copy, const D: usize, const M: usize> {
     //  1. allow for different geo maps. Especially Nurbs maps
     //  2. don't require DeBoorMulti. For that, possibly encode D in BsplineBasis trait
     /// Spline parametrization mapping the reference mesh to the physical Bezier mesh.
-    pub geo_map: SplineGeo<'a, T, [T; D], D, M>
+    pub geo_map: SplineGeo<'a, T, D, M>
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T, D, M> {
     /// Constructs a new [`BezierMesh`] from the given `ref_mesh` and `geo_map`.
-    pub fn new(ref_mesh: KnotMesh<T, D>, geo_map: SplineGeo<'a, T, [T; D], D, M>) -> Self {
+    pub fn new(ref_mesh: KnotMesh<T, D>, geo_map: SplineGeo<'a, T, D, M>) -> Self {
         BezierMesh { ref_mesh, geo_map }
     }
 }
