@@ -6,6 +6,7 @@ use itertools::Itertools;
 use nalgebra::{Const, Dim, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
+use approx::AbsDiffEq;
 use crate::cells::bezier_elem::BezierElem;
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
 
@@ -89,6 +90,7 @@ where T: RealField + Sum + Product + Copy,
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Debug;
     use approx::assert_abs_diff_eq;
     use gauss_quad::GaussLegendre;
     use nalgebra::{matrix, point, Point2};
@@ -110,11 +112,12 @@ mod tests {
         // Test flat element [-1,1]^2
         let quad = PullbackQuad::new(ref_quad.clone());
         let cell = CartCell::new(point![-1.0, -1.0], point![1.0, 1.0]);
-        let nodes: Vec<Point2<f64>> = quad.nodes_elem(&cell).collect();
-        assert_abs_diff_eq!(nodes[0], point![0.57735, 0.57735], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[1], point![0.57735, -0.57735], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[2], point![-0.57735, 0.57735], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[3], point![-0.57735, -0.57735], epsilon = 1e-5);
+        let mut nodes = quad.nodes_elem(&cell);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, 0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.57735, -0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![-0.57735, 0.57735], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![-0.57735, -0.57735], epsilon = 1e-5);
+        assert_eq!(nodes.next(), None);
 
         // Test flat Bezier element
         let space_geo = BsplineSpace::new_open_uniform([2, 2], [1, 1]);
@@ -130,13 +133,14 @@ mod tests {
         let cell = CartCell::new(point![0.0, 0.0], point![1.0, 1.0]);
         let bezier_elem = BezierElem::new(cell, &map);
 
-        let nodes: Vec<Point2<f64>> = quad.nodes_elem(&bezier_elem).collect();
-        assert_abs_diff_eq!(nodes[0], point![0.788675, 0.788675], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[1], point![0.788675, 0.211325], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[2], point![0.211325, 0.788675], epsilon = 1e-5);
-        assert_abs_diff_eq!(nodes[3], point![0.211325, 0.211325], epsilon = 1e-5);
+        let mut nodes= quad.nodes_elem(&bezier_elem);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.788675, 0.788675], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.788675, 0.211325], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.211325, 0.788675], epsilon = 1e-5);
+        assert_abs_diff_eq!(nodes.next().unwrap(), point![0.211325, 0.211325], epsilon = 1e-5);
+        assert_eq!(nodes.next(), None);
 
         // Test curved Bezier element
-
+        // todo
     }
 }
