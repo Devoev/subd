@@ -39,7 +39,7 @@ impl<T: RealField, const M: usize> Quad<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for Quad<T, M> {
+impl <T: RealField + Copy, const M: usize> geo::Cell<T, 2, M> for Quad<T, M> {
     type RefCell = UnitCube<2>;
     type GeoMap = BiLerp<T, M>;
 

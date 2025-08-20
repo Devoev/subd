@@ -4,22 +4,14 @@ use crate::cells::unit_cube::UnitCube;
 use crate::diffgeo::chart::Chart;
 use nalgebra::{stack, Matrix, Point, RealField, SMatrix, SVector, Scalar};
 
-/// **L**inear int**erp**olation (Lerp) in [`M`] dimensional Euclidean space.
+/// **L**inear int**erp**olation (Lerp) between two points in [`M`] dimensions.
 ///
-/// # Transformation properties
-/// There exist 2 versions of a Lerp:
-/// - Univariate transformation of the [unit interval](UnitCube) `[0,1]` to a [`LineSegment`]
+/// Linearly transforms the [unit interval](UnitCube) `[0,1]` to a [`LineSegment`]
 ///   by the mapping
 /// ```text
 /// t ↦ (1 - t) a + t b = (b - a) t + a
 /// ```
 /// where `a` and `b` are the start and end coordinates of the rectangle respectively.
-/// - [`M`]-variate transformation of the [unit cube](UnitCube) `[0,1]^M` to a [`CartCell`]
-/// by the component-wise mapping
-/// ```text
-/// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i] .
-/// ```
-/// For `x[i] = t` the mapping is the same as the univariate case.
 pub struct Lerp<T: Scalar, const M: usize> {
     /// Start coordinates.
     pub a: Point<T, M>,
@@ -35,10 +27,52 @@ impl<T: Scalar, const M: usize> Lerp<T, M> {
     }
 }
 
+impl <T: RealField + Copy, const M: usize> Chart<T, 1, M> for Lerp<T, M> {
+    type Coord = T;
+
+    fn eval(&self, x: Self::Coord) -> Point<T, M> {
+        self.a.lerp(&self.b, x)
+    }
+
+    fn eval_diff(&self, _x: Self::Coord) -> SMatrix<T, M, 1> {
+        self.b - self.a
+    }
+}
+
+/// Volumetric Lerp in [`M`] dimensional Euclidean space.
+///
+/// Linearly transforms the [unit cube](UnitCube) `[0,1]^M` to a [`CartCell`]
+/// by the component-wise mapping
+/// ```text
+/// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i] .
+/// ```
+/// For `x[i] = t` the mapping is the same as the univariate [`Lerp`].
+pub struct MultiLerp<T: Scalar, const M: usize> {
+    /// Start coordinates.
+    pub a: Point<T, M>,
+
+    /// End coordinates.
+    pub b: Point<T, M>,
+}
+
+impl<T: Scalar, const M: usize> MultiLerp<T, M> {
+    /// Constructs a new [`MultiLerp`] from the given coordinate vectors `a` and `b`.
+    pub fn new(a: Point<T, M>, b: Point<T, M>) -> Self {
+        MultiLerp { a, b }
+    }
+}
+
 // todo: possibly move below transform methods to generalized Lerp or something else
-impl <T: RealField + Copy, const M: usize> Lerp<T, M> {
-    /// Linearly transforms an arbitrary hyper rectangle `ref_elem` to `[a, b]`.
-    pub fn transform(&self, ref_elem: CartCell<T, M>, x: Point<T, M>) -> Point<T, M> {
+impl <T: RealField + Copy, const M: usize> MultiLerp<T, M> {
+    /// Linearly transforms the unit-hypercube `[-1,1]^M` to `[a,b]`.
+    pub fn transform(&self, x: SVector<T, M>) -> Point<T, M> {
+        let ones = SVector::repeat(T::one());
+        let p = (ones - x).component_mul(&self.a.coords) + x.component_mul(&self.b.coords);
+        Point::from(p)
+    }
+
+    /// Linearly transforms an arbitrary cartesian cell `ref_elem` to `[a, b]`.
+    pub fn transform_cart_cell(&self, ref_elem: CartCell<T, M>, x: Point<T, M>) -> Point<T, M> {
         let s = ref_elem.a; // Start
         let e = ref_elem.b; // End
         let p = self.a + (self.b - self.a).component_mul(&(x - s)).component_div(&(e - s));
@@ -58,35 +92,15 @@ impl <T: RealField + Copy, const M: usize> Lerp<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Chart<T, [T; M], M, M> for Lerp<T, M> {
+impl <T: RealField + Copy, const M: usize> Chart<T, M, M> for MultiLerp<T, M> {
+    type Coord = [T; M];
+
     fn eval(&self, x: [T; M]) -> Point<T, M> {
-        self.eval(SVector::from(x))
+        self.transform(SVector::from(x))
     }
 
     fn eval_diff(&self, _x: [T; M]) -> SMatrix<T, M, M> {
         self.jacobian()
-    }
-}
-
-impl <T: RealField + Copy, const M: usize> Chart<T, SVector<T, M>, M, M> for Lerp<T, M> {
-    fn eval(&self, x: SVector<T, M>) -> Point<T, M> {
-        let ones = SVector::repeat(T::one());
-        let p = (ones - x).component_mul(&self.a.coords) + x.component_mul(&self.b.coords);
-        Point::from(p)
-    }
-
-    fn eval_diff(&self, _x: SVector<T, M>) -> SMatrix<T, M, M> {
-        self.jacobian()
-    }
-}
-
-impl <T: RealField, const M: usize> Chart<T, T, 1, M> for Lerp<T, M> {
-    fn eval(&self, x: T) -> Point<T, M> {
-        self.a.lerp(&self.b, x)
-    }
-
-    fn eval_diff(&self, _x: T) -> SMatrix<T, M, 1> {
-        &self.b - &self.a
     }
 }
 
@@ -98,14 +112,16 @@ pub struct BiLerp<T: Scalar, const M: usize> {
 }
 
 impl<T: Scalar, const M: usize> BiLerp<T, M> {
-    /// Constructs a new [`Lerp`] from the given array of `vertices`.
+    /// Constructs a new [`BiLerp`] from the given array of `vertices`.
     pub fn new(vertices: [Point<T, M>; 4]) -> Self {
         BiLerp { vertices }
     }
 }
 // todo: replace implementation using lowest order nodal basis interpolation
 
-impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, M> {
+impl <T: RealField + Copy, const M: usize> Chart<T, 2, M> for BiLerp<T, M> {
+    type Coord = (T, T);
+
     fn eval(&self, x: (T, T)) -> Point<T, M> {
         let [q11, q12, q22, q21] = self.vertices;
         let (u, v) = x;
@@ -123,7 +139,7 @@ impl <T: RealField + Copy, const M: usize> Chart<T, (T, T), 2, M> for BiLerp<T, 
         let l2 = Lerp::new(q21, q22); // let l2 = q21.lerp(q22, u);
         let l_du = Lerp::new(         // (q12 - q11).lerp(&(q22 - q21), v),
             Point::from(l1.eval_diff(u)),
-            Point::from(l2.eval_diff(u))
+            Point::from(l2.eval_diff(v)),
         );
         stack![
             l_du.eval(v).coords,
