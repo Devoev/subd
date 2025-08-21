@@ -35,7 +35,7 @@ impl <T, X, E, Q, const D: usize> PullbackQuad<T, X, E, Q, D> {
 impl <T, X, E, Q, const D: usize>  PullbackQuad<T, X, E, Q, D>
 where T: RealField + Sum + Product + Copy,
       X: Dimensioned<T, D>,
-      E: Cell<T, X, D, D>,
+      E: Cell<T, D, D>,
       Q: Quadrature<T, X, E::RefCell>
 {
     /// Returns an iterator over all nodes in the reference domain.
@@ -61,7 +61,8 @@ impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 impl <T, X, E, Q, const D: usize> Quadrature<T, Point<T, D>, E> for PullbackQuad<T, X, E, Q, D>
 where T: RealField + Sum + Product + Copy,
       X: Dimensioned<T, D>,
-      E: Cell<T, X, D, D>,
+      E: Cell<T, D, D>,
+      E::GeoMap: Chart<T, D, D, Coord = X>,
       Q: Quadrature<T, X, E::RefCell>,
       Const<D>: DimMinSelf
 {
