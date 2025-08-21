@@ -1,6 +1,7 @@
 use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::index::dimensioned::Dimensioned;
-use nalgebra::{DefaultAllocator, RealField, Scalar};
+use nalgebra::{Const, DefaultAllocator, RealField, Scalar};
+use crate::basis::traits::Basis;
 
 /// A [`ChartAllocator`] for the [`C::GeoMap`] of a cell.
 pub trait CellAllocator<T: Scalar, C: Cell<T>>: ChartAllocator<T, C::GeoMap>
@@ -29,6 +30,26 @@ pub trait Cell<T: Scalar>
     
     // todo: maybe merge Chart and Cell traits?
 }
+
+// todo: possibly rename and reorganize these traits
+
+/// Constrains `Self` to have a chart with coordinate [`B::Coord`].
+pub trait HasBasisCoord<T: Scalar, B: Basis>: Cell<T, GeoMap: Chart<T, Coord = B::Coord<T>>>
+    where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
+{}
+
+impl <T: Scalar, B: Basis, C: Cell<T, GeoMap: Chart<T, Coord = B::Coord<T>>>> HasBasisCoord<T, B> for C
+where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
+{}
+
+/// Constrains `Self` to have a chart with both parametric and geometry dimension [`D`].
+pub trait HasDim<T: Scalar, const D: usize>: Cell<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>
+where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
+{}
+
+impl <T: Scalar, const D: usize, C: Cell<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>> HasDim<T, D> for C
+where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
+{}
 
 // todo: maybe remove this trait
 /// A [`D`]-dimensional reference cell in the parametric domain.

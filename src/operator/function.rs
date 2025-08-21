@@ -4,15 +4,13 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::Cell;
-use crate::index::dimensioned::Dimensioned;
+use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::{Const, DVector, DefaultAllocator, DimMin, OMatrix, OVector, Point, RealField};
+use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
-use crate::diffgeo::chart::Chart;
 
 /// Assembles a discrete function (load vector).
 pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
@@ -22,14 +20,12 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
     f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T>,
-          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T>,
           Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf + ToTypenum
 {
     // Create empty matrix
     let mut fi = DVector::<T>::zeros(space.dim());
@@ -59,13 +55,11 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     f: &impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T>,
-          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
           B: EvalBasis<T>,
           Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf
 {
     // Evaluate all basis functions at every quadrature point
     // and store them into a buffer
