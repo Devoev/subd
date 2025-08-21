@@ -75,11 +75,34 @@ impl <const D: usize> GaussLegendreMulti<D> {
     }
 }
 
-// todo: are all 3 implementations really needed? Or is the HyperCube one sufficient?
-//  or just merge all into one generic
+// todo: when SymmetricUnitCube, UnitCube and CartCell are all MultiProd,
+//  the impls can be combined into the first generic one
 
-impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl <T, Elem, Quad, const D: usize> Quadrature<T, [Elem; D]> for MultiProd<Quad, D>
+where T: RealField + Sum + Product + Copy,
+      Quad: Quadrature<T, Elem, Node = T, Weight = T>,
+{
+    type Node = [T; D];
+    type Weight = T;
+
+    fn nodes_elem(&self, elem: &[Elem; D]) -> impl Iterator<Item=Self::Node> {
+        zip(&self.quads, elem)
+            .map(|(q, elem)| q.nodes_elem(elem).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.try_into().unwrap())
+    }
+
+    fn weights_elem(&self, elem: &[Elem; D]) -> impl Iterator<Item=Self::Weight> {
+        zip(&self.quads, elem)
+            .map(|(q, elem)| q.nodes_elem(elem).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.into_iter().product())
+    }
+}
+
+impl<T, Q, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, SymmetricUnitCube<1>, Node = T, Weight = T>
 {
     type Node = [T; D];
     type Weight = T;
@@ -100,8 +123,9 @@ impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<GaussL
     }
 }
 
-impl<T, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl<T, Q, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, UnitCube<1>, Node = T, Weight = T>
 {
     type Node = [T; D];
     type Weight = T;
@@ -121,8 +145,10 @@ impl<T, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<GaussLegendre, 
     }
 }
 
-impl <T, const D: usize> Quadrature<T, CartCell<T, D>> for MultiProd<GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl <T, Q, const D: usize> Quadrature<T, CartCell<T, D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, CartCell<T, 1>, Node = T, Weight = T>
+        + Quadrature<T, SymmetricUnitCube<1>, Node = T, Weight = T> // this guarantees that the 1D quadrature is defined on [-1,1] and thus the D-dim quadrature on [-1,1]^D
 {
     type Node = [T; D];
     type Weight = T;
