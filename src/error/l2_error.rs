@@ -10,6 +10,7 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, DimMin, DimName, Dyn, OVector, Point, RealField};
 use std::iter::{zip, Product, Sum};
 use crate::basis::eval::EvalBasisAllocator;
+use crate::diffgeo::chart::Chart;
 
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, M> {
@@ -28,10 +29,11 @@ impl<'a, M> L2Norm<'a, M> {
     pub fn norm_squared<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D>,
-          M::GeoElem: Cell<T, X, D, D>,
+          M: Mesh<'a, T, D, D>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -56,10 +58,11 @@ impl<'a, M> L2Norm<'a, M> {
     pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D>,
-          M::GeoElem: Cell<T, X, D, D>,
+          M: Mesh<'a, T, D, D>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+          Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -71,11 +74,12 @@ impl<'a, M> L2Norm<'a, M> {
     pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -102,11 +106,12 @@ impl<'a, M> L2Norm<'a, M> {
     pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {

@@ -10,6 +10,7 @@ use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
 use nalgebra::{Const, DefaultAllocator, DimMin, OVector, Point, RealField, SVector, U1};
 use std::iter::{Product, Sum};
+use crate::diffgeo::chart::Chart;
 
 /// H1-norm on a mesh.
 pub struct H1Norm<'a, M>(L2Norm<'a, M>);
@@ -26,11 +27,12 @@ impl<'a, M> H1Norm<'a, M> {
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
-        M: Mesh<'a, T, X, D, D>,
-        M::GeoElem: Cell<T, X, D, D>,
+        M: Mesh<'a, T, D, D>,
+        M::GeoElem: Cell<T, D, D>,
+        <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+        Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
         // Calculate ||u||^2 + ||grad u||^2
@@ -43,11 +45,12 @@ impl<'a, M> H1Norm<'a, M> {
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
-        M: Mesh<'a, T, X, D, D>,
-        M::GeoElem: Cell<T, X, D, D>,
+        M: Mesh<'a, T, D, D>,
+        M::GeoElem: Cell<T, D, D>,
+        <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
+        Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
        self.norm_squared(u, u_grad, quad).sqrt()
@@ -58,13 +61,14 @@ impl<'a, M> H1Norm<'a, M> {
     pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T, NumComponents=U1> + Clone,
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
@@ -83,13 +87,14 @@ impl<'a, M> H1Norm<'a, M> {
     pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, B::Coord<T>, D, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T, D, D>,
+          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T, NumComponents=U1> + Clone,
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, B::Coord<T>, D, D>>::RefCell>,
+          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
