@@ -9,6 +9,50 @@ use nalgebra::{RealField, Vector};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
 
+/// Quadrature rule on bivariate tensor-product domain.
+#[derive(Clone, Copy, Debug)]
+pub struct Prod<Q1, Q2> {
+    /// Pair fo quadrature rules
+    quads: (Q1, Q2),
+
+    // _phantom: PhantomData<T>
+}
+
+/// Bivariate Gauss-Legendre quadrature.
+pub type GaussLegendreBi= Prod<GaussLegendre, GaussLegendre>;
+
+impl<Q1, Q2> Prod<Q1, Q2> {
+    /// Constructs a new [`Prod`] from the given quadrature rules per parametric direction.
+    pub fn new(quads: (Q1, Q2)) -> Self {
+        Prod { quads }
+    }
+
+    /// Constructs a new [`GaussLegendreBi`] with the given degrees `px` and `py` per parametric direction.
+    pub fn with_degrees(px: usize, py: usize) -> GaussLegendreBi {
+        GaussLegendreBi::new((GaussLegendre::new(px).unwrap(), GaussLegendre::new(py).unwrap()))
+    }
+}
+
+
+impl <T: RealField + Sum, Q1, Q2> Quadrature<T, UnitCube<2>> for Prod<Q1, Q2>
+    where Q1: Quadrature<T, UnitCube<1>, Node = T, Weight = T>,
+          Q2: Quadrature<T, UnitCube<1>, Node = T, Weight = T>,
+{
+    type Node = (T, T);
+    type Weight = T;
+
+    fn nodes_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=Self::Node> {
+        self.quads.0.nodes_elem(&UnitCube)
+            .cartesian_product(self.quads.1.nodes_elem(&UnitCube).collect_vec())
+    }
+
+    fn weights_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=Self::Weight> {
+        self.quads.0.weights_elem(&UnitCube)
+            .cartesian_product(self.quads.0.weights_elem(&UnitCube).collect_vec())
+            .map(|(wi, wj): (T, T)| wi * wj)
+    }
+}
+
 /// Quadrature rule on tensor-product domains.
 #[derive(Clone, Copy, Debug)]
 pub struct MultiProd<T, Q, const D: usize> {
