@@ -37,8 +37,9 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, B::Coord<T>, D, D>,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+          E: Cell<T, D, D>,
+          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, D>,
           Q: Quadrature<T, B::Coord<T>, E::RefCell>,
@@ -74,7 +75,8 @@ pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
       B::Coord<T>: Dimensioned<T, D>,
-      E: Cell<T, B::Coord<T>, D, D>,
+      E: Cell<T, D, D>,
+      E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
       B: EvalGrad<T, D>,
       Q: Quadrature<T, B::Coord<T>, E::RefCell>,
       DefaultAllocator: EvalGradAllocator<B, D>,

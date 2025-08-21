@@ -10,6 +10,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
+use crate::diffgeo::chart::Chart;
 
 /// The weak discrete Hodge operator
 /// ```text
@@ -35,8 +36,9 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               B::Coord<T>: Dimensioned<T, D>,
-              E: Cell<T, B::Coord<T>, D, D>,
-              M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+              E: Cell<T, D, D>,
+              E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+              M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
               B: LocalBasis<T>,
               Q: Quadrature<T, B::Coord<T>, E::RefCell>,
               DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
@@ -71,7 +73,8 @@ pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, B::Coord<T>, D, D>,
+          E: Cell<T, D, D>,
+          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: EvalBasis<T>,
           Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B>,

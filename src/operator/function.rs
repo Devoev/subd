@@ -12,6 +12,7 @@ use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
 use nalgebra::{Const, DVector, DefaultAllocator, DimMin, OMatrix, OVector, Point, RealField};
 use std::iter::{zip, Product, Sum};
+use crate::diffgeo::chart::Chart;
 
 /// Assembles a discrete function (load vector).
 pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
@@ -22,8 +23,9 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, B::Coord<T>, D, D>,
-          M: Mesh<'a, T, B::Coord<T>, D, D, Elem = B::Elem, GeoElem = E>,
+          E: Cell<T, D, D>,
+          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T>,
           Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
@@ -58,7 +60,8 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, B::Coord<T>, D, D>,
+          E: Cell<T, D, D>,
+          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: EvalBasis<T>,
           Q: Quadrature<T, B::Coord<T>, E::RefCell>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
