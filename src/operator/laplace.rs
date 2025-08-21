@@ -34,7 +34,7 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, E, Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
           E: Cell<T, D, D>,
@@ -42,7 +42,7 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, D>,
-          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
     {
@@ -71,14 +71,14 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
 pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
+    quad: &PullbackQuad<T, E, Q, D>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
       B::Coord<T>: Dimensioned<T, D>,
       E: Cell<T, D, D>,
       E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
       B: EvalGrad<T, D>,
-      Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+      Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
       DefaultAllocator: EvalGradAllocator<B, D>,
       Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

@@ -18,7 +18,7 @@ use crate::diffgeo::chart::Chart;
 pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
     msh: &'a M,
     space: &Space<T, B, D>,
-    quad: PullbackQuad<T, B::Coord<T>, E, Q, D>,
+    quad: PullbackQuad<T, E, Q, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
@@ -27,7 +27,7 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
           E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T>,
-          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
@@ -55,7 +55,7 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
 pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
+    quad: &PullbackQuad<T, E, Q, D>,
     f: &impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
@@ -63,7 +63,7 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
           E: Cell<T, D, D>,
           E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: EvalBasis<T>,
-          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

@@ -23,7 +23,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm_squared<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
@@ -32,7 +32,7 @@ impl<'a, M> H1Norm<'a, M> {
         <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+        Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
         // Calculate ||u||^2 + ||grad u||^2
@@ -41,7 +41,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
@@ -50,7 +50,7 @@ impl<'a, M> H1Norm<'a, M> {
         <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+        Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
        self.norm_squared(u, u_grad, quad).sqrt()
@@ -58,7 +58,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`, using the quadrature rule `quad`.
-    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
@@ -68,7 +68,7 @@ impl<'a, M> H1Norm<'a, M> {
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
@@ -84,7 +84,7 @@ impl<'a, M> H1Norm<'a, M> {
     /// Calculates the H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`,
     /// using the quadrature rule `quad`.
-    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
@@ -94,7 +94,7 @@ impl<'a, M> H1Norm<'a, M> {
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?

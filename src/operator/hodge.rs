@@ -33,14 +33,14 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, B::Coord<T>, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, E, Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               B::Coord<T>: Dimensioned<T, D>,
               E: Cell<T, D, D>,
               E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
               M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
               B: LocalBasis<T>,
-              Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+              Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
               DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
               Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -69,14 +69,14 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
 pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, B::Coord<T>, E, Q, D>,
+    quad: &PullbackQuad<T, E, Q, D>,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
           E: Cell<T, D, D>,
           E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: EvalBasis<T>,
-          Q: Quadrature<T, B::Coord<T>, E::RefCell>,
+          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

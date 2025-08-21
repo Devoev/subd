@@ -26,14 +26,14 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the squared L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm_squared<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
           M::GeoElem: Cell<T, D, D>,
           <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -55,14 +55,14 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
           M::GeoElem: Cell<T, D, D>,
           <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -71,7 +71,7 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the squared L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
@@ -79,7 +79,7 @@ impl<'a, M> L2Norm<'a, M> {
           <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -103,7 +103,7 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, B::Coord<T>, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
@@ -111,7 +111,7 @@ impl<'a, M> L2Norm<'a, M> {
           <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, B::Coord<T>, <M::GeoElem as Cell<T, D, D>>::RefCell>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
