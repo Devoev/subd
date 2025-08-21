@@ -1,18 +1,18 @@
 use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::index::dimensioned::Dimensioned;
-use nalgebra::{DefaultAllocator, RealField};
+use nalgebra::{DefaultAllocator, RealField, Scalar};
 
 /// A [`ChartAllocator`] for the [`C::GeoMap`] of a cell.
-pub trait CellAllocator<T: RealField, C: Cell<T>>: ChartAllocator<T, C::GeoMap> 
+pub trait CellAllocator<T: Scalar, C: Cell<T>>: ChartAllocator<T, C::GeoMap>
     where DefaultAllocator: ChartAllocator<T, C::GeoMap>
 {}
 
-impl<T: RealField, C: Cell<T>> CellAllocator<T, C> for DefaultAllocator
+impl<T: Scalar, C: Cell<T>> CellAllocator<T, C> for DefaultAllocator
     where DefaultAllocator: ChartAllocator<T, C::GeoMap>
 {}
 
 /// A [`D`]-dimensional cell with geometric information embedded in [`M`]-dimensional space.
-pub trait Cell<T: RealField> 
+pub trait Cell<T: Scalar>
     where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {
     /// Reference cell in the parametric domain for the mapping.
@@ -32,7 +32,7 @@ pub trait Cell<T: RealField>
 
 // todo: maybe remove this trait
 /// A [`D`]-dimensional reference cell in the parametric domain.
-pub trait RefCell<T: RealField, X: Dimensioned<T, D>, const D: usize> {
+pub trait RefCell<T: Scalar, X: Dimensioned<T, D>, const D: usize> {
     /// Returns an iterator of `steps` discrete coordinate points in the parametric domain.
     fn coords(steps: usize) -> impl Iterator<Item = X>;
 }
