@@ -92,7 +92,7 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
+impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T, 2, M> for CatmarkPatch<T, M> {
     type RefCell = SubdUnitSquare;
     type GeoMap = CatmarkMap<T, M>;
 
