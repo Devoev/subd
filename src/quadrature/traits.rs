@@ -1,5 +1,8 @@
 use std::iter::{zip, Sum};
 use std::ops::Mul;
+use nalgebra::{DefaultAllocator, Scalar};
+use crate::cells::geo::{Cell, CellCoord};
+use crate::diffgeo::chart::{ChartAllocator};
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -113,3 +116,17 @@ pub trait Quadrature<T: Sum, Elem> {
         self.integrate_elem(elem, self.eval_fn_elem(elem, f))
     }
 }
+
+// todo: can't this be merged with Quadrature?
+//  if the methods of Cell go to Chart, merging won't work,
+//  because Cell has no information about the Coord anymore
+
+/// Constrains `Self` to be a quadrature on [`C::ParametricCell`]
+/// with the coordinates [`C::GeoMap::Coord`] of the chart.
+pub trait QuadratureOnParametricCell<T: Scalar + Sum, C: Cell<T>>: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>
+where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}
+
+impl <T: Scalar + Sum, C: Cell<T>, Q: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>> QuadratureOnParametricCell<T, C> for Q
+where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}

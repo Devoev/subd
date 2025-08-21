@@ -31,7 +31,10 @@ pub trait Cell<T: Scalar>
     // todo: maybe merge Chart and Cell traits?
 }
 
-// todo: possibly rename and reorganize these traits
+// todo: possibly rename and reorganize these traits and types
+
+/// Coordinate of the [`Cell::GeoMap`] of `C`.
+pub type CellCoord<T, C> = <<C as Cell<T>>::GeoMap as Chart<T>>::Coord;
 
 /// Constrains `Self` to have a chart with coordinate [`B::Coord`].
 pub trait HasBasisCoord<T: Scalar, B: Basis>: Cell<T, GeoMap: Chart<T, Coord = B::Coord<T>>>
