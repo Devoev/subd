@@ -74,10 +74,12 @@ fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item
 /// to evaluate the function on every quadrature node.
 /// 
 /// # Type parameters
+/// A quadrature rule is parametrized by the types
 /// - [`T`]: Scalar type.
 /// - [`Elem`]: Type of integration domain.
-/// - [`Node`]: Type of quadrature nodes.
-/// - [`Weight`]: Type of quadrature weight. By default, equal to `T`.
+///
+/// That way a quadrature rule can be implemented once to work for different scalars
+/// and on different elements.
 pub trait Quadrature<T: Sum, Elem> {
     /// Quadrature node.
     type Node;
