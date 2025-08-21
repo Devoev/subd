@@ -36,11 +36,11 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               B::Coord<T>: Dimensioned<T, D>,
-              E: Cell<T, D, D>,
-              E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+              E: Cell<T>,
+              E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
               M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
               B: LocalBasis<T>,
-              Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+              Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
               DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
               Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -73,10 +73,10 @@ pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, D, D>,
-          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          E: Cell<T>,
+          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: EvalBasis<T>,
-          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

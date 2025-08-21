@@ -28,11 +28,11 @@ impl<'a, M> H1Norm<'a, M> {
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
         M: Mesh<'a, T, D, D>,
-        M::GeoElem: Cell<T, D, D>,
-        <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
+        M::GeoElem: Cell<T>,
+        <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
+        Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
         // Calculate ||u||^2 + ||grad u||^2
@@ -46,11 +46,11 @@ impl<'a, M> H1Norm<'a, M> {
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
         M: Mesh<'a, T, D, D>,
-        M::GeoElem: Cell<T, D, D>,
-        <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
+        M::GeoElem: Cell<T>,
+        <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
         U: Fn(Point<T, D>) -> OVector<T, U1>,
         UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
+        Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
         Const<D>: DimMin<Const<D>, Output=Const<D>>
     {
        self.norm_squared(u, u_grad, quad).sqrt()
@@ -62,13 +62,13 @@ impl<'a, M> H1Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: LocalBasis<T, NumComponents=U1> + Clone,
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
@@ -88,13 +88,13 @@ impl<'a, M> H1Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: LocalBasis<T, NumComponents=U1> + Clone,
           B::ElemBasis: EvalGrad<T::RealField, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?

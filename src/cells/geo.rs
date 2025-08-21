@@ -1,9 +1,20 @@
-use crate::diffgeo::chart::Chart;
+use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::index::dimensioned::Dimensioned;
-use nalgebra::{Dim, DimName, RealField};
+use nalgebra::{DefaultAllocator, RealField};
+
+/// A [`ChartAllocator`] for the [`C::GeoMap`] of a cell.
+pub trait CellAllocator<T: RealField, C: Cell<T>>: ChartAllocator<T, C::GeoMap> 
+    where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}
+
+impl<T: RealField, C: Cell<T>> CellAllocator<T, C> for DefaultAllocator
+    where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}
 
 /// A [`D`]-dimensional cell with geometric information embedded in [`M`]-dimensional space.
-pub trait Cell<T: RealField> {
+pub trait Cell<T: RealField> 
+    where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
+{
     /// Reference cell in the parametric domain for the mapping.
     type ParametricCell;
 

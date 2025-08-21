@@ -37,12 +37,12 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, D, D>,
-          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          E: Cell<T>,
+          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, D>,
-          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>,
     {
@@ -75,10 +75,10 @@ pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
       B::Coord<T>: Dimensioned<T, D>,
-      E: Cell<T, D, D>,
-      E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+      E: Cell<T>,
+      E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
       B: EvalGrad<T, D>,
-      Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+      Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
       DefaultAllocator: EvalGradAllocator<B, D>,
       Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

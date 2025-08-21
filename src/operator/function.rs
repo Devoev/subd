@@ -23,11 +23,11 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, D, D>,
-          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          E: Cell<T>,
+          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T>,
-          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {
@@ -60,10 +60,10 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T, D, D>,
-          E::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          E: Cell<T>,
+          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: EvalBasis<T>,
-          Q: Quadrature<T, E::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
 {

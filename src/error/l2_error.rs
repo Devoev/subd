@@ -29,10 +29,10 @@ impl<'a, M> L2Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -58,10 +58,10 @@ impl<'a, M> L2Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = X>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = X>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
           DefaultAllocator: Allocator<N>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -74,11 +74,11 @@ impl<'a, M> L2Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {
@@ -106,11 +106,11 @@ impl<'a, M> L2Norm<'a, M> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, D, D>,
-          <M::GeoElem as Cell<T, D, D>>::GeoMap: Chart<T, D, D, Coord = B::Coord<T>>,
+          M::GeoElem: Cell<T>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T, D, D>>::RefCell, Node = B::Coord<T>>,
+          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
           Const<D>: DimMin<Const<D>, Output = Const<D>>
     {

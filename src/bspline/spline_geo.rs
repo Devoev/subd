@@ -54,10 +54,12 @@ impl <'a, T: RealField, const D: usize, const M: usize> SplineGeo<'a, T, D, M> {
     }
 }
 
-impl <T, const D: usize, const M: usize> Chart<T, D, M> for SplineGeo<'_, T, D, M>
+impl <T, const D: usize, const M: usize> Chart<T> for SplineGeo<'_, T, D, M>
     where T: RealField + Copy
 {
     type Coord = [T; D];
+    type ParametricDim = Const<D>;
+    type GeometryDim = Const<M>;
 
     fn eval(&self, x: [T; D]) -> Point<T, M> {
         let (b, idx) = self.space.eval_local_with_idx(x);
@@ -74,10 +76,12 @@ impl <T, const D: usize, const M: usize> Chart<T, D, M> for SplineGeo<'_, T, D, 
     }
 }
 
-impl <'a, T, const D: usize, const M: usize> Chart<T, D, M> for &'a SplineGeo<'a, T, D, M>
+impl <'a, T, const D: usize, const M: usize> Chart<T> for &'a SplineGeo<'a, T, D, M>
     where T: RealField + Copy
 {
     type Coord = [T; D];
+    type ParametricDim = Const<D>;
+    type GeometryDim = Const<M>;
 
     fn eval(&self, x: [T; D]) -> Point<T, M> {
         Point::from((*self).eval(x))

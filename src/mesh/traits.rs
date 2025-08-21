@@ -1,7 +1,8 @@
-use crate::cells::node::NodeIdx;
 use crate::cells::geo;
-use crate::index::dimensioned::Dimensioned;
-use nalgebra::RealField;
+use crate::cells::geo::{Cell, CellAllocator};
+use crate::cells::node::NodeIdx;
+use crate::diffgeo::chart::ChartAllocator;
+use nalgebra::{DefaultAllocator, RealField};
 
 /// Topology of a mesh consisting of cells.
 pub trait MeshTopology<'a, const K: usize> {
@@ -28,7 +29,9 @@ pub trait MeshTopology<'a, const K: usize> {
 }
 
 /// Mesh consisting of connected cells, also called *elements*.
-pub trait Mesh<'a, T: RealField, const K: usize, const M: usize>: MeshTopology<'a, K> {
+pub trait Mesh<'a, T: RealField, const K: usize, const M: usize>: MeshTopology<'a, K> 
+    where DefaultAllocator: CellAllocator<T, Self::GeoElem>
+{
     /// Geometric element in the mesh.
     type GeoElem: geo::Cell<T>;
 
