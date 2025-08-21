@@ -45,7 +45,7 @@ mod tests {
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
     use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
     use crate::quadrature::traits::Quadrature;
     use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
@@ -486,7 +486,7 @@ mod tests {
         let basis = CatmarkBasis(&msh);
         let space = Space::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
+        let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Load function
@@ -559,7 +559,7 @@ mod tests {
         let basis = CatmarkEdgeBasis(&msh);
         let space = Space::<f64, _, 2>::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
+        let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Assembly

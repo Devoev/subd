@@ -29,11 +29,11 @@ impl <T: RealField, Q, const M: usize> SubdUnitSquareQuad<T, Q, M> {
 
 impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     where T: RealField + Sum + Copy,
-          Q: Quadrature<T, UnitCube<2>, Node = [T; 2], Weight = T> // todo: replace [T; 2] with (T,T), once a BiProd quadrature is implemented
+          Q: Quadrature<T, UnitCube<2>, Node = (T, T), Weight = T>
 {
     /// Returns an iterator over all nodes in the regular reference domain (unit square).
     pub fn nodes_ref_regular(&self) -> impl Iterator<Item = (T, T)> + '_ {
-        self.quad_reg.nodes_elem(&UnitCube).map(|[u, v]| (u, v))
+        self.quad_reg.nodes_elem(&UnitCube)
     }
 
     /// Returns an iterator over all weights in the regular reference domain (unit square).
@@ -97,7 +97,7 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
 
 impl <T, Q> Quadrature<T, SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
 where T: RealField + Sum + Copy,
-      Q: Quadrature<T, UnitCube<2>, Node = [T; 2], Weight = T>
+      Q: Quadrature<T, UnitCube<2>, Node = (T, T), Weight = T>
 {
     type Node = (T, T);
     type Weight = T;
@@ -120,14 +120,14 @@ where T: RealField + Sum + Copy,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
     use approx::{abs_diff_eq, assert_abs_diff_eq};
     use gauss_quad::GaussLegendre;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.
-    fn setup() -> GaussLegendreMulti<f64, 2> {
-        GaussLegendreMulti::new([GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()])
+    fn setup() -> GaussLegendreBi {
+        GaussLegendreBi::new((GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()))
     }
 
     #[test]
