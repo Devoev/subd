@@ -33,7 +33,7 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               B::Coord<T>: Dimensioned<T, D>,
               E: Cell<T, D, D>,
@@ -69,7 +69,7 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
 pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, E, Q, D>,
+    quad: &PullbackQuad<Q, D>,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
@@ -82,7 +82,7 @@ pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
 {
     // Evaluate all basis functions and store in 'buf'
     let ref_elem = elem.ref_cell();
-    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref(&ref_elem)
+    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product uv

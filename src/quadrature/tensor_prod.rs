@@ -14,8 +14,6 @@ use std::marker::PhantomData;
 pub struct Prod<Q1, Q2> {
     /// Pair fo quadrature rules
     quads: (Q1, Q2),
-
-    // _phantom: PhantomData<T>
 }
 
 /// Bivariate Gauss-Legendre quadrature.
@@ -55,26 +53,22 @@ impl <T: RealField + Sum, Q1, Q2> Quadrature<T, UnitCube<2>> for Prod<Q1, Q2>
 
 /// Quadrature rule on tensor-product domains.
 #[derive(Clone, Copy, Debug)]
-pub struct MultiProd<T, Q, const D: usize> {
+pub struct MultiProd<Q, const D: usize> {
     /// Quadrature rules for each parametric direction.
     quads: [Q; D],
-
-    _phantom: PhantomData<T>
 }
 
 /// [`D`]-variate Gauss-Legendre quadrature.
-pub type GaussLegendreMulti<T, const D: usize> = MultiProd<T, GaussLegendre, D>;
+pub type GaussLegendreMulti<const D: usize> = MultiProd<GaussLegendre, D>;
 
-impl<T, Q, const D: usize> MultiProd<T, Q, D>
-    where T: RealField + Sum,
-{
+impl<Q, const D: usize> MultiProd<Q, D> {
     /// Constructs a new [`MultiProd`] from the given `D` quadrature rules per parametric direction.
     pub fn new(quads: [Q; D]) -> Self {
-        MultiProd { quads, _phantom: PhantomData }
+        MultiProd { quads }
     }
 }
 
-impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
+impl <const D: usize> GaussLegendreMulti<D> {
     /// Constructs a new [`GaussLegendreMulti`] with the given `degrees` per parametric direction.
     pub fn with_degrees(degrees: [usize; D]) -> Self {
         GaussLegendreMulti::new(degrees.map(|degree| GaussLegendre::new(degree).unwrap()))
@@ -84,7 +78,7 @@ impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
 // todo: are all 3 implementations really needed? Or is the HyperCube one sufficient?
 //  or just merge all into one generic
 
-impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<T, GaussLegendre, D>
+impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
     type Node = [T; D];
@@ -106,7 +100,7 @@ impl<T, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<T, Gau
     }
 }
 
-impl<T, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<T, GaussLegendre, D>
+impl<T, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
     type Node = [T; D];
@@ -127,7 +121,7 @@ impl<T, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<T, GaussLegendr
     }
 }
 
-impl <T, const D: usize> Quadrature<T, CartCell<T, D>> for MultiProd<T, GaussLegendre, D>
+impl <T, const D: usize> Quadrature<T, CartCell<T, D>> for MultiProd<GaussLegendre, D>
     where T: RealField + Sum + Product + Copy,
 {
     type Node = [T; D];
@@ -156,10 +150,9 @@ mod tests {
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2` in `x`-direction 
     /// and degree `4` in `y`-direction.
-    fn setup() -> GaussLegendreMulti<f64, 2> {
+    fn setup() -> GaussLegendreMulti<2> {
         GaussLegendreMulti {
-            quads: [GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap()],
-            _phantom: Default::default(),
+            quads: [GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap()]
         }
     }
 
@@ -218,7 +211,7 @@ mod tests {
         assert_abs_diff_eq!(weights[7], 0.347855, epsilon = 1e-5);
 
         // Test unit square [0,1]^2
-        let weights = q.weights_elem(&UnitCube).collect_vec();
+        let weights: Vec<f64> = q.weights_elem(&UnitCube).collect();
         assert_abs_diff_eq!(weights[0], 0.08696375, epsilon = 1e-5);
         assert_abs_diff_eq!(weights[1], 0.16303625, epsilon = 1e-5);
         assert_abs_diff_eq!(weights[2], 0.16303625, epsilon = 1e-5);

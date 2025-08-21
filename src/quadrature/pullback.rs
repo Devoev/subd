@@ -1,50 +1,48 @@
 use crate::cells::geo::Cell;
 use crate::diffgeo::chart::Chart;
-use crate::index::dimensioned::Dimensioned;
+use crate::quadrature::tensor_prod::GaussLegendreMulti;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
 use nalgebra::{Const, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
-use std::marker::PhantomData;
-use std::process::Output;
-use crate::cells::bezier_elem::BezierElem;
-use crate::quadrature::tensor_prod::GaussLegendreMulti;
 
 // todo: possibly rename and add docs
 
 /// Quadrature rule on an element.
 /// Integration is performed by pulling back the function to the reference domain.
 #[derive(Clone, Debug)]
-pub struct PullbackQuad<T, E, Q, const D: usize> {
+pub struct PullbackQuad<Q, const D: usize> {
     /// Quadrature rule on the reference domain.
     ref_quad: Q,
-
-    _phantom: PhantomData<(T, E)>,
 }
 
-/// Quadrature rule on [Bezier elements](BezierElem).
-pub type BezierQuad<'a, T, const D: usize> = PullbackQuad<T, BezierElem<'a, T, D, D>, GaussLegendreMulti<T, D>, D>;
+/// Pullback version of [`GaussLegendreMulti`].
+pub type GaussLegendrePullback<const D: usize> = PullbackQuad<GaussLegendreMulti<D>, D>;
 
-impl <T, E, Q, const D: usize> PullbackQuad<T,  E, Q, D> {
+impl <Q, const D: usize> PullbackQuad<Q, D> {
     /// Constructs a new [`PullbackQuad`] from the given
     /// quadrature rule `ref_quad` on the reference domain.
     pub fn new(ref_quad: Q) -> Self {
-        PullbackQuad { ref_quad, _phantom: PhantomData }
+        PullbackQuad { ref_quad }
     }
 }
 
-impl <T, E, Q, const D: usize>  PullbackQuad<T, E, Q, D>
-where T: RealField + Sum + Product + Copy,
-      E: Cell<T, D, D>,
-      Q: Quadrature<T, E::RefCell>
-{
+impl <Q, const D: usize>  PullbackQuad<Q, D> {
     /// Returns an iterator over all nodes in the reference domain.
-    pub fn nodes_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Node> + 'a {
+    pub fn nodes_ref<'a, T, E>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Node> + 'a
+    where T: RealField + Sum + Product + Copy,
+          E: Cell<T, D, D>,
+          Q: Quadrature<T, E::RefCell>
+    {
         self.ref_quad.nodes_elem(ref_elem)
     }
 
     /// Returns an iterator over all weights in the reference domain.
-    pub fn weights_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Weight> + 'a {
+    pub fn weights_ref<'a, T, E>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Weight> + 'a
+    where T: RealField + Sum + Product + Copy,
+          E: Cell<T, D, D>,
+          Q: Quadrature<T, E::RefCell>
+    {
         self.ref_quad.weights_elem(ref_elem)
     }
 }
@@ -58,7 +56,7 @@ pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
 impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
-impl <T, E, Q, const D: usize> Quadrature<T, E> for PullbackQuad<T, E, Q, D>
+impl <T, E, Q, const D: usize> Quadrature<T, E> for PullbackQuad<Q, D>
 where T: RealField + Sum + Product + Copy,
       E: Cell<T, D, D>,
       E::GeoMap: Chart<T, D, D>,
@@ -70,7 +68,7 @@ where T: RealField + Sum + Product + Copy,
 
     fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Point<T, D>> {
         let res = self
-            .nodes_ref(&elem.ref_cell())
+            .nodes_ref::<T, E>(&elem.ref_cell())
             .map(|xi| elem.geo_map().eval(xi))
             .collect_vec(); // todo: remove collect
         res.into_iter()
@@ -79,7 +77,7 @@ where T: RealField + Sum + Product + Copy,
     fn weights_elem(&self, elem: &E) -> impl Iterator<Item=T> {
         let ref_elem = elem.ref_cell();
         let geo_map = elem.geo_map();
-        let res = zip(self.weights_ref(&ref_elem), self.nodes_ref(&ref_elem))
+        let res = zip(self.weights_ref::<T, E>(&ref_elem), self.nodes_ref::<T, E>(&ref_elem))
             .map(|(wi, xi)| {
                 let d_phi = geo_map.eval_diff(xi);
                 wi * d_phi.determinant().abs()
@@ -91,17 +89,18 @@ where T: RealField + Sum + Product + Copy,
 
 #[cfg(test)]
 mod tests {
-    use approx::assert_abs_diff_eq;
-    use gauss_quad::GaussLegendre;
-    use nalgebra::{matrix, point};
+    use super::*;
     use crate::bspline::space::BsplineSpace;
     use crate::bspline::spline_geo::SplineGeo;
     use crate::cells::cartesian::CartCell;
-    use super::*;
+    use approx::assert_abs_diff_eq;
+    use gauss_quad::GaussLegendre;
+    use nalgebra::{matrix, point};
+    use crate::cells::bezier_elem::BezierElem;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.
-    fn setup() -> GaussLegendreMulti<f64, 2> {
+    fn setup() -> GaussLegendreMulti<2> {
         GaussLegendreMulti::new([GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()])
     }
 

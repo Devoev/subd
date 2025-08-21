@@ -34,7 +34,7 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D>,
           E: Cell<T, D, D>,
@@ -71,7 +71,7 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
 pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, E, Q, D>,
+    quad: &PullbackQuad<Q, D>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
       B::Coord<T>: Dimensioned<T, D>,
@@ -86,9 +86,9 @@ where T: RealField + Copy + Product<T> + Sum<T>,
     // and store them into buffers
     let ref_elem = elem.ref_cell();
     let geo_map = elem.geo_map();
-    let buf_grads: Vec<OMatrix<T, Const<D>, B::NumBasis>> = quad.nodes_ref(&ref_elem)
+    let buf_grads: Vec<OMatrix<T, Const<D>, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval_grad(p)).collect();
-    let buf_g_inv: Vec<SMatrix<T, D, D>> = quad.nodes_ref(&ref_elem)
+    let buf_g_inv: Vec<SMatrix<T, D, D>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| {
             let j = geo_map.eval_diff(p);
             (j.transpose() * j).try_inverse().unwrap()

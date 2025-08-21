@@ -23,7 +23,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
+    pub fn norm_squared<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
@@ -41,7 +41,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
+    pub fn norm<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
     where
         T: RealField + Copy + Product<T> + Sum<T>,
         X: Dimensioned<T, D> + Copy,
@@ -58,7 +58,7 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`, using the quadrature rule `quad`.
-    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
@@ -84,7 +84,7 @@ impl<'a, M> H1Norm<'a, M> {
     /// Calculates the H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`,
     /// using the quadrature rule `quad`.
-    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,

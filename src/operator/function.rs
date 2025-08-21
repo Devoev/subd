@@ -18,7 +18,7 @@ use crate::diffgeo::chart::Chart;
 pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
     msh: &'a M,
     space: &Space<T, B, D>,
-    quad: PullbackQuad<T, E, Q, D>,
+    quad: PullbackQuad<Q, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
@@ -55,7 +55,7 @@ pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
 pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     elem: &E,
     sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<T, E, Q, D>,
+    quad: &PullbackQuad<Q, D>,
     f: &impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
@@ -71,7 +71,7 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     // and store them into a buffer
     let ref_elem = elem.ref_cell();
     let quad_nodes = quad.nodes_elem(elem).collect_vec();
-    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref(&ref_elem)
+    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product f * v

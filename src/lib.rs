@@ -44,7 +44,7 @@ mod tests {
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
-    use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
+    use crate::quadrature::pullback::{GaussLegendrePullback, PullbackQuad};
     use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
     use crate::quadrature::traits::Quadrature;
     use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
@@ -426,7 +426,7 @@ mod tests {
 
         // Build quadrature
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
-        let quad = BezierQuad::new(ref_quad);
+        let quad = GaussLegendrePullback::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
         let mat = hodge.assemble(quad);
 
