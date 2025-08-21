@@ -1,6 +1,6 @@
 use crate::cells::chain::Chain;
 use crate::cells::geo;
-use crate::cells::lerp::MultiLerp;
+use crate::cells::lerp::{Lerp, MultiLerp};
 use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
@@ -30,14 +30,14 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
 
 impl <T: RealField + Copy, const M: usize> geo::Cell<T, 1, M> for LineSegment<T, M> {
     type RefCell = UnitCube<1>;
-    type GeoMap = MultiLerp<T, M>;
+    type GeoMap = Lerp<T, M>;
 
     fn ref_cell(&self) -> Self::RefCell {
         UnitCube
     }
 
     fn geo_map(&self) -> Self::GeoMap {
-        MultiLerp::new(self.vertices[0], self.vertices[1])
+        Lerp::new(self.vertices[0], self.vertices[1])
     }
 }
 
