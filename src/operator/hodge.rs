@@ -1,16 +1,14 @@
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::Cell;
-use crate::index::dimensioned::Dimensioned;
+use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField};
+use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
-use crate::diffgeo::chart::Chart;
 
 /// The weak discrete Hodge operator
 /// ```text
@@ -35,14 +33,12 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
     /// using the given quadrature rule `quad`.
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
-              B::Coord<T>: Dimensioned<T, D>,
-              E: Cell<T>,
-              E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+              E: HasBasisCoord<T, B> + HasDim<T, D>,
               M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
               B: LocalBasis<T>,
-              Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
+              Q: QuadratureOnParametricCell<T, E>,
               DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
-              Const<D>: DimMin<Const<D>, Output = Const<D>>
+              Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix
         let mut mij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
@@ -72,13 +68,11 @@ pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
     quad: &PullbackQuad<Q, D>,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T>,
-          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
           B: EvalBasis<T>,
-          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
+          Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalBasisAllocator<B>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf
 {
     // Evaluate all basis functions and store in 'buf'
     let ref_elem = elem.ref_cell();

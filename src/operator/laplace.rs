@@ -1,14 +1,14 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::Cell;
+use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMatrix, U1};
+use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMatrix, ToTypenum, U1};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 
@@ -36,15 +36,13 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     /// using the given quadrature rule `quad`.
     pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D>,
-          E: Cell<T>,
-          E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
           B: LocalBasis<T, NumComponents = U1>,
           B::ElemBasis: EvalGrad<T, D>,
-          Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
+          Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>,
+          Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix
         let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
@@ -74,13 +72,11 @@ pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
     quad: &PullbackQuad<Q, D>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
-      B::Coord<T>: Dimensioned<T, D>,
-      E: Cell<T>,
-      E::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+      E: HasBasisCoord<T, B> + HasDim<T, D>,
       B: EvalGrad<T, D>,
-      Q: Quadrature<T, E::ParametricCell, Node = B::Coord<T>>,
+      Q: QuadratureOnParametricCell<T, E>,
       DefaultAllocator: EvalGradAllocator<B, D>,
-      Const<D>: DimMin<Const<D>, Output = Const<D>>
+      Const<D>: DimMinSelf
 {
     // Evaluate all basis functions and inverse gram matrices at every quadrature point
     // and store them into buffers
