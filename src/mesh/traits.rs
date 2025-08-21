@@ -30,7 +30,7 @@ pub trait MeshTopology<'a, const K: usize> {
 /// Mesh consisting of connected cells, also called *elements*.
 pub trait Mesh<'a, T: RealField, const K: usize, const M: usize>: MeshTopology<'a, K> {
     /// Geometric element in the mesh.
-    type GeoElem: geo::Cell<T, K, M>;
+    type GeoElem: geo::Cell<T>;
 
     /// Returns the geometric element corresponding to the given topological `elem`.
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem;

@@ -5,7 +5,7 @@ use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{clamp, DimName, DimNameSub, Point, RealField, U0, U1};
+use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U0, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
 
@@ -28,11 +28,11 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T, 1, M> for LineSegment<T, M> {
-    type RefCell = UnitCube<1>;
+impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
+    type ParametricCell = UnitCube<1>;
     type GeoMap = Lerp<T, M>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         UnitCube
     }
 

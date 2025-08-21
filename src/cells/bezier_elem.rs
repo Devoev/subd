@@ -26,11 +26,11 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T, D, M> for BezierElem<'a, T, D, M> {
-    type RefCell = CartCell<T, D>;
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T> for BezierElem<'a, T, D, M> {
+    type ParametricCell = CartCell<T, D>;
     type GeoMap = &'a SplineGeo<'a, T, D, M>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         self.ref_elem
     }
 

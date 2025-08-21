@@ -2,7 +2,7 @@ use crate::cells::cartesian::CartCell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::unit_cube::UnitCube;
 use crate::diffgeo::chart::Chart;
-use nalgebra::{stack, Matrix, Point, RealField, SMatrix, SVector, Scalar};
+use nalgebra::{stack, Const, Matrix, Point, RealField, SMatrix, SVector, Scalar, U1, U2};
 
 /// **L**inear int**erp**olation (Lerp) between two points in [`M`] dimensions.
 ///
@@ -27,8 +27,10 @@ impl<T: Scalar, const M: usize> Lerp<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Chart<T, 1, M> for Lerp<T, M> {
+impl <T: RealField + Copy, const M: usize> Chart<T> for Lerp<T, M> {
     type Coord = T;
+    type ParametricDim = U1;
+    type GeometryDim = Const<M>;
 
     fn eval(&self, x: Self::Coord) -> Point<T, M> {
         self.a.lerp(&self.b, x)
@@ -92,8 +94,10 @@ impl <T: RealField + Copy, const M: usize> MultiLerp<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Chart<T, M, M> for MultiLerp<T, M> {
+impl <T: RealField + Copy, const M: usize> Chart<T> for MultiLerp<T, M> {
     type Coord = [T; M];
+    type ParametricDim = Const<M>;
+    type GeometryDim = Const<M>;
 
     fn eval(&self, x: [T; M]) -> Point<T, M> {
         self.transform(SVector::from(x))
@@ -119,8 +123,10 @@ impl<T: Scalar, const M: usize> BiLerp<T, M> {
 }
 // todo: replace implementation using lowest order nodal basis interpolation
 
-impl <T: RealField + Copy, const M: usize> Chart<T, 2, M> for BiLerp<T, M> {
+impl <T: RealField + Copy, const M: usize> Chart<T> for BiLerp<T, M> {
     type Coord = (T, T);
+    type ParametricDim = U2;
+    type GeometryDim = Const<M>;
 
     fn eval(&self, x: (T, T)) -> Point<T, M> {
         let [q11, q12, q22, q21] = self.vertices;
