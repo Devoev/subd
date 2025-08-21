@@ -6,6 +6,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
+use std::process::Output;
 use crate::cells::bezier_elem::BezierElem;
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
 
@@ -14,17 +15,17 @@ use crate::quadrature::tensor_prod::GaussLegendreMulti;
 /// Quadrature rule on an element.
 /// Integration is performed by pulling back the function to the reference domain.
 #[derive(Clone, Debug)]
-pub struct PullbackQuad<T, X, E, Q, const D: usize> {
+pub struct PullbackQuad<T, E, Q, const D: usize> {
     /// Quadrature rule on the reference domain.
     ref_quad: Q,
 
-    _phantom: PhantomData<(T, X, E)>,
+    _phantom: PhantomData<(T, E)>,
 }
 
 /// Quadrature rule on [Bezier elements](BezierElem).
-pub type BezierQuad<'a, T, const D: usize> = PullbackQuad<T, [T; D], BezierElem<'a, T, D, D>, GaussLegendreMulti<T, D>, D>;
+pub type BezierQuad<'a, T, const D: usize> = PullbackQuad<T, BezierElem<'a, T, D, D>, GaussLegendreMulti<T, D>, D>;
 
-impl <T, X, E, Q, const D: usize> PullbackQuad<T, X, E, Q, D> {
+impl <T, E, Q, const D: usize> PullbackQuad<T,  E, Q, D> {
     /// Constructs a new [`PullbackQuad`] from the given
     /// quadrature rule `ref_quad` on the reference domain.
     pub fn new(ref_quad: Q) -> Self {
@@ -32,19 +33,18 @@ impl <T, X, E, Q, const D: usize> PullbackQuad<T, X, E, Q, D> {
     }
 }
 
-impl <T, X, E, Q, const D: usize>  PullbackQuad<T, X, E, Q, D>
+impl <T, E, Q, const D: usize>  PullbackQuad<T, E, Q, D>
 where T: RealField + Sum + Product + Copy,
-      X: Dimensioned<T, D>,
       E: Cell<T, D, D>,
-      Q: Quadrature<T, X, E::RefCell>
+      Q: Quadrature<T, E::RefCell>
 {
     /// Returns an iterator over all nodes in the reference domain.
-    pub fn nodes_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = X> + 'a {
+    pub fn nodes_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Node> + 'a {
         self.ref_quad.nodes_elem(ref_elem)
     }
 
     /// Returns an iterator over all weights in the reference domain.
-    pub fn weights_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = T> + 'a {
+    pub fn weights_ref<'a>(&'a self, ref_elem: &'a E::RefCell) -> impl Iterator<Item = Q::Weight> + 'a {
         self.ref_quad.weights_elem(ref_elem)
     }
 }
@@ -58,14 +58,15 @@ pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
 impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
-impl <T, X, E, Q, const D: usize> Quadrature<T, Point<T, D>, E> for PullbackQuad<T, X, E, Q, D>
+impl <T, E, Q, const D: usize> Quadrature<T, E> for PullbackQuad<T, E, Q, D>
 where T: RealField + Sum + Product + Copy,
-      X: Dimensioned<T, D>,
       E: Cell<T, D, D>,
-      E::GeoMap: Chart<T, D, D, Coord = X>,
-      Q: Quadrature<T, X, E::RefCell>,
+      E::GeoMap: Chart<T, D, D>,
+      Q: Quadrature<T, E::RefCell, Node = <E::GeoMap as Chart<T, D, D>>::Coord>,
       Const<D>: DimMinSelf
 {
+    type Node = Point<T, D>;
+    type Weight = T;
 
     fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Point<T, D>> {
         let res = self

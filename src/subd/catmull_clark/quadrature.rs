@@ -29,15 +29,15 @@ impl <T: RealField, Q, const M: usize> SubdUnitSquareQuad<T, Q, M> {
 
 impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     where T: RealField + Sum + Copy,
-          Q: Quadrature<T, (T, T), UnitCube<2>>
+          Q: Quadrature<T, UnitCube<2>, Node = [T; 2], Weight = T> // todo: replace [T; 2] with (T,T), once a BiProd quadrature is implemented
 {
     /// Returns an iterator over all nodes in the regular reference domain (unit square).
     pub fn nodes_ref_regular(&self) -> impl Iterator<Item = (T, T)> + '_ {
-        self.quad_reg.nodes_elem(&UnitCube)
+        self.quad_reg.nodes_elem(&UnitCube).map(|[u, v]| (u, v))
     }
 
     /// Returns an iterator over all weights in the regular reference domain (unit square).
-    pub fn weights_ref_regular(&self) -> impl Iterator<Item=T> + '_ {
+    pub fn weights_ref_regular(&self) -> impl Iterator<Item = T> + '_ {
         self.quad_reg.weights_elem(&UnitCube)
     }
 
@@ -95,10 +95,13 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     }
 }
 
-impl <T, Q> Quadrature<T, (T, T), SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
+impl <T, Q> Quadrature<T, SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
 where T: RealField + Sum + Copy,
-      Q: Quadrature<T, (T, T), UnitCube<2>>
+      Q: Quadrature<T, UnitCube<2>, Node = [T; 2], Weight = T>
 {
+    type Node = (T, T);
+    type Weight = T;
+
     fn nodes_elem(&self, elem: &SubdUnitSquare) -> impl Iterator<Item=(T, T)> {
         match elem {
             SubdUnitSquare::Regular => self.nodes_ref_regular().collect_vec().into_iter(),
