@@ -54,9 +54,11 @@ impl <'a, T: RealField, const D: usize, const M: usize> SplineGeo<'a, T, D, M> {
     }
 }
 
-impl <T, const D: usize, const M: usize> Chart<T, [T; D], D, M> for SplineGeo<'_, T, D, M>
+impl <T, const D: usize, const M: usize> Chart<T, D, M> for SplineGeo<'_, T, D, M>
     where T: RealField + Copy
 {
+    type Coord = [T; D];
+
     fn eval(&self, x: [T; D]) -> Point<T, M> {
         let (b, idx) = self.space.eval_local_with_idx(x);
         // todo: replace collect_vec().iter() somehow
@@ -72,9 +74,11 @@ impl <T, const D: usize, const M: usize> Chart<T, [T; D], D, M> for SplineGeo<'_
     }
 }
 
-impl <'a, T, const D: usize, const M: usize> Chart<T, [T; D], D, M> for &'a SplineGeo<'a, T, D, M>
+impl <'a, T, const D: usize, const M: usize> Chart<T, D, M> for &'a SplineGeo<'a, T, D, M>
     where T: RealField + Copy
 {
+    type Coord = [T; D];
+
     fn eval(&self, x: [T; D]) -> Point<T, M> {
         Point::from((*self).eval(x))
     }

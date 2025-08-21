@@ -113,7 +113,7 @@ impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for KnotMesh<T
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, [T; K], K, K> for KnotMesh<T, K> {
+impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, K, K> for KnotMesh<T, K> {
     type GeoElem = CartCell<T, K>;
 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
