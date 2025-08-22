@@ -7,14 +7,13 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
+use iter_num_tools::lin_space;
+use itertools::{izip, Itertools};
 use nalgebra::{matrix, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
-use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
-use itertools::{izip, Itertools};
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
@@ -30,14 +29,13 @@ use subd::mesh::knot_mesh::KnotMesh;
 use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
-use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 3;
+const NUM_REFINE: u8 = 6;
 
 pub fn main() -> io::Result<()> {
     // Define problem
@@ -64,8 +62,8 @@ pub fn main() -> io::Result<()> {
         println!("Iteration {} / {NUM_REFINE}", i+1);
 
         // Construct mesh and space
-        let p = 3;
-        let n = 2usize.pow(i as u32) + p + 1;
+        let p = 1;
+        let n = 2usize.pow(i as u32 + 1) + p;
         let xi = KnotVec::<f64>::new_open_uniform(n, p);
         let msh_ref = KnotMesh::from_knots([xi.clone(), xi.clone()]);
         let msh = BezierMesh::new(msh_ref, map.clone());
@@ -144,16 +142,17 @@ fn solve(
     let norm_h1 = h1.norm(&u, &u_grad, &quad);
 
     // Plot error
-    let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        // u(p).x - uh.eval_on_elem(elem, x).x
-        (u_grad(p) - uh.eval_grad_on_elem(elem, x)).norm_squared()
-    };
-    plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
-        let [u_range, v_range] = patch.ref_elem.ranges();
-        (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
-    }).show();
+    // let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
+    //     let patch = msh.geo_elem(elem);
+    //     let p = patch.geo_map().eval(x);
+    //     // u(p).x - uh.eval_on_elem(elem, x).x
+    //     // (u_grad(p) - uh.eval_grad_on_elem(elem, x)).norm_squared()
+    //     uh.eval_grad_on_elem(elem, x).x
+    // };
+    // plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
+    //     let [u_range, v_range] = patch.ref_elem.ranges();
+    //     (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
+    // }).show();
 
     (space.dim(), err_h1, norm_h1, err_l2, norm_l2)
 }
