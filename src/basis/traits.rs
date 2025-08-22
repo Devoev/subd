@@ -6,8 +6,9 @@ pub trait Basis {
     type NumBasis: Dim;
 
     /// Number of components for each basis function.
-    /// For scalar valued functions equal to `1`,
-    /// for vector valued functions equal to the dimension of the parametric domain.
+    /// This is usually either
+    /// - `1` for scalar fields.
+    /// - `D` (dimension of the domain) for vector fields.
     type NumComponents: DimName;
 
     /// Coordinate of a parametric point over type [`T`].
