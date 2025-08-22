@@ -9,57 +9,104 @@ use nalgebra::{RealField, Vector};
 use std::iter::{zip, Product, Sum};
 use std::marker::PhantomData;
 
-/// Quadrature rule on tensor-product domains.
+/// Quadrature rule on bivariate tensor-product domain.
 #[derive(Clone, Copy, Debug)]
-pub struct MultiProd<T, Q, const D: usize> {
-    /// Quadrature rules for each parametric direction.
-    quads: [Q; D],
-
-    _phantom: PhantomData<T>
+pub struct Prod<Q1, Q2> {
+    /// Pair fo quadrature rules
+    quads: (Q1, Q2),
 }
 
-/// [`D`]-variate Gauss-Legendre quadrature.
-pub type GaussLegendreMulti<T, const D: usize> = MultiProd<T, GaussLegendre, D>;
+/// Bivariate Gauss-Legendre quadrature.
+pub type GaussLegendreBi= Prod<GaussLegendre, GaussLegendre>;
 
-impl<T, Q, const D: usize> MultiProd<T, Q, D>
-    where T: RealField + Sum,
-{
-    /// Constructs a new [`MultiProd`] from the given `D` quadrature rules per parametric direction.
-    pub fn new(quads: [Q; D]) -> Self {
-        MultiProd { quads, _phantom: PhantomData }
+impl<Q1, Q2> Prod<Q1, Q2> {
+    /// Constructs a new [`Prod`] from the given quadrature rules per parametric direction.
+    pub fn new(quads: (Q1, Q2)) -> Self {
+        Prod { quads }
+    }
+
+    /// Constructs a new [`GaussLegendreBi`] with the given degrees `px` and `py` per parametric direction.
+    pub fn with_degrees(px: usize, py: usize) -> GaussLegendreBi {
+        GaussLegendreBi::new((GaussLegendre::new(px).unwrap(), GaussLegendre::new(py).unwrap()))
     }
 }
 
-impl <T: RealField + Sum, const D: usize> GaussLegendreMulti<T, D> {
+
+impl <T: RealField + Sum, Q1, Q2> Quadrature<T, UnitCube<2>> for Prod<Q1, Q2>
+    where Q1: Quadrature<T, UnitCube<1>, Node = T, Weight = T>,
+          Q2: Quadrature<T, UnitCube<1>, Node = T, Weight = T>,
+{
+    type Node = (T, T);
+    type Weight = T;
+
+    fn nodes_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=Self::Node> {
+        self.quads.0.nodes_elem(&UnitCube)
+            .cartesian_product(self.quads.1.nodes_elem(&UnitCube).collect_vec())
+    }
+
+    fn weights_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=Self::Weight> {
+        self.quads.0.weights_elem(&UnitCube)
+            .cartesian_product(self.quads.0.weights_elem(&UnitCube).collect_vec())
+            .map(|(wi, wj): (T, T)| wi * wj)
+    }
+}
+
+/// Quadrature rule on tensor-product domains.
+#[derive(Clone, Copy, Debug)]
+pub struct MultiProd<Q, const D: usize> {
+    /// Quadrature rules for each parametric direction.
+    quads: [Q; D],
+}
+
+/// [`D`]-variate Gauss-Legendre quadrature.
+pub type GaussLegendreMulti<const D: usize> = MultiProd<GaussLegendre, D>;
+
+impl<Q, const D: usize> MultiProd<Q, D> {
+    /// Constructs a new [`MultiProd`] from the given `D` quadrature rules per parametric direction.
+    pub fn new(quads: [Q; D]) -> Self {
+        MultiProd { quads }
+    }
+}
+
+impl <const D: usize> GaussLegendreMulti<D> {
     /// Constructs a new [`GaussLegendreMulti`] with the given `degrees` per parametric direction.
     pub fn with_degrees(degrees: [usize; D]) -> Self {
         GaussLegendreMulti::new(degrees.map(|degree| GaussLegendre::new(degree).unwrap()))
     }
 }
 
-// todo: make this generic over Q and E again
+// todo: when SymmetricUnitCube, UnitCube and CartCell are all MultiProd,
+//  the impls can be combined into the first generic one
 
-impl<T> Quadrature<T, (T, T), UnitCube<2>> for MultiProd<T, GaussLegendre, 2>
-    where T: RealField + Sum + Product + Copy,
+impl <T, Elem, Quad, const D: usize> Quadrature<T, [Elem; D]> for MultiProd<Quad, D>
+where T: RealField + Sum + Product + Copy,
+      Quad: Quadrature<T, Elem, Node = T, Weight = T>,
 {
-    fn nodes_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=(T, T)> {
-        self.quads[0].nodes_elem(&UnitCube)
-            .cartesian_product(self.quads[1].nodes_elem(&UnitCube).collect_vec())
+    type Node = [T; D];
+    type Weight = T;
+
+    fn nodes_elem(&self, elem: &[Elem; D]) -> impl Iterator<Item=Self::Node> {
+        zip(&self.quads, elem)
+            .map(|(q, elem)| q.nodes_elem(elem).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.try_into().unwrap())
     }
 
-    fn weights_elem(&self, _elem: &UnitCube<2>) -> impl Iterator<Item=T> {
-        self.quads[0].weights_elem(&UnitCube)
-            .cartesian_product(self.quads[1].weights_elem(&UnitCube).collect_vec())
-            .map(|(wi, wj): (T, T)| wi * wj)
+    fn weights_elem(&self, elem: &[Elem; D]) -> impl Iterator<Item=Self::Weight> {
+        zip(&self.quads, elem)
+            .map(|(q, elem)| q.nodes_elem(elem).collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.into_iter().product())
     }
 }
 
-// todo: are all 3 implementations really needed? Or is the HyperCube one sufficient?
-//  or just merge all into one generic
-
-impl<T, const D: usize> Quadrature<T, [T; D], SymmetricUnitCube<D>> for MultiProd<T, GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl<T, Q, const D: usize> Quadrature<T, SymmetricUnitCube<D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, SymmetricUnitCube<1>, Node = T, Weight = T>
 {
+    type Node = [T; D];
+    type Weight = T;
+
     fn nodes_elem(&self, _elem: &SymmetricUnitCube<D>) -> impl Iterator<Item=[T; D]> {
         self.quads.iter()
             .map(|quad| quad.nodes_elem(&SymmetricUnitCube).collect_vec())
@@ -76,9 +123,12 @@ impl<T, const D: usize> Quadrature<T, [T; D], SymmetricUnitCube<D>> for MultiPro
     }
 }
 
-impl<T, const D: usize> Quadrature<T, [T; D], UnitCube<D>> for MultiProd<T, GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl<T, Q, const D: usize> Quadrature<T, UnitCube<D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, UnitCube<1>, Node = T, Weight = T>
 {
+    type Node = [T; D];
+    type Weight = T;
 
     fn nodes_elem(&self, _elem: &UnitCube<D>) -> impl Iterator<Item=[T; D]> {
         self.quads.iter()
@@ -95,9 +145,14 @@ impl<T, const D: usize> Quadrature<T, [T; D], UnitCube<D>> for MultiProd<T, Gaus
     }
 }
 
-impl <T, const D: usize> Quadrature<T, [T; D], CartCell<T, D>> for MultiProd<T, GaussLegendre, D>
-    where T: RealField + Sum + Product + Copy,
+impl <T, Q, const D: usize> Quadrature<T, CartCell<T, D>> for MultiProd<Q, D>
+where T: RealField + Sum + Product + Copy,
+      Q: Quadrature<T, CartCell<T, 1>, Node = T, Weight = T>
+        + Quadrature<T, SymmetricUnitCube<1>, Node = T, Weight = T> // this guarantees that the 1D quadrature is defined on [-1,1] and thus the D-dim quadrature on [-1,1]^D
 {
+    type Node = [T; D];
+    type Weight = T;
+
     fn nodes_elem(&self, elem: &CartCell<T, D>) -> impl Iterator<Item=[T; D]> {
         let lerp = elem.geo_map();
         self.nodes_elem(&SymmetricUnitCube)
@@ -121,10 +176,9 @@ mod tests {
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2` in `x`-direction 
     /// and degree `4` in `y`-direction.
-    fn setup() -> GaussLegendreMulti<f64, 2> {
+    fn setup() -> GaussLegendreMulti<2> {
         GaussLegendreMulti {
-            quads: [GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap()],
-            _phantom: Default::default(),
+            quads: [GaussLegendre::new(2).unwrap(), GaussLegendre::new(4).unwrap()]
         }
     }
 
@@ -144,7 +198,7 @@ mod tests {
         assert_abs_diff_eq!(nodes[7].as_slice(), [-0.57735, -0.861136].as_slice(), epsilon = 1e-5);
 
         // Test unit square [0,1]^2
-        let nodes = <GaussLegendreMulti<f64, 2> as Quadrature<f64, [f64; 2], UnitCube<2>>>::nodes_elem(&q, &UnitCube::<2>).collect_vec();
+        let nodes = q.nodes_elem(&UnitCube).collect_vec();
         assert_abs_diff_eq!(nodes[0].as_slice(), [0.788675, 0.930568].as_slice(), epsilon = 1e-5);
         assert_abs_diff_eq!(nodes[1].as_slice(), [0.788675, 0.6699905].as_slice(), epsilon = 1e-5);
         assert_abs_diff_eq!(nodes[2].as_slice(), [0.788675, 0.3300095].as_slice(), epsilon = 1e-5);
@@ -183,7 +237,7 @@ mod tests {
         assert_abs_diff_eq!(weights[7], 0.347855, epsilon = 1e-5);
 
         // Test unit square [0,1]^2
-        let weights = <GaussLegendreMulti<f64, 2> as Quadrature<f64, [f64; 2], UnitCube<2>>>::weights_elem(&q, &UnitCube::<2>).collect_vec();
+        let weights: Vec<f64> = q.weights_elem(&UnitCube).collect();
         assert_abs_diff_eq!(weights[0], 0.08696375, epsilon = 1e-5);
         assert_abs_diff_eq!(weights[1], 0.16303625, epsilon = 1e-5);
         assert_abs_diff_eq!(weights[2], 0.16303625, epsilon = 1e-5);

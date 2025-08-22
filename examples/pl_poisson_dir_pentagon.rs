@@ -27,7 +27,7 @@ use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
@@ -104,7 +104,7 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
     let space = PlSpaceQuad::new(basis);
 
     // Define quadrature
-    let ref_quad = GaussLegendreMulti::with_degrees([2, 2]);
+    let ref_quad = GaussLegendreBi::with_degrees(2, 2);
     let quad = PullbackQuad::new(ref_quad);
 
     // Assemble system

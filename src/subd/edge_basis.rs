@@ -18,13 +18,14 @@ pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a Cat
 impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.0.num_nodes() * 2) // todo: replace with num_edges
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T, (T, T)> for CatmarkEdgeBasis<'a, T, M> {
+impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for CatmarkEdgeBasis<'a, T, M> {
     type Elem = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
     type ElemBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
@@ -63,6 +64,7 @@ pub enum CatmarkPatchEdgeBasis {
 impl Basis for CatmarkPatchEdgeBasis {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         match self {
@@ -73,7 +75,7 @@ impl Basis for CatmarkPatchEdgeBasis {
     }
 }
 
-impl <T: RealField + Copy> EvalBasis<T, (T, T)> for CatmarkPatchEdgeBasis {
+impl <T: RealField + Copy> EvalBasis<T> for CatmarkPatchEdgeBasis {
     #[allow(clippy::toplevel_ref_arg)]
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;

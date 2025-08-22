@@ -44,8 +44,8 @@ mod tests {
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
-    use crate::quadrature::pullback::{BezierQuad, PullbackQuad};
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::pullback::{GaussLegendrePullback, PullbackQuad};
+    use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
     use crate::quadrature::traits::Quadrature;
     use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
@@ -77,7 +77,7 @@ mod tests {
         let space_3d = BsplineSpace::new(basis_3d);
 
         let t = 0.6;
-        println!("{}", space_1d.eval_local(t));
+        println!("{}", space_1d.eval_local([t]));
         println!("{}", space_2d.eval_local([t, t]));
         println!("{}", space_3d.eval_local([t, t, t]));
     }
@@ -96,7 +96,7 @@ mod tests {
             Ok(curve) => { curve }
             Err(error) => { panic!("{}", error) }
         };
-        dbg!(curve.eval(0.0));
+        dbg!(curve.eval([0.0]));
     }
 
     // #[test]
@@ -109,12 +109,12 @@ mod tests {
 
         // Populate basis values
         let mut b = RowDVector::zeros(dim);
-        space.populate_global(&mut b, 0.1);
+        space.populate_global(&mut b, [0.1]);
         println!("{}", b.transpose());
 
         // Populate gradients
         let mut b = RowDVector::zeros(dim);
-        space.populate_grad_global(&mut b, 0.1);
+        space.populate_grad_global(&mut b, [0.1]);
         println!("{}", b.transpose());
     }
 
@@ -136,7 +136,7 @@ mod tests {
         let basis_2d = cart_prod::Prod::new((basis_x, basis_y));
         let space = BsplineSpaceVec2d::new(basis_2d);
 
-        let x = (0.5, 0.2);
+        let x = [0.5, 0.2];
         println!("{}", space.eval_local(x));
     }
 
@@ -426,7 +426,7 @@ mod tests {
 
         // Build quadrature
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
-        let quad = BezierQuad::new(ref_quad);
+        let quad = GaussLegendrePullback::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
         let mat = hodge.assemble(quad);
 
@@ -486,7 +486,7 @@ mod tests {
         let basis = CatmarkBasis(&msh);
         let space = Space::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
+        let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Load function
@@ -557,9 +557,9 @@ mod tests {
 
         // Construct basis and space
         let basis = CatmarkEdgeBasis(&msh);
-        let space = Space::<f64, (f64, f64), _, 2>::new(basis);
+        let space = Space::<f64, _, 2>::new(basis);
 
-        let ref_quad = GaussLegendreMulti::with_degrees([3, 3]);
+        let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Assembly
@@ -633,7 +633,7 @@ mod tests {
         let start = Instant::now();
         let knots = KnotVec::new_open_uniform(n, p);
         let basis = de_boor::DeBoor::new(knots, n, p);
-        let space = Space::<_,_,_,1>::new(basis);
+        let space = Space::<_,_,1>::new(basis);
         for t in grid.clone() {
             let _ = black_box(space.eval_local(t));
         }
@@ -643,7 +643,7 @@ mod tests {
         let start = Instant::now();
         let space = BsplineSpace::new_open_uniform([n], [p]);
         for t in grid.clone() {
-            let _ = black_box(space.eval_local(t));
+            let _ = black_box(space.eval_local([t]));
         }
         let time_tp = start.elapsed();
 

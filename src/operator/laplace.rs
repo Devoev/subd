@@ -1,14 +1,13 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::LocalGradBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::Cell;
+use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
-use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMatrix, U1};
+use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 
@@ -17,33 +16,31 @@ use std::iter::{zip, Product, Sum};
 /// K[i,j] = ∫ grad b[i] · grad b[j] dx ,
 /// ```
 /// where the `b[i]` are nodal basis functions.
-pub struct Laplace<'a, T, X, M, B, const D: usize> {
+pub struct Laplace<'a, T, M, B, const D: usize> {
     /// Mesh defining the geometry discretization.
     msh: &'a M,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, X, B, D>
+    space: &'a Space<T, B, D>
 }
 
 
-impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
+impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     /// Constructs a new `Laplace` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, X, B, D>) -> Self {
+    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
         Laplace { msh, space }
     }
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<T, X, E, Q, D>) -> CooMatrix<T>
+    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T, X, NumComponents = U1>,
-          B::ElemBasis: EvalGrad<T, X, D>,
-          Q: Quadrature<T, X, E::RefCell>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalGradBasis<T, D>,
+          Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>,
+          Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix
         let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
@@ -67,26 +64,25 @@ impl <'a, T, X, M, B, const D: usize> Laplace<'a, T, X, M, B, D> {
 }
 
 /// Assembles the local discrete Laplace operator.
-pub fn assemble_laplace_local<T, X, E, B, Q, const D: usize>(
+pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
     elem: &E,
-    sp_local: &Space<T, X, B, D>,
-    quad: &PullbackQuad<T, X, E, Q, D>,
+    sp_local: &Space<T, B, D>,
+    quad: &PullbackQuad<Q, D>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
-      X: Dimensioned<T, D>,
-      E: Cell<T, X, D, D>,
-      B: EvalGrad<T, X, D>,
-      Q: Quadrature<T, X, E::RefCell>,
+      E: HasBasisCoord<T, B> + HasDim<T, D>,
+      B: EvalGrad<T, D>,
+      Q: QuadratureOnParametricCell<T, E>,
       DefaultAllocator: EvalGradAllocator<B, D>,
-      Const<D>: DimMin<Const<D>, Output = Const<D>>
+      Const<D>: DimMinSelf
 {
     // Evaluate all basis functions and inverse gram matrices at every quadrature point
     // and store them into buffers
     let ref_elem = elem.ref_cell();
     let geo_map = elem.geo_map();
-    let buf_grads: Vec<OMatrix<T, Const<D>, B::NumBasis>> = quad.nodes_ref(&ref_elem)
+    let buf_grads: Vec<OMatrix<T, Const<D>, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval_grad(p)).collect();
-    let buf_g_inv: Vec<SMatrix<T, D, D>> = quad.nodes_ref(&ref_elem)
+    let buf_g_inv: Vec<SMatrix<T, D, D>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| {
             let j = geo_map.eval_diff(p);
             (j.transpose() * j).try_inverse().unwrap()

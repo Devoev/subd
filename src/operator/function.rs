@@ -4,30 +4,28 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::Cell;
-use crate::index::dimensioned::Dimensioned;
+use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DVector, DefaultAllocator, DimMin, OMatrix, OVector, Point, RealField};
+use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
+pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
     msh: &'a M,
-    space: &Space<T, X, B, D>,
-    quad: PullbackQuad<T, X, E, Q, D>,
+    space: &Space<T, B, D>,
+    quad: PullbackQuad<Q, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T, X>,
-          Q: Quadrature<T, X, E::RefCell>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
+          B: LocalBasis<T>,
+          Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf + ToTypenum
 {
     // Create empty matrix
     let mut fi = DVector::<T>::zeros(space.dim());
@@ -50,25 +48,24 @@ pub fn assemble_function<'a, T, X, E, B, M, Q, const D: usize>(
 }
 
 /// Assembles a local discrete function vector.
-pub fn assemble_function_local<T, X, E, B, Q, const D: usize>(
+pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     elem: &E,
-    sp_local: &Space<T, X, B, D>,
-    quad: &PullbackQuad<T, X, E, Q, D>,
+    sp_local: &Space<T, B, D>,
+    quad: &PullbackQuad<Q, D>,
     f: &impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D>,
-          E: Cell<T, X, D, D>,
-          B: EvalBasis<T, X>,
-          Q: Quadrature<T, X, E::RefCell>,
+          E: HasBasisCoord<T, B> + HasDim<T, D>,
+          B: EvalBasis<T>,
+          Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf
 {
     // Evaluate all basis functions at every quadrature point
     // and store them into a buffer
     let ref_elem = elem.ref_cell();
     let quad_nodes = quad.nodes_elem(elem).collect_vec();
-    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref(&ref_elem)
+    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product f * v

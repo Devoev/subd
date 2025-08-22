@@ -137,7 +137,7 @@ impl <T: RealField + Copy, const M: usize> LinSubdMesh<T, M> {
     }
 }
 
-impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, (T, T), 2, M> for LinSubdMesh<T, M> {
+impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, 2, M> for LinSubdMesh<T, M> {
     type GeoElem = Quad<T, M>;
 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {

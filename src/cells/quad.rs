@@ -8,7 +8,7 @@ use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{DimName, DimNameSub, Point, RealField, SVector, U1, U2};
+use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, U1, U2};
 
 /// A 2d quadrilateral element of topology [`QuadNodes`],
 /// embedded in [`M`]-dimensional space.
@@ -39,11 +39,11 @@ impl<T: RealField, const M: usize> Quad<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T, (T, T), 2, M> for Quad<T, M> {
-    type RefCell = UnitCube<2>;
+impl <T: RealField + Copy, const M: usize> geo::Cell<T> for Quad<T, M> {
+    type ParametricCell = UnitCube<2>;
     type GeoMap = BiLerp<T, M>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         UnitCube
     }
 

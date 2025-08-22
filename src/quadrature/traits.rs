@@ -1,5 +1,8 @@
 use std::iter::{zip, Sum};
 use std::ops::Mul;
+use nalgebra::{DefaultAllocator, Scalar};
+use crate::cells::geo::{Cell, CellCoord};
+use crate::diffgeo::chart::{ChartAllocator};
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -74,16 +77,24 @@ fn integrate_with_weights<T: Sum, W: Mul<T, Output=T>>(w: impl IntoIterator<Item
 /// to evaluate the function on every quadrature node.
 /// 
 /// # Type parameters
+/// A quadrature rule is parametrized by the types
 /// - [`T`]: Scalar type.
 /// - [`Elem`]: Type of integration domain.
-/// - [`Node`]: Type of quadrature nodes.
-/// - [`Weight`]: Type of quadrature weight. By default, equal to `T`.
-pub trait Quadrature<T, Node, Elem, Weight = T> where T: Sum, Weight: Mul<T, Output=T> {
+///
+/// That way a quadrature rule can be implemented once to work for different scalars
+/// and on different elements.
+pub trait Quadrature<T: Sum, Elem> {
+    /// Quadrature node.
+    type Node;
+
+    /// Quadrature weight.
+    type Weight: Mul<T, Output=T>;
+
     /// Returns an iterator over all quadrature nodes in the given `elem`.
-    fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item = Node>;
+    fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item = Self::Node>;
     
     /// Returns an iterator over all quadrature weights in the given `elem`.
-    fn weights_elem(&self, elem: &Elem) -> impl Iterator<Item = Weight>;
+    fn weights_elem(&self, elem: &Elem) -> impl Iterator<Item = Self::Weight>;
 
     /// Numerically integrates a function `f` on the given `elem`.
     /// The values of the function evaluated at the [quadrature nodes][`Self::nodes_elem`]
@@ -94,14 +105,28 @@ pub trait Quadrature<T, Node, Elem, Weight = T> where T: Sum, Weight: Mul<T, Out
 
     /// Evaluates the function `f` on every [quadrature node][Self::nodes_elem]
     /// of the given `elem`.
-    fn eval_fn_elem(&self, elem: &Elem, f: impl Fn(Node) -> T) -> impl Iterator<Item = T> {
+    fn eval_fn_elem(&self, elem: &Elem, f: impl Fn(Self::Node) -> T) -> impl Iterator<Item = T> {
         self.nodes_elem(elem).map(f)
     }
 
     /// Numerically integrates a function `f` on the given `elem`,
     /// by evaluating the function at every quadrature point using [`Self::eval_fn_elem`].
     /// The actual quadrature is then performed using [Self::integrate_ref].
-    fn integrate_fn_elem(&self, elem: &Elem, f: impl Fn(Node) -> T) -> T {
+    fn integrate_fn_elem(&self, elem: &Elem, f: impl Fn(Self::Node) -> T) -> T {
         self.integrate_elem(elem, self.eval_fn_elem(elem, f))
     }
 }
+
+// todo: can't this be merged with Quadrature?
+//  if the methods of Cell go to Chart, merging won't work,
+//  because Cell has no information about the Coord anymore
+
+/// Constrains `Self` to be a quadrature on [`C::ParametricCell`]
+/// with the coordinates [`C::GeoMap::Coord`] of the chart.
+pub trait QuadratureOnParametricCell<T: Scalar + Sum, C: Cell<T>>: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>
+where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}
+
+impl <T: Scalar + Sum, C: Cell<T>, Q: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>> QuadratureOnParametricCell<T, C> for Q
+where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+{}

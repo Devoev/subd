@@ -16,21 +16,21 @@ pub struct BezierElem<'a, T: RealField + Copy, const D: usize, const M: usize> {
 
     // todo: see BezierMesh
     /// Spline parametrization mapping the reference mesh to the physical Bezier mesh.
-    pub geo_map: &'a SplineGeo<'a, T, [T; D], D, M>
+    pub geo_map: &'a SplineGeo<'a, T, D, M>
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T, D, M> {
     /// Constructs a new [`BezierElem`] from the given `ref_elem` and `geo_map`.
-    pub fn new(ref_elem: CartCell<T, D>, geo_map: &'a SplineGeo<'a, T, [T; D], D, M>) -> Self {
+    pub fn new(ref_elem: CartCell<T, D>, geo_map: &'a SplineGeo<'a, T, D, M>) -> Self {
         BezierElem { ref_elem, geo_map }
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T, [T; D], D, M> for BezierElem<'a, T, D, M> {
-    type RefCell = CartCell<T, D>;
-    type GeoMap = &'a SplineGeo<'a, T, [T; D], D, M>;
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T> for BezierElem<'a, T, D, M> {
+    type ParametricCell = CartCell<T, D>;
+    type GeoMap = &'a SplineGeo<'a, T, D, M>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         self.ref_elem
     }
 

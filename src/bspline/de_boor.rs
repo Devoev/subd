@@ -71,13 +71,14 @@ impl <T: RealField + Copy> DeBoor<T> {
 impl<T: RealField> Basis for DeBoor<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<_T> = _T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.num_basis)
     }
 }
 
-impl <T: RealField + Copy> LocalBasis<T, T> for DeBoor<T> {
+impl <T: RealField + Copy> LocalBasis<T> for DeBoor<T> {
     type Elem = KnotSpan;
     type ElemBasis = DeBoorSpan<T>;
     type GlobalIndices = RangeInclusive<usize>;
@@ -92,7 +93,7 @@ impl <T: RealField + Copy> LocalBasis<T, T> for DeBoor<T> {
     }
 }
 
-impl <T: RealField + Copy> FindElem<T, T> for DeBoor<T> {
+impl <T: RealField + Copy> FindElem<T> for DeBoor<T> {
     fn find_elem(&self, x: T) -> Self::Elem {
         self.find_span(x).unwrap()
     }

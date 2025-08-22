@@ -101,7 +101,7 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
     }
 }
 
-impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, (T, T), 2, M> for QuadVertexMesh<T, M> {
+impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, 2, M> for QuadVertexMesh<T, M> {
     type GeoElem = Quad<T, M>;
 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {

@@ -27,7 +27,7 @@ use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
@@ -111,7 +111,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
 
     // Define quadrature
     let p = 4;
-    let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+    let ref_quad = GaussLegendreBi::with_degrees(p, p);
     let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 1));
 
     // Assemble system

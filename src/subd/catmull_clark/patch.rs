@@ -92,11 +92,11 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T, (T, T), 2, M> for CatmarkPatch<T, M> {
-    type RefCell = SubdUnitSquare;
+impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T> for CatmarkPatch<T, M> {
+    type ParametricCell = SubdUnitSquare;
     type GeoMap = CatmarkMap<T, M>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         match self {
             CatmarkPatch::Irregular(_, _) => SubdUnitSquare::Irregular,
             _ => SubdUnitSquare::Regular

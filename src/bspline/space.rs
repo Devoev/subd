@@ -22,21 +22,21 @@ use std::iter::zip;
 /// - [`T`]: Scalar type for coefficients.
 /// - [`X`]: Type of parametric values in the reference domain.
 /// - [`D`]: Dimension of the parametric domain.
-pub type BsplineSpace<T, X, const D: usize> = Space<T, X, MultiDeBoor<T, D>, D>;
+pub type BsplineSpace<T, const D: usize> = Space<T, MultiDeBoor<T, D>, D>;
 
 /// Functions space of univariate scalar B-Splines.
-pub type BsplineSpace1d<T> = BsplineSpace<T, T, 1>;
+pub type BsplineSpace1d<T> = BsplineSpace<T, 1>;
 
 /// Function space of bivariate scalar B-Splines.
-pub type BsplineSpace2d<T> = BsplineSpace<T, (T, T), 2>;
+pub type BsplineSpace2d<T> = BsplineSpace<T, 2>;
 
 /// Function space of trivariate scalar B-Splines.
-pub type BsplineSpace3d<T> = BsplineSpace<T, (T, T, T), 3>;
+pub type BsplineSpace3d<T> = BsplineSpace<T, 3>;
 
 /// Function space of 2D vector B-Splines.
-pub type BsplineSpaceVec2d<T> = Space<T, (T, T), DeBoorVec2d<T>, 2>;
+pub type BsplineSpaceVec2d<T> = Space<T, DeBoorVec2d<T>, 2>;
 
-impl<T, X, const D: usize> BsplineSpace<T, X, D> {
+impl<T, const D: usize> BsplineSpace<T, D> {
     /// Returns an array of the knot vectors for each parametric direction.
     pub fn knots(&self) -> [&KnotVec<T>; D] {
         self.basis.bases.iter().map(|b| &b.knots).collect_array().unwrap()
@@ -67,7 +67,7 @@ impl<T, X, const D: usize> BsplineSpace<T, X, D> {
     }
 }
 
-impl <T: RealField + Copy, X, const D: usize> BsplineSpace<T, X, D> {
+impl <T: RealField + Copy, const D: usize> BsplineSpace<T, D> {
     /// Constructs an *open* and *uniform* [`BsplineSpace`]
     /// with `n[i]+p[i]+1` knots for each parametric direction.
     ///
@@ -79,7 +79,7 @@ impl <T: RealField + Copy, X, const D: usize> BsplineSpace<T, X, D> {
     ///
     /// let n = [5, 4, 6];
     /// let p = [1, 2, 2];
-    /// let space = BsplineSpace::<f64, [f64; 3], 3>::new_open_uniform(n, p);
+    /// let space = BsplineSpace::<f64, 3>::new_open_uniform(n, p);
     ///
     /// let [KnotVec(xi_1), KnotVec(xi_2), KnotVec(xi_3)] = &space.knots();
     /// assert_abs_diff_eq!(xi_1.as_slice(), [0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0].as_slice());

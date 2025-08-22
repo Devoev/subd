@@ -29,7 +29,7 @@ impl <T: RealField, Q, const M: usize> SubdUnitSquareQuad<T, Q, M> {
 
 impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     where T: RealField + Sum + Copy,
-          Q: Quadrature<T, (T, T), UnitCube<2>>
+          Q: Quadrature<T, UnitCube<2>, Node = (T, T), Weight = T>
 {
     /// Returns an iterator over all nodes in the regular reference domain (unit square).
     pub fn nodes_ref_regular(&self) -> impl Iterator<Item = (T, T)> + '_ {
@@ -37,7 +37,7 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     }
 
     /// Returns an iterator over all weights in the regular reference domain (unit square).
-    pub fn weights_ref_regular(&self) -> impl Iterator<Item=T> + '_ {
+    pub fn weights_ref_regular(&self) -> impl Iterator<Item = T> + '_ {
         self.quad_reg.weights_elem(&UnitCube)
     }
 
@@ -95,10 +95,13 @@ impl <T, Q> SubdUnitSquareQuad<T, Q, 2>
     }
 }
 
-impl <T, Q> Quadrature<T, (T, T), SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
+impl <T, Q> Quadrature<T, SubdUnitSquare> for SubdUnitSquareQuad<T, Q, 2>
 where T: RealField + Sum + Copy,
-      Q: Quadrature<T, (T, T), UnitCube<2>>
+      Q: Quadrature<T, UnitCube<2>, Node = (T, T), Weight = T>
 {
+    type Node = (T, T);
+    type Weight = T;
+
     fn nodes_elem(&self, elem: &SubdUnitSquare) -> impl Iterator<Item=(T, T)> {
         match elem {
             SubdUnitSquare::Regular => self.nodes_ref_regular().collect_vec().into_iter(),
@@ -117,14 +120,14 @@ where T: RealField + Sum + Copy,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::quadrature::tensor_prod::GaussLegendreMulti;
+    use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
     use approx::{abs_diff_eq, assert_abs_diff_eq};
     use gauss_quad::GaussLegendre;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.
-    fn setup() -> GaussLegendreMulti<f64, 2> {
-        GaussLegendreMulti::new([GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()])
+    fn setup() -> GaussLegendreBi {
+        GaussLegendreBi::new((GaussLegendre::new(2).unwrap(), GaussLegendre::new(2).unwrap()))
     }
 
     #[test]

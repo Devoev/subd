@@ -15,7 +15,7 @@ use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
 use subd::operator::hodge::Hodge;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
@@ -33,7 +33,7 @@ fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
     // Define quadrature
     let p = 3;
     let m_max = 0; // todo: pick different value?
-    let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+    let ref_quad = GaussLegendreBi::with_degrees(p, p);
     let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, m_max));
 
     // Build mass matrix

@@ -12,7 +12,7 @@ use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
 use itertools::Itertools;
-use nalgebra::{Dim, DimName, DimNameSub, Point, Scalar};
+use nalgebra::{Const, Dim, DimName, DimNameSub, Point, Scalar, U2};
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
@@ -70,7 +70,8 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=NodeId
 /// using `num` evaluation points per parametric direction.
 pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num: usize, mesh_grid: &D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Patch: Cell<f64, X, 2, 2>,
+          Patch: Cell<f64>,
+          Patch::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&Elem, X) -> f64,
           D: Fn(&Patch, usize) -> (Vec<f64>, Vec<f64>)
 {
@@ -105,7 +106,8 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 /// using `num` evaluation points per parametric direction per element.
 pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid: D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Msh: Mesh<'a, f64, X, 2, 2>,
+          Msh: Mesh<'a, f64, 2, 2>,
+          <Msh::GeoElem as Cell<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&Msh::Elem, X) -> f64,
           D: Fn(&Msh::GeoElem, usize) -> (Vec<f64>, Vec<f64>)
 {

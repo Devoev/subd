@@ -4,7 +4,7 @@
 use itertools::Itertools;
 use plotly::layout::{Annotation, Axis, Shape, ShapeType};
 use plotly::{Layout, Plot, Scatter};
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::quadrature::traits::Quadrature;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::patch::subd_unit_square::SubdUnitSquare;
@@ -13,8 +13,8 @@ fn main() {
     // Define quadrature
     let p = 2;
     let m_max = 5;
-    let gauss_quad = GaussLegendreMulti::<f64, 2>::with_degrees([p, p]);
-    let subd_quad = SubdUnitSquareQuad::new(gauss_quad.clone(), m_max);
+    let gauss_quad = GaussLegendreBi::with_degrees(p, p);
+    let subd_quad = SubdUnitSquareQuad::<f64, _, 2>::new(gauss_quad.clone(), m_max);
 
     // Get irregular nodes
     let nodes_irr = subd_quad.nodes_elem(&SubdUnitSquare::Irregular);

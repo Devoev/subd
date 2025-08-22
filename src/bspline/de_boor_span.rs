@@ -31,13 +31,14 @@ impl <T: RealField> DeBoorSpan<T> {
 impl<T: RealField> Basis for DeBoorSpan<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<_T> = _T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.degree + 1)
     }
 }
 
-impl<T: RealField + Copy> EvalBasis<T, T> for DeBoorSpan<T> {
+impl<T: RealField + Copy> EvalBasis<T> for DeBoorSpan<T> {
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;
@@ -63,7 +64,7 @@ impl<T: RealField + Copy> EvalBasis<T, T> for DeBoorSpan<T> {
     }
 }
 
-impl <T: RealField + Copy> EvalDerivs<T, T> for DeBoorSpan<T> {
+impl <T: RealField + Copy> EvalDerivs<T> for DeBoorSpan<T> {
     fn eval_derivs<const K: usize>(&self, x: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
     where
         Const<K>: DimNameAdd<U1>
@@ -158,7 +159,7 @@ impl <T: RealField + Copy> EvalDerivs<T, T> for DeBoorSpan<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalGrad<T, T, 1> for DeBoorSpan<T> {
+impl<T: RealField + Copy> EvalGrad<T, 1> for DeBoorSpan<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()

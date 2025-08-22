@@ -1,6 +1,6 @@
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, U1};
+use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, Scalar, U1};
 
 /// Allocator for the [`B::NumComponents`] ✕ [`B::NumBasis`] matrix of basis evaluations.
 pub trait EvalBasisAllocator<B: Basis>: Allocator<B::NumComponents, B::NumBasis> {}
@@ -8,24 +8,22 @@ pub trait EvalBasisAllocator<B: Basis>: Allocator<B::NumComponents, B::NumBasis>
 impl <B: Basis> EvalBasisAllocator<B> for DefaultAllocator
     where DefaultAllocator: Allocator<B::NumComponents, B::NumBasis> {}
 
-/// Set of basis functions which can be evaluated at arbitrary points using [`Self::eval`].
+/// Pointwise evaluation of basis functions.
 ///
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-pub trait EvalBasis<T: RealField, X>: Basis + Sized
+/// The set of all [basis functions](Basis) can be evaluated at arbitrary parametric points of type [`Self::Coord<T>`]
+/// using [`Self::eval`].
+pub trait EvalBasis<T: Scalar>: Basis + Sized
     where DefaultAllocator: EvalBasisAllocator<Self>
 {
     /// Evaluates all basis functions at the parametric point `x`
     /// as the column-wise matrix `(b[1],...,b[n])`.
-    fn eval(&self, x: X) -> OMatrix<T, Self::NumComponents, Self::NumBasis>;
+    fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis>;
 }
 
-/// Scalar, differentiable basis functions.
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-pub trait EvalDerivs<T: RealField, X>: EvalBasis<T, X, NumComponents = U1>
+/// Evaluation of arbitrary derivatives of basis functions.
+///
+/// The derivatives up to a given order `K` can be evaluated using [`Self::eval_derivs`].
+pub trait EvalDerivs<T: RealField>: EvalBasis<T, NumComponents = U1>
     where DefaultAllocator: EvalBasisAllocator<Self>
 {
     /// Evaluates the value and the first [`K`] derivatives of all basis functions
@@ -40,7 +38,7 @@ pub trait EvalDerivs<T: RealField, X>: EvalBasis<T, X, NumComponents = U1>
     ///   └                     ┘
     /// ```
     /// where each row corresponds to the `i-1`-th derivative of basis functions.
-    fn eval_derivs<const K: usize>(&self, x: X) -> OMatrix<T, DimNameSum<Const<K>, U1>, Self::NumBasis>
+    fn eval_derivs<const K: usize>(&self, x: Self::Coord<T>) -> OMatrix<T, DimNameSum<Const<K>, U1>, Self::NumBasis>
         where Const<K>: DimNameAdd<U1>,
               DefaultAllocator: Allocator<<Const<K> as DimNameAdd<U1>>::Output, Self::NumBasis>;
 }
@@ -53,15 +51,14 @@ pub trait EvalGradAllocator<B: Basis, const D: usize>:
 impl <B: Basis, const D: usize> EvalGradAllocator<B, D> for DefaultAllocator
     where DefaultAllocator: EvalBasisAllocator<B> + Allocator<Const<D>, B::NumBasis> {}
 
-/// Basis functions for `H(grad)`-conforming spaces (i.e. nodal functions).
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-/// - [`D`] : Dimension of the reference domain.
-pub trait EvalGrad<T: RealField, X, const D: usize> : EvalBasis<T, X, NumComponents = U1>
+/// Evaluation of gradients of basis functions.
+///
+/// The [`D`]-dimensional gradient of all basis functions can be evaluated using [`Self::eval_grad`].
+/// The gradient of each basis function is represented as a column vector.
+pub trait EvalGrad<T: RealField, const D: usize> : EvalBasis<T, NumComponents = U1>
     where DefaultAllocator: EvalGradAllocator<Self, D>
 {
     /// Evaluates the gradients of all basis functions at the parametric point `x`
     /// as the column-wise matrix `(grad b[1],...,grad b[n])`.
-    fn eval_grad(&self, x: X) -> OMatrix<T, Const<D>, Self::NumBasis>;
+    fn eval_grad(&self, x: Self::Coord<T>) -> OMatrix<T, Const<D>, Self::NumBasis>;
 }

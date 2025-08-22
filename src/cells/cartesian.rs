@@ -1,5 +1,5 @@
 use crate::cells::geo;
-use crate::cells::lerp::Lerp;
+use crate::cells::lerp::MultiLerp;
 use crate::cells::topo::{Cell, CellBoundary};
 use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
@@ -82,29 +82,16 @@ impl<T: RealField + Copy, const K: usize> CartCell<T, K> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> geo::Cell<T, [T; D], D, D> for CartCell<T, D> {
-    type RefCell = UnitCube<D>;
-    type GeoMap = Lerp<T, D>;
+impl <T: RealField + Copy, const D: usize> geo::Cell<T> for CartCell<T, D> {
+    type ParametricCell = UnitCube<D>;
+    type GeoMap = MultiLerp<T, D>;
 
-    fn ref_cell(&self) -> Self::RefCell {
+    fn ref_cell(&self) -> Self::ParametricCell {
         UnitCube
     }
 
     fn geo_map(&self) -> Self::GeoMap {
-        Lerp::new(self.a, self.b)
-    }
-}
-
-impl <T: RealField + Copy> geo::Cell<T, T, 1, 1> for CartCell<T, 1> {
-    type RefCell = UnitCube<1>;
-    type GeoMap = Lerp<T, 1>;
-
-    fn ref_cell(&self) -> Self::RefCell {
-        UnitCube
-    }
-
-    fn geo_map(&self) -> Self::GeoMap {
-        Lerp::new(self.a, self.b)
+        MultiLerp::new(self.a, self.b)
     }
 }
 

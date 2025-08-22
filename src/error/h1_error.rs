@@ -1,14 +1,14 @@
-use crate::basis::eval::{EvalGrad, EvalGradAllocator};
+use crate::basis::eval::EvalGradAllocator;
 use crate::basis::grad::GradBasis;
 use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalBasis;
-use crate::cells::geo::Cell;
+use crate::basis::local::LocalGradBasis;
+use crate::cells::geo::{Cell, HasDim};
+use crate::diffgeo::chart::Chart;
 use crate::error::l2_error::L2Norm;
-use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
-use nalgebra::{Const, DefaultAllocator, DimMin, OVector, Point, RealField, SVector, U1};
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::QuadratureOnParametricCell;
+use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, U1};
 use std::iter::{Product, Sum};
 
 /// H1-norm on a mesh.
@@ -22,16 +22,14 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the squared H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
-    where
-        T: RealField + Copy + Product<T> + Sum<T>,
-        X: Dimensioned<T, D> + Copy,
-        M: Mesh<'a, T, X, D, D>,
-        M::GeoElem: Cell<T, X, D, D>,
-        U: Fn(Point<T, D>) -> OVector<T, U1>,
-        UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-        Const<D>: DimMin<Const<D>, Output=Const<D>>
+    pub fn norm_squared<T, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          M: Mesh<'a, T, D, D>,
+          M::GeoElem: HasDim<T, D>,
+          U: Fn(Point<T, D>) -> OVector<T, U1>,
+          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf
     {
         // Calculate ||u||^2 + ||grad u||^2
         self.0.norm_squared(u, quad) + self.0.norm_squared(u_grad, quad)
@@ -39,33 +37,30 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
-    where
-        T: RealField + Copy + Product<T> + Sum<T>,
-        X: Dimensioned<T, D> + Copy,
-        M: Mesh<'a, T, X, D, D>,
-        M::GeoElem: Cell<T, X, D, D>,
-        U: Fn(Point<T, D>) -> OVector<T, U1>,
-        UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-        Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-        Const<D>: DimMin<Const<D>, Output=Const<D>>
+    pub fn norm<T, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
+    where T: RealField + Copy + Product<T> + Sum<T>,
+          M: Mesh<'a, T, D, D>,
+          M::GeoElem: HasDim<T, D>,
+          U: Fn(Point<T, D>) -> OVector<T, U1>,
+          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf
     {
        self.norm_squared(u, u_grad, quad).sqrt()
     }
 
     /// Calculates the squared H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`, using the quadrature rule `quad`.
-    pub fn error_squared<T, X, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, X, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T> + HasDim<T, D>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
+          B: LocalGradBasis<T, D> + Clone,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
@@ -80,17 +75,16 @@ impl<'a, M> H1Norm<'a, M> {
     /// Calculates the H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`,
     /// using the quadrature rule `quad`.
-    pub fn error<T, X, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, X, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<T, X, M::GeoElem, Q, D>) -> T
+    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
-          M: Mesh<'a, T, X, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T, X, D, D>,
-          B: LocalBasis<T, X, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, X, D>,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: Cell<T> + HasDim<T, D>,
+          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
+          B: LocalGradBasis<T, D> + Clone,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: Quadrature<T, X, <M::GeoElem as Cell<T, X, D, D>>::RefCell>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {

@@ -19,13 +19,14 @@ pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T,
 impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.0.num_nodes())
     }
 }
 
-impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T, (T, T)> for CatmarkBasis<'a, T, M> {
+impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T> for CatmarkBasis<'a, T, M> {
     type Elem = &'a CatmarkPatchNodes;
     type ElemBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
@@ -169,6 +170,7 @@ impl CatmarkPatchBasis {
 impl Basis for CatmarkPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         match self {
@@ -180,7 +182,7 @@ impl Basis for CatmarkPatchBasis {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive> EvalBasis<T, (T, T)> for CatmarkPatchBasis {
+impl <T: RealField + Copy + ToPrimitive> EvalBasis<T> for CatmarkPatchBasis {
     fn eval(&self, x: (T, T)) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let (u, v) = x;
         match self {
@@ -200,7 +202,7 @@ impl <T: RealField + Copy + ToPrimitive> EvalBasis<T, (T, T)> for CatmarkPatchBa
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, (T, T), 2> for CatmarkPatchBasis {
+impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, 2> for CatmarkPatchBasis {
     fn eval_grad(&self, x: (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         let (u, v) = x;
         match self {

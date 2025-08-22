@@ -4,7 +4,7 @@ use approx::assert_abs_diff_eq;
 use crate::common::mesh_examples::make_pentagon_mesh;
 use subd::mesh::traits::Mesh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::quadrature::traits::Quadrature;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
@@ -14,7 +14,7 @@ fn test() {
     // Define quadrature
     let p = 2;
     let m_max = 15;
-    let gauss_quad = GaussLegendreMulti::<f64, 2>::with_degrees([p, p]);
+    let gauss_quad = GaussLegendreBi::with_degrees(p, p);
     let lin_quad = PullbackQuad::new(gauss_quad.clone());
     let subd_quad = SubdUnitSquareQuad::new(gauss_quad.clone(), m_max);
     let catmark_quad = PullbackQuad::new(subd_quad);
