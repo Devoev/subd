@@ -1,15 +1,12 @@
+use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalBasis;
-use crate::cells::geo::Cell;
-use crate::index::dimensioned::Dimensioned;
+use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::Quadrature;
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, DimMin, DimName, Dyn, OVector, Point, RealField};
+use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector};
 use std::iter::{zip, Product, Sum};
-use crate::basis::eval::EvalBasisAllocator;
-use crate::diffgeo::chart::Chart;
 
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, M> {
@@ -25,16 +22,13 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the squared L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm_squared<T, const N: usize, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
-          M::GeoElem: Cell<T>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-          U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
-          DefaultAllocator: Allocator<N>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          M::GeoElem: HasDim<T, D>,
+          U: Fn(Point<T, D>) -> SVector<T, N>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf
     {
         // Iterate over every element and calculate error element-wise
         self.msh.elem_iter()
@@ -54,16 +48,13 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, X, N: DimName, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm<T, const N: usize, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          X: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D>,
-          M::GeoElem: Cell<T>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = X, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-          U: Fn(Point<T, D>) -> OVector<T, N>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = X>,
-          DefaultAllocator: Allocator<N>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          M::GeoElem: HasDim<T, D>,
+          U: Fn(Point<T, D>) -> SVector<T, N>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Const<D>: DimMinSelf
     {
         self.norm_squared(u, quad).sqrt()
     }
@@ -72,15 +63,13 @@ impl<'a, M> L2Norm<'a, M> {
     /// using the quadrature rule `quad`.
     pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          M::GeoElem: HasDim<T, D> + HasBasisCoord<T, B>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf
     {
         // Iterate over every element and calculate error element-wise
         self.msh.elem_iter()
@@ -104,15 +93,13 @@ impl<'a, M> L2Norm<'a, M> {
     /// using the quadrature rule `quad`.
     pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          B::Coord<T>: Dimensioned<T, D> + Copy,
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          M::GeoElem: HasDim<T, D> + HasBasisCoord<T, B>,
           B: LocalBasis<T>,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
+          Q: QuadratureOnParametricCell<T, M::GeoElem>,
           DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
-          Const<D>: DimMin<Const<D>, Output = Const<D>>
+          Const<D>: DimMinSelf
     {
         self.error_squared(uh, u, quad).sqrt()
     }
