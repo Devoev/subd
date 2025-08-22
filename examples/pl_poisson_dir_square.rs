@@ -32,7 +32,7 @@ use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 3;
+const NUM_REFINE: u8 = 6;
 
 pub fn main() -> io::Result<()> {
     // Define problem

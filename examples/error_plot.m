@@ -8,9 +8,16 @@ err_h1 = data(:,3);
 
 %% Calculate approximate convergence rate
 x = log(n_dof_sqrt);
+
+%% L2
+y = log(err_l2);
+q =  (y(end) - y(end-1)) / (x(end) - x(end-1));
+fprintf('Approximated order of convergence in L2: q = %.6f \n', -q);
+
+%% H1
 y = log(err_h1);
 q =  (y(end) - y(end-1)) / (x(end) - x(end-1));
-fprintf('Approximated order of convergence in H1: q = %.6f', -q);
+fprintf('Approximated order of convergence in H1: q = %.6f \n', -q);
 
 %% Plot
 figure()
