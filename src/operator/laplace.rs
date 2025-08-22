@@ -1,5 +1,5 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{LocalBasis, LocalGradBasis};
 use crate::basis::space::Space;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
@@ -38,8 +38,7 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           E: HasBasisCoord<T, B> + HasDim<T, D>,
           M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T, NumComponents = U1>,
-          B::ElemBasis: EvalGrad<T, D>,
+          B: LocalGradBasis<T, D>,
           Q: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
           Const<D>: DimMinSelf + ToTypenum

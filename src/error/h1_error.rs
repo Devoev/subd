@@ -1,7 +1,7 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
 use crate::basis::grad::GradBasis;
 use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{LocalBasis, LocalGradBasis};
 use crate::cells::geo::Cell;
 use crate::error::l2_error::L2Norm;
 use crate::index::dimensioned::Dimensioned;
@@ -64,8 +64,7 @@ impl<'a, M> H1Norm<'a, M> {
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
           M::GeoElem: Cell<T>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-          B: LocalBasis<T, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, D>,
+          B: LocalGradBasis<T, D> + Clone,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,
@@ -90,8 +89,7 @@ impl<'a, M> H1Norm<'a, M> {
           M: Mesh<'a, T, D, D, Elem = B::Elem>,
           M::GeoElem: Cell<T>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-          B: LocalBasis<T, NumComponents=U1> + Clone,
-          B::ElemBasis: EvalGrad<T::RealField, D>,
+          B: LocalGradBasis<T, D> + Clone,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: Quadrature<T, <M::GeoElem as Cell<T>>::ParametricCell, Node = B::Coord<T>>,

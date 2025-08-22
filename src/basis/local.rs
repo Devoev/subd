@@ -1,7 +1,6 @@
+use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::basis::traits::Basis;
-use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar};
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
+use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar, U1};
 
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
 
@@ -30,6 +29,15 @@ pub trait LocalBasis<T: Scalar>: Basis<NumBasis = Dyn>
     /// Returns an iterator over all global indices of the local basis of `elem`.
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices;
 }
+
+/// Local basis functions with gradient evaluations.
+pub trait LocalGradBasis<T: RealField, const D: usize>: LocalBasis<T, ElemBasis: EvalGrad<T, D>, NumComponents = U1>
+    where DefaultAllocator: EvalGradAllocator<Self::ElemBasis, D> {}
+
+impl <T: RealField, const D: usize, B> LocalGradBasis<T, D> for B
+where B: LocalBasis<T, ElemBasis: EvalGrad<T, D>, NumComponents = U1>, 
+      DefaultAllocator: EvalGradAllocator<Self::ElemBasis, D>
+{}
 
 /// Local basis functions that can find the local element by parametric value.
 pub trait FindElem<T: Scalar>: LocalBasis<T>
