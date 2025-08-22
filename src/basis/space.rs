@@ -1,7 +1,7 @@
 use crate::basis::error::CoeffsSpaceDimError;
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::{FindElem, LocalBasis};
+use crate::basis::local::{FindElem, LocalBasis, LocalGradBasis};
 use crate::basis::traits::Basis;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, RealField};
 use std::iter::zip;
@@ -132,8 +132,7 @@ type EvalGradLocalWithIdx<T, B, const D: usize> = (EvalGradLocal<T, B, D>, <B as
 
 impl <T, B, const D: usize> Space<T, B, D>
     where T: RealField,
-          B: LocalBasis<T>,
-          B::ElemBasis: EvalGrad<T, D>,
+          B: LocalGradBasis<T, D>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Evaluates the gradients of only local basis functions on the given `elem` at the parametric point `x`.
@@ -163,8 +162,7 @@ impl <T, B, const D: usize> Space<T, B, D>
 
 impl <T, B, const D: usize> Space<T, B, D>
     where T: RealField,
-          B: FindElem<T>,
-          B::ElemBasis: EvalGrad<T, D>,
+          B: FindElem<T> + LocalGradBasis<T, D>,
           B::Coord<T>: Copy,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {

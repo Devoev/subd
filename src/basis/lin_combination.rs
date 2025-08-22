@@ -1,6 +1,6 @@
 use crate::basis::error::CoeffsSpaceDimError;
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::basis::local::{FindElem, LocalBasis};
+use crate::basis::local::{FindElem, LocalBasis, LocalGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
@@ -107,8 +107,7 @@ where T: ComplexField,
 
 impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
 where T: ComplexField,
-      B: LocalBasis<T::RealField, NumComponents = U1>,
-      B::ElemBasis: EvalGrad<T::RealField, D>,
+      B: LocalGradBasis<T::RealField, D>,
       DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>
 {
     /// Evaluates the gradient of the linear combination on the given `elem` at the parametric point `x`.
