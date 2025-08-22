@@ -8,11 +8,10 @@ pub trait EvalBasisAllocator<B: Basis>: Allocator<B::NumComponents, B::NumBasis>
 impl <B: Basis> EvalBasisAllocator<B> for DefaultAllocator
     where DefaultAllocator: Allocator<B::NumComponents, B::NumBasis> {}
 
-/// Set of basis functions which can be evaluated at arbitrary points using [`Self::eval`].
+/// Pointwise evaluation of basis functions.
 ///
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
+/// The set of all [basis functions](Basis) can be evaluated at arbitrary parametric points of type [`Self::Coord<T>`]
+/// using [`Self::eval`].
 pub trait EvalBasis<T: Scalar>: Basis + Sized
     where DefaultAllocator: EvalBasisAllocator<Self>
 {
@@ -21,10 +20,9 @@ pub trait EvalBasis<T: Scalar>: Basis + Sized
     fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis>;
 }
 
-/// Scalar, differentiable basis functions.
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
+/// Evaluation of arbitrary derivatives of basis functions.
+///
+/// The derivatives up to a given order `K` can be evaluated using [`Self::eval_derivs`].
 pub trait EvalDerivs<T: RealField>: EvalBasis<T, NumComponents = U1>
     where DefaultAllocator: EvalBasisAllocator<Self>
 {
@@ -53,11 +51,10 @@ pub trait EvalGradAllocator<B: Basis, const D: usize>:
 impl <B: Basis, const D: usize> EvalGradAllocator<B, D> for DefaultAllocator
     where DefaultAllocator: EvalBasisAllocator<B> + Allocator<Const<D>, B::NumBasis> {}
 
-/// Basis functions for `H(grad)`-conforming spaces (i.e. nodal functions).
-/// # Type parameters
-/// - [`T`] : Real scalar type.
-/// - [`X`] : Type of parametric values in the reference domain.
-/// - [`D`] : Dimension of the reference domain.
+/// Evaluation of gradients of basis functions.
+///
+/// The [`D`]-dimensional gradient of all basis functions can be evaluated using [`Self::eval_grad`].
+/// The gradient of each basis function is represented as a column vector.
 pub trait EvalGrad<T: RealField, const D: usize> : EvalBasis<T, NumComponents = U1>
     where DefaultAllocator: EvalGradAllocator<Self, D>
 {
