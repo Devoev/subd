@@ -1,8 +1,11 @@
+use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::cells::cartesian::CartCell;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::unit_cube::UnitCube;
+use crate::cells::quad::Quad;
 use crate::diffgeo::chart::Chart;
-use nalgebra::{stack, Const, Matrix, Point, RealField, SMatrix, SVector, Scalar, U1, U2};
+use crate::subd::lin_subd::basis::LinBasisQuad;
+use nalgebra::{Const, Matrix, Point, RealField, SMatrix, SVector, Scalar, U1, U2};
 
 /// **L**inear int**erp**olation (Lerp) between two points in [`M`] dimensions.
 ///
@@ -11,7 +14,7 @@ use nalgebra::{stack, Const, Matrix, Point, RealField, SMatrix, SVector, Scalar,
 /// ```text
 /// t ↦ (1 - t) a + t b = (b - a) t + a
 /// ```
-/// where `a` and `b` are the start and end coordinates of the rectangle respectively.
+/// where `a` and `b` are the start and end coordinates of the line segment respectively.
 pub struct Lerp<T: Scalar, const M: usize> {
     /// Start coordinates.
     pub a: Point<T, M>,
@@ -48,6 +51,7 @@ impl <T: RealField + Copy, const M: usize> Chart<T> for Lerp<T, M> {
 /// ```text
 /// x[i] ↦ (1 - x[i]) a[i] + x[i] b[i] .
 /// ```
+/// where `a` and `b` are the start and end coordinates of the cell respectively.
 /// For `x[i] = t` the mapping is the same as the univariate [`Lerp`].
 pub struct MultiLerp<T: Scalar, const M: usize> {
     /// Start coordinates.
@@ -108,9 +112,11 @@ impl <T: RealField + Copy, const M: usize> Chart<T> for MultiLerp<T, M> {
     }
 }
 
-// todo: possibly remove multivariate transformation of Lerp and add MultiLerp?
-
-/// Bilinear interpolation between 4 vertices in [`M`]-dimensional Euclidean space.
+/// **Bil**inear int**erp**olation (Bi-Lerp) between four points in [`M`] dimensions.
+///
+/// Linearly transforms the [unit square](UnitCube) `[0,1]²` to the [`Quad`]
+/// formed by the four given vertices,
+/// by applying univariate Lerps in both parametric direction successively.
 pub struct BiLerp<T: Scalar, const M: usize> {
     pub vertices: [Point<T, M>; 4]
 }
@@ -119,6 +125,11 @@ impl<T: Scalar, const M: usize> BiLerp<T, M> {
     /// Constructs a new [`BiLerp`] from the given array of `vertices`.
     pub fn new(vertices: [Point<T, M>; 4]) -> Self {
         BiLerp { vertices }
+    }
+
+    /// Returns the `4✕M` matrix of the vertex coordinates.
+    fn coords(&self) -> SMatrix<T, 4, M> {
+        Matrix::from_rows(&self.vertices.clone().map(|p| p.coords.transpose()))
     }
 }
 // todo: replace implementation using lowest order nodal basis interpolation
@@ -129,37 +140,25 @@ impl <T: RealField + Copy, const M: usize> Chart<T> for BiLerp<T, M> {
     type GeometryDim = Const<M>;
 
     fn eval(&self, x: (T, T)) -> Point<T, M> {
-        let [q11, q12, q22, q21] = self.vertices;
-        let (u, v) = x;
-        let l1 = Lerp::new(q11, q12);              // q11.lerp(q12, u);
-        let l2 = Lerp::new(q21, q22);              // q21.lerp(q22, u);
-        let l = Lerp::new(l1.eval(u), l2.eval(u)); // l1.lerp(&l2, v)
-        l.eval(v)
+        let b = LinBasisQuad.eval(x);
+        let c = self.coords();
+        Point::from((b * c).transpose())
     }
 
     #[allow(clippy::toplevel_ref_arg)]
     fn eval_diff(&self, x: (T, T)) -> SMatrix<T, M, 2> {
-        let [q11, q12, q22, q21] = self.vertices;
-        let (u, v) = x;
-        let l1 = Lerp::new(q11, q12); // let l1 = q11.lerp(q12, u);
-        let l2 = Lerp::new(q21, q22); // let l2 = q21.lerp(q22, u);
-        let l_du = Lerp::new(         // (q12 - q11).lerp(&(q22 - q21), v),
-            Point::from(l1.eval_diff(u)),
-            Point::from(l2.eval_diff(v)),
-        );
-        stack![
-            l_du.eval(v).coords,
-            l2.eval(u) - l1.eval(u) // l2 - l1
-        ]
+        let grad_b = LinBasisQuad.eval_grad(x);
+        let c = self.coords();
+        (grad_b * c).transpose()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use approx::assert_abs_diff_eq;
     use nalgebra::{matrix, point, vector};
     use rand::random_range;
-    use super::*;
 
     #[test]
     fn eval_lerp() {
