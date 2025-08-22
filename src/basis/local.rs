@@ -30,12 +30,12 @@ pub trait LocalBasis<T: Scalar>: Basis<NumBasis = Dyn>
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices;
 }
 
-/// Local basis functions with gradient evaluations.
+/// Local basis functions with [gradient evaluations](EvalGrad).
 pub trait LocalGradBasis<T: RealField, const D: usize>: LocalBasis<T, ElemBasis: EvalGrad<T, D>, NumComponents = U1>
     where DefaultAllocator: EvalGradAllocator<Self::ElemBasis, D> {}
 
 impl <T: RealField, const D: usize, B> LocalGradBasis<T, D> for B
-where B: LocalBasis<T, ElemBasis: EvalGrad<T, D>, NumComponents = U1>, 
+where B: LocalBasis<T, ElemBasis: EvalGrad<T, D>, NumComponents = U1>,
       DefaultAllocator: EvalGradAllocator<Self::ElemBasis, D>
 {}
 

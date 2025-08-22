@@ -1,6 +1,6 @@
 use crate::basis::eval::{EvalBasis, EvalGrad, EvalGradAllocator};
 use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::{LocalBasis, LocalGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
@@ -30,8 +30,7 @@ impl <T: RealField, B: EvalGrad<T, D>, const D: usize> EvalBasis<T> for GradBasi
 /// Implement [`LocalBasis`] if `B` is also a local basis.
 impl <T, B, const D: usize> LocalBasis<T> for GradBasis<B, D>
 where T: RealField,
-      B: LocalBasis<T, NumComponents = U1>,
-      B::ElemBasis: EvalGrad<T, D>,
+      B: LocalGradBasis<T, D>,
       DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     type Elem = B::Elem;
@@ -52,8 +51,7 @@ pub type GradSpace<T, B, const D: usize> = Space<T, GradBasis<B, D>, D>;
 
 impl <T, B, const D: usize> Space<T, B, D>
 where T: RealField,
-      B: LocalBasis<T, NumComponents = U1>,
-      B::ElemBasis: EvalGrad<T, D>,
+      B: LocalGradBasis<T, D>,
       DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Returns the gradient of this space.
@@ -65,8 +63,7 @@ where T: RealField,
 
 impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
     where T: ComplexField,
-          B: LocalBasis<T::RealField, NumComponents = U1>,
-          B::ElemBasis: EvalGrad<T::RealField, D>,
+          B: LocalGradBasis<T::RealField, D>,
           DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
 {
     /// Returns the gradient of this linear combination in the space `grad_space`.

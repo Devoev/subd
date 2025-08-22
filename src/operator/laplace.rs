@@ -1,14 +1,13 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
-use crate::basis::local::{LocalBasis, LocalGradBasis};
+use crate::basis::local::LocalGradBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
+use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
-use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, DimMin, OMatrix, RealField, SMatrix, ToTypenum, U1};
+use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 

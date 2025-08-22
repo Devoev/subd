@@ -1,8 +1,9 @@
-use crate::basis::eval::{EvalGrad, EvalGradAllocator};
+use crate::basis::eval::EvalGradAllocator;
 use crate::basis::grad::GradBasis;
 use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::{LocalBasis, LocalGradBasis};
+use crate::basis::local::LocalGradBasis;
 use crate::cells::geo::Cell;
+use crate::diffgeo::chart::Chart;
 use crate::error::l2_error::L2Norm;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::traits::Mesh;
@@ -10,7 +11,6 @@ use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::Quadrature;
 use nalgebra::{Const, DefaultAllocator, DimMin, OVector, Point, RealField, SVector, U1};
 use std::iter::{Product, Sum};
-use crate::diffgeo::chart::Chart;
 
 /// H1-norm on a mesh.
 pub struct H1Norm<'a, M>(L2Norm<'a, M>);
