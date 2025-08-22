@@ -7,20 +7,19 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
+use iter_num_tools::lin_space;
 use itertools::{izip, Itertools};
 use nalgebra::{matrix, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
 use std::process::Command;
-use iter_num_tools::lin_space;
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
-use subd::knots::knot_span::KnotSpan;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
@@ -28,7 +27,7 @@ use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
@@ -42,8 +41,8 @@ pub fn main() -> io::Result<()> {
 
     // Define mesh
     let coords_square = matrix![
-            0.0, 0.0, 1.0, 1.0;
-            0.0, 1.0, 1.0, 0.0
+            0.0, 1.0, 1.0, 0.0;
+            0.0, 0.0, 1.0, 1.0
         ].transpose();
 
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
@@ -56,7 +55,6 @@ pub fn main() -> io::Result<()> {
     for i in 0..NUM_REFINE {
         // Print info
         println!("Iteration {} / {NUM_REFINE}", i+1);
-
 
         // Refine mesh
         msh = msh.lin_subd().unpack();
