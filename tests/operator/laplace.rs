@@ -5,7 +5,7 @@
 //! - Positive semidefinite: `ꟛ(M) >= 0` (todo: this is not tested yet)
 
 use crate::common::matrix_properties::{assert_has_rank, assert_is_symmetric};
-use crate::common::mesh_examples::make_pentagon_mesh;
+use crate::common::mesh_examples::{make_pentagon_mesh, make_unit_square_mesh};
 use nalgebra::{matrix, DMatrix};
 use std::error::Error;
 use subd::bspline::de_boor::MultiDeBoor;
@@ -85,19 +85,29 @@ fn bspline_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pl_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
-    // Define mesh and space
-    let msh = make_pentagon_mesh().lin_subd().unpack();
-    let space = PlSpaceQuad::new(PlBasisQuad(&msh));
-
     // Define quadrature
     let ref_quad = GaussLegendreBi::with_degrees(2, 2);
     let quad = PullbackQuad::new(ref_quad);
 
-    // Build mass matrix
+    // Mesh of unit square
+    let msh = make_unit_square_mesh();
+    let space = PlSpaceQuad::new(PlBasisQuad(&msh));
+
+    // Do tests
+    let laplace = Laplace::new(&msh, &space);
+    let stiff_matrix = DMatrix::from(&laplace.assemble(quad.clone()));
+
+    assert_is_symmetric(&stiff_matrix, 1e-13);
+    assert_has_rank(&stiff_matrix, space.dim() - 1, 1e-13);
+
+    // Mesh of regular pentagon
+    let msh = make_pentagon_mesh().lin_subd().unpack();
+    let space = PlSpaceQuad::new(PlBasisQuad(&msh));
+
+    // Do tests
     let laplace = Laplace::new(&msh, &space);
     let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
 
-    // Do tests
     assert_is_symmetric(&stiff_matrix, 1e-13);
     assert_has_rank(&stiff_matrix, space.dim() - 1, 1e-13);
     Ok(())
