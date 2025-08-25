@@ -32,3 +32,17 @@ pub fn make_pentagon_mesh() -> QuadVertexMesh<f64, 2> {
     ];
     QuadVertexMesh::new(coords, faces)
 }
+
+/// Constructs the four corner points of a rectangle of side-lengths `a` and `b`,
+/// starting in the origin `(0,0)`.
+/// The nodes are ordered as in [`QuadNodes`].
+pub fn make_rectangle_geo(a: f64, b: f64) -> [Point2<f64>; 4] {
+    [Point2::origin(), Point2::new(a, 0.0), Point2::new(a, b), Point2::new(0.0, b)]
+}
+
+/// Constructs the lowest-order quad mesh for the unit square.
+pub fn make_unit_square_mesh() -> QuadVertexMesh<f64, 2> {
+    let coords = make_rectangle_geo(1.0, 1.0).to_vec();
+    let quad = QuadNodes::from_indices(0, 1, 2, 3);
+    QuadVertexMesh::new(coords, vec![quad])
+}

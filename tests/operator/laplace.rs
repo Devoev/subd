@@ -1,7 +1,8 @@
 //! Tests for properties of the Galerkin discretized Laplace operator, i.e *stiffness matrix*.
 //! The stiffness matrix should be
 //! - Symmetric: `K = Kᐪ`
-//! - Positive definite: `ꟛ(M) > 0`
+//! - Rank deficient: `rank(K) = dim(K) - 1`
+//! - Positive semidefinite: `ꟛ(M) >= 0` (todo: this is not tested yet)
 
 use crate::common::matrix_properties::{assert_has_rank, assert_is_symmetric};
 use crate::common::mesh_examples::make_pentagon_mesh;
