@@ -90,7 +90,7 @@ fn pl_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
     let quad = PullbackQuad::new(ref_quad);
 
     // Mesh of unit square
-    let msh = make_unit_square_mesh();
+    let msh = make_unit_square_mesh().lin_subd().unpack();
     let space = PlSpaceQuad::new(PlBasisQuad(&msh));
 
     // Do tests
