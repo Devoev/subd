@@ -20,6 +20,7 @@ use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
+use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 #[test]
 fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
@@ -42,7 +43,7 @@ fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);
-    assert_is_positive_definite(&mass_matrix)?;
+    assert_is_positive_definite(&mass_matrix, 1e-13)?;
     Ok(())
 }
 
@@ -77,6 +78,26 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);
-    assert_is_positive_definite(&mass_matrix)?;
+    assert_is_positive_definite(&mass_matrix, 1e-13)?;
+    Ok(())
+}
+
+#[test]
+fn pl_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
+    // Define mesh and space
+    let msh = make_pentagon_mesh().lin_subd().unpack();
+    let space = PlSpaceQuad::new(PlBasisQuad(&msh));
+
+    // Define quadrature
+    let ref_quad = GaussLegendreBi::with_degrees(2, 2);
+    let quad = PullbackQuad::new(ref_quad);
+
+    // Build mass matrix
+    let hodge = Hodge::new(&msh, &space);
+    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
+
+    // Do tests
+    assert_is_symmetric(&mass_matrix, 1e-13);
+    assert_is_positive_definite(&mass_matrix, 1e-13)?;
     Ok(())
 }
