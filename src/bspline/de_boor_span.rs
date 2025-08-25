@@ -171,9 +171,9 @@ impl<T: RealField + Copy> EvalGrad<T, 1> for DeBoorSpan<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::assert_relative_eq;
+    use approx::{assert_abs_diff_eq, assert_relative_eq};
     use itertools::izip;
-    use nalgebra::dvector;
+    use nalgebra::{dmatrix, dvector};
     use rand::random_range;
 
     fn setup_eval() -> ([f64; 10], [DeBoorSpan<f64>; 10]) {
@@ -188,6 +188,19 @@ mod tests {
         // Constructs local bases
         let local_bases = spans.map(|idx| DeBoorSpan::new(xi.clone(), p, KnotSpan(idx)));
         (ts, local_bases)
+    }
+
+    fn setup_eval_derivs() -> (f64, DeBoorSpan<f64>) {
+        // Get random parametric value
+        let t = random_range(0.0..=1.0);
+
+        // Define first knot vector
+        let p = 1;
+        let n = 5;
+        let xi = KnotVec(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
+        let idx = KnotSpan::find(&xi, n, t).unwrap();
+        let basis = DeBoorSpan::new(xi, p, idx);
+        (t, basis)
     }
 
     fn setup_eval_derivs_sum() -> (f64, DeBoorSpan<f64>, DeBoorSpan<f64>) {
@@ -234,6 +247,18 @@ mod tests {
             let eval = b.eval(t).transpose();
             assert_relative_eq!(eval, eval_exact, epsilon = 1e-5);
         }
+    }
+
+    #[test]
+    fn eval_derivs() {
+        let (t, b) = setup_eval_derivs();
+        let eval = b.eval_derivs::<2>(t);
+
+        // Assert that first derivatives are either -4 or +4, because elements are of size 1/4
+        assert_abs_diff_eq!(eval.row(1).into_owned(), dvector![-4.0, 4.0].transpose());
+
+        // Assert that second derivatives are all zero, because function is PL
+        assert_abs_diff_eq!(eval.row(2).into_owned(), dvector![0.0, 0.0].transpose());
     }
 
     #[test]
