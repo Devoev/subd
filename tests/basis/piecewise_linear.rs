@@ -37,13 +37,13 @@ fn pl_basis() {
 
     // Compare evaluation
     let mut eval_pl = space_pl.eval_on_elem(&elem_pl, (u, v));
-    let eval_spline = space_spline.eval_on_elem(&elem_spline, [u / 2.0, v / 2.0]);
+    let eval_spline = space_spline.eval_on_elem(&elem_spline, [u / 2.0, v / 2.0]); // Map parameters from [0,1] to [0,1/2]
     to_lex_ordering(&mut eval_pl);
     assert_abs_diff_eq!(eval_pl.as_slice(), eval_spline.as_slice());
 
     // Compare gradient evaluation
-    let mut eval_pl = space_pl.eval_grad_on_elem(&elem_pl, (u, v));
-    let eval_spline = space_spline.eval_grad_on_elem(&elem_spline, [u / 2.0, v / 2.0]);
+    let mut eval_pl = space_pl.eval_grad_on_elem(&elem_pl, (u, v)) * 2.0; // Apply inverse Jacobian (pullback) to gradients
+    let eval_spline = space_spline.eval_grad_on_elem(&elem_spline, [u / 2.0, v / 2.0]); // Map parameters from [0,1] to [0,1/2]
     to_lex_ordering(&mut eval_pl);
-    assert_abs_diff_eq!(eval_pl.as_slice(), eval_spline.as_slice()); // todo: why is a scale factor of 2 required here?
+    assert_abs_diff_eq!(eval_pl.as_slice(), eval_spline.as_slice());
 }
