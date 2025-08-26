@@ -3,6 +3,9 @@ use crate::basis::lin_combination::LinCombination;
 use crate::basis::local::{LocalBasis, LocalGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
+use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord, HasDim};
+use crate::diffgeo::chart::Chart;
+use crate::mesh::traits::Mesh;
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
@@ -69,5 +72,82 @@ impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
     /// Returns the gradient of this linear combination in the space `grad_space`.
     pub fn grad(self, grad_space: &'a GradSpace<T::RealField, B, D>) -> LinCombination<'a, T, GradBasis<B, D>, D> {
         LinCombination::new(self.coeffs, grad_space).unwrap()
+    }
+}
+
+/// [`GradBasis`] mapped to the physical domain of a single element.
+pub struct GradBasisPullbackLocal<C, B, const D: usize> {
+    chart: C,
+    grad_basis: GradBasis<B, D>,
+}
+
+impl<C, B, const D: usize> Basis for GradBasisPullbackLocal<C, B, D>
+where
+    B: Basis<NumComponents = U1>,
+{
+    type NumBasis = B::NumBasis;
+    type NumComponents = Const<D>;
+    type Coord<T> = B::Coord<T>;
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        self.grad_basis.num_basis_generic()
+    }
+}
+
+impl<T, C, B, const D: usize> EvalBasis<T> for GradBasisPullbackLocal<C, B, D>
+    where T: RealField,
+          B: EvalGrad<T, D>,
+          B::Coord<T>: Copy,
+          C: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+          DefaultAllocator: EvalGradAllocator<B, D>
+{
+    fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
+        let d_phi = self.chart.eval_diff(x);
+        d_phi.transpose().try_inverse().unwrap() * self.grad_basis.eval(x)
+    }
+}
+
+// todo: implementation is correct, but refactor all code below
+//  should we differentiate between Basis in the parametric and physical domain in general?
+
+/// [`GradBasis`] mapped to the physical domain by inverse pullbacks.
+pub struct GradBasisPullback<'a, M, B, const D: usize> {
+    pub msh: &'a M,
+    pub grad_basis: GradBasis<B, D>
+}
+
+impl<'a, M, B, const D: usize> Basis for GradBasisPullback<'a, M, B, D>
+where
+    B: Basis<NumComponents = U1>,
+{
+    type NumBasis = B::NumBasis;
+    type NumComponents = Const<D>;
+    type Coord<T> = B::Coord<T>;
+
+    fn num_basis_generic(&self) -> Self::NumBasis {
+        self.grad_basis.num_basis_generic()
+    }
+}
+
+impl <'a, T, M, B, const D: usize> LocalBasis<T> for GradBasisPullback<'a, M, B, D>
+    where T: RealField,
+          B: LocalGradBasis<T, D>,
+          B::Coord<T>: Copy,
+          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M::GeoElem: HasBasisCoord<T, B> + HasDim<T, D>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, M::GeoElem>
+{
+    type Elem = B::Elem;
+    type ElemBasis = GradBasisPullbackLocal<<M::GeoElem as Cell<T>>::GeoMap, B::ElemBasis, D>;
+    type GlobalIndices = B::GlobalIndices;
+
+    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+        let parametric_basis = self.grad_basis.elem_basis(elem);
+        let chart = self.msh.geo_elem(elem).geo_map();
+        GradBasisPullbackLocal { chart, grad_basis: parametric_basis }
+    }
+
+    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+        self.grad_basis.global_indices(elem)
     }
 }

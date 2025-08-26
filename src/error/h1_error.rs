@@ -1,5 +1,5 @@
 use crate::basis::eval::EvalGradAllocator;
-use crate::basis::grad::GradBasis;
+use crate::basis::grad::{GradBasis, GradBasisPullback};
 use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalGradBasis;
 use crate::cells::geo::{Cell, HasDim};
@@ -10,6 +10,7 @@ use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::QuadratureOnParametricCell;
 use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, U1};
 use std::iter::{Product, Sum};
+use crate::basis::space::Space;
 
 /// H1-norm on a mesh.
 pub struct H1Norm<'a, M>(L2Norm<'a, M>);
@@ -57,6 +58,7 @@ impl<'a, M> H1Norm<'a, M> {
           M::GeoElem: Cell<T> + HasDim<T, D>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
           B: LocalGradBasis<T, D> + Clone,
+          B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: QuadratureOnParametricCell<T, M::GeoElem>,
@@ -65,8 +67,12 @@ impl<'a, M> H1Norm<'a, M> {
           DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
         // Compute gradient of uh (todo: possibly add as input argument?)
-        let grad_space = uh.space.clone().grad();
-        let uh_grad = uh.clone().grad(&grad_space);
+        // todo: very ugly. When GradBasisPullback gets refactored, update this code!
+        let grad_space_parametric = uh.space.clone().grad();
+        let grad_basis = GradBasisPullback { msh: self.0.msh, grad_basis: grad_space_parametric.basis };
+        let grad_space = Space::new(grad_basis);
+        // let uh_grad = uh.clone().grad(&grad_space);
+        let uh_grad = LinCombination::new(uh.coeffs.clone(), &grad_space).unwrap();
 
         // Calculate ||u - uh||^2 + ||grad u - grad uh||^2
         self.0.error_squared(uh, u, quad) + self.0.error_squared(&uh_grad, u_grad, quad)
@@ -81,6 +87,7 @@ impl<'a, M> H1Norm<'a, M> {
           M::GeoElem: Cell<T> + HasDim<T, D>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
           B: LocalGradBasis<T, D> + Clone,
+          B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: QuadratureOnParametricCell<T, M::GeoElem>,
