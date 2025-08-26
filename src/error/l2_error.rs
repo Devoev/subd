@@ -11,7 +11,7 @@ use std::iter::{zip, Product, Sum};
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, M> {
     /// Mesh defining the geometry discretization.
-    msh: &'a M,
+    pub(crate) msh: &'a M,
 }
 
 impl<'a, M> L2Norm<'a, M> {
