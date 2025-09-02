@@ -2,6 +2,72 @@ clear
 pkg load nurbs
 pkg load geopdes
 
+%% Define solution functions
+function coeffs = calc_coeffs(coords)
+    % Get x and y coordinates of corner points
+    coords = coords(2:2:end, :);
+    xs = coords(:, 1);
+    ys = coords(:, 2);
+
+    % Calculate coefficients
+    a = -diff([ys; ys(1)])'; % Circular difference
+    b = -diff([xs; xs(1)])'; % Circular difference
+    c = arrayfun(@(i) coords(i, 1) * coords(mod(i, size(coords, 1)) + 1, 2) - ...
+                 coords(mod(i, size(coords, 1)) + 1, 1) * coords(i, 2), ...
+                 1:size(coords, 1))';
+    coeffs = {a, b, c};
+end
+
+function result = eval_factor(coeffs, i, x, y)
+    a = coeffs{1};
+    b = coeffs{2};
+    c = coeffs{3};
+    result = a(i) * x + b(i) * y + c(i);
+end
+
+function result = eval_product(coeffs, x, y)
+    result = 1;
+    for i = 1:5
+        result = result .* eval_factor(coeffs, i, x, y);
+    end
+end
+
+function result = eval_deriv_summand(coeffs, j, x, y)
+    result = 1;
+    for i = 1:5
+        if i ~= j
+            result = result .* eval_factor(coeffs, i, x, y);
+        end
+    end
+end
+
+function result = eval_deriv(deriv_coeffs, coeffs, x, y)
+    result = 0;
+    for j = 1:5
+        result = result + deriv_coeffs(j) .* eval_deriv_summand(coeffs, j, x, y);
+    end
+end
+
+function result = eval_second_deriv_summand(coeffs, k, j, x, y)
+    result = 1;
+    for i = 1:5
+        if i ~= k && i ~= j
+            result = result .* eval_factor(coeffs, i, x, y);
+        end
+    end
+end
+
+function result = eval_second_deriv(deriv_coeffs, coeffs, x, y)
+    result = 0;
+    for k = 1:5
+        for j = 1:5
+            if k ~= j
+                result = result + eval_second_deriv_summand(coeffs, k, j, x, y) .* deriv_coeffs(k) .* deriv_coeffs(j);
+            end
+        end
+    end
+end
+
 %% Make geometry
 r = 1;
 n = 5;
@@ -39,14 +105,22 @@ end
 bnd_gamma_idx = 1:length(bnd_gamma);
 
 %% Define problem
-u = @(x,y) exp(x .* y); % TODO
-u_grad = @(x,y) [zeros(size(x)), zeros(size(x))]; % TODO
-f = @(x,y) ones(size(x));
+coeffs = calc_coeffs(coords);
+u = @(x,y) eval_product(coeffs, x, y);
+
+u_dx = @(x,y) eval_deriv(coeffs{1}, coeffs, x, y);
+u_dy = @(x,y) eval_deriv(coeffs{2}, coeffs, x, y);
+u_grad = @(x,y) [u_dx(x,y), u_dy(x,y)];
+
+u_dxx = @(x,y) eval_second_deriv(coeffs{1}, coeffs, x, y);
+u_dyy = @(x,y) eval_second_deriv(coeffs{2}, coeffs, x, y);
+f = @(x,y) -u_dxx(x,y) - u_dyy(x,y);
+
 g = @(x,y,idx) zeros(size(x));
 c = @(x,y) ones(size(x));
 
 %% Define discretization
-nsub  = 1;
+nsub  = 8;
 p     = 3;
 k     = 2;
 nquad = p+1;
@@ -90,5 +164,7 @@ uh(int_dofs) = stiff_mat(int_dofs, int_dofs) \ rhs(int_dofs);
 sp_plot_solution(uh, space, geo, [10, 10])
 
 % Error
+err_l2 = sp_l2_error(space, msh, uh, u);
 err_h1 = sp_h1_error(space, msh, uh, u, u_grad);
-fprintf("The error in H1 is ||u - u_h||_H1 = %.6f \n", err_h1)
+fprintf("The error in L2 is ||u - u_h||_L2 = %.10f \n", err_l2)
+fprintf("The error in H1 is ||u - u_h||_H1 = %.10f \n", err_h1)
