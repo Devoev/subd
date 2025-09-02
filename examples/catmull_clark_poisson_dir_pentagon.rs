@@ -36,7 +36,7 @@ use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 3;
+const NUM_REFINE: u8 = 5;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -151,10 +151,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
         let h1_err_sq = (u_grad(p) - d_phi*uh.eval_grad_on_elem(elem, x)).norm_squared();
         (l2_err_sq + h1_err_sq).sqrt()
     };
-    plot_fn_msh(msh, &err_fn, 2, |_, num| {
-        let grid = lin_space((1e-8)..=1.0, num).collect_vec();
-        (grid.clone(), grid)
-    }).show();
+    // plot_fn_msh(msh, &err_fn, 2, |_, num| {
+    //     let grid = lin_space((1e-8)..=1.0, num).collect_vec();
+    //     (grid.clone(), grid)
+    // }).show();
 
     // Calculate error
     let l2 = L2Norm::new(msh);
