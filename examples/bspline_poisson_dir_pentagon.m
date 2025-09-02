@@ -6,9 +6,8 @@ pkg load geopdes
 r = 1;
 n = 5;
 
-% Angle between segments
+% Vertex positions
 phi = 2*pi / n;
-
 coords = zeros(2*n+1,2);
 for i = 0:n-1
     phi_i = phi * i;
@@ -20,5 +19,20 @@ for i = 0:n-1
 end
 
 % Nurbs squares
-knots = [0 0 1 1];
-patch_1 = nrbmak([coords(1), coords(11), coords(2), coords(3)], {knots, knots});
+num_patches = 5;
+c = [
+    0, 10, 1, 2;
+    0, 2, 3, 4;
+    0, 4, 5, 6;
+    0, 6, 7, 8;
+    0, 8, 9, 10;
+];
+
+hold on
+for i = 1:num_patches
+    idx = c(i,:) + 1;
+    patches{i} = nrb4surf(coords(idx(1),:), coords(idx(2),:), coords(idx(4),:), coords(idx(3),:));
+    nrbplot(patches{i}, [10, 10]);
+end
+
+geo = mp_geo_load(patches);
