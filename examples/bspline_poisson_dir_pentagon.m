@@ -19,7 +19,7 @@ for i = 0:n-1
 end
 
 % Nurbs squares
-num_patches = 5;
+npatch = 5;
 c = [
     0, 10, 1, 2;
     0, 2, 3, 4;
@@ -29,10 +29,59 @@ c = [
 ];
 
 hold on
-for i = 1:num_patches
+for i = 1:npatch
     idx = c(i,:) + 1;
-    patches{i} = nrb4surf(coords(idx(1),:), coords(idx(2),:), coords(idx(4),:), coords(idx(3),:));
-    nrbplot(patches{i}, [10, 10]);
+    patches(i) = nrb4surf(coords(idx(1),:), coords(idx(2),:), coords(idx(4),:), coords(idx(3),:));
+    %nrbplot(patches(i), [10, 10]);
 end
 
-geo = mp_geo_load(patches);
+[geo, bnd, gamma, ~, bnd_gamma] = mp_geo_load(patches);
+bnd_gamma_idx = [1 2 3 4 5];
+
+%% Define problem
+f = @(x,y) ones(size(x));
+g = @(x,y,idx) zeros(size(x));
+c = @(x,y) ones(size(x));
+
+%% Define discretization
+nsub  = 1;
+p     = 3;
+k     = 2;
+nquad = p+1;
+
+msh   = cell(1, npatch);
+sp    = cell(1, npatch);
+
+for iptc = 1:npatch
+    [knots, zeta] = kntrefine(geo(iptc).nurbs.knots, [nsub, nsub]-1, [p, p], [k, k]);
+
+    % Construct msh structure
+    rule      = msh_gauss_nodes([nquad, nquad]);
+    [qn, qw]  = msh_set_quad_nodes(zeta, rule);
+    msh{iptc} = msh_cartesian(zeta, qn, qw, geo(iptc));
+
+    % Construct space
+    sp{iptc} = sp_bspline(knots, [p, p], msh{iptc});
+end
+
+%% Assembly
+msh = msh_multipatch(msh, bnd);
+space = sp_multipatch(sp, msh, gamma, bnd_gamma);
+clear sp
+
+stiff_mat = op_gradu_gradv_mp(space, space, msh, c);
+rhs = op_f_v_mp(space, msh, f);
+
+%% Solve
+% Apply Dirichlet boundary conditions
+u = zeros(space.ndof, 1);
+[u_drchlt, drchlt_dofs] = sp_drchlt_l2_proj(space, msh, g, bnd_gamma_idx);
+u(drchlt_dofs) = u_drchlt;
+int_dofs = setdiff(1:space.ndof, drchlt_dofs);
+
+% Solve the linear system
+rhs(int_dofs) = rhs(int_dofs) - stiff_mat(int_dofs, drchlt_dofs)*u_drchlt;
+u(int_dofs) = stiff_mat(int_dofs, int_dofs) \ rhs(int_dofs);
+
+% Plot
+sp_plot_solution(u, space, geo, [10, 10])
