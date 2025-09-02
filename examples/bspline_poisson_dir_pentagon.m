@@ -166,5 +166,6 @@ sp_plot_solution(uh, space, geo, [10, 10])
 % Error
 err_l2 = sp_l2_error(space, msh, uh, u);
 err_h1 = sp_h1_error(space, msh, uh, u, u_grad);
-fprintf("The error in L2 is ||u - u_h||_L2 = %.10f \n", err_l2)
-fprintf("The error in H1 is ||u - u_h||_H1 = %.10f \n", err_h1)
+fprintf("Number of DOFs = %i \n", space.ndof)
+fprintf("The error in L2 is ||u - u_h||_L2 = %.10e \n", err_l2)
+fprintf("The error in H1 is ||u - u_h||_H1 = %.10e \n", err_h1)
