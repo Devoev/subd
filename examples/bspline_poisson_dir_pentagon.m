@@ -36,7 +36,7 @@ for i = 1:npatch
 end
 
 [geo, bnd, gamma, ~, bnd_gamma] = mp_geo_load(patches);
-bnd_gamma_idx = [1 2 3 4 5];
+bnd_gamma_idx = 1:length(bnd_gamma);
 
 %% Define problem
 f = @(x,y) ones(size(x));
