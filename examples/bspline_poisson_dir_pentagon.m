@@ -39,6 +39,8 @@ end
 bnd_gamma_idx = 1:length(bnd_gamma);
 
 %% Define problem
+u = @(x,y) exp(x .* y); % TODO
+u_grad = @(x,y) [zeros(size(x)), zeros(size(x))]; % TODO
 f = @(x,y) ones(size(x));
 g = @(x,y,idx) zeros(size(x));
 c = @(x,y) ones(size(x));
@@ -74,14 +76,19 @@ rhs = op_f_v_mp(space, msh, f);
 
 %% Solve
 % Apply Dirichlet boundary conditions
-u = zeros(space.ndof, 1);
-[u_drchlt, drchlt_dofs] = sp_drchlt_l2_proj(space, msh, g, bnd_gamma_idx);
-u(drchlt_dofs) = u_drchlt;
+uh = zeros(space.ndof, 1);
+[uh_drchlt, drchlt_dofs] = sp_drchlt_l2_proj(space, msh, g, bnd_gamma_idx);
+uh(drchlt_dofs) = uh_drchlt;
 int_dofs = setdiff(1:space.ndof, drchlt_dofs);
 
 % Solve the linear system
-rhs(int_dofs) = rhs(int_dofs) - stiff_mat(int_dofs, drchlt_dofs)*u_drchlt;
-u(int_dofs) = stiff_mat(int_dofs, int_dofs) \ rhs(int_dofs);
+rhs(int_dofs) = rhs(int_dofs) - stiff_mat(int_dofs, drchlt_dofs)*uh_drchlt;
+uh(int_dofs) = stiff_mat(int_dofs, int_dofs) \ rhs(int_dofs);
 
+%% Post processing
 % Plot
-sp_plot_solution(u, space, geo, [10, 10])
+sp_plot_solution(uh, space, geo, [10, 10])
+
+% Error
+err_h1 = sp_h1_error(space, msh, uh, u, u_grad);
+fprintf("The error in H1 is ||u - u_h||_H1 = %.6f \n", err_h1)
