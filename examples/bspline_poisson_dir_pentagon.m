@@ -110,7 +110,7 @@ u = @(x,y) eval_product(coeffs, x, y);
 
 u_dx = @(x,y) eval_deriv(coeffs{1}, coeffs, x, y);
 u_dy = @(x,y) eval_deriv(coeffs{2}, coeffs, x, y);
-u_grad = @(x,y) [u_dx(x,y), u_dy(x,y)];
+u_grad = @(x,y) cat(1, reshape(u_dx(x,y), [1, size(x)]), reshape(u_dy(x,y), [1, size(x)]));
 
 u_dxx = @(x,y) eval_second_deriv(coeffs{1}, coeffs, x, y);
 u_dyy = @(x,y) eval_second_deriv(coeffs{2}, coeffs, x, y);
@@ -120,7 +120,7 @@ g = @(x,y,idx) zeros(size(x));
 c = @(x,y) ones(size(x));
 
 %% Define discretization
-nsub  = 8;
+nsub  = 32;
 p     = 3;
 k     = 2;
 nquad = p+1;
@@ -169,3 +169,4 @@ err_h1 = sp_h1_error(space, msh, uh, u, u_grad);
 fprintf("Number of DOFs = %i \n", space.ndof)
 fprintf("The error in L2 is ||u - u_h||_L2 = %.10e \n", err_l2)
 fprintf("The error in H1 is ||u - u_h||_H1 = %.10e \n", err_h1)
+fprintf("Write %i,%.10e,%.10e \n", space.ndof, err_l2, err_h1)
