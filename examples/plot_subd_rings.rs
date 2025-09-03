@@ -1,14 +1,15 @@
+use std::fs::File;
 use iter_num_tools::lin_space;
 use nalgebra::{matrix, Point2};
-use num_traits::real::Real;
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::Mesh;
-use subd::plot::plot_fn_msh;
+use subd::plot::{plot_fn_msh, write_connectivity, write_coords_with_fn};
 
 fn main() {
+    // Define mesh
     let coords = matrix![
         0.0, 0.0;
         0.19304569050536266, -0.1402559040003067;
@@ -30,14 +31,21 @@ fn main() {
         QuadNodes::from_indices(0, 6, 7, 8),
         QuadNodes::from_indices(0, 8, 9, 10),
     ];
-    let mut quad_msh = QuadVertexMesh::from_matrix(coords, faces);
-    quad_msh = quad_msh.lin_subd().unpack();
+    let mut msh = QuadVertexMesh::from_matrix(coords, faces);
+    msh = msh.lin_subd().lin_subd().unpack();
 
+    // Define function
     let f = |p: Point2<f64>| {
-        let arg = p.coords.norm_squared();
-        -arg.exp() * arg.sin()
+        (p.coords / 5.0).norm().cos()
     };
-    plot_fn_msh(&quad_msh, &|elem, uv| f(quad_msh.geo_elem(elem).geo_map().eval(uv)), 10, |elem, num| {
+
+    // Plot
+    plot_fn_msh(&msh, &|elem, uv| f(msh.geo_elem(elem).geo_map().eval(uv)), 10, |elem, num| {
         (lin_space(0.0..=1.0, num).collect(), lin_space(0.0..=1.0, num).collect())
     }).show();
+
+    // Write
+    let z = msh.coords.iter().map(|&p| f(p));
+    write_connectivity(msh.elems.iter().copied(), &mut File::create("examples/surf_conn.dat").unwrap()).unwrap();
+    write_coords_with_fn(msh.coords.iter().copied(), z, &mut File::create("examples/surf.dat").unwrap()).unwrap();
 }
