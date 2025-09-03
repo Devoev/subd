@@ -6,13 +6,12 @@ use subd::cells::quad::QuadNodes;
 use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::Mesh;
-use subd::plot::{plot_fn_msh, write_connectivity, write_coords_with_fn};
+use subd::plot::{plot_faces, plot_fn_msh, write_connectivity, write_coords_with_fn};
 
 fn main() {
     // Define mesh
     let coords = matrix![
         0.0, 0.0;
-        0.19304569050536266, -0.1402559040003067;
         0.3205815769824112, -0.00000000000000004163336342344337;
         0.19304569050536266, 0.14025590400030666;
         0.09906515537108554, 0.3048911977932986;
@@ -21,7 +20,8 @@ fn main() {
         -0.238617596228014, 0.00000000000000003469446951953614;
         -0.25935594386229116, -0.18843312310692542;
         -0.07373689239135572, -0.22693881979533853;
-        0.09906515537108546, -0.30489119779329865
+        0.09906515537108546, -0.30489119779329865;
+        0.19304569050536266, -0.1402559040003067;
     ];
 
     let faces = vec![
@@ -33,6 +33,7 @@ fn main() {
     ];
     let mut msh = QuadVertexMesh::from_matrix(coords, faces);
     msh = msh.lin_subd().lin_subd().unpack();
+    plot_faces(&msh, msh.elems.iter().copied()).show();
 
     // Define function
     let f = |p: Point2<f64>| {
