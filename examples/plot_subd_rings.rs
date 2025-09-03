@@ -49,4 +49,5 @@ fn main() {
     let z = msh.coords.iter().map(|&p| f(p));
     write_connectivity(msh.elems.iter().copied(), &mut File::create("examples/surf_conn.dat").unwrap()).unwrap();
     write_coords_with_fn(msh.coords.iter().copied(), z, &mut File::create("examples/surf.dat").unwrap()).unwrap();
+    write_connectivity(msh.edges().filter(|edge| msh.is_boundary_node(edge.start()) && msh.is_boundary_node(edge.end())), &mut File::create("examples/surf_bnd_conn.dat").unwrap()).unwrap();
 }
