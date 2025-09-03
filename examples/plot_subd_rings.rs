@@ -1,12 +1,16 @@
-use std::fs::File;
 use iter_num_tools::lin_space;
+use itertools::Itertools;
 use nalgebra::{matrix, Point2};
+use std::fs::File;
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::Mesh;
 use subd::plot::{plot_faces, plot_fn_msh, write_connectivity, write_coords_with_fn};
+use subd::quadrature::pullback::PullbackQuad;
+use subd::quadrature::tensor_prod::GaussLegendreBi;
+use subd::quadrature::traits::Quadrature;
 
 fn main() {
     // Define mesh
@@ -34,6 +38,11 @@ fn main() {
     let mut msh = QuadVertexMesh::from_matrix(coords, faces);
     msh = msh.lin_subd().lin_subd().unpack();
     plot_faces(&msh, msh.elems.iter().copied()).show();
+
+    // Find quadrature points
+    let quad = PullbackQuad::new(GaussLegendreBi::with_degrees(2, 2));
+    let nodes = quad.nodes_elem(&msh.geo_elem(&&msh.elems[0])).collect_vec();
+    dbg!(&nodes);
 
     // Define function
     let f = |p: Point2<f64>| {
