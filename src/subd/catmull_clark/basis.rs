@@ -46,6 +46,7 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T> for C
 }
 
 /// Basis functions on a Catmull-Clark patch.
+#[derive(Clone, Copy, Debug)]
 pub enum CatmarkPatchBasis {
     /// See [`CatmarkPatchNodes::Regular`].
     Regular,
