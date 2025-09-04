@@ -7,6 +7,7 @@
 //! ```
 //! with `Ω` being the pentagon of circumradius `1`.
 
+use std::collections::{BTreeMap, HashMap, HashSet};
 use iter_num_tools::lin_space;
 use itertools::{izip, Itertools};
 use nalgebra::{center, point, Point2, Vector1, Vector2};
@@ -15,6 +16,7 @@ use std::f64::consts::PI;
 use std::fs::File;
 use std::io;
 use std::process::Command;
+use approx::{abs_diff_eq, relative_eq};
 use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
@@ -36,7 +38,7 @@ use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
 /// Number of refinements for the convergence study.
-const NUM_REFINE: u8 = 5;
+const NUM_REFINE: u8 = 4;
 
 fn main() -> io::Result<()> {
     // Define geometry
@@ -149,12 +151,39 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
         let d_phi = patch.geo_map().eval_diff(x);
         let l2_err_sq = (u(p) - uh.eval_on_elem(elem, x)).norm_squared();
         let h1_err_sq = (u_grad(p) - d_phi*uh.eval_grad_on_elem(elem, x)).norm_squared();
-        (l2_err_sq + h1_err_sq).sqrt()
+        (l2_err_sq).sqrt()
     };
     // plot_fn_msh(msh, &err_fn, 2, |_, num| {
     //     let grid = lin_space((1e-8)..=1.0, num).collect_vec();
     //     (grid.clone(), grid)
     // }).show();
+
+    // todo: move this to function plot::eval_at_vertices
+    // Compute the error on each vertex position (possibly multiple times)
+    let vertices_to_err = msh.elems.iter()
+        .flat_map(|elem| {
+            let patch = msh.geo_elem(&elem);
+            let phi = patch.geo_map();
+            [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
+                let p = phi.eval(uv);
+                let err = (u(p) - uh.eval_on_elem(&elem, uv)).norm();
+                (p, err)
+            })
+        })
+        .collect_vec();
+
+    // Filter duplicate computes and sort by node index
+    let err_pointwise_per_node: BTreeMap<usize, f64> = vertices_to_err.iter()
+        .map(|(p, err)| {
+            let i = msh.coords.iter()
+                .enumerate()
+                .filter_map(|(i, other)| relative_eq!(p, other, epsilon = 1e-2).then_some(i)).next().unwrap();
+            (i, *err)
+        })
+        .sorted_by(|(i,_), (j,_)| i.cmp(j))
+        .collect();
+
+    write_coords_with_fn(msh.coords.iter().copied(), err_pointwise_per_node.values().copied(), &mut File::create("examples/err_pointwise.dat").unwrap()).unwrap();
 
     // Calculate error
     let l2 = L2Norm::new(msh);

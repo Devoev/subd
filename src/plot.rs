@@ -1,9 +1,11 @@
+use std::collections::BTreeMap;
 use std::fmt::Display;
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::iter::zip;
-use crate::cells::geo::Cell;
+use approx::relative_eq;
+use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord};
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
@@ -12,10 +14,15 @@ use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
 use itertools::Itertools;
-use nalgebra::{Const, Dim, DimName, DimNameSub, Point, Scalar, U2};
+use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, DimName, DimNameSub, Dyn, Point, RealField, Scalar, U2};
+use numeric_literals::replace_float_literals;
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
+use crate::basis::eval::EvalBasisAllocator;
+use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
+use crate::basis::local::LocalBasis;
+use crate::basis::traits::Basis;
 use crate::cells::topo;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
@@ -120,6 +127,30 @@ pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid:
     }
 
     plot
+}
+
+#[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
+pub fn eval_at_vertices<'a, T, Msh, B>(msh: &'a Msh, fh: LinCombination<T, B, 2>)
+    where T: RealField,
+          Msh: Mesh<'a, T, 2, 2>,
+          Msh::GeoElem: HasBasisCoord<T, B>,
+          B: LocalBasis<T, Elem = Msh::Elem, Coord<T> = (T, T)>,
+          // B::ElemBasis: Basis<Coord<T> = (T, T)>,
+          DefaultAllocator: CellAllocator<T, Msh::GeoElem> + EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>
+{
+    let vertices_to_err = msh.elem_iter()
+        .flat_map(|elem| {
+            let patch = msh.geo_elem(&elem);
+            let phi = patch.geo_map();
+            [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
+                let p = phi.eval(uv.clone());
+                let err = fh.eval_on_elem(&elem, uv).norm();
+                (p, err)
+            })
+        })
+        .collect_vec();
+
+    todo!("")
 }
 
 /// Writes the coordinates of control points `coords` into a `file`.
