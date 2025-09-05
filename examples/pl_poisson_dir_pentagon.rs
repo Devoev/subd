@@ -134,7 +134,10 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
     let err_fn = |elem: &&QuadNodes, x: (f64, f64)| {
         let patch = msh.geo_elem(elem);
         let p = patch.geo_map().eval(x);
-        (u(p).x - uh.eval_on_elem(elem, x).x).abs()
+        let d_phi = patch.geo_map().eval_diff(x);
+        let l2_err_sq = (u(p) - uh.eval_on_elem(elem, x)).norm_squared();
+        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(elem, x)).norm_squared();
+        (l2_err_sq + h1_err_sq).sqrt()
     };
     // plot_fn_msh(msh, &err_fn, 2, |_, num| {
     //     let grid = lin_space(0.0..=1.0, num).collect_vec();
