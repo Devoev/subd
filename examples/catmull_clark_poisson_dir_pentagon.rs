@@ -150,8 +150,8 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
         let p = patch.geo_map().eval(x);
         let d_phi = patch.geo_map().eval_diff(x);
         let l2_err_sq = (u(p) - uh.eval_on_elem(elem, x)).norm_squared();
-        let h1_err_sq = (u_grad(p) - d_phi*uh.eval_grad_on_elem(elem, x)).norm_squared();
-        (l2_err_sq).sqrt()
+        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(elem, x)).norm_squared();
+        (l2_err_sq + h1_err_sq).sqrt()
     };
     // plot_fn_msh(msh, &err_fn, 2, |_, num| {
     //     let grid = lin_space((1e-8)..=1.0, num).collect_vec();
@@ -166,7 +166,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
             let phi = patch.geo_map();
             [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
                 let p = phi.eval(uv);
+                let d_phi = phi.eval_diff(uv);
+                let pullback = d_phi.transpose().try_inverse().unwrap();
                 let err = (u(p) - uh.eval_on_elem(&elem, uv)).norm();
+                // let err = (u_grad(p) - pullback*uh.eval_grad_on_elem(&elem, uv)).norm();
                 (p, err)
             })
         })

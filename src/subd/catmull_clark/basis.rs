@@ -137,7 +137,14 @@ impl CatmarkPatchBasis {
     
     /// Evaluates the gradients of the `2n+8` basis functions 
     /// for the irregular case [`CatmarkPatchBasis::Irregular`] of valence `n` at `(u,v)`.
-    pub fn eval_irregular_grad<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> OMatrix<T, U2, Dyn> {
+    pub fn eval_irregular_grad<T: RealField + Copy + ToPrimitive>(mut u: T, mut v: T, n: usize) -> OMatrix<T, U2, Dyn> {
+        // For u,v = 0, return // todo: what should be returned?
+        if u.is_zero() && v.is_zero() {
+            // fixme: this is currently hardcoded. Calculate exact limit and return here
+            u = T::from_f64(1e-8).unwrap();
+            v = T::from_f64(1e-8).unwrap();
+        }
+
         // Transform (u,v)
         let (u, v, nsub, k) = SubdUnitSquare::transform(u, v);
 
