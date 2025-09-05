@@ -2,7 +2,7 @@ use crate::mesh::elem_vertex::ElemVertexMesh;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::Mesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
-use nalgebra::RealField;
+use nalgebra::{Point, RealField};
 use num_traits::ToPrimitive;
 
 /// Catmull-Clark mesh.
@@ -27,5 +27,9 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> Mesh<'a, T, 2, M> f
 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         CatmarkPatch::from_msh(self, elem)
+    }
+
+    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, M>> {
+        self.coords.iter().copied()
     }
 }

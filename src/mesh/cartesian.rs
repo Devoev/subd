@@ -150,4 +150,8 @@ impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, K, K> for CartMesh<T, 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         CartCell::from_msh_and_idx(*elem, self)
     }
+
+    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, K>> {
+        self.indices().map(|idx| self.vertex(idx))
+    }
 }

@@ -7,7 +7,7 @@ use crate::cells::quad::{Quad, QuadNodes};
 use crate::cells::topo::{Cell, CellBoundary, Edge2, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
-use nalgebra::{RealField, U1, U2};
+use nalgebra::{Point, RealField, U1, U2};
 use std::hash::Hash;
 use crate::mesh::traits::Mesh;
 
@@ -106,6 +106,10 @@ impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, 2, M> for QuadVertexMe
 
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         Quad::from_msh(**elem, self)
+    }
+
+    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, M>> {
+        self.coords.iter().copied()
     }
 }
 

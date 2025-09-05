@@ -8,7 +8,7 @@ use crate::mesh::cartesian::{CartMesh, NodesIter};
 use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, RealField};
-use std::iter::{zip, Map};
+use std::iter::{once, zip, Map};
 use std::vec::IntoIter;
 
 // todo: this is in huge parts copied from cartesian.rs. Merge the two implementations
@@ -123,5 +123,10 @@ impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, K, K> for KnotMesh<T, 
         let a = self.vertex(idx_a);
         let b = self.vertex(idx_b);
         CartCell::new(a, b)
+    }
+
+    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, K>> {
+        todo!("Implement this when iteration over breakpoints works");
+        once(Point::origin())
     }
 }

@@ -2,7 +2,7 @@ use crate::cells::geo;
 use crate::cells::geo::{Cell, CellAllocator};
 use crate::cells::node::NodeIdx;
 use crate::diffgeo::chart::ChartAllocator;
-use nalgebra::{DefaultAllocator, RealField};
+use nalgebra::{DefaultAllocator, Point, RealField};
 
 /// Topology of a mesh consisting of cells.
 pub trait MeshTopology<'a, const K: usize> {
@@ -37,6 +37,9 @@ pub trait Mesh<'a, T: RealField, const K: usize, const M: usize>: MeshTopology<'
 
     /// Returns the geometric element corresponding to the given topological `elem`.
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem;
+
+    /// Iterates over all vertices in this mesh.
+    fn vertex_iter(&'a self) -> impl Iterator<Item = Point<T, M>>;
 }
 
 // todo: update signature of elems and add more methods

@@ -143,4 +143,8 @@ impl<'a, T: RealField + Copy, const M: usize> Mesh<'a, T, 2, M> for LinSubdMesh<
     fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
         Quad::new(elem.nodes().map(|n| *self.coords(n)))
     }
+
+    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, M>> {
+        self.coords.iter().copied()
+    }
 }
