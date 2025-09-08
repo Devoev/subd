@@ -1,13 +1,19 @@
 use std::f64::consts::PI;
-use nalgebra::{center, point, DMatrix, Point2};
-use nalgebra_sparse::CsrMatrix;
+use std::iter::zip;
+use itertools::Itertools;
+use nalgebra::{center, point, DMatrix, OMatrix, Point2, SMatrix, U2, U4};
+use nalgebra_sparse::{CooMatrix, CsrMatrix};
+use subd::basis::eval::EvalBasis;
 use subd::basis::space::Space;
-use subd::cells::quad::QuadNodes;
+use subd::cells::geo::Cell;
+use subd::cells::quad::{Quad, QuadNodes};
+use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::MeshTopology;
-use subd::operator::hodge::Hodge;
+use subd::mesh::traits::{Mesh, MeshTopology};
+use subd::operator::hodge::{assemble_hodge_local, Hodge};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
+use subd::quadrature::traits::Quadrature;
 use subd::subd::lin_subd::edge_basis::WhitneyEdgeQuad;
 
 fn main() {
@@ -33,11 +39,65 @@ fn main() {
     let quad = PullbackQuad::new(ref_quad);
 
     // Build mass matrix
-    let mass_matrix = Hodge::new(&msh, &space).assemble(quad);
-    let mass_matrix = DMatrix::from(&mass_matrix);
+    // let mass_matrix = Hodge::new(&msh, &space).assemble(quad);
+    // let mass_matrix = DMatrix::from(&mass_matrix);
     // todo: this is incorrect, because the pullback of the 1-forms is not considered
+    //  for now, manually assemble mass matrix.
+    //  Still, this seems wrong because of the zero-row?
 
+    // Create empty matrix
+    let mut mij = CooMatrix::<f64>::zeros(space.dim(), space.dim());
+
+    // Iteration over all mesh elements
+    for elem in msh.elem_iter() {
+        // Build local space and local mass matrix
+        let (sp_local, idx) = space.local_space_with_idx(&elem);
+        let geo_elem = msh.geo_elem(&elem);
+
+        // Local assembly
+        // Evaluate all basis functions and store in 'buf'
+        let ref_elem = geo_elem.ref_cell();
+        let buf: Vec<OMatrix<f64, U2, U4>> = quad.nodes_ref::<f64, Quad<f64, 2>>(&ref_elem)
+            .map(|p| sp_local.basis.eval(p)).collect();
+        let buf_g_inv: Vec<SMatrix<f64, 2, 2>> = quad.nodes_ref::<f64, Quad<f64, 2>>(&ref_elem)
+            .map(|p| {
+                let j = geo_elem.geo_map().eval_diff(p);
+                (j.transpose() * j).try_inverse().unwrap()
+            }).collect();
+
+        // Calculate pullback of product uv
+        let uv_pullback = |b: &OMatrix<f64, U2, U4>, g_inv: &SMatrix<f64, 2, 2>, i: usize, j: usize| {
+            // Eval basis
+            let bi = b.column(i);
+            let bj = b.column(j);
+
+            // Calculate integrand
+            (bi.transpose() * g_inv * bj).x
+            // bi.dot(&bj)
+        };
+
+        // Integrate over all combinations of b[i] * b[j] and integrate
+        let num_basis = sp_local.dim();
+        let mij_iter = (0..num_basis).cartesian_product(0..num_basis)
+            .map(|(i, j)| {
+                let integrand = zip(&buf, &buf_g_inv)
+                    .map(|(b_grad, g_inv)| uv_pullback(b_grad, g_inv, i, j));
+                quad.integrate_elem(&geo_elem, integrand)
+            });
+
+        // Assemble matrix
+        let mij_local = DMatrix::from_iterator(num_basis, num_basis, mij_iter);
+
+        // Fill global mass matrix with local entries
+        let idx_local_global = idx.enumerate();
+        for ((i_local, i), (j_local, j)) in idx_local_global.clone().cartesian_product(idx_local_global) {
+            mij.push(i, j, mij_local[(i_local, j_local)]);
+        }
+    }
+
+    let mass_matrix = DMatrix::from(&mij);
     println!("{}", mass_matrix);
+    println!("{:?}", mass_matrix.shape());
     println!("{}", mass_matrix.rank(1e-10));
 }
 
