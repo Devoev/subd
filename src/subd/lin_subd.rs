@@ -3,4 +3,4 @@ pub mod refine;
 mod mesh;
 pub mod matrix;
 pub mod basis;
-mod edge_basis;
+pub mod edge_basis;
