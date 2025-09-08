@@ -1,6 +1,6 @@
 use crate::basis::traits::Basis;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, Scalar, U1};
+use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowOVector, RowVector, Scalar, U1, U2};
 
 /// Allocator for the [`B::NumComponents`] ✕ [`B::NumBasis`] matrix of basis evaluations.
 pub trait EvalBasisAllocator<B: Basis>: Allocator<B::NumComponents, B::NumBasis> {}
@@ -61,4 +61,22 @@ pub trait EvalGrad<T: RealField, const D: usize> : EvalBasis<T, NumComponents = 
     /// Evaluates the gradients of all basis functions at the parametric point `x`
     /// as the column-wise matrix `(grad b[1],...,grad b[n])`.
     fn eval_grad(&self, x: Self::Coord<T>) -> OMatrix<T, Const<D>, Self::NumBasis>;
+}
+
+/// Allocator for basis evaluations and the row vector of [`B::NumBasis`] scalar curl evaluations.
+pub trait EvalScalarCurlAllocator<B: Basis>: EvalBasisAllocator<B> + Allocator<U1, B::NumBasis> {}
+
+impl <B: Basis> EvalScalarCurlAllocator<B> for DefaultAllocator
+    where DefaultAllocator: EvalBasisAllocator<B> + Allocator<U1, B::NumBasis> {}
+
+/// Evaluation of scalar curls of basis functions.
+///
+/// The scalar curls of all basis functions can be evaluated using [`Self::eval_scalar_curl`].
+/// The scalar curls are scalar valued, hence the result is stored in a row-vector.
+pub trait EvalScalarCurl<T: RealField>: EvalBasis<T, NumComponents = U2>
+    where DefaultAllocator: EvalScalarCurlAllocator<Self>
+{
+    /// Evaluates the scalar curl of all basis functions at the parametric point `x`
+    /// as the column-wise matrix `(curl b[1],...,curl b[n])`.
+    fn eval_scalar_curl(&self, x: Self::Coord<T>) -> RowOVector<T, Self::NumBasis>;
 }

@@ -1,6 +1,6 @@
-use crate::basis::eval::EvalBasis;
+use crate::basis::eval::{EvalBasis, EvalScalarCurl};
 use crate::basis::traits::Basis;
-use nalgebra::{matrix, one, zero, Dyn, OMatrix, RealField, U2, U4};
+use nalgebra::{matrix, one, zero, Dyn, OMatrix, RealField, RowDVector, RowOVector, RowVector4, U2, U4};
 use crate::basis::local::LocalBasis;
 use crate::cells::line_segment::DirectedEdge;
 use crate::cells::quad::QuadNodes;
@@ -77,8 +77,14 @@ impl <T: RealField + Copy> EvalBasis<T> for WhitneyEdgeQuadLocal {
         // e34 = [-y; 0];
         // e41 = [0; x - 1];
         matrix![
-            -v + one(), zero(), -v,     zero(); // u-components
+            -v + one(), zero(), -v,     zero();    // u-components
             zero(),     u,      zero(), u - one(); // v-components
         ]
+    }
+}
+
+impl <T: RealField + Copy> EvalScalarCurl<T> for WhitneyEdgeQuadLocal {
+    fn eval_scalar_curl(&self, _x: (T, T)) -> RowOVector<T, Self::NumBasis> {
+        RowVector4::from_element(one())
     }
 }
