@@ -29,7 +29,7 @@ fn main() {
         QuadNodes::from_indices(0, 8, 9, 10),
     ];
     let mut msh = QuadVertexMesh::new(coords, faces);
-    // msh = msh.lin_subd().unpack();
+    msh = msh.lin_subd().unpack();
 
     // Define edge space
     let space = Space::<f64, _, 2>::new(WhitneyEdgeQuad::new(&msh));
@@ -81,7 +81,7 @@ fn main() {
         let mij_iter = (0..num_basis).cartesian_product(0..num_basis)
             .map(|(i, j)| {
                 let integrand = zip(&buf, &buf_g_inv)
-                    .map(|(b_grad, g_inv)| uv_pullback(b_grad, g_inv, i, j));
+                    .map(|(b, g_inv)| uv_pullback(b, g_inv, i, j));
                 quad.integrate_elem(&geo_elem, integrand)
             });
 
@@ -96,9 +96,11 @@ fn main() {
     }
 
     let mass_matrix = DMatrix::from(&mij);
-    println!("{}", mass_matrix);
-    println!("{:?}", mass_matrix.shape());
+    // println!("{}", mass_matrix);
+    // println!("{:?}", mass_matrix.shape());
     println!("{}", mass_matrix.rank(1e-10));
+    let evs = mass_matrix.eigenvalues().unwrap();
+    println!("{}", evs);
 }
 
 /// Constructs the center and corner points of a regular `n`-gon of radius `r`.
