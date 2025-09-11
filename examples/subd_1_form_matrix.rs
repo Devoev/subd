@@ -41,9 +41,6 @@ fn main() {
     // Build mass matrix
     // let mass_matrix = Hodge::new(&msh, &space).assemble(quad);
     // let mass_matrix = DMatrix::from(&mass_matrix);
-    // todo: this is incorrect, because the pullback of the 1-forms is not considered
-    //  for now, manually assemble mass matrix.
-    //  Still, this seems wrong because of the zero-row?
 
     // Create empty matrix
     let mut mij = CooMatrix::<f64>::zeros(space.dim(), space.dim());
