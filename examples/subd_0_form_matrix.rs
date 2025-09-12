@@ -1,5 +1,7 @@
 use nalgebra::{center, point, DMatrix, Point2};
 use std::f64::consts::PI;
+use approx::{relative_ne, RelativeEq};
+use itertools::Itertools;
 use nalgebra_sparse::CsrMatrix;
 use subd::basis::space::Space;
 use subd::cells::quad::QuadNodes;
@@ -32,7 +34,7 @@ fn main() {
     let space_catmark = CatmarkSpace::new(CatmarkBasis(&msh_catmark));
 
     // Refine mesh and calculate subdivision matrix
-    let num_refine = 3;
+    let num_refine = 1;
     let mut a = CsrMatrix::identity(msh.num_nodes());
     for _ in 0..num_refine {
         // Update subdivision matrix
@@ -40,7 +42,7 @@ fn main() {
         a = CsrMatrix::from(&s) * a;
 
         // Refine mesh
-        msh = msh.lin_subd().unpack();
+        msh = msh.catmark_subd().unpack();
     }
 
     // Define space
@@ -54,19 +56,28 @@ fn main() {
     // Build DEC mass matrix on refined mesh
     let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
     let m_dec = CsrMatrix::from(&mass_matrix_dec);
-    // let mass_matrix = DMatrix::from(&mass_matrix);
+    let dense = DMatrix::from(&m_dec);
+    // let mass_matrix = DMatrix::from(&mass_matrix);#
+
+    // todo: using the exact catmull-clark matrix on finer level.
+    //  This should technically be exactly the matrix of the coarser level,
+    //  by the refinability property, but it isn't...
+    let msh = CatmarkMesh::from_quad_mesh(msh);
+    let space = CatmarkSpace::new(CatmarkBasis(&msh));
+    let m_dec = Hodge::new(&msh, &space).assemble(quad_catmark.clone());
+    let m_dec = CsrMatrix::from(&m_dec);
 
     // Calculate SEC on initial mesh by using the subdivision of basis functions
     let m_sec = a.transpose() * m_dec * a;
     let mass_matrix_sec = DMatrix::from(&m_sec);
 
-    // Calculate catmull-clark mass matrix directly on initial mesh
+    // Calculate catmull-clark mass matrix directly on initial coarse mesh
     let m_cc = Hodge::new(&msh_catmark, &space_catmark).assemble(quad_catmark);
     let mass_matrix_cc = DMatrix::from(&m_cc);
 
     // println!("{:?}", mass_matrix_catmark.shape());
-    println!("{}", mass_matrix_sec);
-    println!("{}", mass_matrix_cc);
+    // println!("{}", mass_matrix_sec);
+    // println!("{}", mass_matrix_cc);
     println!("Relative error = {} %", (mass_matrix_sec - &mass_matrix_cc).norm() / mass_matrix_cc.norm() * 100.0);
 }
 
