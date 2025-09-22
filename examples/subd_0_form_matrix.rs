@@ -18,7 +18,7 @@ use subd::subd::lin_subd::basis::PlBasisQuad;
 fn main() {
     // Define geometry
     let coords_square = matrix![
-            0.0, 0.0, 1.0, 1.0;
+            0.0, 0.0, 1.0, 1.0;<
             0.0, 1.0, 1.0, 0.0
         ].transpose();
 
