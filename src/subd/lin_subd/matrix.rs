@@ -32,30 +32,31 @@ type EdgeMidpoints = HashMap<UndirectedEdge, NodeIdx>;
 type FaceMidpoints = HashMap<QuadNodes, NodeIdx>;
 
 /// Assembles the global subdivision matrix for the given `quad_msh`.
-pub fn assemble_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> (CooMatrix<f64>, EdgeMidpoints, FaceMidpoints) {
+pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> (CooMatrix<f64>, EdgeMidpoints, FaceMidpoints) {
     let edges = quad_msh.edges().collect_vec();
     let num_nodes = quad_msh.num_nodes();
-    let mut mat = CooMatrix::new(quad_msh.num_elems() + edges.len(), num_nodes);
+    let mut mat = CooMatrix::new(quad_msh.num_elems() + edges.len() + num_nodes, num_nodes);
     let mut edge_midpoints: EdgeMidpoints = HashMap::new();
     let mut face_midpoints: FaceMidpoints = HashMap::new();
 
-    // for elem in &quad_msh.elems {
-    //     let [a, b, c, d] = elem.nodes();
-    //     for (local_idx, &NodeIdx(global_idx)) in elem.nodes().iter().enumerate() {
-    //
-    //     }
-    // }
-
-    for (elem_idx, elem) in quad_msh.elems.iter().enumerate() {
-        let [NodeIdx(a), NodeIdx(b), NodeIdx(c), NodeIdx(d)] = elem.nodes();
-        mat.push(elem_idx, a, 0.25);
-        mat.push(elem_idx, b, 0.25);
-        mat.push(elem_idx, c, 0.25);
-        mat.push(elem_idx, d, 0.25);
-        face_midpoints.insert(*elem, NodeIdx(elem_idx + num_nodes));
+    // Apply no node smoothing = identity mapping
+    for node_idx in 0..num_nodes {
+        mat.push(node_idx, node_idx, 1.0)
     }
 
-    let idx_offset = quad_msh.num_elems();
+    // Apply face-midpoint stencil
+    let mut idx_offset = num_nodes;
+    for (face_idx, face) in quad_msh.elems.iter().enumerate() {
+        let [NodeIdx(a), NodeIdx(b), NodeIdx(c), NodeIdx(d)] = face.nodes();
+        mat.push(face_idx + idx_offset, a, 0.25);
+        mat.push(face_idx + idx_offset, b, 0.25);
+        mat.push(face_idx + idx_offset, c, 0.25);
+        mat.push(face_idx + idx_offset, d, 0.25);
+        face_midpoints.insert(*face, NodeIdx(face_idx + num_nodes));
+    }
+
+    // Apply edge-midpoint stencil
+    idx_offset += quad_msh.num_elems();
     for (edge_idx, edge) in edges.into_iter().enumerate() {
         let [NodeIdx(a), NodeIdx(b)] = edge.0;
         mat.push(edge_idx + idx_offset, a, 0.5);
