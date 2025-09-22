@@ -9,6 +9,7 @@ use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::lin_subd::basis::PlBasisQuad;
 use subd::subd::lin_subd::matrix::assemble_global_mat;
+use subd::subd::lin_subd::refine::LinSubd;
 
 fn main() {
     // Define geometry
@@ -32,14 +33,15 @@ fn main() {
         a = CsrMatrix::from(&s) * a;
 
         // Refine mesh
-        msh = msh.lin_subd().unpack();
+        // msh = msh.lin_subd().unpack();
+        LinSubd::do_refine_mat(&mut msh);
     }
 
     // Define fine space
     let space_fine = Space::<f64, _, 2>::new(PlBasisQuad(&msh));
 
     // Define quadrature
-    let ref_quad = GaussLegendreBi::with_degrees(4, 4);
+    let ref_quad = GaussLegendreBi::with_degrees(2, 2);
     let quad = PullbackQuad::new(ref_quad.clone());
 
     // Build DEC mass matrix on refined mesh
@@ -50,13 +52,11 @@ fn main() {
     let m_sec_coarse = a.transpose() * m_dec_fine * a;
     let mass_matrix_sec = DMatrix::from(&m_sec_coarse);
 
-    // Calculate catmull-clark mass matrix directly on initial mesh
+    // Calculate mass matrix directly on initial mesh
     let m_coarse = Hodge::new(&msh_coarse, &space_coarse).assemble(quad);
     let mass_matrix = DMatrix::from(&m_coarse);
 
-    // println!("{:?}", mass_matrix_catmark.shape());
-    println!("{}", mass_matrix_sec);
-    println!("{}", mass_matrix);
-    println!("{}", &mass_matrix_sec - &mass_matrix);
+    println!("SEC mass matrix = {}", mass_matrix_sec);
+    println!("Direct mass matrix = {}", mass_matrix);
     println!("Relative error = {} %", (mass_matrix_sec - &mass_matrix).norm() / mass_matrix.norm() * 100.0);
 }

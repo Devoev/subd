@@ -1,7 +1,7 @@
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::subd::lin_subd::matrix::assemble_mat;
+use crate::subd::lin_subd::matrix::assemble_global_mat;
 use crate::subd::lin_subd::stencil::{EdgeMidpointStencil, FaceMidpointStencil};
 use nalgebra::{Point, RealField};
 use nalgebra_sparse::CsrMatrix;
@@ -73,12 +73,14 @@ impl <const M: usize> LinSubd<f64, M> {
     /// Refines the given `quad_msh` using the global subdivision matrix.
     pub fn do_refine_mat(quad_msh: &mut QuadVertexMesh<f64, M>) {
         // Refine coords
-        let (s, edge_midpoints, face_midpoints) = assemble_mat(quad_msh);
+        let (s, edge_midpoints, face_midpoints) = assemble_global_mat(quad_msh);
         let s = CsrMatrix::from(&s);
         let c = quad_msh.coords_matrix();
         let c_subd = s * &c;
 
-        // Append new coords
+        // Update coords
+        quad_msh.coords.clear();
+        quad_msh.coords.reserve(c_subd.len());
         for point_coords in c_subd.row_iter() {
             quad_msh.coords.push(Point::from(point_coords.transpose()));
         }

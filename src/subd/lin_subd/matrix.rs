@@ -52,7 +52,7 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
         mat.push(face_idx + idx_offset, b, 0.25);
         mat.push(face_idx + idx_offset, c, 0.25);
         mat.push(face_idx + idx_offset, d, 0.25);
-        face_midpoints.insert(*face, NodeIdx(face_idx + num_nodes));
+        face_midpoints.insert(*face, NodeIdx(face_idx + idx_offset));
     }
 
     // Apply edge-midpoint stencil
@@ -61,7 +61,7 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
         let [NodeIdx(a), NodeIdx(b)] = edge.0;
         mat.push(edge_idx + idx_offset, a, 0.5);
         mat.push(edge_idx + idx_offset, b, 0.5);
-        edge_midpoints.insert(edge.into(), NodeIdx(edge_idx + idx_offset + num_nodes));
+        edge_midpoints.insert(edge.into(), NodeIdx(edge_idx + idx_offset));
     }
 
     (mat, edge_midpoints, face_midpoints)
