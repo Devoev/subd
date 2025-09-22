@@ -18,7 +18,7 @@ use subd::subd::lin_subd::basis::PlBasisQuad;
 fn main() {
     // Define geometry
     let coords_square = matrix![
-            0.0, 0.0, 1.0, 1.0;<
+            0.0, 0.0, 1.0, 1.0;
             0.0, 1.0, 1.0, 0.0
         ].transpose();
 
@@ -64,6 +64,9 @@ fn main() {
     let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
     let m_dec_fine = CsrMatrix::from(&mass_matrix_dec);
 
+    // todo: using the exact catmull-clark matrix on finer level.
+    //  This should technically be EXACTLY the matrix of the coarser level,
+    //  by the refinability property, but it isn't...
     let msh_catmark_fine = CatmarkMesh::from_quad_mesh(msh.clone());
     let space_catmark_fine = CatmarkSpace::new(CatmarkBasis(&msh_catmark_fine));
     let m_dec_fine = Hodge::new(&msh_catmark_fine, &space_catmark_fine).assemble(quad_catmark.clone());
