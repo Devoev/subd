@@ -1,4 +1,4 @@
-use nalgebra::{center, point, DMatrix, Point2};
+use nalgebra::{center, matrix, point, DMatrix, Point2};
 use std::f64::consts::PI;
 use nalgebra_sparse::CsrMatrix;
 use subd::basis::space::Space;
@@ -17,22 +17,31 @@ use subd::subd::lin_subd::basis::PlBasisQuad;
 
 fn main() {
     // Define geometry
-    let coords = make_geo(1.0, 5);
+    let coords_square = matrix![
+            0.0, 0.0, 1.0, 1.0;
+            0.0, 1.0, 1.0, 0.0
+        ].transpose();
 
-    // Define mesh
-    let faces = vec![
-        QuadNodes::from_indices(0, 10, 1, 2),
-        QuadNodes::from_indices(0, 2, 3, 4),
-        QuadNodes::from_indices(0, 4, 5, 6),
-        QuadNodes::from_indices(0, 6, 7, 8),
-        QuadNodes::from_indices(0, 8, 9, 10),
-    ];
-    let mut msh = QuadVertexMesh::new(coords, faces).lin_subd().unpack();
-    let msh_catmark = CatmarkMesh::from_quad_mesh(msh.clone());
-    let space_catmark = CatmarkSpace::new(CatmarkBasis(&msh_catmark));
+    // Define coarse mesh
+    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
+    let mut msh = QuadVertexMesh::from_matrix(coords_square, quads).lin_subd().unpack();
+    // // Define geometry
+    // let coords = make_geo(1.0, 5);
+    //
+    // // Define mesh
+    // let faces = vec![
+    //     QuadNodes::from_indices(0, 10, 1, 2),
+    //     QuadNodes::from_indices(0, 2, 3, 4),
+    //     QuadNodes::from_indices(0, 4, 5, 6),
+    //     QuadNodes::from_indices(0, 6, 7, 8),
+    //     QuadNodes::from_indices(0, 8, 9, 10),
+    // ];
+    // let mut msh = QuadVertexMesh::new(coords, faces).lin_subd().unpack();
+    let msh_catmark_coarse = CatmarkMesh::from_quad_mesh(msh.clone());
+    let space_catmark_coarse = CatmarkSpace::new(CatmarkBasis(&msh_catmark_coarse));
 
     // Refine mesh and calculate subdivision matrix
-    let num_refine = 3;
+    let num_refine = 1;
     let mut a = CsrMatrix::identity(msh.num_nodes());
     for _ in 0..num_refine {
         // Update subdivision matrix
@@ -40,33 +49,38 @@ fn main() {
         a = CsrMatrix::from(&s) * a;
 
         // Refine mesh
-        msh = msh.lin_subd().unpack();
+        msh = msh.catmark_subd().unpack();
     }
 
     // Define space
     let space_pl = Space::<f64, _, 2>::new(PlBasisQuad(&msh));
 
     // Define quadrature
-    let ref_quad = GaussLegendreBi::with_degrees(2, 2);
+    let ref_quad = GaussLegendreBi::with_degrees(4, 4);
     let quad = PullbackQuad::new(ref_quad.clone());
     let quad_catmark = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 10));
 
     // Build DEC mass matrix on refined mesh
     let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
-    let m_dec = CsrMatrix::from(&mass_matrix_dec);
-    // let mass_matrix = DMatrix::from(&mass_matrix);
+    let m_dec_fine = CsrMatrix::from(&mass_matrix_dec);
+
+    let msh_catmark_fine = CatmarkMesh::from_quad_mesh(msh.clone());
+    let space_catmark_fine = CatmarkSpace::new(CatmarkBasis(&msh_catmark_fine));
+    let m_dec_fine = Hodge::new(&msh_catmark_fine, &space_catmark_fine).assemble(quad_catmark.clone());
+    let m_dec_fine = CsrMatrix::from(&m_dec_fine);
 
     // Calculate SEC on initial mesh by using the subdivision of basis functions
-    let m_sec = a.transpose() * m_dec * a;
-    let mass_matrix_sec = DMatrix::from(&m_sec);
+    let m_sec_coarse = a.transpose() * m_dec_fine * a;
+    let mass_matrix_sec = DMatrix::from(&m_sec_coarse);
 
     // Calculate catmull-clark mass matrix directly on initial mesh
-    let m_cc = Hodge::new(&msh_catmark, &space_catmark).assemble(quad_catmark);
-    let mass_matrix_cc = DMatrix::from(&m_cc);
+    let m_cc_coarse = Hodge::new(&msh_catmark_coarse, &space_catmark_coarse).assemble(quad_catmark);
+    let mass_matrix_cc = DMatrix::from(&m_cc_coarse);
 
     // println!("{:?}", mass_matrix_catmark.shape());
     println!("{}", mass_matrix_sec);
     println!("{}", mass_matrix_cc);
+    println!("{}", &mass_matrix_sec - &mass_matrix_cc);
     println!("Relative error = {} %", (mass_matrix_sec - &mass_matrix_cc).norm() / mass_matrix_cc.norm() * 100.0);
 }
 
