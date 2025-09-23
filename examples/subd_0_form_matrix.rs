@@ -1,12 +1,10 @@
-use nalgebra::{center, matrix, point, DMatrix, DVector, Point2, RowDVector};
-use std::f64::consts::PI;
+use nalgebra::{center, matrix, point, DMatrix, Point2, RowDVector};
 use nalgebra_sparse::CsrMatrix;
-use subd::basis::space::Space;
+use std::f64::consts::PI;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
 use subd::operator::hodge::Hodge;
-use subd::plot::plot_faces;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
@@ -14,13 +12,12 @@ use subd::subd::catmull_clark::matrices::assemble_global_mat;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
-use subd::subd::lin_subd::basis::PlBasisQuad;
 
 fn main() {
     // Define geometry
     let coords_square = matrix![
-            0.0, 0.0, 1.0, 1.0;
-            0.0, 1.0, 1.0, 0.0
+            0.0, 1.0, 1.0, 0.0;
+            0.0, 0.0, 1.0, 1.0
         ].transpose();
 
     // Define coarse mesh
@@ -51,6 +48,8 @@ fn main() {
 
         // Refine mesh
         msh = msh.catmark_subd().unpack();
+        // msh = msh.lin_subd().unpack();
+        // LinSubd::do_refine_mat(&mut msh);
     }
 
     // Define space
@@ -74,8 +73,8 @@ fn main() {
     let m_dec_fine = CsrMatrix::from(&m_dec_fine);
 
     // Element for single basis evaluation
-    let uv_fine = (0.5, 0.5);
-    let uv_coarse = (0.25, 0.25); // todo: hardcoded
+    let uv_fine = (0.783157, 0.25756);
+    let uv_coarse = (uv_fine.0 / 2_i32.pow(num_refine) as f64, uv_fine.1 / 2_i32.pow(num_refine) as f64);
     let elem_fine = &msh_catmark_fine.elems[0];
     let elem_coarse = &msh_catmark_coarse.elems[0];
 
