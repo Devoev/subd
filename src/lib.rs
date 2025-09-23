@@ -302,7 +302,7 @@ mod tests {
 
         // Constructs quad mesh and catmark patch mesh
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
-        let msh = CatmarkMesh::from_quad_mesh(quad_msh);
+        let msh = CatmarkMesh::from(quad_msh);
 
         // Print patches
         for elem in msh.elem_iter() {
@@ -378,7 +378,7 @@ mod tests {
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
-        let mut msh = CatmarkMesh::from_quad_mesh(msh);
+        let mut msh = CatmarkMesh::from(msh);
         // msh.refine();
         
         // Convert back to quad mesh
@@ -480,7 +480,7 @@ mod tests {
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
-        let msh = CatmarkMesh::from_quad_mesh(msh);
+        let msh = CatmarkMesh::from(msh);
 
         // Construct basis and space
         let basis = CatmarkBasis(&msh);
@@ -553,7 +553,7 @@ mod tests {
         // Constructs quad mesh and catmark patch mesh (topological)
         let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
-        let msh = CatmarkMesh::from_quad_mesh(msh);
+        let msh = CatmarkMesh::from(msh);
 
         // Construct basis and space
         let basis = CatmarkEdgeBasis(&msh);

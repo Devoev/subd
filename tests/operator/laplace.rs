@@ -26,7 +26,7 @@ use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 #[test]
 fn catmark_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
     let msh = make_pentagon_mesh().catmark_subd().unpack();
-    let msh = CatmarkMesh::from_quad_mesh(msh);
+    let msh = CatmarkMesh::from(msh);
 
     // Define space
     let basis = CatmarkBasis(&msh);

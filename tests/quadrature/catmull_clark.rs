@@ -21,7 +21,7 @@ fn test() {
 
     // Make mesh
     let quad_msh = make_pentagon_mesh().lin_subd().unpack();
-    let catmark_msh = CatmarkMesh::from_quad_mesh(quad_msh.clone());
+    let catmark_msh = CatmarkMesh::from(quad_msh.clone());
 
     // Perform integration on linear surface
     let area_exact = quad_msh.elems.iter()

@@ -21,7 +21,7 @@ fn main() {
 
     // Refine and construct Catmark mesh
     quad_msh = quad_msh.catmark_subd().catmark_subd().catmark_subd().catmark_subd().unpack();
-    let msh = CatmarkMesh::from_quad_mesh(quad_msh.clone());
+    let msh = CatmarkMesh::from(quad_msh.clone());
 
     // Define space
     let basis = CatmarkBasis(&msh);

@@ -35,7 +35,7 @@ fn main() {
     //     QuadNodes::from_indices(0, 8, 9, 10),
     // ];
     // let mut msh = QuadVertexMesh::new(coords, faces).lin_subd().unpack();
-    let msh_catmark_coarse = CatmarkMesh::from_quad_mesh(msh.clone());
+    let msh_catmark_coarse = CatmarkMesh::from(msh.clone());
     let space_catmark_coarse = CatmarkSpace::new(CatmarkBasis(&msh_catmark_coarse));
 
     // Refine mesh and calculate subdivision matrix
@@ -67,7 +67,7 @@ fn main() {
     // todo: using the exact catmull-clark matrix on finer level.
     //  This should technically be EXACTLY the matrix of the coarser level,
     //  by the refinability property, but it isn't...
-    let msh_catmark_fine = CatmarkMesh::from_quad_mesh(msh.clone());
+    let msh_catmark_fine = CatmarkMesh::from(msh.clone());
     let space_catmark_fine = CatmarkSpace::new(CatmarkBasis(&msh_catmark_fine));
     let m_dec_fine = Hodge::new(&msh_catmark_fine, &space_catmark_fine).assemble(quad_catmark.clone());
     let m_dec_fine = CsrMatrix::from(&m_dec_fine);

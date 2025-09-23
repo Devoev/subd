@@ -61,7 +61,7 @@ pub fn main() -> io::Result<()> {
 
         // Refine and construct Catmark mesh
         quad_msh = quad_msh.catmark_subd().unpack();
-        let msh = CatmarkMesh::from_quad_mesh(quad_msh.clone());
+        let msh = CatmarkMesh::from(quad_msh.clone());
 
         // Solve problem
         let (n_dof, err_l2, norm_l2) = solve(&msh, u, f);
