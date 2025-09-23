@@ -1,4 +1,4 @@
-use nalgebra::{center, matrix, point, DMatrix, Point2};
+use nalgebra::{center, matrix, point, DMatrix, DVector, Point2, RowDVector};
 use std::f64::consts::PI;
 use nalgebra_sparse::CsrMatrix;
 use subd::basis::space::Space;
@@ -6,6 +6,7 @@ use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
 use subd::operator::hodge::Hodge;
+use subd::plot::plot_faces;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
@@ -53,16 +54,16 @@ fn main() {
     }
 
     // Define space
-    let space_pl = Space::<f64, _, 2>::new(PlBasisQuad(&msh));
+    // let space_pl = Space::<f64, _, 2>::new(PlBasisQuad(&msh));
 
     // Define quadrature
     let ref_quad = GaussLegendreBi::with_degrees(4, 4);
-    let quad = PullbackQuad::new(ref_quad.clone());
+    // let quad = PullbackQuad::new(ref_quad.clone());
     let quad_catmark = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 10));
 
     // Build DEC mass matrix on refined mesh
-    let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
-    let m_dec_fine = CsrMatrix::from(&mass_matrix_dec);
+    // let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
+    // let m_dec_fine = CsrMatrix::from(&mass_matrix_dec);
 
     // todo: using the exact catmull-clark matrix on finer level.
     //  This should technically be EXACTLY the matrix of the coarser level,
@@ -72,19 +73,33 @@ fn main() {
     let m_dec_fine = Hodge::new(&msh_catmark_fine, &space_catmark_fine).assemble(quad_catmark.clone());
     let m_dec_fine = CsrMatrix::from(&m_dec_fine);
 
+    // Element for single basis evaluation
+    let uv_fine = (0.5, 0.5);
+    let uv_coarse = (0.25, 0.25); // todo: hardcoded
+    let elem_fine = &msh_catmark_fine.elems[0];
+    let elem_coarse = &msh_catmark_coarse.elems[0];
+
     // Calculate SEC on initial mesh by using the subdivision of basis functions
-    let m_sec_coarse = a.transpose() * m_dec_fine * a;
+    let mut b_fine = RowDVector::zeros(msh_catmark_fine.num_nodes());
+    space_catmark_fine.populate_global_on_elem(&mut b_fine, &elem_fine, uv_fine);
+
+    let m_sec_coarse = a.transpose() * m_dec_fine * &a;
+    let b_sec = (a.transpose() * b_fine.transpose()).transpose();
     let mass_matrix_sec = DMatrix::from(&m_sec_coarse);
 
     // Calculate catmull-clark mass matrix directly on initial mesh
+    let mut b_coarse = RowDVector::zeros(msh_catmark_coarse.num_nodes());
+    space_catmark_coarse.populate_global_on_elem(&mut b_coarse, &elem_coarse, uv_coarse);
+
     let m_cc_coarse = Hodge::new(&msh_catmark_coarse, &space_catmark_coarse).assemble(quad_catmark);
     let mass_matrix_cc = DMatrix::from(&m_cc_coarse);
 
     // println!("{:?}", mass_matrix_catmark.shape());
-    println!("{}", mass_matrix_sec);
-    println!("{}", mass_matrix_cc);
-    println!("{}", &mass_matrix_sec - &mass_matrix_cc);
+    println!("SEC mass matrix = {}", mass_matrix_sec);
+    println!("Direct mass matrix = {}", mass_matrix_cc);
+    println!("Difference = {}", &mass_matrix_sec - &mass_matrix_cc);
     println!("Relative error = {} %", (mass_matrix_sec - &mass_matrix_cc).norm() / mass_matrix_cc.norm() * 100.0);
+    println!("Relative error of basis evaluation = {} %", (b_sec - &b_coarse).norm() / b_coarse.norm() * 100.0);
 }
 
 /// Constructs the center and corner points of a regular `n`-gon of radius `r`.
