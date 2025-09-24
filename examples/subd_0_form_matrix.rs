@@ -1,6 +1,7 @@
 use nalgebra::{center, matrix, point, DMatrix, Point2, RowDVector};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
+use rand::random_range;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::traits::MeshTopology;
@@ -73,7 +74,7 @@ fn main() {
     let m_dec_fine = CsrMatrix::from(&m_dec_fine);
 
     // Element for single basis evaluation
-    let uv_fine = (0.783157, 0.25756);
+    let uv_fine = (random_range(0.0..1.0), random_range(0.0..1.0));
     let uv_coarse = (uv_fine.0 / 2_i32.pow(num_refine) as f64, uv_fine.1 / 2_i32.pow(num_refine) as f64);
     let elem_fine = &msh_catmark_fine.elems[0];
     let elem_coarse = &msh_catmark_coarse.elems[0];
@@ -94,11 +95,13 @@ fn main() {
     let mass_matrix_cc = DMatrix::from(&m_cc_coarse);
 
     // println!("{:?}", mass_matrix_catmark.shape());
+    println!("SEC basis evaluation = {}", b_sec);
+    println!("Direct basis evaluation = {}", b_coarse);
     println!("SEC mass matrix = {}", mass_matrix_sec);
     println!("Direct mass matrix = {}", mass_matrix_cc);
     println!("Difference = {}", &mass_matrix_sec - &mass_matrix_cc);
-    println!("Relative error = {} %", (mass_matrix_sec - &mass_matrix_cc).norm() / mass_matrix_cc.norm() * 100.0);
-    println!("Relative error of basis evaluation = {} %", (b_sec - &b_coarse).norm() / b_coarse.norm() * 100.0);
+    println!("Relative error = {:e} %", (mass_matrix_sec - &mass_matrix_cc).norm() / mass_matrix_cc.norm() * 100.0);
+    println!("Relative error of basis evaluation = {:e} %", (b_sec - &b_coarse).norm() / b_coarse.norm() * 100.0);
 }
 
 /// Constructs the center and corner points of a regular `n`-gon of radius `r`.
