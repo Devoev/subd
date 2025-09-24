@@ -5,10 +5,12 @@ use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
 use crate::cells::line_segment::{DirectedEdge, UndirectedEdge};
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
+use crate::cells::topo::{CellToNodes, CellBoundary, OrientedCell, Cell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, U1, U2};
+use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, Scalar, U1, U2};
+use crate::mesh::elem_vertex::{ElemToVertex, ElemToVertexMesh};
+use crate::mesh::traits::{Mesh, VertexStorage};
 
 /// A 2d quadrilateral element of topology [`QuadNodes`],
 /// embedded in [`M`]-dimensional space.
@@ -224,7 +226,17 @@ impl QuadNodes {
     }
 }
 
-impl Cell<U2> for QuadNodes {
+impl <T: RealField + Copy, const M: usize> Cell<T, U2, Const<M>> for QuadNodes {
+    type GeoCell = Quad<T, M>;
+    type Coords = Vec<Point<T, M>>;
+    type Cells = ElemToVertex<QuadNodes>;
+
+    fn to_geo_cell(&self, msh: ElemToVertexMesh<T, Const<M>, QuadNodes>) -> Self::GeoCell {
+        Quad::new(self.0.map(|node| msh.coords.vertex(node)))
+    }
+}
+
+impl CellToNodes<U2> for QuadNodes {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }

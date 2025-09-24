@@ -262,7 +262,7 @@ impl CatmarkPatchNodes {
     }
 }
 
-impl cells::topo::Cell<U2> for CatmarkPatchNodes {
+impl cells::topo::CellToNodes<U2> for CatmarkPatchNodes {
     fn nodes(&self) -> &[NodeIdx] {
         self.as_slice()
     }

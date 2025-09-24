@@ -1,11 +1,11 @@
 use nalgebra::{Const, DimName, DimNameSub, U0};
-use crate::cells::topo::Cell;
+use crate::cells::topo::CellToNodes;
 
 /// Index of a node aka. vertex in a mesh. Represented by a global index.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct NodeIdx(pub usize);
 
-impl Cell<U0> for NodeIdx {
+impl CellToNodes<U0> for NodeIdx {
     fn nodes(&self) -> &[NodeIdx] {
         &[] // todo: return self?
     }

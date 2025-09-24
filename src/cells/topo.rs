@@ -1,9 +1,31 @@
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
-use nalgebra::{DimName, DimNameDiff, DimNameSub, U1, U2, U3};
+use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U2, U3};
+use nalgebra::allocator::Allocator;
+use crate::cells::geo;
+use crate::diffgeo::chart::ChartAllocator;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 
-/// Topology of a [`K`]-dimensional cell inside a mesh.
-pub trait Cell<K: DimName> {
+/// Topology of a [`D`]-dimensional cell inside a mesh.
+pub trait Cell<T: Scalar, D: DimName, M: DimName>
+    where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>,
+          DefaultAllocator: Allocator<M>
+{
+    /// The geometric cell associated with this topology.
+    type GeoCell: geo::Cell<T>;
+
+    /// Coordinates storage of the associated mesh.
+    type Coords: VertexStorage<T, M>;
+
+    /// Cell topology of the associated mesh.
+    type Cells: MeshTopology;
+
+    /// Constructs the geometric cell associated with this topology from the given `msh`.
+    fn to_geo_cell(&self, msh: &Mesh<T, M, Self::Coords, Self::Cells>) -> Self::GeoCell;
+}
+
+/// Nodes-Topology of a [`K`]-dimensional cell inside a mesh.
+pub trait CellToNodes<K: DimName> {
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
     fn nodes(&self) -> &[NodeIdx];
 
@@ -48,8 +70,8 @@ pub trait Cell<K: DimName> {
     }
 }
 
-/// A [topological cell](Cell) with an ordering of its nodes.
-pub trait OrderedCell<K: DimName>: Cell<K> {
+/// A [topological cell](CellToNodes) with an ordering of its nodes.
+pub trait OrderedCell<K: DimName>: CellToNodes<K> {
     /// Returns a (globally) sorted copy of this cell.
     ///
     /// For cells `c₁` and `c₂` with the same nodes,
@@ -62,8 +84,8 @@ pub trait OrderedCell<K: DimName>: Cell<K> {
 
 // todo: merge ordered and oriented cell maybe?
 
-/// A [topological cell](Cell) with a global orientation (`+1` or `-1`).
-pub trait OrientedCell<K: DimName>: Cell<K> {
+/// A [topological cell](CellToNodes) with a global orientation (`+1` or `-1`).
+pub trait OrientedCell<K: DimName>: CellToNodes<K> {
     /// Returns the global orientation of this cell (`+1` or `-1`).
     fn orientation(&self) -> i8; 
     // todo: update return value with Enum
@@ -77,13 +99,13 @@ pub trait OrientedCell<K: DimName>: Cell<K> {
     fn reversed(&self) -> Self;
 }
 
-/// A [topological cell](Cell) with a boundary.
-pub trait CellBoundary<K: DimName + DimNameSub<U1>>: Cell<K> {
+/// A [topological cell](CellToNodes) with a boundary.
+pub trait CellBoundary<K: DimName + DimNameSub<U1>>: CellToNodes<K> {
     /// Number of [`K`]`-1`-dimensional sub-cells in the boundary of this cell.
     const NUM_SUB_CELLS: usize;
 
     /// Cell topology of the individual sub-cells of the boundary chain.
-    type SubCell: Cell<DimNameDiff<K, U1>>;
+    type SubCell: CellToNodes<DimNameDiff<K, U1>>;
 
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
     type Boundary: Chain<DimNameDiff<K, U1>, Self::SubCell>;
@@ -104,7 +126,7 @@ pub type Face3<C> = SubCell<U3, C>;
 /// Edge of a `3`-dimensional cell element [`C`].
 pub type Edge3<C> = SubCell<Face3<C>, C>;
 
-impl <K: DimName> Cell<K> for () {
+impl <K: DimName> CellToNodes<K> for () {
     fn nodes(&self) -> &[NodeIdx] {
         &[]
     }

@@ -38,7 +38,7 @@ impl LinFace {
     }
 }
 
-impl topo::Cell<U2> for LinFace {
+impl topo::CellToNodes<U2> for LinFace {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0.0
     }

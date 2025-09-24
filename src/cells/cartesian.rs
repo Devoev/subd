@@ -1,6 +1,6 @@
 use crate::cells::geo;
 use crate::cells::lerp::MultiLerp;
-use crate::cells::topo::{Cell, CellBoundary};
+use crate::cells::topo::{CellToNodes, CellBoundary};
 use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
@@ -99,7 +99,7 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T> for CartCell<T, D> {
 #[derive(Debug, Clone, Copy)]
 pub struct CartCellIdx<const K: usize>(pub [usize; K]);
 
-impl <const K: usize> Cell<Const<K>> for CartCellIdx<K> {
+impl <const K: usize> CellToNodes<Const<K>> for CartCellIdx<K> {
     fn nodes(&self) -> &[NodeIdx] {
         todo!()
     }

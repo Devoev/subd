@@ -2,7 +2,7 @@ use crate::cells::chain::Chain;
 use crate::cells::geo;
 use crate::cells::lerp::{Lerp, MultiLerp};
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
+use crate::cells::topo::{CellToNodes, CellBoundary, OrderedCell, OrientedCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U0, U1};
@@ -84,7 +84,7 @@ impl DirectedEdge {
     }
 }
 
-impl Cell<U1> for DirectedEdge {
+impl CellToNodes<U1> for DirectedEdge {
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -200,7 +200,7 @@ impl From<UndirectedEdge> for DirectedEdge {
     }
 }
 
-impl Cell<U1> for UndirectedEdge {
+impl CellToNodes<U1> for UndirectedEdge {
     fn nodes(&self) -> &[NodeIdx] {
         &self.sorted_nodes
     }

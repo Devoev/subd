@@ -2,19 +2,41 @@
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary};
-use crate::mesh::traits::MeshTopology;
+use crate::cells::topo::{CellToNodes, CellBoundary};
+use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, U1};
+use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, OPoint, Point, RealField, U1};
 use std::iter::Map;
 use std::ops::Range;
+use std::vec::IntoIter;
+
+/// Element-to-vertex connectivity of a mesh with cells [`C`].
+pub struct ElemToVertex<C> {
+    pub elems: Vec<C>
+}
+
+impl <C: Clone> MeshTopology for ElemToVertex<C> {
+    type Elem = C;
+    type ElemIter = IntoIter<Self::Elem>;
+    
+    fn num_elems(&self) -> usize {
+        self.elems.len()
+    }
+
+    fn elem_iter(&self) -> Self::ElemIter {
+        self.elems.clone().into_iter()
+    }
+}
+
+/// Element-to-vertex mesh.
+pub type ElemToVertexMesh<T, M, C> = Mesh<T, M, Vec<OPoint<T, M>>, ElemToVertex<C>>;
 
 /// Element-vertex mesh, with topological connectivity information
 /// of [`K`]-dimensional cells [`C`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
 #[derive(Debug, Clone)]
-pub struct ElemVertexMesh<T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> {
+pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Const<K>>, const K: usize, const M: usize> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point<T, M>>,
 
@@ -22,7 +44,7 @@ pub struct ElemVertexMesh<T: RealField, C: Cell<Const<K>>, const K: usize, const
     pub elems: Vec<C>,
 }
 
-impl <T: RealField, C: Cell<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
+impl <T: RealField, C: CellToNodes<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
     // todo: replace panic with result
     /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     /// 
@@ -118,7 +140,7 @@ pub type NodesIter = Map<Range<usize>, fn(usize) -> NodeIdx>;
 /// An iterator that yields the elements of an element-vertex mesh.
 pub type ElemsIter<'a, C> = std::slice::Iter<'a, C>;
 
-impl <'a, T: RealField, C: Cell<Const<K>> + 'a, const K: usize, const M: usize> MeshTopology<'a, K> for ElemVertexMesh<T, C, K, M> {
+impl <'a, T: RealField, C: CellToNodes<Const<K>> + 'a, const K: usize, const M: usize> MeshTopology<'a, K> for ElemVertexMesh<T, C, K, M> {
     type Elem = &'a C;
     type NodeIter = NodesIter;
     type ElemIter = ElemsIter<'a, C>;

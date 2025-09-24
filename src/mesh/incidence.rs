@@ -1,5 +1,5 @@
 use crate::cells::chain::Chain;
-use crate::cells::topo::{Cell, CellBoundary, OrientedCell, SubCell};
+use crate::cells::topo::{CellToNodes, CellBoundary, OrientedCell, SubCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;

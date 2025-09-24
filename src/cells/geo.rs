@@ -2,6 +2,8 @@ use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::index::dimensioned::Dimensioned;
 use nalgebra::{Const, DefaultAllocator, RealField, Scalar};
 use crate::basis::traits::Basis;
+use crate::cells::topo;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 
 /// A [`ChartAllocator`] for the [`C::GeoMap`] of a cell.
 pub trait CellAllocator<T: Scalar, C: Cell<T>>: ChartAllocator<T, C::GeoMap>
@@ -29,6 +31,21 @@ pub trait Cell<T: Scalar>
     fn geo_map(&self) -> Self::GeoMap;
     
     // todo: maybe merge Chart and Cell traits?
+}
+
+// todo: this could be an alternative to the to_geo_cell method in topo::Cell
+//  what is better?
+pub trait CellInMesh<T: Scalar>: Cell<T> {
+    
+    type TopoCell;
+
+    /// Coordinates storage of the associated mesh.
+    type Coords: VertexStorage<T, <Self::GeoMap as Chart<T>>::GeometryDim>;
+
+    /// Cell topology of the associated mesh.
+    type Cells: MeshTopology;
+    
+    fn from_msh(cell: &Self::TopoCell, msh: &Mesh<T, M, Self::Coords, Self::Cells>) ->
 }
 
 // todo: possibly rename and reorganize these traits and types

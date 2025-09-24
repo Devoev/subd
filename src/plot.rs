@@ -163,7 +163,7 @@ pub fn write_coords<T: Scalar + Display, const D: usize>(coords: impl Iterator<I
 }
 
 /// Writes the element connectivity of `elems` into a `file`.
-pub fn write_connectivity<C: topo::Cell<K>, K: DimName>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_connectivity<C: topo::CellToNodes<K>, K: DimName>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     for elem in elems {
         let str = elem.nodes().iter().map(|n| n.0.to_string()).collect_vec().join(" ");
         writeln!(file, "{str}")?;
