@@ -226,12 +226,12 @@ impl QuadNodes {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Cell<T, U2, Const<M>> for QuadNodes {
+impl <T: RealField + Copy, const M: usize> Cell<T, Const<M>> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
     type Cells = ElemToVertex<QuadNodes>;
 
-    fn to_geo_cell(&self, msh: ElemToVertexMesh<T, Const<M>, QuadNodes>) -> Self::GeoCell {
+    fn to_geo_cell(&self, msh: &ElemToVertexMesh<T, QuadNodes, M>) -> Self::GeoCell {
         Quad::new(self.0.map(|node| msh.coords.vertex(node)))
     }
 }

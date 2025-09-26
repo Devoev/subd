@@ -1,27 +1,29 @@
 use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
-use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U2, U3};
+use nalgebra::{Const, DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U2, U3};
 use nalgebra::allocator::Allocator;
 use crate::cells::geo;
 use crate::diffgeo::chart::ChartAllocator;
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 
-/// Topology of a [`D`]-dimensional cell inside a mesh.
-pub trait Cell<T: Scalar, D: DimName, M: DimName>
-    where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>,
-          DefaultAllocator: Allocator<M>
-{
+// todo: refactor
+//  - replace T and M with GATs
+//  - should a topological cell really have knowledge about the geometry? Should this just be a
+//    sub-trait of geo:Cell (i.e. CellInMesh)
+/// Topology of a cell inside a mesh.
+pub trait Cell<T: Scalar, M: DimName> {
     /// The geometric cell associated with this topology.
-    type GeoCell: geo::Cell<T>;
+    type GeoCell; //: geo::Cell<T> // todo: add bound
+    // where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>;
 
     /// Coordinates storage of the associated mesh.
-    type Coords: VertexStorage<T, M>;
+    type Coords: VertexStorage<T>;
 
     /// Cell topology of the associated mesh.
     type Cells: MeshTopology;
 
     /// Constructs the geometric cell associated with this topology from the given `msh`.
-    fn to_geo_cell(&self, msh: &Mesh<T, M, Self::Coords, Self::Cells>) -> Self::GeoCell;
+    fn to_geo_cell(&self, msh: &Mesh<T, Self::Coords, Self::Cells>) -> Self::GeoCell;
 }
 
 /// Nodes-Topology of a [`K`]-dimensional cell inside a mesh.
