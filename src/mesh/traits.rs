@@ -22,7 +22,10 @@ pub trait MeshTopology {
 }
 
 /// Storage for the geometrical vertex points of a mesh.
-pub trait VertexStorage<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
+pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDim> {
+    /// Dimension of the embedding Euclidean space.
+    type GeoDim: DimName;
+
     /// Node iterator.
     type NodeIter: Iterator<Item = NodeIdx>;
 
@@ -33,12 +36,13 @@ pub trait VertexStorage<T: Scalar, M: DimName> where DefaultAllocator: Allocator
     fn node_iter(&self) -> Self::NodeIter;
 
     /// Gets the vertex point of the `i`-th node in the mesh.
-    fn vertex(&self, i: NodeIdx) -> OPoint<T, M>; // todo: possibly also allow for multi index?
+    fn vertex(&self, i: NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
 }
 
-impl <T: Scalar, M: DimName> VertexStorage<T, M> for Vec<OPoint<T, M>>
+impl <T: Scalar, M: DimName> VertexStorage<T> for Vec<OPoint<T, M>>
 where DefaultAllocator: Allocator<M>
 {
+    type GeoDim = M;
     type NodeIter = impl Iterator<Item = NodeIdx>;
 
     fn num_nodes(&self) -> usize {
@@ -55,8 +59,8 @@ where DefaultAllocator: Allocator<M>
 }
 
 /// A mesh consisting of connected topological cells and vertex coordinates.
-pub struct Mesh<T: Scalar, M: DimName, Coords: VertexStorage<T, M>, Cells: MeshTopology>
-    where DefaultAllocator: Allocator<M>
+pub struct Mesh<T: Scalar, Coords: VertexStorage<T>, Cells: MeshTopology>
+    where DefaultAllocator: Allocator<Coords::GeoDim>
 {
     /// Coordinate storage.
     pub coords: Coords,
@@ -64,15 +68,14 @@ pub struct Mesh<T: Scalar, M: DimName, Coords: VertexStorage<T, M>, Cells: MeshT
     /// Mesh cell topology.
     pub cells: Cells,
 
-    _phantom_data: PhantomData<(T, M)>,
+    _phantom_data: PhantomData<T>,
 }
 
-impl <T, M, Coords, Cells> Mesh<T, M, Coords, Cells>
+impl <T, Coords, Cells> Mesh<T, Coords, Cells>
 where T: Scalar,
-      M: DimName,
-      Coords: VertexStorage<T, M>,
+      Coords: VertexStorage<T>,
       Cells: MeshTopology,
-      DefaultAllocator: Allocator<M>
+      DefaultAllocator: Allocator<Coords::GeoDim>
 {
 
 }
