@@ -2,12 +2,15 @@ use crate::cells::chain::Chain;
 use crate::cells::geo;
 use crate::cells::lerp::{Lerp, MultiLerp};
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellToNodes, CellBoundary, OrderedCell, OrientedCell};
+use crate::cells::topo::{CellToNodes, CellBoundary, OrderedCell, OrientedCell, Cell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U0, U1};
+use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, Scalar, U0, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
+use crate::cells::quad::QuadNodes;
+use crate::mesh::elem_vertex::ElemToVertex;
+use crate::mesh::traits::{Mesh, VertexStorage};
 
 /// A line segment, i.e. a straight line bounded by 2 points
 /// in [`M`]-dimensional space.
@@ -81,6 +84,16 @@ impl DirectedEdge {
     /// Reverses the orientation of this edge by calling [`DirectedEdge::reversed`].
     pub fn reverse(&mut self) {
         *self = self.reversed();
+    }
+}
+
+impl <T: Scalar, const M: usize> Cell<T, Const<M>> for DirectedEdge {
+    type GeoCell = LineSegment<T, M>;
+    type Coords = Vec<Point<T, M>>;
+    type Cells = ElemToVertex<QuadNodes>;
+
+    fn to_geo_cell(&self, msh: &Mesh<T, Self::Coords, Self::Cells>) -> Self::GeoCell {
+        LineSegment::new(self.0.map(|node| msh.coords.vertex(node)))
     }
 }
 

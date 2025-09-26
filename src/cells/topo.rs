@@ -10,6 +10,9 @@ use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 //  - replace T and M with GATs
 //  - should a topological cell really have knowledge about the geometry? Should this just be a
 //    sub-trait of geo:Cell (i.e. CellInMesh)
+//  - the associated types don't quite make sense. Ideally this should be independent of the exact mesh used
+//    (for example 2D vs 3D quad mesh should both work for quads, any mesh for (Un-)DirectedEdge).
+//    This can maybe also be fixed by moving the associated types to generics of the method.
 /// Topology of a cell inside a mesh.
 pub trait Cell<T: Scalar, M: DimName> {
     /// The geometric cell associated with this topology.
