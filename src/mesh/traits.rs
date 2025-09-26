@@ -3,7 +3,7 @@ use crate::cells::geo;
 use crate::cells::geo::{Cell, CellAllocator};
 use crate::cells::node::NodeIdx;
 use crate::diffgeo::chart::ChartAllocator;
-use nalgebra::{DefaultAllocator, DimName, OPoint, Point, RealField, Scalar};
+use nalgebra::{Const, DefaultAllocator, DimName, Dyn, OMatrix, OPoint, Point, RealField, Scalar};
 use nalgebra::allocator::Allocator;
 
 /// Topology of a mesh consisting of cells.
@@ -39,6 +39,7 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     fn vertex(&self, i: NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
 }
 
+/// Vector of control points.
 impl <T: Scalar, M: DimName> VertexStorage<T> for Vec<OPoint<T, M>>
 where DefaultAllocator: Allocator<M>
 {
@@ -55,6 +56,26 @@ where DefaultAllocator: Allocator<M>
 
     fn vertex(&self, i: NodeIdx) -> OPoint<T, M> {
         self[i.0]
+    }
+}
+
+/// Matrix of row-wise control points.
+impl <T: Scalar, M: DimName> VertexStorage<T> for OMatrix<T, Dyn, M>
+where DefaultAllocator: Allocator<M>
+{
+    type GeoDim = M;
+    type NodeIter = impl Iterator<Item = NodeIdx>;
+
+    fn num_nodes(&self) -> usize {
+        self.nrows()
+    }
+
+    fn node_iter(&self) -> Self::NodeIter {
+        (0..self.nrows()).map(NodeIdx)
+    }
+
+    fn vertex(&self, NodeIdx(i): NodeIdx) -> OPoint<T, Self::GeoDim> {
+        OPoint::from(self.row(i))
     }
 }
 
