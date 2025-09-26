@@ -30,7 +30,7 @@ impl <C: Clone> MeshTopology for ElemToVertex<C> {
 }
 
 /// Element-to-vertex mesh.
-pub type ElemToVertexMesh<T, M, C> = Mesh<T, M, Vec<OPoint<T, M>>, ElemToVertex<C>>;
+pub type ElemToVertexMesh<T, C, const M: usize> = Mesh<T, Vec<Point<T, M>>, ElemToVertex<C>>;
 
 /// Element-vertex mesh, with topological connectivity information
 /// of [`K`]-dimensional cells [`C`]
