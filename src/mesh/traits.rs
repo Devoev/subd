@@ -1,10 +1,7 @@
-use std::marker::PhantomData;
-use crate::cells::geo;
-use crate::cells::geo::{Cell, CellAllocator};
-use crate::cells::node::NodeIdx;
-use crate::diffgeo::chart::ChartAllocator;
-use nalgebra::{Const, DefaultAllocator, DimName, Dyn, OMatrix, OPoint, Point, RealField, Scalar};
 use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, DimName, Dyn, OMatrix, OPoint, Scalar};
+use std::marker::PhantomData;
+use std::ops::Range;
 
 /// Topology of a mesh consisting of cells.
 pub trait MeshTopology {
@@ -26,8 +23,11 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     /// Dimension of the embedding Euclidean space.
     type GeoDim: DimName;
 
+    /// Node index defining a global ordering of vertices.
+    type NodeIdx;
+
     /// Node iterator.
-    type NodeIter: Iterator<Item = NodeIdx>;
+    type NodeIter: Iterator<Item = Self::NodeIdx>;
 
     /// Returns the total number of nodes in this mesh.
     fn num_nodes(&self) -> usize;
@@ -36,7 +36,7 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     fn node_iter(&self) -> Self::NodeIter;
 
     /// Gets the vertex point of the `i`-th node in the mesh.
-    fn vertex(&self, i: NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
+    fn vertex(&self, i: Self::NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
 }
 
 /// Vector of control points.
@@ -44,18 +44,19 @@ impl <T: Scalar, M: DimName> VertexStorage<T> for Vec<OPoint<T, M>>
 where DefaultAllocator: Allocator<M>
 {
     type GeoDim = M;
-    type NodeIter = impl Iterator<Item = NodeIdx>;
+    type NodeIdx = usize;
+    type NodeIter = Range<usize>;
 
     fn num_nodes(&self) -> usize {
         self.len()
     }
 
     fn node_iter(&self) -> Self::NodeIter {
-        (0..self.len()).map(NodeIdx)
+        0..self.len()
     }
 
-    fn vertex(&self, i: NodeIdx) -> OPoint<T, M> {
-        self[i.0]
+    fn vertex(&self, i: usize) -> OPoint<T, M> {
+        self[i]
     }
 }
 
@@ -64,17 +65,18 @@ impl <T: Scalar, M: DimName> VertexStorage<T> for OMatrix<T, Dyn, M>
 where DefaultAllocator: Allocator<M>
 {
     type GeoDim = M;
-    type NodeIter = impl Iterator<Item = NodeIdx>;
+    type NodeIdx = usize;
+    type NodeIter = Range<usize>;
 
     fn num_nodes(&self) -> usize {
         self.nrows()
     }
 
     fn node_iter(&self) -> Self::NodeIter {
-        (0..self.nrows()).map(NodeIdx)
+        0..self.nrows()
     }
 
-    fn vertex(&self, NodeIdx(i): NodeIdx) -> OPoint<T, Self::GeoDim> {
+    fn vertex(&self, i: usize) -> OPoint<T, Self::GeoDim> {
         OPoint::from(self.row(i))
     }
 }

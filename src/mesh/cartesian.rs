@@ -1,31 +1,32 @@
-use std::io::empty;
-use crate::cells::cartesian::{CartCell, CartCellIdx};
-use crate::index::dimensioned::{DimShape, MultiRange, Strides};
-use itertools::Itertools;
-use nalgebra::{Const, OPoint, Point, RealField, Scalar};
-use std::iter::{once, zip, Map, Once};
+use crate::cells::cartesian::CartCellIdx;
 use crate::cells::node::NodeIdx;
+use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
 use crate::knots::breaks::Breaks;
-use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology, VertexStorage};
+use itertools::Itertools;
+use nalgebra::{Const, OPoint, Point, RealField, Scalar};
+use std::iter::{zip, Map, Once};
 
 impl <T: Scalar, const D: usize> VertexStorage<T> for [Breaks<T>; D] {
     type GeoDim = Const<D>;
-    type NodeIter = Once<NodeIdx>; // todo
+    type NodeIdx = [usize; D];
+    type NodeIter = Once<[usize; D]>; // todo
 
     fn num_nodes(&self) -> usize {
-        todo!()
+        self.iter().map(|zeta| zeta.len()).product()
     }
 
     fn node_iter(&self) -> Self::NodeIter {
-        todo!();
-        once(NodeIdx(0))
+        todo!("Implement node using multi cartesian product");
     }
 
-    fn vertex(&self, i: NodeIdx) -> OPoint<T, Self::GeoDim> {
-        // todo: because i is a linear index, it has to first be turned into a multi index
-        //  solution => use a multi index directly and encode that in the VertexStorage trait
-        todo!()
+    fn vertex(&self, i: [usize; D]) -> OPoint<T, Self::GeoDim> {
+        let coords = zip(i, self)
+            .map(|(i, zeta)| zeta[i])
+            .collect_array()
+            .unwrap();
+        Point::from(coords)
     }
 }
 
