@@ -2,7 +2,7 @@ use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U2, U3};
+use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U0, U1, U2, U3};
 
 // todo: refactor
 //  - replace T and M with GATs
@@ -29,8 +29,11 @@ pub trait Cell<T: Scalar, M: DimName> {
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell where DefaultAllocator: Allocator<M>;
 }
 
-/// Nodes-Topology of a [`K`]-dimensional cell inside a mesh.
-pub trait CellToNodes<K: DimName> {
+/// Nodes-Topology of a cell inside a mesh.
+pub trait CellToNodes {
+    /// Dimension of this cell.
+    type Dim: DimName;
+
     /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
     fn nodes(&self) -> &[NodeIdx];
 
@@ -59,7 +62,7 @@ pub trait CellToNodes<K: DimName> {
     /// In this case `connected_to(other, U1)` returns `false`
     /// but `connected_to(other, U0)` returns `true`.
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
-    where K: DimNameSub<M>;
+    where Self::Dim: DimNameSub<M>;
 
     /// Returns `true` if the cell contains the given `node`.
     fn contains_node(&self, node: NodeIdx) -> bool {
@@ -69,14 +72,14 @@ pub trait CellToNodes<K: DimName> {
     /// Returns `true` if `self` and `other` are topologically equal.
     /// This is the same as testing `self.is_connected(other, K::name())`.
     fn topo_eq(&self, other: &Self) -> bool
-        where K: DimNameSub<K>
+        where Self::Dim: DimNameSub<Self::Dim>
     {
-        self.is_connected(other, K::name())
+        self.is_connected(other, Self::Dim::name())
     }
 }
 
 /// A [topological cell](CellToNodes) with an ordering of its nodes.
-pub trait OrderedCell<K: DimName>: CellToNodes<K> {
+pub trait OrderedCell: CellToNodes {
     /// Returns a (globally) sorted copy of this cell.
     ///
     /// For cells `c₁` and `c₂` with the same nodes,
@@ -90,7 +93,7 @@ pub trait OrderedCell<K: DimName>: CellToNodes<K> {
 // todo: merge ordered and oriented cell maybe?
 
 /// A [topological cell](CellToNodes) with a global orientation (`+1` or `-1`).
-pub trait OrientedCell<K: DimName>: CellToNodes<K> {
+pub trait OrientedCell: CellToNodes {
     /// Returns the global orientation of this cell (`+1` or `-1`).
     fn orientation(&self) -> i8; 
     // todo: update return value with Enum
@@ -105,41 +108,25 @@ pub trait OrientedCell<K: DimName>: CellToNodes<K> {
 }
 
 /// A [topological cell](CellToNodes) with a boundary.
-pub trait CellBoundary<K: DimName + DimNameSub<U1>>: CellToNodes<K> {
+pub trait CellBoundary: CellToNodes where Self::Dim: DimNameSub<U1> {
     /// Number of [`K`]`-1`-dimensional sub-cells in the boundary of this cell.
     const NUM_SUB_CELLS: usize;
 
     /// Cell topology of the individual sub-cells of the boundary chain.
-    type SubCell: CellToNodes<DimNameDiff<K, U1>>;
+    type SubCell: CellToNodes<Dim = DimNameDiff<Self::Dim, U1>>;
 
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
-    type Boundary: Chain<DimNameDiff<K, U1>, Self::SubCell>;
+    type Boundary: Chain<Self::SubCell>;
 
     /// Returns the [boundary topology](Self::Boundary) of this cell.
     fn boundary(&self) -> Self::Boundary;
 }
 
 /// Type of sub-cells the [`K`]`-1`-dimensional boundary of [`C`] is composed.
-pub type SubCell<K, C> = <C as CellBoundary<K>>::SubCell;
+pub type SubCell<C> = <C as CellBoundary>::SubCell;
 
 /// Edge of a `2`-dimensional face element [`F`].
-pub type Edge2<F> = SubCell<U2, F>;
+pub type Edge2<F> = SubCell<F>;
 
 /// Face of a `3`-dimensional cell element [`C`].
-pub type Face3<C> = SubCell<U3, C>;
-
-/// Edge of a `3`-dimensional cell element [`C`].
-pub type Edge3<C> = SubCell<Face3<C>, C>;
-
-impl <K: DimName> CellToNodes<K> for () {
-    fn nodes(&self) -> &[NodeIdx] {
-        &[]
-    }
-
-    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
-    where
-        K: DimNameSub<M>
-    {
-        false
-    }
-}
+pub type Face3<C> = SubCell<C>;

@@ -239,7 +239,9 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for QuadNodes {
     }
 }
 
-impl CellToNodes<U2> for QuadNodes {
+impl CellToNodes for QuadNodes {
+    type Dim = U2;
+
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -262,7 +264,7 @@ impl CellToNodes<U2> for QuadNodes {
     }
 }
 
-impl OrientedCell<U2> for QuadNodes {
+impl OrientedCell for QuadNodes {
     fn orientation(&self) -> i8 {
         todo!("possible orientation:\
         + smallest node -> 2nd smallest node \
@@ -284,7 +286,7 @@ impl OrientedCell<U2> for QuadNodes {
     }
 }
 
-impl CellBoundary<U2> for QuadNodes {
+impl CellBoundary for QuadNodes {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;
@@ -296,14 +298,8 @@ impl CellBoundary<U2> for QuadNodes {
 
 pub struct QuadBndTopo(pub [DirectedEdge; 4]);
 
-impl Chain<U1, DirectedEdge> for QuadBndTopo {
+impl Chain<DirectedEdge> for QuadBndTopo {
     fn cells(&self) -> &[DirectedEdge] {
         &self.0
     }
-}
-
-impl ChainBoundary<U1, DirectedEdge> for QuadBndTopo {
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary { }
 }

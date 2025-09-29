@@ -1,23 +1,17 @@
 use nalgebra::{DimName, DimNameDiff, DimNameSub, U1};
 use crate::cells::topo::{CellToNodes, CellBoundary};
 
-/// Topology of a [`K`]-chain inside a mesh.
-pub trait Chain<K: DimName, C: CellToNodes<K>> {
+/// Topology of a chain inside a mesh.
+pub trait Chain<C: CellToNodes> {
     /// Returns a slice of all [cell topologies](CellTopo) in this chain.
     fn cells(&self) -> &[C];
 }
 
 /// A [topological chain](Chain) with a boundary.
-pub trait ChainBoundary<K: DimName + DimNameSub<U1>, C: CellBoundary<K>>: Chain<K, C> {
+pub trait ChainBoundary<C: CellBoundary>: Chain<C> where C::Dim: DimNameSub<U1> {
     /// Topology of the [`K`]`-1`-dimensional boundary of this chain.
-    type Boundary: Chain<DimNameDiff<K, U1>, C::SubCell>;
+    type Boundary: Chain<C::SubCell>;
 
     /// Returns the [boundary topology](Self::Boundary) of this chain.
     fn boundary(&self) -> Self::Boundary;
-}
-
-impl <K: DimName, C: CellToNodes<K>> Chain<K, C> for () {
-    fn cells(&self) -> &[C] {
-        &[]
-    }
 }

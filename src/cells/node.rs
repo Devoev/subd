@@ -19,7 +19,9 @@ impl <T: Scalar, const M: usize> Cell<T, Const<M>> for NodeIdx {
     }
 }
 
-impl CellToNodes<U0> for NodeIdx {
+impl CellToNodes for NodeIdx {
+    type Dim = U0;
+
     fn nodes(&self) -> &[NodeIdx] {
         &[] // todo: return self?
     }

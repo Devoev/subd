@@ -100,7 +100,9 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for DirectedEdge {
     }
 }
 
-impl CellToNodes<U1> for DirectedEdge {
+impl CellToNodes for DirectedEdge {
+    type Dim = U1;
+
     fn nodes(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -125,7 +127,7 @@ impl CellToNodes<U1> for DirectedEdge {
     }
 }
 
-impl CellBoundary<U1> for DirectedEdge {
+impl CellBoundary for DirectedEdge {
     const NUM_SUB_CELLS: usize = 2;
     type SubCell = NodeIdx;
     type Boundary = NodePair;
@@ -135,13 +137,13 @@ impl CellBoundary<U1> for DirectedEdge {
     }
 }
 
-impl OrderedCell<U1> for DirectedEdge {
+impl OrderedCell for DirectedEdge {
     fn sorted(&self) -> Self {
         DirectedEdge(minmax(self.start(), self.end()))
     }
 }
 
-impl OrientedCell<U1> for DirectedEdge {
+impl OrientedCell for DirectedEdge {
     fn orientation(&self) -> i8 {
         clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
     }
@@ -158,7 +160,7 @@ impl OrientedCell<U1> for DirectedEdge {
 /// Pair of two disjoint nodes.
 pub struct NodePair(pub [NodeIdx; 2]);
 
-impl Chain<U0, NodeIdx> for NodePair {
+impl Chain<NodeIdx> for NodePair {
     fn cells(&self) -> &[NodeIdx] {
         &self.0
     }
@@ -216,7 +218,9 @@ impl From<UndirectedEdge> for DirectedEdge {
     }
 }
 
-impl CellToNodes<U1> for UndirectedEdge {
+impl CellToNodes for UndirectedEdge {
+    type Dim = U1;
+
     fn nodes(&self) -> &[NodeIdx] {
         &self.sorted_nodes
     }

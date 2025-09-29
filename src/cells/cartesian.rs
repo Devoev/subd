@@ -120,7 +120,9 @@ impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     }
 }
 
-impl <const K: usize> CellToNodes<Const<K>> for CartCellIdx<K> {
+impl <const K: usize> CellToNodes for CartCellIdx<K> {
+    type Dim = Const<K>;
+
     fn nodes(&self) -> &[NodeIdx] {
         todo!()
     }
@@ -133,12 +135,12 @@ impl <const K: usize> CellToNodes<Const<K>> for CartCellIdx<K> {
     }
 }
 
-impl CellBoundary<U3> for CartCellIdx<3> {
-    const NUM_SUB_CELLS: usize = 6;
-    type SubCell = CartCellIdx<2>;
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary {
-        todo!("Get")
-    }
-}
+// impl CellBoundary for CartCellIdx<3> {
+//     const NUM_SUB_CELLS: usize = 6;
+//     type SubCell = CartCellIdx<2>;
+//     type Boundary = ();
+//
+//     fn boundary(&self) -> Self::Boundary {
+//         todo!("Get")
+//     }
+// }
