@@ -92,11 +92,8 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for DirectedEdge {
     type GeoCell = LineSegment<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
-    where
-        DefaultAllocator: Allocator<Const<M>>
-    {
-        LineSegment::new(self.0.map(|node| coords.vertex(node)))
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+        LineSegment::new(self.0.map(|node| coords.vertex(node.0)))
     }
 }
 

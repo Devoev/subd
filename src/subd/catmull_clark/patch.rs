@@ -269,14 +269,11 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
     type GeoCell = CatmarkPatch<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
-    where
-        DefaultAllocator: Allocator<Const<M>>
-    {
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let coords = self
             .as_slice()
             .iter()
-            .map(|node| coords.vertex(*node));
+            .map(|node| coords.vertex(node.0));
         match self {
             CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
             CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),

@@ -105,10 +105,7 @@ impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     type GeoCell = CartCell<T, K>;
     type Coords = [Breaks<T>; K];
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
-    where
-        DefaultAllocator: Allocator<Const<K>>
-    {
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let idx_a = self.0;
         let idx_b = idx_a.map(|i| i + 1);
         // todo: move construction of coords_a and coords_b to VertexStorage trait that works for multi indices

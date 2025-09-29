@@ -11,11 +11,8 @@ impl <T: Scalar, const M: usize> Cell<T, Const<M>> for NodeIdx {
     type GeoCell = Point<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
-    where
-        DefaultAllocator: Allocator<Const<M>>
-    {
-        coords.vertex(*self)
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+        coords.vertex(self.0)
     }
 }
 

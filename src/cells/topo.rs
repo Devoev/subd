@@ -17,16 +17,16 @@ use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U0, U
 //   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway.
 //      but move it to a generic parameter of to_geo_cell
 /// Topology of a cell inside a mesh.
-pub trait Cell<T: Scalar, M: DimName> {
+pub trait Cell<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
     /// The geometric cell associated with this topology.
     type GeoCell; //: geo::Cell<T> // todo: add bound
     // where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>;
 
     /// Coordinates storage of the associated mesh.
-    type Coords: VertexStorage<T, GeoDim = M> where DefaultAllocator: Allocator<M>;
+    type Coords: VertexStorage<T, GeoDim = M>;
 
     /// Constructs the geometric cell associated with this topology from the given vertex `coords`.
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell where DefaultAllocator: Allocator<M>;
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell;
 }
 
 /// Nodes-Topology of a cell inside a mesh.

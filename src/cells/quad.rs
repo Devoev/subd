@@ -231,11 +231,8 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
-    where
-        DefaultAllocator: Allocator<Const<M>>
-    {
-        Quad::new(self.0.map(|node| coords.vertex(node)))
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+        Quad::new(self.0.map(|node| coords.vertex(node.0)))
     }
 }
 
