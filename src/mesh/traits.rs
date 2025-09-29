@@ -4,6 +4,9 @@ use std::marker::PhantomData;
 use std::ops::Range;
 
 /// Topology of a mesh consisting of cells.
+///
+/// A topological mesh is essentially a collection of cells, also called elements.
+/// This trait mainly provides iteration over all mesh elements using [`Self::elem_iter`].
 pub trait MeshTopology {
     /// Topological element in the mesh.
     type Elem; //: topo::Cell<Const<K>>; todo: add bound
