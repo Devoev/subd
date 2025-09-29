@@ -7,7 +7,7 @@ use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, OPoint, Point, RealField, U1};
-use std::iter::Map;
+use std::iter::{once, Map};
 use std::ops::Range;
 use std::vec::IntoIter;
 
@@ -128,7 +128,9 @@ impl <T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize> E
 
     /// Returns an iterator over all boundary nodes in this mesh.
     pub fn boundary_nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
-        self.node_iter().filter(|&n| self.is_boundary_node_general(n))
+        // self.node_iter().filter(|&n| self.is_boundary_node_general(n))
+        todo!();
+        once(NodeIdx(0))
     }
 
     // todo: add info about regular/ irregular adjacency
@@ -139,25 +141,3 @@ pub type NodesIter = Map<Range<usize>, fn(usize) -> NodeIdx>;
 
 /// An iterator that yields the elements of an element-vertex mesh.
 pub type ElemsIter<'a, C> = std::slice::Iter<'a, C>;
-
-impl <'a, T: RealField, C: CellToNodes<Const<K>> + 'a, const K: usize, const M: usize> MeshTopology<'a, K> for ElemVertexMesh<T, C, K, M> {
-    type Elem = &'a C;
-    type NodeIter = NodesIter;
-    type ElemIter = ElemsIter<'a, C>;
-
-    fn num_nodes(&self) -> usize {
-        self.coords.len()
-    }
-
-    fn num_elems(&self) -> usize {
-        self.elems.len()
-    }
-
-    fn node_iter(&'a self) -> Self::NodeIter {
-        (0..self.num_nodes()).map(NodeIdx)
-    }
-
-    fn elem_iter(&'a self) -> Self::ElemIter {
-        self.elems.iter()
-    }
-}

@@ -5,9 +5,10 @@ use crate::cells::node::NodeIdx;
 use crate::cells::topo::{CellToNodes, CellBoundary, OrderedCell, OrientedCell, Cell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, Scalar, U0, U1};
+use nalgebra::{clamp, Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, Scalar, U0, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
+use nalgebra::allocator::Allocator;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::elem_vertex::ElemToVertex;
 use crate::mesh::traits::{Mesh, VertexStorage};
@@ -87,13 +88,15 @@ impl DirectedEdge {
     }
 }
 
-impl <T: Scalar, const M: usize> Cell<T, Const<M>> for DirectedEdge {
+impl <T: RealField, const M: usize> Cell<T, Const<M>> for DirectedEdge {
     type GeoCell = LineSegment<T, M>;
     type Coords = Vec<Point<T, M>>;
-    type Cells = ElemToVertex<QuadNodes>;
 
-    fn to_geo_cell(&self, msh: &Mesh<T, Self::Coords, Self::Cells>) -> Self::GeoCell {
-        LineSegment::new(self.0.map(|node| msh.coords.vertex(node)))
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
+    where
+        DefaultAllocator: Allocator<Const<M>>
+    {
+        LineSegment::new(self.0.map(|node| coords.vertex(node)))
     }
 }
 
