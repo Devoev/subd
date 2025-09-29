@@ -19,6 +19,15 @@ pub trait MeshTopology {
 }
 
 /// Storage for the geometrical vertex points of a mesh.
+///
+/// Each vertex point of a mesh is represented by an [`OPoint<T,Self::GeoDim>`]
+/// with [`Self::GeoDim`] being the dimension of the embedding Euclidean space.
+///
+/// Access to individual vertices is given by the [`Self::vertex`] method,
+/// given an index of type [`Self::NodeIdx`]. This is usually either a `usize`
+/// or a multi-index.
+/// Iteration over all vertices can be achieved
+/// by the [`Self::node_iter`] and [`Self::num_nodes`] methods.
 pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDim> {
     /// Dimension of the embedding Euclidean space.
     type GeoDim: DimName;
