@@ -1,9 +1,23 @@
-use nalgebra::{Const, DimName, DimNameSub, U0};
-use crate::cells::topo::CellToNodes;
+use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Point, Scalar, U0};
+use nalgebra::allocator::Allocator;
+use crate::cells::topo::{Cell, CellToNodes};
+use crate::mesh::traits::VertexStorage;
 
 /// Index of a node aka. vertex in a mesh. Represented by a global index.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct NodeIdx(pub usize);
+
+impl <T: Scalar, const M: usize> Cell<T, Const<M>> for NodeIdx {
+    type GeoCell = Point<T, M>;
+    type Coords = Vec<Point<T, M>>;
+
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
+    where
+        DefaultAllocator: Allocator<Const<M>>
+    {
+        coords.vertex(*self)
+    }
+}
 
 impl CellToNodes<U0> for NodeIdx {
     fn nodes(&self) -> &[NodeIdx] {
