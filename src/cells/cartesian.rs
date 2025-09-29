@@ -1,13 +1,15 @@
 use crate::cells::geo;
 use crate::cells::lerp::MultiLerp;
-use crate::cells::topo::{CellToNodes, CellBoundary};
+use crate::cells::topo::{CellToNodes, CellBoundary, Cell};
 use crate::cells::node::NodeIdx;
 use crate::mesh::cartesian::CartMesh;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{vector, Const, DimName, DimNameSub, Point, Point1, RealField, SVector, U1, U3};
+use nalgebra::{vector, Const, DefaultAllocator, DimName, DimNameSub, Point, Point1, RealField, SVector, Scalar, U1, U3};
 use std::iter::zip;
 use std::ops::RangeInclusive;
+use nalgebra::allocator::Allocator;
 use crate::cells::unit_cube::UnitCube;
+use crate::knots::breaks::Breaks;
 
 /// A [`K`]-dimensional cartesian cell aka. hyper-rectangle.
 /// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
@@ -98,6 +100,25 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T> for CartCell<T, D> {
 /// Multi-index of a [`CartCell`].
 #[derive(Debug, Clone, Copy)]
 pub struct CartCellIdx<const K: usize>(pub [usize; K]);
+
+impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
+    type GeoCell = CartCell<T, K>;
+    type Coords = [Breaks<T>; K];
+
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
+    where
+        DefaultAllocator: Allocator<Const<K>>
+    {
+        let idx_a = self.0;
+        let idx_b = idx_a.map(|i| i + 1);
+        // todo: move construction of coords_a and coords_b to VertexStorage trait that works for multi indices
+        let coords_a = zip(idx_a, coords).map(|(i, zeta)| zeta[i]).collect_array().unwrap();
+        let coords_b = zip(idx_b, coords).map(|(i, zeta)| zeta[i]).collect_array().unwrap();
+        let a = Point::from(coords_a);
+        let b = Point::from(coords_b);
+        CartCell::new(a, b)
+    }
+}
 
 impl <const K: usize> CellToNodes<Const<K>> for CartCellIdx<K> {
     fn nodes(&self) -> &[NodeIdx] {
