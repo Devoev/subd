@@ -9,8 +9,11 @@ use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
 use crate::subd::catmull_clark::map::CatmarkMap;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use itertools::Itertools;
-use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
+use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U2};
+use nalgebra::allocator::Allocator;
 use num_traits::ToPrimitive;
+use crate::cells::topo::Cell;
+use crate::mesh::traits::VertexStorage;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 
 /// A Catmull-Clark surface patch.
@@ -258,6 +261,27 @@ impl CatmarkPatchNodes {
             CatmarkPatchNodes::Irregular(val, _) => {
                 QuadNodes([val[0], val[5], val[4], val[3]])
             }
+        }
+    }
+}
+
+impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
+    type GeoCell = CatmarkPatch<T, M>;
+    type Coords = Vec<Point<T, M>>;
+
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
+    where
+        DefaultAllocator: Allocator<Const<M>>
+    {
+        let coords = self
+            .as_slice()
+            .iter()
+            .map(|node| coords.vertex(*node));
+        match self {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), *n)
         }
     }
 }

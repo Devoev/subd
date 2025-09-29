@@ -14,7 +14,8 @@ use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U
 //    (for example 2D vs 3D quad mesh should both work for quads, any mesh for (Un-)DirectedEdge).
 //    This can maybe also be fixed by moving the associated types to generics of the method.
 //    Also for all topologies defined by only nodes, the Coords parameter is sufficient.
-//   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway
+//   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway.
+//      but move it to a generic parameter of to_geo_cell
 /// Topology of a cell inside a mesh.
 pub trait Cell<T: Scalar, M: DimName> {
     /// The geometric cell associated with this topology.

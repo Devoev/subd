@@ -1,28 +1,14 @@
+use crate::cells::quad::QuadNodes;
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::Mesh;
-use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
-use nalgebra::{Point, RealField};
-use num_traits::ToPrimitive;
-use crate::cells::quad::QuadNodes;
+use crate::subd::catmull_clark::patch::CatmarkPatchNodes;
+use nalgebra::RealField;
 
 /// Catmull-Clark mesh.
 pub type CatmarkMesh<T, const M: usize> = ElemVertexMesh<T, CatmarkPatchNodes, 2, M>;
 
 impl <T: RealField, const M: usize> CatmarkMesh<T, M> {
     
-}
-
-impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> Mesh<'a, T, 2, M> for CatmarkMesh<T, M> {
-    type GeoElem = CatmarkPatch<T, M>;
-
-    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
-        CatmarkPatch::from_msh(self, elem)
-    }
-
-    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, M>> {
-        self.coords.iter().copied()
-    }
 }
 
 impl <T: RealField, const M: usize> From<QuadVertexMesh<T, M>> for CatmarkMesh<T, M> {
