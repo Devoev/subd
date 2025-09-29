@@ -3,6 +3,7 @@ use crate::cells::node::NodeIdx;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U0, U1, U2, U3};
+use crate::mesh::traits;
 
 // todo: refactor
 //  - replace T and M with GATs
@@ -25,7 +26,10 @@ pub trait Cell<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
     /// Coordinates storage of the associated mesh.
     type Coords: VertexStorage<T, GeoDim = M>;
 
-    /// Constructs the geometric cell associated with this topology from the given vertex `coords`.
+    /// Returns a slice of node indices corresponding to corner vertices of `self`.
+    fn nodes(&self) -> &[traits::NodeIdx<T, Self::Coords>];
+
+    /// Constructs the geometric cell associated with `self` from the given vertex `coords`.
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell;
 }
 

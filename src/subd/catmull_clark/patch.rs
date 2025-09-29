@@ -269,6 +269,10 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
     type GeoCell = CatmarkPatch<T, M>;
     type Coords = Vec<Point<T, M>>;
 
+    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+        self.as_slice().iter().map(|node| node.0).collect()
+    }
+
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let coords = self
             .as_slice()

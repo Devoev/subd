@@ -231,6 +231,10 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
 
+    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+        &self.0.map(|node| node.0)
+    }
+
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         Quad::new(self.0.map(|node| coords.vertex(node.0)))
     }

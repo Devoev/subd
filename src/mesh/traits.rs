@@ -39,6 +39,9 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     fn vertex(&self, i: Self::NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
 }
 
+/// The node index of the vertex storage `Coords`.
+pub type NodeIdx<T, Coords> = <Coords as VertexStorage<T>>::NodeIdx;
+
 /// Vector of control points.
 impl <T: Scalar, M: DimName> VertexStorage<T> for Vec<OPoint<T, M>>
 where DefaultAllocator: Allocator<M>

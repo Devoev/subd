@@ -11,6 +11,11 @@ impl <T: Scalar, const M: usize> Cell<T, Const<M>> for NodeIdx {
     type GeoCell = Point<T, M>;
     type Coords = Vec<Point<T, M>>;
 
+    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+        todo!()
+        &[]
+    }
+
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         coords.vertex(self.0)
     }

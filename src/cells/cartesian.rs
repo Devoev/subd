@@ -105,6 +105,10 @@ impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     type GeoCell = CartCell<T, K>;
     type Coords = [Breaks<T>; K];
 
+    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+        todo!("Implement by iterating over all 2^D vertices")
+    }
+
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let idx_a = self.0;
         let idx_b = idx_a.map(|i| i + 1);
