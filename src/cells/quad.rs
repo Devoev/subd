@@ -8,7 +8,8 @@ use crate::cells::node::NodeIdx;
 use crate::cells::topo::{CellToNodes, CellBoundary, OrientedCell, Cell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, Scalar, U1, U2};
+use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, SVector, Scalar, U1, U2};
+use nalgebra::allocator::Allocator;
 use crate::mesh::elem_vertex::{ElemToVertex, ElemToVertexMesh};
 use crate::mesh::traits::{Mesh, VertexStorage};
 
@@ -226,13 +227,15 @@ impl QuadNodes {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> Cell<T, Const<M>> for QuadNodes {
+impl <T: Scalar, const M: usize> Cell<T, M> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
-    type Cells = ElemToVertex<QuadNodes>;
 
-    fn to_geo_cell(&self, msh: &ElemToVertexMesh<T, QuadNodes, M>) -> Self::GeoCell {
-        Quad::new(self.0.map(|node| msh.coords.vertex(node)))
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell
+    where
+        DefaultAllocator: Allocator<Const<M>>
+    {
+        Quad::new(self.0.map(|node| coords.vertex(node)))
     }
 }
 

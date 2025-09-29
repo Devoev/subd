@@ -8,26 +8,26 @@ use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 
 // todo: refactor
 //  - replace T and M with GATs
+//   => T and M MUST be generics and not be moves to GATs, because the concrete GeoCell and VertexStorage impl possibly require them. What about generics for every method and type?
 //  - should a topological cell really have knowledge about the geometry? Should this just be a
 //    sub-trait of geo:Cell (i.e. CellInMesh)
+//   => this can't work, because there is exactly one geometry description for multiple different connectivity descriptions
 //  - the associated types don't quite make sense. Ideally this should be independent of the exact mesh used
 //    (for example 2D vs 3D quad mesh should both work for quads, any mesh for (Un-)DirectedEdge).
 //    This can maybe also be fixed by moving the associated types to generics of the method.
 //    Also for all topologies defined by only nodes, the Coords parameter is sufficient.
+//   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway
 /// Topology of a cell inside a mesh.
-pub trait Cell<T: Scalar, M: DimName> {
+pub trait Cell<T: Scalar, const M: usize> {
     /// The geometric cell associated with this topology.
     type GeoCell; //: geo::Cell<T> // todo: add bound
     // where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>;
 
     /// Coordinates storage of the associated mesh.
-    type Coords: VertexStorage<T>;
+    type Coords: VertexStorage<T, GeoDim = Const<M>> where DefaultAllocator: Allocator<Const<M>>;
 
-    /// Cell topology of the associated mesh.
-    type Cells: MeshTopology;
-
-    /// Constructs the geometric cell associated with this topology from the given `msh`.
-    fn to_geo_cell(&self, msh: &Mesh<T, Self::Coords, Self::Cells>) -> Self::GeoCell;
+    /// Constructs the geometric cell associated with this topology from the given vertex `coords`.
+    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell where DefaultAllocator: Allocator<Const<M>>;
 }
 
 /// Nodes-Topology of a [`K`]-dimensional cell inside a mesh.
