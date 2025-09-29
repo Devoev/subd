@@ -17,7 +17,16 @@ use crate::mesh::traits;
 //    Also for all topologies defined by only nodes, the Coords parameter is sufficient.
 //   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway.
 //      but move it to a generic parameter of to_geo_cell
+
 /// Topology of a cell inside a mesh.
+///
+/// The topology inside a mesh is uniquely defined by its corner node indices
+/// which can be obtained by the [`Cell::nodes`] method.
+///
+/// Given a matching coordinate storage [`Cell::Coords`] the geometric representation of
+/// the cell can be constructed using [`Cell::to_geo_cell`].
+/// This is useful for 'extracting' geometric information
+/// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
 pub trait Cell<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
     /// The geometric cell associated with this topology.
     type GeoCell; //: geo::Cell<T> // todo: add bound
