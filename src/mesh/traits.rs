@@ -98,7 +98,10 @@ where T: Scalar,
       Cells: MeshTopology,
       DefaultAllocator: Allocator<Coords::GeoDim>
 {
-
+    /// Constructs a new [`Mesh<T,Coords,Cells>`] with the given `coords` and `cells`.
+    pub fn with_coords_and_cells(coords: Coords, cells: Cells) -> Self {
+        Mesh { coords, cells, _phantom_data: PhantomData }
+    }
 }
 
 // todo: update signature of elems and add more methods

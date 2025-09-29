@@ -6,13 +6,18 @@ use crate::cells::topo::{CellToNodes, CellBoundary};
 use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, OPoint, Point, RealField, U1};
+use nalgebra::{Const, DefaultAllocator, Dim, DimNameDiff, DimNameSub, Dyn, OMatrix, OPoint, Point, RealField, Scalar, U1};
 use std::iter::{once, Map};
+use std::marker::PhantomData;
 use std::ops::Range;
 use std::vec::IntoIter;
 
-/// Element-to-vertex connectivity of a mesh with cells [`C`].
+/// Element-to-vertex connectivity of a mesh.
+///
+/// Directly stores each (volumetric) element inside a [`Vec<C>`], 
+/// with each element pointing to its corner node indices.
 pub struct ElemToVertex<C> {
+    /// Element connectivity vector.
     pub elems: Vec<C>
 }
 
@@ -31,6 +36,13 @@ impl <C: Clone> MeshTopology for ElemToVertex<C> {
 
 /// Element-to-vertex mesh.
 pub type ElemToVertexMesh<T, C, const M: usize> = Mesh<T, Vec<Point<T, M>>, ElemToVertex<C>>;
+
+impl <T: Scalar, C: Clone, const M: usize> ElemToVertexMesh<T, C, M> {
+    /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
+    pub fn new(coords: Vec<Point<T, M>>, elems: Vec<C>) -> Self {
+        ElemToVertexMesh::with_coords_and_cells(coords, ElemToVertex { elems })
+    }
+}
 
 /// Element-vertex mesh, with topological connectivity information
 /// of [`K`]-dimensional cells [`C`]
