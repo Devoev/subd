@@ -12,35 +12,36 @@ use std::marker::PhantomData;
 use std::ops::Range;
 use std::vec::IntoIter;
 
-/// Element-to-vertex connectivity of a mesh.
+/// Vector of topological cells.
 ///
-/// Directly stores each (volumetric) element inside a [`Vec<C>`], 
+/// Contains the mesh connectivity information by
+/// directly storing each (volumetric) element inside a [`Vec<C>`],
 /// with each element pointing to its corner node indices.
-pub struct ElemToVertex<C> {
-    /// Element connectivity vector.
-    pub elems: Vec<C>
-}
+pub struct ElemVec<C>(Vec<C>);
 
-impl <C: Clone> MeshTopology for ElemToVertex<C> {
+impl <C: Clone> MeshTopology for ElemVec<C> {
     type Elem = C;
     type ElemIter = IntoIter<Self::Elem>;
     
     fn num_elems(&self) -> usize {
-        self.elems.len()
+        self.0.len()
     }
 
     fn elem_iter(&self) -> Self::ElemIter {
-        self.elems.clone().into_iter()
+        self.0.clone().into_iter()
     }
 }
 
-/// Element-to-vertex mesh.
-pub type ElemToVertexMesh<T, C, const M: usize> = Mesh<T, Vec<Point<T, M>>, ElemToVertex<C>>;
+/// Element-to-vertex mesh represented by vectors of elements and vertices each.
+///
+/// The coordinates are stored inside a [`Vec`] of [`Point<T,M>`]
+/// and the topological cells inside an [`ElemVec<C>`].
+pub type ElemToVertexMesh<T, C, const M: usize> = Mesh<T, Vec<Point<T, M>>, ElemVec<C>>;
 
 impl <T: Scalar, C: Clone, const M: usize> ElemToVertexMesh<T, C, M> {
     /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     pub fn new(coords: Vec<Point<T, M>>, elems: Vec<C>) -> Self {
-        ElemToVertexMesh::with_coords_and_cells(coords, ElemToVertex { elems })
+        ElemToVertexMesh::with_coords_and_cells(coords, ElemVec(elems))
     }
 }
 

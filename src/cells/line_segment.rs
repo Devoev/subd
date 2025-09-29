@@ -10,7 +10,7 @@ use std::cmp::minmax;
 use std::hash::Hash;
 use nalgebra::allocator::Allocator;
 use crate::cells::quad::QuadNodes;
-use crate::mesh::elem_vertex::ElemToVertex;
+use crate::mesh::elem_vertex::ElemVec;
 use crate::mesh::traits::{Mesh, VertexStorage};
 
 /// A line segment, i.e. a straight line bounded by 2 points
