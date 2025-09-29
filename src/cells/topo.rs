@@ -23,8 +23,8 @@ use crate::mesh::traits;
 /// The topology inside a mesh is uniquely defined by its corner node indices
 /// which can be obtained by the [`Cell::nodes`] method.
 ///
-/// Given a matching coordinate storage [`Cell::Coords`] the geometric representation of
-/// the cell can be constructed using [`Cell::to_geo_cell`].
+/// Given a matching coordinate storage [`Cell::Coords`] of dimension `M`
+/// the geometric representation of the cell can be constructed using [`Cell::to_geo_cell`].
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
 pub trait Cell<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
