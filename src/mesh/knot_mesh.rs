@@ -89,14 +89,10 @@ impl <T: RealField + Copy, const D: usize> KnotMesh<T, D> {
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for KnotMesh<T, K> {
+impl<T: RealField + Copy, const K: usize> MeshTopology for KnotMesh<T, K> {
     type Elem = [KnotSpan; K];
-    type NodeIter = NodesIter<'a, K>;
     type ElemIter = KnotSpanIter<K>;
 
-    fn num_nodes(&self) -> usize {
-        self.dim_shape.len()
-    }
 
     fn num_elems(&self) -> usize {
         let mut dim_shape_elems = self.dim_shape;
@@ -104,29 +100,7 @@ impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for KnotMesh<T
         dim_shape_elems.len()
     }
 
-    fn node_iter(&'a self) -> Self::NodeIter {
-        todo!()
-    }
-
-    fn elem_iter(&'a self) -> Self::ElemIter {
+    fn elem_iter(&self) -> Self::ElemIter {
         self.elems()
-    }
-}
-
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, K, K> for KnotMesh<T, K> {
-    type GeoElem = CartCell<T, K>;
-
-    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
-        let idx = elem.map(|span| span.0);
-        let idx_a = idx;
-        let idx_b = idx_a.map(|i| i + 1);
-        let a = self.vertex(idx_a);
-        let b = self.vertex(idx_b);
-        CartCell::new(a, b)
-    }
-
-    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, K>> {
-        todo!("Implement this when iteration over breakpoints works");
-        once(Point::origin())
     }
 }

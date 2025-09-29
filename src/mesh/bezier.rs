@@ -43,37 +43,15 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology<'a, D> for BezierMesh<'a, T, D, M> {
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for BezierMesh<'a, T, D, M> {
     type Elem = [KnotSpan; D]; // todo: possibly introduce KnotSpanIdx with multi index
-    type NodeIter = NodesIter<'a, D>;
     type ElemIter = KnotSpanIter<D>;
-
-    fn num_nodes(&self) -> usize {
-        self.ref_mesh.num_nodes()
-    }
 
     fn num_elems(&self) -> usize {
         self.ref_mesh.num_elems()
     }
-
-    fn node_iter(&'a self) -> Self::NodeIter {
-        self.ref_mesh.node_iter()
-    }
-
-    fn elem_iter(&'a self) -> Self::ElemIter {
+    
+    fn elem_iter(&self) -> Self::ElemIter {
         self.ref_mesh.elem_iter()
-    }
-}
-
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> Mesh<'a, T, D, M> for BezierMesh<'a, T, D, M> {
-    type GeoElem = BezierElem<'a, T, D, M>;
-
-    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
-        let cell = self.ref_mesh.geo_elem(elem);
-        BezierElem::new(cell, &self.geo_map)
-    }
-
-    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, M>> {
-        self.ref_mesh.vertex_iter().map(|p| self.geo_map.eval(p.into_arr()))
     }
 }

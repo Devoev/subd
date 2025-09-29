@@ -120,14 +120,9 @@ impl<T: RealField, const D: usize> CartMesh<T, D> {
     }
 }
 
-impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for CartMesh<T, K> {
+impl<T: RealField + Copy, const K: usize> MeshTopology for CartMesh<T, K> {
     type Elem = CartCellIdx<K>;
-    type NodeIter = NodesIter<'a, K>;
     type ElemIter = ElemsIter<K>;
-
-    fn num_nodes(&self) -> usize {
-        self.dim_shape.len()
-    }
 
     fn num_elems(&self) -> usize {
         let mut dim_shape_elems = self.dim_shape;
@@ -135,23 +130,7 @@ impl<'a, T: RealField + Copy, const K: usize> MeshTopology<'a, K> for CartMesh<T
         dim_shape_elems.len()
     }
 
-    fn node_iter(&'a self) -> Self::NodeIter {
-        self.nodes()
-    }
-
-    fn elem_iter(&'a self) -> Self::ElemIter {
+    fn elem_iter(&self) -> Self::ElemIter {
         self.elems()
-    }
-}
-
-impl<'a, T: RealField + Copy, const K: usize> Mesh<'a, T, K, K> for CartMesh<T, K> {
-    type GeoElem = CartCell<T, K>;
-
-    fn geo_elem(&'a self, elem: &Self::Elem) -> Self::GeoElem {
-        CartCell::from_msh_and_idx(*elem, self)
-    }
-
-    fn vertex_iter(&'a self) -> impl Iterator<Item=Point<T, K>> {
-        self.indices().map(|idx| self.vertex(idx))
     }
 }
