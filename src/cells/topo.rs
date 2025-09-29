@@ -6,7 +6,7 @@ use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1, U
 
 // todo: refactor
 //  - replace T and M with GATs
-//   => T and M MUST be generics and not be moves to GATs, because the concrete GeoCell and VertexStorage impl possibly require them. What about generics for every method and type?
+//   => T and M MUST be generics and not be moves to GATs, because the concrete GeoCell and Coords impl possibly require stricter variants
 //  - should a topological cell really have knowledge about the geometry? Should this just be a
 //    sub-trait of geo:Cell (i.e. CellInMesh)
 //   => this can't work, because there is exactly one geometry description for multiple different connectivity descriptions
