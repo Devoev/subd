@@ -38,9 +38,9 @@ pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 /// Assembles the `K` to `K-1` incidence matrix of size `num_sub_cells ✕ num_cells`.
 ///
 /// For each `K`-cell, the incidences in the `i`-th row get populated using `populate_incidence`.
-fn assemble_incidence_mat<C, K, F>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, populate_incidence: F) -> CooMatrix<i8>
-    where C: CellBoundary<K>,
-          K: DimName + DimNameSub<U1>,
+fn assemble_incidence_mat<C, F>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, populate_incidence: F) -> CooMatrix<i8>
+    where C: CellBoundary,
+          C::Dim: DimName + DimNameSub<U1>,
           F: Fn(&mut CooMatrix<i8>, C, usize),
 {
     // Build empty incidence matrix
@@ -57,10 +57,10 @@ fn assemble_incidence_mat<C, K, F>(num_cells: usize, num_sub_cells: usize, cell_
 
 /// Populates the `cell_idx`-th column with incidences of `cell`,
 /// by comparing the orientation of the boundary cells with the global orientation in `sub_cells` .
-fn populate_by_orientation<C, K>(mat: &mut CooMatrix<i8>, cell: C, cell_idx: usize, sub_cells: &[SubCell<K, C>])
-    where C: CellBoundary<K>,
-          K: DimName + DimNameSub<U1> + DimNameSub<K>,
-          SubCell<K, C>: OrientedCell<DimNameDiff<K, U1>> + Eq, <K as DimNameSub<U1>>::Output: DimNameSub<<K as DimNameSub<U1>>::Output>
+fn populate_by_orientation<C>(mat: &mut CooMatrix<i8>, cell: C, cell_idx: usize, sub_cells: &[SubCell<C>])
+    where C: CellBoundary,
+          C::Dim: DimName + DimNameSub<U1> + DimNameSub<C::Dim>,
+          SubCell<C>: OrientedCell + Eq
 {
     // Get sub-cells in boundary of current `cell`
     let boundary = cell.boundary();

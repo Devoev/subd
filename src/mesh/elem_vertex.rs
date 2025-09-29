@@ -48,7 +48,7 @@ impl <T: Scalar, C: Clone, const M: usize> ElemToVertexMesh<T, C, M> {
 /// of [`K`]-dimensional cells [`C`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
 #[derive(Debug, Clone)]
-pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Const<K>>, const K: usize, const M: usize> {
+pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Dim = Const<K>>, const K: usize, const M: usize> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point<T, M>>,
 
@@ -56,7 +56,7 @@ pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Const<K>>, const K: usize
     pub elems: Vec<C>,
 }
 
-impl <T: RealField, C: CellToNodes<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
+impl <T: RealField, C: CellToNodes<Dim = Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
     // todo: replace panic with result
     /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     /// 
@@ -120,7 +120,7 @@ impl <T: RealField, C: CellToNodes<Const<K>>, const K: usize, const M: usize> El
     }
 }
 
-impl <T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M>
+impl <T: RealField, C: CellBoundary<Dim = Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M>
     where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
 {
     /// Returns `true` if given `elem` is at the boundary of the mesh,

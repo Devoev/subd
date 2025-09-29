@@ -286,7 +286,9 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
     }
 }
 
-impl cells::topo::CellToNodes<U2> for CatmarkPatchNodes {
+impl cells::topo::CellToNodes for CatmarkPatchNodes {
+    type Dim = U2;
+
     fn nodes(&self) -> &[NodeIdx] {
         self.as_slice()
     }
@@ -307,7 +309,7 @@ impl cells::topo::CellToNodes<U2> for CatmarkPatchNodes {
     }
 }
 
-impl cells::topo::CellBoundary<U2> for CatmarkPatchNodes  {
+impl cells::topo::CellBoundary for CatmarkPatchNodes  {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;

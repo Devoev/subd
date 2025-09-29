@@ -17,8 +17,8 @@ pub type FaceVertexMesh<T, C, const M: usize> = ElemVertexMesh<T, C, 2, M>;
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = FaceVertexMesh<T, QuadNodes, M>;
 
-impl <T: RealField, F: CellBoundary<U2>, const M: usize> FaceVertexMesh<T, F, M>
-where Edge2<F>: OrderedCell<U1> + OrientedCell<U1> + Clone + Eq + Hash
+impl <T: RealField, F: CellBoundary<Dim = U2>, const M: usize> FaceVertexMesh<T, F, M>
+where Edge2<F>: OrderedCell + OrientedCell + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
