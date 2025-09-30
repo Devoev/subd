@@ -20,8 +20,8 @@ pub struct DirichletBcHom {
 impl DirichletBcHom {
     /// Constructs a new [`DirichletBcHom`] from the given elem-to-vertex `msh`,
     /// where `idx_dof` are all interior nodes.
-    pub fn from_mesh<T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize>(msh: &ElemVertexMesh<T, C, K, M>) -> Self
-        where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
+    pub fn from_mesh<T: RealField, C: CellBoundary, const M: usize>(msh: &ElemVertexMesh<T, C, M>) -> Self
+        where C::Dim: DimNameSub<U1> + DimNameSub<DimNameDiff<C::Dim, U1>>
     {
         let num_nodes = msh.num_nodes();
         let idx = (0..num_nodes).collect::<BTreeSet<_>>();

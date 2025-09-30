@@ -2,42 +2,44 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
 use crate::cells::geo::{HasBasisCoord, HasDim};
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, ToTypenum};
+use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, Scalar, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
+use nalgebra::allocator::Allocator;
 
 /// The weak discrete Hodge operator
 /// ```text
 /// M[i,j] = ∫ b[i] · b[j] dx ,
 /// ```
 /// where the `b[i]` are the basis functions.
-pub struct Hodge<'a, T, M, B, const D: usize> {
+pub struct Hodge<'a, T, Basis, Coords, Cells, const D: usize> {
     /// Mesh defining the geometry discretization.
-    msh: &'a M,
+    msh: &'a Mesh<T, Coords, Cells>,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, B, D>
+    space: &'a Space<T, Basis, D>
 }
 
-impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
-    /// Constructs a new `Hodge` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
+impl <'a, T, Basis, Coords, Cells, const D: usize> Hodge<'a, T, Basis, Coords, Cells, D> {
+    /// Constructs a new `Hodge` operator from the given `msh` and `space`.
+    pub fn new(msh: &'a Mesh<T, Coords, Cells>, space: &'a Space<T, Basis, D>) -> Self {
         Hodge { msh, space }
     }
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
+    pub fn assemble<Elem, Quadrature>(&self, quad: PullbackQuad<Quadrature, D>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
-              E: HasBasisCoord<T, B> + HasDim<T, D>,
-              M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-              B: LocalBasis<T>,
-              Q: QuadratureOnParametricCell<T, E>,
-              DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
+              Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
+              Coords: VertexStorage<T>,
+              Cells: MeshTopology<Elem = Basis::Elem>,
+              Basis: LocalBasis<T>,
+              Quadrature: QuadratureOnParametricCell<T, Elem>,
+              DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
               Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix

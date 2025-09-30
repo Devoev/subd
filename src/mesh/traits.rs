@@ -97,9 +97,7 @@ where DefaultAllocator: Allocator<M>
 }
 
 /// A mesh consisting of connected topological cells and vertex coordinates.
-pub struct Mesh<T: Scalar, Coords: VertexStorage<T>, Cells: MeshTopology>
-    where DefaultAllocator: Allocator<Coords::GeoDim>
-{
+pub struct Mesh<T, Coords, Cells> {
     /// Coordinate storage.
     pub coords: Coords,
 

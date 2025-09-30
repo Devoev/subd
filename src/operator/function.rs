@@ -5,26 +5,28 @@ use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
 use crate::cells::geo::{HasBasisCoord, HasDim};
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
+use nalgebra::allocator::Allocator;
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, E, B, M, Q, const D: usize>(
-    msh: &'a M,
-    space: &Space<T, B, D>,
-    quad: PullbackQuad<Q, D>,
-    f: impl Fn(Point<T, D>) -> OVector<T, B::NumComponents>
+pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: usize>(
+    msh: &Mesh<T, Coords, Cells>,
+    space: &Space<T, Basis, D>,
+    quad: PullbackQuad<Quadrature, D>,
+    f: impl Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          E: HasBasisCoord<T, B> + HasDim<T, D>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalBasis<T>,
-          Q: QuadratureOnParametricCell<T, E>,
-          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B>,
+          E: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Basis: LocalBasis<T>,
+          Coords: VertexStorage<T>, 
+          Cells: MeshTopology<Elem = Basis::Elem>,
+          Quadrature: QuadratureOnParametricCell<T, E>,
+          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
 {
     // Create empty matrix

@@ -3,10 +3,11 @@ use crate::basis::local::LocalGradBasis;
 use crate::basis::space::Space;
 use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
 use itertools::Itertools;
+use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
@@ -16,30 +17,31 @@ use std::iter::{zip, Product, Sum};
 /// K[i,j] = ∫ grad b[i] · grad b[j] dx ,
 /// ```
 /// where the `b[i]` are nodal basis functions.
-pub struct Laplace<'a, T, M, B, const D: usize> {
+pub struct Laplace<'a, T, Basis, Coords, Cells, const D: usize> {
     /// Mesh defining the geometry discretization.
-    msh: &'a M,
+    msh: &'a Mesh<T, Coords, Cells>,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, B, D>
+    space: &'a Space<T, Basis, D>
 }
 
 
-impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
-    /// Constructs a new `Laplace` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
+impl <'a, T, Basis, Coords, Cells, const D: usize> Laplace<'a, T, Basis, Coords, Cells, D> {
+    /// Constructs a new `Laplace` operator from the given `msh` and `space`.
+    pub fn new(msh: &'a Mesh<T, Coords, Cells>, space: &'a Space<T, Basis, D>) -> Self {
         Laplace { msh, space }
     }
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
+    pub fn assemble<Elem, Quadrature>(&self, quad: PullbackQuad<Quadrature, D>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          E: HasBasisCoord<T, B> + HasDim<T, D>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalGradBasis<T, D>,
-          Q: QuadratureOnParametricCell<T, E>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
+          Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology<Elem = Basis::Elem>,
+          Basis: LocalGradBasis<T, D>,
+          Quadrature: QuadratureOnParametricCell<T, Elem>,
+          DefaultAllocator: EvalGradAllocator<Basis::ElemBasis, D> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix
