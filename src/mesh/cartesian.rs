@@ -12,7 +12,21 @@ use std::iter::{zip, Map, Once};
 ///
 /// Given `d` breakpoint vectors `zi`, the cartesian product is defined as
 /// `z = z1 × ... × zd`. The elements of that product are gridpoints in a cartesian mesh.
+#[derive(Clone, Debug)]
 pub struct MultiBreaks<T, const D: usize>([Breaks<T>; D]);
+
+impl <T, const D: usize> MultiBreaks<T, D> {
+    /// Returns the [`DimShape<D>`] associated with the
+    /// tensor product gridpoint shape of `self`.
+    pub fn to_shape(&self) -> DimShape<D> {
+        let shapes = self.0.iter()
+            .map(|zeta| zeta.len())
+            .collect_array()
+            .unwrap();
+
+        DimShape(shapes)
+    }
+}
 
 impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     type GeoDim = Const<D>;
@@ -36,7 +50,42 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     }
 }
 
-/// Cartesian mesh built by tensor product of [`Breaks<T>`].
+/// Topology of a structured Cartesian grid.
+pub struct Cartesian<const D: usize> {
+    /// Shape of the structured nodes in each parametric directions.
+    pub dim_shape: DimShape<D>, // todo: possibly only save element info instead of node info
+
+    /// Strides for each parametric direction.
+    pub strides: Strides<D>
+}
+
+impl <const D: usize> Cartesian<D> {
+    /// Constructs a new [`Cartesian`] topology of the given `shape`.
+    pub fn with_shape(shape: DimShape<D>) -> Self {
+        let strides = Strides::from(shape);
+        Cartesian { dim_shape: shape, strides }
+    }
+}
+
+impl<const D: usize> MeshTopology for Cartesian<D> {
+    type Elem = CartCellIdx<D>;
+    type ElemIter = ElemsIter<D>;
+
+    fn num_elems(&self) -> usize {
+        let mut dim_shape_elems = self.dim_shape;
+        dim_shape_elems.shrink(1);
+        dim_shape_elems.len()
+    }
+
+    fn elem_iter(&self) -> Self::ElemIter {
+        let mut dim_shape_elems = self.dim_shape;
+        dim_shape_elems.shrink(1);
+        dim_shape_elems.multi_range().map(CartCellIdx)
+    }
+}
+
+/// Cartesian mesh built by [tensor product breaks](MultiBreaks).
+///
 /// The grid formed by the mesh nodes can in 2D be schematically visualized as
 /// ```text
 ///        ^
@@ -53,47 +102,16 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
 ///           bx[0]       bx[nx]
 /// ```
 /// where `bx` and `by` are the breakpoints for the `x` and `y` direction respectively.
-pub struct CartMesh<T: RealField, const D: usize> {
-    /// Breakpoints for each parametric direction.
-    pub breaks: [Breaks<T>; D],
-
-    /// Shape of the parametric directions.
-    pub dim_shape: DimShape<D>,
-
-    /// Strides for each parametric direction.
-    pub strides: Strides<D>
-}
+pub type CartMesh<T, const D: usize> = Mesh<T, MultiBreaks<T, D>, Cartesian<D>>;
 
 impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
-    /// Constructs a new [`CartMesh`] from the given `breaks`, `dim_shape` and `strides`.
-    ///
-    /// # Panics
-    /// If the shape of the `breaks` does not equal the shape of `dim_shape`,
-    /// the function will panic.
-    pub fn new(breaks: [Breaks<T>; D], dim_shape: DimShape<D>, strides: Strides<D>) -> Self {
-        let n_breaks = breaks.iter().map(|b| b.len()).collect_vec();
-        let n_shape = dim_shape.0;
-        assert_eq!(n_breaks, n_shape,
-                   "Shape of `breaks` (is {:?}) doesn't equal shape of `dim_shape` (is {:?})",
-                   n_breaks, n_shape);
-        CartMesh { breaks, dim_shape, strides }
-    }
-
     /// Constructs a new [`CartMesh`] from the given `breaks`.
+    ///
     /// The topological information for the shape and strides is constructed from the shape of the breaks.
-    pub fn from_breaks(breaks: [Breaks<T>; D]) -> Self {
-        let shape = breaks.iter().map(|b| b.len()).collect_array().unwrap();
-        let dim_shape = DimShape(shape);
-        CartMesh { breaks, dim_shape, strides: Strides::from(dim_shape) }
-    }
-    
-    /// Constructs the vertex point at the given multi-index position `idx`.
-    pub fn vertex(&self, idx: [usize; D]) -> Point<T, D> {
-        zip(idx, &self.breaks)
-            .map(|(i, breaks)| breaks[i])
-            .collect_array::<D>()
-            .unwrap()
-            .into()
+    pub fn with_breaks(breaks: [Breaks<T>; D]) -> Self {
+        let breaks = MultiBreaks(breaks);
+        let shape = breaks.to_shape();
+        CartMesh::with_coords_and_cells(breaks, Cartesian::with_shape(shape))
     }
 }
 
@@ -111,7 +129,7 @@ impl <'a, const D: usize> NodesIter<'a, D> {
 
     /// Constructs a enw [`NodesIter`] from the given cartesian `msh`.
     pub fn from_msh<T: RealField>(msh: &'a CartMesh<T, D>) -> Self {
-        NodesIter::new(msh.indices(), &msh.strides)
+        NodesIter::new(msh.indices(), &msh.cells.strides)
     }
 }
 
@@ -132,33 +150,6 @@ pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) 
 impl<T: RealField, const D: usize> CartMesh<T, D> {
     /// Returns an iterator over all multi-indices in this grid.
     pub fn indices(&self) -> MultiRange<[usize; D]> {
-        self.dim_shape.multi_range()
-    }
-
-    /// Returns an iterator over all nodes with linear indices in increasing index order.
-    pub fn nodes(&self) -> NodesIter<'_, D> {
-        NodesIter::from_msh(self)
-    }
-
-    /// Returns an iterator over all elements in lexicographical order.
-    pub fn elems(&self) -> ElemsIter<D> {
-        let mut dim_shape_elems = self.dim_shape;
-        dim_shape_elems.shrink(1);
-        dim_shape_elems.multi_range().map(CartCellIdx)
-    }
-}
-
-impl<T: RealField + Copy, const K: usize> MeshTopology for CartMesh<T, K> {
-    type Elem = CartCellIdx<K>;
-    type ElemIter = ElemsIter<K>;
-
-    fn num_elems(&self) -> usize {
-        let mut dim_shape_elems = self.dim_shape;
-        dim_shape_elems.shrink(1);
-        dim_shape_elems.len()
-    }
-
-    fn elem_iter(&self) -> Self::ElemIter {
-        self.elems()
+        self.cells.dim_shape.multi_range()
     }
 }

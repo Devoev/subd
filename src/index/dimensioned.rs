@@ -132,14 +132,23 @@ impl<const D: usize> Dimensioned<usize, D> for Strides<D> {
 }
 
 impl <const D: usize> From<DimShape<D>> for Strides<D> {
-    fn from(mut value: DimShape<D>) -> Self {
-        value.0.iter_mut().fold(1, |acc, x| {
+    /// Turns a [`DimShape<D>`] into [`Strides<D>`].
+    ///
+    /// The `strides` for a given `shape` are defined by the formulas
+    /// ```text
+    /// strides[1] = 1   
+    /// strides[2] = shape[1]   
+    /// strides[3] = shape[1] × shape[2]   
+    /// strides[4] = ...
+    /// ```
+    fn from(mut shape: DimShape<D>) -> Self {
+        shape.0.iter_mut().fold(1, |acc, x| {
             let tmp = *x * acc;
             *x = acc;
             tmp
         });
 
-        Strides(value.0)
+        Strides(shape.0)
     }
 }
 
