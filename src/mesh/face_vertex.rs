@@ -1,48 +1,47 @@
-//! Special cases of an [`ElemVertexMesh`] for `K = 2`, i.e. where the elements are faces.
+//! Special cases of an [`ElemVertexMesh`] for `Dim = 2`, i.e. where the elements are faces.
 
 use crate::cells::chain::Chain;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::topo::{CellConnectivity, CellBoundary, Edge2, OrderedCell, OrientedCell};
+use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
-use nalgebra::{Point, RealField, U1, U2};
+use nalgebra::{RealField, U2};
 use std::hash::Hash;
-use crate::mesh::traits::Mesh;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
 
 impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVertexMesh<T, F, M>
-where Edge2<F>: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
+where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
+    pub fn edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
         self.cells.0.iter()
             .flat_map(|face| face.boundary().cells().to_owned())
-            .map(|edge: Edge2<F> | edge.sorted())
+            .map(|edge: F::SubCell| edge.sorted())
             .unique()
     }
 
     /// Returns an iterator over all *open* edges,
     /// i.e. edges that are connected to only *one* face.
-    pub fn open_edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
+    pub fn open_edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
         self.cells.0.iter()
             .flat_map(|face| face.boundary().cells().to_owned())
-            .map(|edge: Edge2<F> | edge.sorted())
+            .map(|edge: F::SubCell| edge.sorted())
             .counts()
             .into_iter()
             .filter_map(|(edge, num)| (num == 1).then_some(edge))
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = Edge2<F>> + '_ {
+    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = F::SubCell> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
     }
 
     /// Returns all faces connected to the given (undirected) `edge`.
-    pub fn faces_of_edge(&self, edge: Edge2<F>) -> impl Iterator<Item = &F> + '_ {
+    pub fn faces_of_edge(&self, edge: F::SubCell) -> impl Iterator<Item = &F> + '_ {
         self.cells.0.iter()
             .filter(move |face| {
                 let edges = face.boundary().cells().to_owned();
@@ -100,10 +99,10 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-    use nalgebra::SMatrix;
-    use crate::cells::line_segment::DirectedEdge;
     use super::*;
+    use crate::cells::line_segment::DirectedEdge;
+    use nalgebra::SMatrix;
+    use std::collections::HashSet;
 
 
     /// Constructs the (irregular) quad mesh

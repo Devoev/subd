@@ -140,6 +140,3 @@ where Self::Dim: DimNameSub<U1> {
 
 /// Type of sub-cells the [`K`]`-1`-dimensional boundary of [`C`] is composed.
 pub type SubCell<C> = <C as CellBoundary>::SubCell;
-
-/// Edge of a `2`-dimensional face element [`F`].
-pub type Edge2<F> = SubCell<F>;
