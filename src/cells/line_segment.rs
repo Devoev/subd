@@ -208,12 +208,15 @@ impl UndirectedEdge {
 }
 
 impl From<DirectedEdge> for UndirectedEdge {
+    /// Turns a directed edge into an undirected one, by removing the orientation.
     fn from(value: DirectedEdge) -> Self {
         UndirectedEdge::new(value.start(), value.end())
     }
 }
 
 impl From<UndirectedEdge> for DirectedEdge {
+    /// Turns an undirected edge into a directed one,
+    /// by choosing the orientation such that `start < end`.
     fn from(value: UndirectedEdge) -> Self {
         DirectedEdge(value.sorted_nodes)
     }
