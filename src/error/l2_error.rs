@@ -2,32 +2,38 @@ use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalBasis;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
-use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector};
+use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, ToTypenum};
 use std::iter::{zip, Product, Sum};
+use nalgebra::allocator::Allocator;
+use num_traits::real::Real;
+use crate::cells::topo::ToGeoCell;
 
 /// L2-norm on a mesh.
-pub struct L2Norm<'a, M> {
+pub struct L2Norm<'a, T, Coords, Cells> {
     /// Mesh defining the geometry discretization.
-    pub(crate) msh: &'a M,
+    pub(crate) msh: &'a Mesh<T, Coords, Cells>,
 }
 
-impl<'a, M> L2Norm<'a, M> {
+impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     /// Constructs a new [`L2Norm`] on the given `msh`. 
-    pub fn new(msh: &'a M) -> Self {
+    pub fn new(msh: &'a Mesh<T, Coords, Cells>) -> Self {
         L2Norm { msh }
     }
 
     /// Calculates the squared L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, const N: usize, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm_squared<const N: usize, const D: usize, U, Quadrature>(&self, u: U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D>,
-          M::GeoElem: HasDim<T, D>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology,
+          Cells::Elem: ToGeoCell<T, Coords::GeoDim>,
+          <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
         // Iterate over every element and calculate error element-wise
@@ -48,12 +54,15 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, const N: usize, const D: usize, U, Q>(&self, u: U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm<const N: usize, const D: usize, U, Quadrature>(&self, u: U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D>,
-          M::GeoElem: HasDim<T, D>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology,
+          Cells::Elem: ToGeoCell<T, Coords::GeoDim>,
+          <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
         self.norm_squared(u, quad).sqrt()
@@ -61,14 +70,16 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the squared L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error_squared<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn error_squared<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: HasDim<T, D> + HasBasisCoord<T, B>,
-          B: LocalBasis<T>,
-          U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology<Elem = Basis::Elem>,
+          Basis: LocalBasis<T>,
+          Basis::Elem: ToGeoCell<T, Coords::GeoDim>,
+          <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
         // Iterate over every element and calculate error element-wise
@@ -79,7 +90,7 @@ impl<'a, M> L2Norm<'a, M> {
                 let ref_elem = geo_elem.ref_cell();
 
                 // Evaluate functions at quadrature nodes of element
-                let uh = quad.nodes_ref::<T, M::GeoElem>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
+                let uh = quad.nodes_ref::<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
                 let u = quad.nodes_elem(&geo_elem).map(u);
 
                 // Calculate L2 error on element
@@ -91,15 +102,17 @@ impl<'a, M> L2Norm<'a, M> {
 
     /// Calculates the L2 error between the given discrete solution `uh` and the exact one `u`
     /// using the quadrature rule `quad`.
-    pub fn error<T, B, const D: usize, U, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, quad: &PullbackQuad<Q, D>) -> T
+    pub fn error<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: HasDim<T, D> + HasBasisCoord<T, B>,
-          B: LocalBasis<T>,
-          U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
-          Const<D>: DimMinSelf
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology<Elem = Basis::Elem>,
+          Basis: LocalBasis<T>,
+          Basis::Elem: ToGeoCell<T, Coords::GeoDim>,
+          <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
+          Const<D>: DimMinSelf + ToTypenum
     {
         self.error_squared(uh, u, quad).sqrt()
     }
