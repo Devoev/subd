@@ -274,7 +274,7 @@ impl Cell for CatmarkPatchNodes {
     }
 }
 
-impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for CatmarkPatchNodes {
+impl <T: RealField + Copy + ToPrimitive, const M: usize> ToGeoCell<T, Const<M>> for CatmarkPatchNodes {
     type GeoCell = CatmarkPatch<T, M>;
     type Coords = Vec<Point<T, M>>;
 

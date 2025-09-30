@@ -116,7 +116,7 @@ impl <const K: usize> Cell for CartCellIdx<K> {
     }
 }
 
-impl <T: RealField, const K: usize> ToGeoCell<T, Const<K>> for CartCellIdx<K> {
+impl <T: RealField + Copy, const K: usize> ToGeoCell<T, Const<K>> for CartCellIdx<K> {
     type GeoCell = CartCell<T, K>;
     type Coords = MultiBreaks<T, K>;
 

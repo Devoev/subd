@@ -3,7 +3,8 @@ use crate::cells::node::NodeIdx;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
-
+use crate::cells::geo;
+use crate::cells::geo::CellAllocator;
 // todo: refactor
 //  - replace T and M with GATs
 //   => T and M MUST be generics and not be moves to GATs, because the concrete GeoCell and Coords impl possibly require stricter variants
@@ -38,10 +39,11 @@ pub trait Cell {
 /// the geometric representation of the cell can be constructed using [`Cell::to_geo_cell`].
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
-pub trait ToGeoCell<T: Scalar, M: DimName>: Cell where DefaultAllocator: Allocator<M> {
+pub trait ToGeoCell<T: Scalar, M: DimName>: Cell
+    where DefaultAllocator: Allocator<M> + CellAllocator<T, Self::GeoCell>
+{
     /// The geometric cell associated with this topology.
-    type GeoCell; //: geo::Cell<T> // todo: add bound
-    // where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>;
+    type GeoCell: geo::Cell<T>;
 
     /// Coordinates storage of the associated mesh.
     type Coords: VertexStorage<T, GeoDim = M, NodeIdx = Self::Node>;

@@ -236,7 +236,7 @@ impl Cell for QuadNodes {
     }
 }
 
-impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for QuadNodes {
+impl <T: RealField + Copy, const M: usize> ToGeoCell<T, Const<M>> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
     

@@ -97,7 +97,7 @@ impl Cell for DirectedEdge {
     }
 }
 
-impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for DirectedEdge {
+impl <T: RealField + Copy, const M: usize> ToGeoCell<T, Const<M>> for DirectedEdge {
     type GeoCell = LineSegment<T, M>;
     type Coords = Vec<Point<T, M>>;
 
