@@ -5,6 +5,7 @@ use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use nalgebra::{center, RealField};
 use std::collections::HashMap;
+use crate::cells::topo::ToGeoCell;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text
@@ -83,7 +84,7 @@ impl FaceMidpointStencil {
         quad_msh: &mut QuadVertexMesh<T, M>,
         face: QuadNodes,
     ) -> NodeIdx {
-        let quad = Quad::from_msh(face, quad_msh);
+        let quad = face.to_geo_cell(&quad_msh.coords);
         let center = quad.centroid();
         quad_msh.coords.push(center);
         NodeIdx(quad_msh.num_nodes() - 1)

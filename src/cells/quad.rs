@@ -10,23 +10,17 @@ use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, U2};
 use std::iter::zip;
 
-/// A 2d quadrilateral element of topology [`QuadNodes`],
-/// embedded in [`M`]-dimensional space.
+/// An `M` dimensional quadrilateral element, defined by four `vertices`.
 #[derive(Debug, Clone, Copy)]
 pub struct Quad<T: RealField, const M: usize> {
+    /// Corner vertices of the quadrilateral.
     pub vertices: [Point<T, M>; 4]
 }
 
 impl<T: RealField, const M: usize> Quad<T, M> {
-
-    /// Constructs a new [`Quad`] from the given `vertices`.
+    /// Constructs a new `Quad` from the given `vertices`.
     pub fn new(vertices: [Point<T, M>; 4]) -> Self {
         Quad { vertices }
-    }
-
-    /// Constructs a new [`Quad`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: QuadNodes, msh: &QuadVertexMesh<T, M>) -> Self {
-        Quad::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 
     /// Computes the centroid of this face.
@@ -238,7 +232,7 @@ impl Cell for QuadNodes {
 impl <T: RealField + Copy, const M: usize> ToGeoCell<T, Const<M>> for QuadNodes {
     type GeoCell = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
-    
+
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         Quad::new(self.0.map(|node| coords.vertex(node)))
     }

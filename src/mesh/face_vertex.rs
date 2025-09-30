@@ -4,7 +4,7 @@ use crate::cells::chain::Chain;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
+use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U2};
@@ -62,7 +62,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
     }
 }
 
-impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
+impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     /// Returns `true` if the `node` is regular.
     pub fn is_regular_node(&self, node: NodeIdx) -> bool {
         self.valence(node) == 4
@@ -93,7 +93,7 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
 
     /// Returns an iterator over all faces in this mesh.
     pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
-        self.cells.0.iter().map(|&face| Quad::from_msh(face, self))
+        self.cells.0.iter().map(|&face| face.to_geo_cell(&self.coords))
     }
 }
 

@@ -24,6 +24,7 @@ use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, Selec
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::cells::topo;
+use crate::cells::topo::ToGeoCell;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -37,7 +38,7 @@ pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNo
             let edge = Scatter::new(vec![pi.x, pj.x], vec![pi.y, pj.y]);
             plot.add_trace(edge)
         }
-        let quad = Quad::from_msh(face, msh);
+        let quad = face.to_geo_cell(&msh.coords);
         let center = quad.centroid();
         let text = Annotation::new()
             .text(num.to_string())
