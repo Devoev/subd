@@ -1,6 +1,6 @@
 use crate::bspline::spline_geo::SplineGeo;
-use crate::cells::cartesian::CartCell;
 use nalgebra::RealField;
+use crate::element::cartesian::CartCell;
 use crate::element::geo;
 // todo: is BezierElem even needed somewhere?
 //  bezier elem should provide access to a local basis. 

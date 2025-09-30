@@ -27,8 +27,6 @@ mod tests {
     use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
-    use crate::cells::cartesian::CartCell;
-    use crate::cells::geo::Cell as GeoCell;
     use crate::cells::quad::QuadNodes;
     use crate::diffgeo::chart::Chart;
     use crate::knots::breaks::Breaks;

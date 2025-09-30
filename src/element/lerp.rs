@@ -1,9 +1,9 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::cells::cartesian::CartCell;
 use crate::cells::quad::Quad;
 use crate::diffgeo::chart::Chart;
 use crate::subd::lin_subd::basis::LinBasisQuad;
 use nalgebra::{Const, Matrix, Point, RealField, SMatrix, SVector, Scalar, U1, U2};
+use crate::element::cartesian::CartCell;
 
 /// **L**inear int**erp**olation (Lerp) between two points in [`M`] dimensions.
 ///
