@@ -2,8 +2,7 @@ use crate::cells::chain::Chain;
 use crate::cells::node::NodeIdx;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U0, U1, U2, U3};
-use crate::mesh::traits;
+use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
 
 // todo: refactor
 //  - replace T and M with GATs
@@ -22,34 +21,37 @@ use crate::mesh::traits;
 ///
 /// The topology inside a mesh is uniquely defined by its corner node indices
 /// which can be obtained by the [`Cell::nodes`] method.
+pub trait Cell {
+    /// Topological dimension of this cell.
+    type Dim: DimName;
+
+    /// Node representing the indices of vertices inside a mesh.
+    type Node;
+
+    /// Returns a slice of node indices corresponding to corner vertices of `self`.
+    fn nodes(&self) -> &[Self::Node];
+}
+
+/// Conversion of a topological into a geometric cell.
 ///
 /// Given a matching coordinate storage [`Cell::Coords`] of dimension `M`
 /// the geometric representation of the cell can be constructed using [`Cell::to_geo_cell`].
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
-pub trait Cell<T: Scalar, M: DimName> where DefaultAllocator: Allocator<M> {
+pub trait ToGeoCell<T: Scalar, M: DimName>: Cell where DefaultAllocator: Allocator<M> {
     /// The geometric cell associated with this topology.
     type GeoCell; //: geo::Cell<T> // todo: add bound
     // where DefaultAllocator: ChartAllocator<T, <Self::GeoCell as geo::Cell<T>>::GeoMap>;
 
     /// Coordinates storage of the associated mesh.
-    type Coords: VertexStorage<T, GeoDim = M>;
-
-    /// Returns a slice of node indices corresponding to corner vertices of `self`.
-    fn nodes(&self) -> &[traits::NodeIdx<T, Self::Coords>];
+    type Coords: VertexStorage<T, GeoDim = M, NodeIdx = Self::Node>;
 
     /// Constructs the geometric cell associated with `self` from the given vertex `coords`.
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell;
 }
 
-/// Nodes-Topology of a cell inside a mesh.
-pub trait CellToNodes {
-    /// Dimension of this cell.
-    type Dim: DimName;
-
-    /// Returns a slice of all node indices in a mesh corresponding to the corner vertices of the cell.
-    fn nodes(&self) -> &[NodeIdx];
-
+/// A [topological cell](Cell) with connectivity and neighboring relations.
+pub trait CellConnectivity: Cell {
     /// Returns `true` if this cell is topologically connected (or adjacent) to the `other` cell
     /// by an [`M`]-dimensional sub-cell with `M <= K`. 
     /// That is if the two cells share a common `M`-cell (up to node ordering and orientation).
@@ -91,8 +93,8 @@ pub trait CellToNodes {
     }
 }
 
-/// A [topological cell](CellToNodes) with an ordering of its nodes.
-pub trait OrderedCell: CellToNodes {
+/// A [topological cell](CellConnectivity) with an ordering of its nodes.
+pub trait OrderedCell: Cell {
     /// Returns a (globally) sorted copy of this cell.
     ///
     /// For cells `c₁` and `c₂` with the same nodes,
@@ -105,8 +107,8 @@ pub trait OrderedCell: CellToNodes {
 
 // todo: merge ordered and oriented cell maybe?
 
-/// A [topological cell](CellToNodes) with a global orientation (`+1` or `-1`).
-pub trait OrientedCell: CellToNodes {
+/// A [topological cell](CellConnectivity) with a global orientation (`+1` or `-1`).
+pub trait OrientedCell: Cell {
     /// Returns the global orientation of this cell (`+1` or `-1`).
     fn orientation(&self) -> i8; 
     // todo: update return value with Enum
@@ -120,13 +122,14 @@ pub trait OrientedCell: CellToNodes {
     fn reversed(&self) -> Self;
 }
 
-/// A [topological cell](CellToNodes) with a boundary.
-pub trait CellBoundary: CellToNodes where Self::Dim: DimNameSub<U1> {
+/// A [topological cell](CellConnectivity) with a boundary.
+pub trait CellBoundary: Cell
+where Self::Dim: DimNameSub<U1> {
     /// Number of [`K`]`-1`-dimensional sub-cells in the boundary of this cell.
     const NUM_SUB_CELLS: usize;
 
     /// Cell topology of the individual sub-cells of the boundary chain.
-    type SubCell: CellToNodes<Dim = DimNameDiff<Self::Dim, U1>>;
+    type SubCell: Cell<Dim = DimNameDiff<Self::Dim, U1>>;
 
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
     type Boundary: Chain<Self::SubCell>;
@@ -140,6 +143,3 @@ pub type SubCell<C> = <C as CellBoundary>::SubCell;
 
 /// Edge of a `2`-dimensional face element [`F`].
 pub type Edge2<F> = SubCell<F>;
-
-/// Face of a `3`-dimensional cell element [`C`].
-pub type Face3<C> = SubCell<C>;

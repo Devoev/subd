@@ -5,7 +5,7 @@ use crate::cells::geo;
 use crate::cells::lerp::BiLerp;
 use crate::cells::line_segment::{DirectedEdge, UndirectedEdge};
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellToNodes, CellBoundary, OrientedCell, Cell};
+use crate::cells::topo::{CellConnectivity, CellBoundary, OrientedCell, Cell, ToGeoCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, SVector, Scalar, U1, U2};
@@ -227,26 +227,25 @@ impl QuadNodes {
     }
 }
 
-impl <T: RealField, const M: usize> Cell<T, Const<M>> for QuadNodes {
-    type GeoCell = Quad<T, M>;
-    type Coords = Vec<Point<T, M>>;
+impl Cell for QuadNodes {
+    type Dim = U2;
+    type Node = usize;
 
-    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+    fn nodes(&self) -> &[Self::Node] {
         &self.0.map(|node| node.0)
     }
+}
 
+impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for QuadNodes {
+    type GeoCell = Quad<T, M>;
+    type Coords = Vec<Point<T, M>>;
+    
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         Quad::new(self.0.map(|node| coords.vertex(node.0)))
     }
 }
 
-impl CellToNodes for QuadNodes {
-    type Dim = U2;
-
-    fn nodes(&self) -> &[NodeIdx] {
-        &self.0
-    }
-
+impl CellConnectivity for QuadNodes {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U2: DimNameSub<M>

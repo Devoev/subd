@@ -2,7 +2,7 @@ use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
-use crate::cells::topo::CellToNodes;
+use crate::cells::topo::CellConnectivity;
 use crate::mesh::traits::MeshTopology;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;

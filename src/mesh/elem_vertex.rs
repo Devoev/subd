@@ -2,7 +2,7 @@
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellToNodes, CellBoundary};
+use crate::cells::topo::{CellConnectivity, CellBoundary};
 use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
@@ -49,7 +49,7 @@ impl <T: Scalar, C: Clone, const M: usize> ElemToVertexMesh<T, C, M> {
 /// of [`K`]-dimensional cells [`C`]
 /// with geometric data of the coordinates of each [`M`]-dimensional vertex.
 #[derive(Debug, Clone)]
-pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Dim = Const<K>>, const K: usize, const M: usize> {
+pub struct ElemVertexMesh<T: RealField, C: CellConnectivity<Dim = Const<K>>, const K: usize, const M: usize> {
     /// Coordinates of the meshes vertices.
     pub coords: Vec<Point<T, M>>,
 
@@ -57,7 +57,7 @@ pub struct ElemVertexMesh<T: RealField, C: CellToNodes<Dim = Const<K>>, const K:
     pub elems: Vec<C>,
 }
 
-impl <T: RealField, C: CellToNodes<Dim = Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
+impl <T: RealField, C: CellConnectivity<Dim = Const<K>>, const K: usize, const M: usize> ElemVertexMesh<T, C, K, M> {
     // todo: replace panic with result
     /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     /// 

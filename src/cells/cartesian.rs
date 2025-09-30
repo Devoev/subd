@@ -1,7 +1,7 @@
 use crate::cells::geo;
 use crate::cells::lerp::MultiLerp;
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellToNodes};
+use crate::cells::topo::{Cell, CellConnectivity, ToGeoCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::cartesian::{CartMesh, MultiBreaks};
 use crate::mesh::traits::VertexStorage;
@@ -107,13 +107,18 @@ impl<const K: usize> CartCellIdx<K> {
     }
 }
 
-impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
-    type GeoCell = CartCell<T, K>;
-    type Coords = MultiBreaks<T, K>;
+impl <const K: usize> Cell for CartCellIdx<K> {
+    type Dim = Const<K>;
+    type Node = [usize; K];
 
-    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+    fn nodes(&self) -> &[Self::Node] {
         todo!("Implement by iterating over all 2^D vertices")
     }
+}
+
+impl <T: RealField, const K: usize> ToGeoCell<T, Const<K>> for CartCellIdx<K> {
+    type GeoCell = CartCell<T, K>;
+    type Coords = MultiBreaks<T, K>;
 
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let idx_a = *self.as_index();
@@ -124,13 +129,7 @@ impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     }
 }
 
-impl <const K: usize> CellToNodes for CartCellIdx<K> {
-    type Dim = Const<K>;
-
-    fn nodes(&self) -> &[NodeIdx] {
-        todo!()
-    }
-
+impl <const K: usize> CellConnectivity for CartCellIdx<K> {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         Const<K>: DimNameSub<M>

@@ -4,7 +4,7 @@ use crate::cells::chain::Chain;
 use crate::cells::line_segment::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::topo::{CellToNodes, CellBoundary, Edge2, OrderedCell, OrientedCell};
+use crate::cells::topo::{CellConnectivity, CellBoundary, Edge2, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{Point, RealField, U1, U2};

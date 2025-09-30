@@ -1,8 +1,8 @@
 use nalgebra::{DimName, DimNameDiff, DimNameSub, U1};
-use crate::cells::topo::{CellToNodes, CellBoundary};
+use crate::cells::topo::{CellConnectivity, CellBoundary, Cell};
 
 /// Topology of a chain inside a mesh.
-pub trait Chain<C: CellToNodes> {
+pub trait Chain<C: Cell> {
     /// Returns a slice of all [cell topologies](CellTopo) in this chain.
     fn cells(&self) -> &[C];
 }

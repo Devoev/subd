@@ -12,7 +12,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U2};
 use nalgebra::allocator::Allocator;
 use num_traits::ToPrimitive;
-use crate::cells::topo::Cell;
+use crate::cells::topo::{Cell, ToGeoCell};
 use crate::mesh::traits::VertexStorage;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 
@@ -265,13 +265,18 @@ impl CatmarkPatchNodes {
     }
 }
 
-impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
-    type GeoCell = CatmarkPatch<T, M>;
-    type Coords = Vec<Point<T, M>>;
+impl Cell for CatmarkPatchNodes {
+    type Dim = U2;
+    type Node = usize;
 
-    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+    fn nodes(&self) -> &[Self::Node] {
         self.as_slice().iter().map(|node| node.0).collect()
     }
+}
+
+impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for CatmarkPatchNodes {
+    type GeoCell = CatmarkPatch<T, M>;
+    type Coords = Vec<Point<T, M>>;
 
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         let coords = self
@@ -287,13 +292,7 @@ impl <T: RealField, const M: usize> Cell<T, Const<M>> for CatmarkPatchNodes {
     }
 }
 
-impl cells::topo::CellToNodes for CatmarkPatchNodes {
-    type Dim = U2;
-
-    fn nodes(&self) -> &[NodeIdx] {
-        self.as_slice()
-    }
-
+impl cells::topo::CellConnectivity for CatmarkPatchNodes {
     // todo: possibly change this
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where

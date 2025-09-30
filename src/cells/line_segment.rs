@@ -2,7 +2,7 @@ use crate::cells::chain::Chain;
 use crate::cells::geo;
 use crate::cells::lerp::{Lerp, MultiLerp};
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellToNodes, CellBoundary, OrderedCell, OrientedCell, Cell};
+use crate::cells::topo::{CellConnectivity, CellBoundary, OrderedCell, OrientedCell, Cell, ToGeoCell};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{clamp, Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, Scalar, U0, U1};
@@ -88,26 +88,25 @@ impl DirectedEdge {
     }
 }
 
-impl <T: RealField, const M: usize> Cell<T, Const<M>> for DirectedEdge {
-    type GeoCell = LineSegment<T, M>;
-    type Coords = Vec<Point<T, M>>;
+impl Cell for DirectedEdge {
+    type Dim = U1;
+    type Node = usize;
 
-    fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
+    fn nodes(&self) -> &[Self::Node] {
         &self.0.map(|node| node.0)
     }
+}
+
+impl <T: RealField, const M: usize> ToGeoCell<T, Const<M>> for DirectedEdge {
+    type GeoCell = LineSegment<T, M>;
+    type Coords = Vec<Point<T, M>>;
 
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
         LineSegment::new(self.0.map(|node| coords.vertex(node.0)))
     }
 }
 
-impl CellToNodes for DirectedEdge {
-    type Dim = U1;
-
-    fn nodes(&self) -> &[NodeIdx] {
-        &self.0
-    }
-
+impl CellConnectivity for DirectedEdge {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U1: DimNameSub<M>
@@ -222,13 +221,16 @@ impl From<UndirectedEdge> for DirectedEdge {
     }
 }
 
-impl CellToNodes for UndirectedEdge {
+impl Cell for UndirectedEdge {
     type Dim = U1;
+    type Node = usize;
 
-    fn nodes(&self) -> &[NodeIdx] {
-        &self.sorted_nodes
+    fn nodes(&self) -> &[Self::Node] {
+        &self.sorted_nodes.map(|node| node.0)
     }
+}
 
+impl CellConnectivity for UndirectedEdge {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U1: DimNameSub<M>
