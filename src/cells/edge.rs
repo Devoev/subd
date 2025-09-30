@@ -10,40 +10,9 @@ use std::cmp::minmax;
 use std::hash::Hash;
 use nalgebra::allocator::Allocator;
 use crate::cells::quad::QuadNodes;
+use crate::element::line_segment::LineSegment;
 use crate::mesh::elem_vertex::ElemVec;
 use crate::mesh::traits::{Mesh, VertexStorage};
-
-/// A line segment, i.e. a straight line bounded by 2 points
-/// in [`M`]-dimensional space.
-pub struct LineSegment<T: RealField, const M: usize> {
-    pub vertices: [Point<T, M>; 2]
-}
-
-impl<T: RealField, const M: usize> LineSegment<T, M> {
-
-    /// Constructs a new [`LineSegment`] from the given `vertices`.
-    pub fn new(vertices: [Point<T, M>; 2]) -> Self {
-        LineSegment { vertices }
-    }
-
-    /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: DirectedEdge, msh: &QuadVertexMesh<T, M>) -> Self {
-        LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
-    }
-}
-
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
-    type ParametricCell = UnitCube<1>;
-    type GeoMap = Lerp<T, M>;
-
-    fn ref_cell(&self) -> Self::ParametricCell {
-        UnitCube
-    }
-
-    fn geo_map(&self) -> Self::GeoMap {
-        Lerp::new(self.vertices[0], self.vertices[1])
-    }
-}
 
 /// Node index.
 type Node = usize;

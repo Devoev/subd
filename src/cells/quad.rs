@@ -1,50 +1,11 @@
-use crate::cells::chain::{Chain};
-use crate::cells::geo;
-use crate::cells::lerp::BiLerp;
-use crate::cells::line_segment::{DirectedEdge, UndirectedEdge};
+use crate::cells::chain::Chain;
+use crate::cells::edge::{DirectedEdge, UndirectedEdge};
 use crate::cells::topo::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToGeoCell};
-use crate::cells::unit_cube::UnitCube;
-use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::VertexStorage;
 use itertools::Itertools;
-use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, U2};
+use nalgebra::{Const, DimName, DimNameSub, Point, RealField, U2};
 use std::iter::zip;
-
-/// An `M` dimensional quadrilateral element, defined by four `vertices`.
-#[derive(Debug, Clone, Copy)]
-pub struct Quad<T: RealField, const M: usize> {
-    /// Corner vertices of the quadrilateral.
-    pub vertices: [Point<T, M>; 4]
-}
-
-impl<T: RealField, const M: usize> Quad<T, M> {
-    /// Constructs a new `Quad` from the given `vertices`.
-    pub fn new(vertices: [Point<T, M>; 4]) -> Self {
-        Quad { vertices }
-    }
-
-    /// Computes the centroid of this face.
-    pub fn centroid(&self) -> Point<T, M> {
-        let centroid = self.vertices
-            .iter()
-            .map(|p| &p.coords)
-            .sum::<SVector<T, M>>() / T::from_f64(4.0).unwrap();
-        Point::from(centroid)
-    }
-}
-
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for Quad<T, M> {
-    type ParametricCell = UnitCube<2>;
-    type GeoMap = BiLerp<T, M>;
-
-    fn ref_cell(&self) -> Self::ParametricCell {
-        UnitCube
-    }
-
-    fn geo_map(&self) -> Self::GeoMap {
-        BiLerp::new(self.vertices)
-    }
-}
+pub(crate) use crate::element::quad::Quad;
 
 /// Node index.
 type Node = usize;

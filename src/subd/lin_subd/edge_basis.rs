@@ -1,7 +1,7 @@
 use crate::basis::eval::{EvalBasis, EvalScalarCurl};
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
-use crate::cells::line_segment::UndirectedEdge;
+use crate::cells::edge::UndirectedEdge;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{matrix, one, zero, Dyn, OMatrix, RealField, RowOVector, RowVector4, U2, U4};

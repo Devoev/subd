@@ -5,7 +5,7 @@ use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameDiff, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;
-use crate::cells::line_segment::DirectedEdge;
+use crate::cells::edge::DirectedEdge;
 use crate::cells::node::NodeIdx;
 // todo: replace this with a generic implementation over the mesh type. For that add
 //  - generic edges, that provide all methods of NodePair (sorted, start, end...)

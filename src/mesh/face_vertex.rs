@@ -1,7 +1,7 @@
 //! Special cases of an [`ElemVertexMesh`] for `Dim = 2`, i.e. where the elements are faces.
 
 use crate::cells::chain::Chain;
-use crate::cells::line_segment::LineSegment;
+use crate::cells::edge::LineSegment;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
@@ -102,7 +102,7 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cells::line_segment::DirectedEdge;
+    use crate::cells::edge::DirectedEdge;
     use nalgebra::SMatrix;
     use std::collections::HashSet;
 

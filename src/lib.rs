@@ -15,6 +15,7 @@ pub mod diffgeo;
 pub mod cg;
 pub mod plot;
 pub mod error;
+pub mod element;
 
 #[cfg(test)]
 mod tests {

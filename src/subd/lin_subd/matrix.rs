@@ -6,7 +6,7 @@ use nalgebra::{matrix, Matrix5x4, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::sync::LazyLock;
 use itertools::Itertools;
-use crate::cells::line_segment::UndirectedEdge;
+use crate::cells::edge::UndirectedEdge;
 use crate::cells::quad::QuadNodes;
 
 // todo: maybe change the code below to use the local subdivision matrix S

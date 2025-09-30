@@ -1,4 +1,4 @@
-use crate::cells::line_segment::UndirectedEdge;
+use crate::cells::edge::UndirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::mesh::face_vertex::QuadVertexMesh;

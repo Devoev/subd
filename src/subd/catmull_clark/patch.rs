@@ -1,6 +1,6 @@
 use crate::cells;
 use crate::cells::geo;
-use crate::cells::line_segment::DirectedEdge;
+use crate::cells::edge::DirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
 use crate::cells::unit_cube::UnitCube;

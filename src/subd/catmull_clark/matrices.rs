@@ -4,7 +4,7 @@ use std::iter::once;
 use std::sync::LazyLock;
 use itertools::Itertools;
 use nalgebra_sparse::CooMatrix;
-use crate::cells::line_segment::UndirectedEdge;
+use crate::cells::edge::UndirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;

@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::iter::zip;
 use approx::relative_eq;
 use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord};
-use crate::cells::line_segment::LineSegment;
+use crate::cells::edge::LineSegment;
 use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::diffgeo::chart::Chart;

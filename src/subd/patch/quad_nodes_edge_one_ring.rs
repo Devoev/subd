@@ -1,4 +1,4 @@
-use crate::cells::line_segment::DirectedEdge;
+use crate::cells::edge::DirectedEdge;
 use crate::cells::node::NodeIdx;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use itertools::Itertools;
