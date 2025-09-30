@@ -2,7 +2,7 @@ use crate::cells::geo;
 use crate::cells::lerp::MultiLerp;
 use crate::cells::topo::{CellToNodes, CellBoundary, Cell};
 use crate::cells::node::NodeIdx;
-use crate::mesh::cartesian::CartMesh;
+use crate::mesh::cartesian::{CartMesh, MultiBreaks};
 use itertools::{repeat_n, Itertools};
 use nalgebra::{vector, Const, DefaultAllocator, DimName, DimNameSub, Point, Point1, RealField, SVector, Scalar, U1, U3};
 use std::iter::zip;
@@ -103,7 +103,7 @@ pub struct CartCellIdx<const K: usize>(pub [usize; K]);
 
 impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     type GeoCell = CartCell<T, K>;
-    type Coords = [Breaks<T>; K];
+    type Coords = MultiBreaks<T, K>;
 
     fn nodes(&self) -> &[crate::mesh::traits::NodeIdx<T, Self::Coords>] {
         todo!("Implement by iterating over all 2^D vertices")

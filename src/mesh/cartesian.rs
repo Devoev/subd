@@ -3,18 +3,24 @@ use crate::cells::node::NodeIdx;
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
 use crate::knots::breaks::Breaks;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use itertools::Itertools;
 use nalgebra::{Const, OPoint, Point, RealField, Scalar};
 use std::iter::{zip, Map, Once};
 
-impl <T: Scalar, const D: usize> VertexStorage<T> for [Breaks<T>; D] {
+/// `D`-variate cartesian product of [breakpoints](Breaks).
+///
+/// Given `d` breakpoint vectors `zi`, the cartesian product is defined as
+/// `z = z1 × ... × zd`. The elements of that product are gridpoints in a cartesian mesh.
+pub struct MultiBreaks<T, const D: usize>([Breaks<T>; D]);
+
+impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     type GeoDim = Const<D>;
     type NodeIdx = [usize; D];
     type NodeIter = Once<[usize; D]>; // todo
 
     fn num_nodes(&self) -> usize {
-        self.iter().map(|zeta| zeta.len()).product()
+        self.0.iter().map(|zeta| zeta.len()).product()
     }
 
     fn node_iter(&self) -> Self::NodeIter {
@@ -22,7 +28,7 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for [Breaks<T>; D] {
     }
 
     fn vertex(&self, i: [usize; D]) -> OPoint<T, Self::GeoDim> {
-        let coords = zip(i, self)
+        let coords = zip(i, self.0)
             .map(|(i, zeta)| zeta[i])
             .collect_array()
             .unwrap();
