@@ -1,6 +1,5 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::cells::cartesian::CartCell;
-use crate::cells::unit_cube::UnitCube;
 use crate::cells::quad::Quad;
 use crate::diffgeo::chart::Chart;
 use crate::subd::lin_subd::basis::LinBasisQuad;

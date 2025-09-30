@@ -4,7 +4,6 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::LocalBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
@@ -12,6 +11,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
 use nalgebra::allocator::Allocator;
+use crate::element::geo::{HasBasisCoord, HasDim};
 
 /// Assembles a discrete function (load vector).
 pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: usize>(

@@ -1,8 +1,8 @@
 use nalgebra::{Point, RealField};
-use crate::cells::geo;
-use crate::cells::lerp::Lerp;
 use crate::cells::edge::DirectedEdge;
-use crate::cells::unit_cube::UnitCube;
+use crate::element::geo;
+use crate::element::lerp::Lerp;
+use crate::element::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 
 /// A line segment, i.e. a straight line bounded by 2 points

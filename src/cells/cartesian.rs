@@ -1,8 +1,7 @@
-use crate::cells::geo;
-use crate::cells::lerp::MultiLerp;
-use crate::cells::node::NodeIdx;
 use crate::cells::topo::{Cell, CellConnectivity, ToGeoCell};
-use crate::cells::unit_cube::UnitCube;
+use crate::element::geo;
+use crate::element::lerp::MultiLerp;
+use crate::element::unit_cube::UnitCube;
 use crate::mesh::cartesian::{CartMesh, MultiBreaks};
 use crate::mesh::traits::VertexStorage;
 use itertools::{repeat_n, Itertools};

@@ -1,13 +1,13 @@
 //! Special cases of an [`ElemVertexMesh`] for `Dim = 2`, i.e. where the elements are faces.
 
 use crate::cells::chain::Chain;
-use crate::cells::edge::LineSegment;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U2};
 use std::hash::Hash;
+use crate::element::line_segment::LineSegment;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;

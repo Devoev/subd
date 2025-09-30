@@ -1,7 +1,7 @@
 use nalgebra::{Point, RealField, SVector};
-use crate::cells::geo;
-use crate::cells::lerp::BiLerp;
-use crate::cells::unit_cube::UnitCube;
+use crate::element::geo;
+use crate::element::lerp::BiLerp;
+use crate::element::unit_cube::UnitCube;
 
 /// An `M` dimensional quadrilateral element, defined by four `vertices`.
 #[derive(Debug, Clone, Copy)]

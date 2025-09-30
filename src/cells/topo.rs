@@ -1,9 +1,9 @@
 use crate::cells::chain::Chain;
-use crate::cells::geo;
-use crate::cells::geo::CellAllocator;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
+use crate::element::geo;
+use crate::element::geo::CellAllocator;
 
 /// Topology of a cell inside a mesh.
 ///

@@ -1,8 +1,7 @@
 use crate::bspline::spline_geo::SplineGeo;
-use crate::cells::geo;
 use crate::cells::cartesian::CartCell;
 use nalgebra::RealField;
-
+use crate::element::geo;
 // todo: is BezierElem even needed somewhere?
 //  bezier elem should provide access to a local basis. 
 //  It needs information about knot spans, such that local evaluations are possible

@@ -1,7 +1,7 @@
-use crate::cells::geo::RefCell;
 use iter_num_tools::lin_space;
 use itertools::{repeat_n, Itertools};
 use nalgebra::RealField;
+use crate::element::geo::RefCell;
 // todo:
 //  1. possibly replace with MultiProd<UnitInterval> and UnitInterval as Unit<Interval>
 //  2. store calculated coords directly in struct instead of computation in coords()

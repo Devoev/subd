@@ -1,18 +1,12 @@
 use crate::cells::chain::Chain;
-use crate::cells::geo;
-use crate::cells::lerp::{Lerp, MultiLerp};
+
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellConnectivity, CellBoundary, OrderedCell, OrientedCell, Cell, ToGeoCell};
-use crate::cells::unit_cube::UnitCube;
-use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{clamp, Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, Scalar, U0, U1};
+use crate::cells::topo::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
+use crate::element::line_segment::LineSegment;
+use crate::mesh::traits::VertexStorage;
+use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
-use nalgebra::allocator::Allocator;
-use crate::cells::quad::QuadNodes;
-use crate::element::line_segment::LineSegment;
-use crate::mesh::elem_vertex::ElemVec;
-use crate::mesh::traits::{Mesh, VertexStorage};
 
 /// Node index.
 type Node = usize;
