@@ -5,8 +5,10 @@ use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::Mesh;
+use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
+use nalgebra::allocator::Allocator;
+use crate::cells::topo::ToGeoCell;
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
 pub struct GradBasis<B, const D: usize>(B);
@@ -111,34 +113,36 @@ impl<T, C, B, const D: usize> EvalBasis<T> for GradBasisPullbackLocal<C, B, D>
 //  should we differentiate between Basis in the parametric and physical domain in general?
 
 /// [`GradBasis`] mapped to the physical domain by inverse pullbacks.
-pub struct GradBasisPullback<'a, M, B, const D: usize> {
-    pub msh: &'a M,
-    pub grad_basis: GradBasis<B, D>
+pub struct GradBasisPullback<'a, T, Basis, Coords, Cells, const D: usize> {
+    pub msh: &'a Mesh<T, Coords, Cells>,
+    pub grad_basis: GradBasis<Basis, D>
 }
 
-impl<'a, M, B, const D: usize> Basis for GradBasisPullback<'a, M, B, D>
+impl<'a, T, B, Coords, Cells, const D: usize> Basis for GradBasisPullback<'a, T, B, Coords, Cells, D>
 where
     B: Basis<NumComponents = U1>,
 {
     type NumBasis = B::NumBasis;
     type NumComponents = Const<D>;
-    type Coord<T> = B::Coord<T>;
+    type Coord<_T> = B::Coord<_T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.grad_basis.num_basis_generic()
     }
 }
 
-impl <'a, T, M, B, const D: usize> LocalBasis<T> for GradBasisPullback<'a, M, B, D>
+impl <'a, T, B, Coords, Cells, const D: usize> LocalBasis<T> for GradBasisPullback<'a, T, B, Coords, Cells, D>
     where T: RealField,
           B: LocalGradBasis<T, D>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology<Elem = B::Elem>,
           B::Coord<T>: Copy,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: HasBasisCoord<T, B> + HasDim<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, M::GeoElem>
+          B::Elem: ToGeoCell<T, Coords::GeoDim>,
+          <B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, B> + HasDim<T, D>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, <B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell> + Allocator<Coords::GeoDim>
 {
     type Elem = B::Elem;
-    type ElemBasis = GradBasisPullbackLocal<<M::GeoElem as Cell<T>>::GeoMap, B::ElemBasis, D>;
+    type ElemBasis = GradBasisPullbackLocal<<<B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell as Cell<T>>::GeoMap, B::ElemBasis, D>;
     type GlobalIndices = B::GlobalIndices;
 
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
