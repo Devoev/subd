@@ -38,7 +38,7 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for PlBasisQuad<'a,
     }
 
     fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
-        elem.0.into_iter().map(|n| n.0)
+        elem.0.into_iter().map(|n| n)
     }
 }
 

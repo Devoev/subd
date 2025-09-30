@@ -16,7 +16,7 @@ fn main() {
             0.0, 1.0, 1.0, 0.0
         ].transpose();
 
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
     let mut quad_msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Refine and construct Catmark mesh

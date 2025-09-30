@@ -118,11 +118,11 @@ mod tests {
     /// of valence `n=5` with all-zero control points.
     fn setup() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
-            QuadNodes::from_indices(1, 0, 3, 2),
-            QuadNodes::from_indices(0, 5, 4, 3),
-            QuadNodes::from_indices(7, 6, 5, 0),
-            QuadNodes::from_indices(9, 8, 7, 0),
-            QuadNodes::from_indices(9, 0, 1, 10),
+            QuadNodes::new(1, 0, 3, 2),
+            QuadNodes::new(0, 5, 4, 3),
+            QuadNodes::new(7, 6, 5, 0),
+            QuadNodes::new(9, 8, 7, 0),
+            QuadNodes::new(9, 0, 1, 10),
         ];
 
         QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)

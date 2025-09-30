@@ -49,7 +49,7 @@ pub fn main() -> io::Result<()> {
         ].transpose();
 
     // Define mesh
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
     let mut quad_msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Convergence study

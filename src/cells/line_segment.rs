@@ -45,6 +45,9 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
     }
 }
 
+/// Node index.
+type Node = usize;
+
 /// A *directed* edge between two nodes.
 /// The topological structure is
 /// ```text
@@ -54,16 +57,16 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
 /// where `0` is the start and `1` the end node.
 /// Geometrically the pair defines the topology of a [`LineSegment`].
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct DirectedEdge(pub [NodeIdx; 2]);
+pub struct DirectedEdge(pub [Node; 2]);
 
 impl DirectedEdge {
     /// Returns the start node of this edge.
-    pub fn start(&self) -> NodeIdx {
+    pub fn start(&self) -> Node {
         self.0[0]
     }
 
     /// Returns the end node of this edge.
-    pub fn end(&self) -> NodeIdx {
+    pub fn end(&self) -> Node {
         self.0[1]
     }
 
@@ -173,35 +176,35 @@ impl Chain<NodeIdx> for NodePair {
 pub struct UndirectedEdge {
     /// The sorted nodes defining the start and end of the edge.
     /// The sorting is such that `start < end`.
-    sorted_nodes: [NodeIdx; 2]
+    sorted_nodes: [Node; 2]
 }
 
 impl UndirectedEdge {
     /// Constructs a new [`UndirectedEdge`] from the given nodes `a` and `b`
     /// by sorting the nodes such that `start < end`.
-    pub fn new(a: NodeIdx, b: NodeIdx) -> Self {
+    pub fn new(a: Node, b: Node) -> Self {
         // todo: test for a == b
         UndirectedEdge { sorted_nodes: minmax(a, b) }
     }
 
     /// Attempts to construct a new [`UndirectedEdge`] from the given `start` and `end` nodes.
     /// If `start >= end` `None` is returned.
-    pub fn try_new(start: NodeIdx, end: NodeIdx) -> Option<Self> {
+    pub fn try_new(start: Node, end: Node) -> Option<Self> {
         (start < end).then_some(UndirectedEdge { sorted_nodes: [start, end] })
     }
 
     /// Returns the array of sorted nodes.
-    pub fn sorted_nodes(&self) -> &[NodeIdx; 2] {
+    pub fn sorted_nodes(&self) -> &[Node; 2] {
         &self.sorted_nodes
     }
 
     /// Returns the node with the lower index.
-    pub fn first(&self) -> NodeIdx {
+    pub fn first(&self) -> Node {
         self.sorted_nodes[0]
     }
 
     /// Returns the node with the greater index.
-    pub fn second(&self) -> NodeIdx {
+    pub fn second(&self) -> Node {
         self.sorted_nodes[1]
     }
 }

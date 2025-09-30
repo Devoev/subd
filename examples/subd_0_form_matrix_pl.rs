@@ -20,7 +20,7 @@ fn main() {
         ].transpose();
 
     // Define coarse mesh and space
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
     let mut msh = QuadVertexMesh::from_coords_matrix(coords_square, quads).lin_subd().unpack();
     let msh_coarse = msh.clone();
     let space_coarse = Space::<f64, _, 2>::new(PlBasisQuad(&msh_coarse));
