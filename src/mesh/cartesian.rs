@@ -61,9 +61,12 @@ impl <const D: usize> Cartesian<D> {
     }
 }
 
+/// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
+pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
+
 impl<const D: usize> MeshTopology for Cartesian<D> {
     type Elem = CartCellIdx<D>;
-    type ElemIter = ElemsIter<D>;
+    type ElemIter = CartCellIter<D>;
 
     fn num_elems(&self) -> usize {
         let mut dim_shape_elems = self.dim_shape;
@@ -108,38 +111,6 @@ impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
         CartMesh::with_coords_and_cells(breaks, Cartesian::with_shape(shape))
     }
 }
-
-/// An iterator over the linear nodes ([`NodeIdx`]) of a [`CartMesh`] mesh.
-pub struct NodesIter<'a, const D: usize> {
-    iter: MultiRange<[usize; D]>,
-    strides: &'a Strides<D>
-}
-
-impl <'a, const D: usize> NodesIter<'a, D> {
-    /// Constructs a new [`NodesIter`] from the given `iter` and `strides`.
-    pub fn new(iter: MultiRange<[usize; D]>, strides: &'a Strides<D>) -> Self {
-        NodesIter { iter, strides }
-    }
-
-    /// Constructs a enw [`NodesIter`] from the given cartesian `msh`.
-    pub fn from_msh<T: RealField>(msh: &'a CartMesh<T, D>) -> Self {
-        NodesIter::new(msh.indices(), &msh.cells.strides)
-    }
-}
-
-// todo: this implementation doesn't make much sense. Either just return the multi-indices,
-//  or iterate over linear indices directly. Flattening the multi-indices is way to expensive
-
-impl<const D: usize> Iterator for NodesIter<'_, D> {
-    type Item = NodeIdx;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|idx| NodeIdx(idx.into_lin(self.strides)))
-    }
-}
-
-/// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
-pub type ElemsIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
 impl<T: RealField, const D: usize> CartMesh<T, D> {
     /// Returns an iterator over all multi-indices in this grid.
