@@ -16,15 +16,9 @@ use std::iter::{zip, Map, Once};
 pub struct MultiBreaks<T, const D: usize>([Breaks<T>; D]);
 
 impl <T, const D: usize> MultiBreaks<T, D> {
-    /// Returns the [`DimShape<D>`] associated with the
-    /// tensor product gridpoint shape of `self`.
-    pub fn to_shape(&self) -> DimShape<D> {
-        let shapes = self.0.iter()
-            .map(|zeta| zeta.len())
-            .collect_array()
-            .unwrap();
-
-        DimShape(shapes)
+    /// Returns the internal array of breaks in each parametric direction.
+    pub fn as_breaks(&self) -> &[Breaks<T>; D] {
+        &self.0
     }
 }
 
@@ -110,7 +104,7 @@ impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
     /// The topological information for the shape and strides is constructed from the shape of the breaks.
     pub fn with_breaks(breaks: [Breaks<T>; D]) -> Self {
         let breaks = MultiBreaks(breaks);
-        let shape = breaks.to_shape();
+        let shape = DimShape::new_of_breaks(&breaks);
         CartMesh::with_coords_and_cells(breaks, Cartesian::with_shape(shape))
     }
 }

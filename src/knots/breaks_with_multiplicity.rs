@@ -5,6 +5,7 @@ use std::fmt::{Debug};
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
+use crate::knots::breaks::Breaks;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`],
 /// paired with a *multiplicity* value.
@@ -35,6 +36,12 @@ impl <T: RealField> BreaksWithMultiplicity<T> {
             .map(|(k, zeta)| (k, zeta.clone()))
             .collect();
         BreaksWithMultiplicity(breaks)
+    }
+
+    /// Returns a vector of breakpoints without multiplicity information.
+    pub fn to_breaks(&self) -> Breaks<T> {
+        let (_, breaks): (_, Vec<T>) = self.0.iter().unzip();
+        Breaks(breaks)
     }
 }
 

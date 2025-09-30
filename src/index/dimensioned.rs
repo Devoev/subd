@@ -4,6 +4,7 @@ use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, SVector, Scalar};
 use std::iter::Map;
 use std::ops::Range;
+use crate::knots::breaks::Breaks;
 
 /// Types composed of [`D`] elements of type [`T`],
 /// i.e. a type isomorphic to the fixed-sized array `[T; D]`.
@@ -52,6 +53,28 @@ impl<const D: usize, T: Scalar> Dimensioned<T, D> for Point<T, D> {
 /// Shape of a [`D`]-variate array.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct DimShape<const D: usize>(pub [usize; D]);
+
+impl<const D: usize> DimShape<D> {
+    // todo: are both impls required? Is the top one really cheaper in some cases?
+
+    /// Constructs a new `DimShape` matching the shape of the given `breaks`
+    /// for each parametric direction.
+    pub fn new_of_breaks<T>(breaks: &[Breaks<T>; D]) -> Self {
+        let shapes = breaks.iter()
+            .map(|zeta| zeta.len())
+            .collect_array()
+            .unwrap();
+
+        DimShape(shapes)
+    }
+
+    /// Converts given `breaks` for each parametric direction
+    /// into a `DimShape` matching its shape.
+    pub fn from_breaks<T>(breaks: [Breaks<T>; D]) -> Self {
+        let shapes = breaks.map(|zeta| zeta.len());
+        DimShape(shapes)
+    }
+}
 
 /// An iterator over the multivariate cartesian product of ranges.
 /// Yields all multi-indices inside a [`DimShape`].
@@ -136,9 +159,9 @@ impl <const D: usize> From<DimShape<D>> for Strides<D> {
     ///
     /// The `strides` for a given `shape` are defined by the formulas
     /// ```text
-    /// strides[1] = 1   
-    /// strides[2] = shape[1]   
-    /// strides[3] = shape[1] × shape[2]   
+    /// strides[1] = 1
+    /// strides[2] = shape[1]
+    /// strides[3] = shape[1] × shape[2]
     /// strides[4] = ...
     /// ```
     fn from(mut shape: DimShape<D>) -> Self {
