@@ -72,7 +72,7 @@ impl<const D: usize> MeshTopology for Cartesian<D> {
         dim_shape_elems.len()
     }
 
-    fn elem_iter(&self) -> Self::ElemIter {
+    fn into_elem_iter(self) -> Self::ElemIter {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
         dim_shape_elems.multi_range().map(CartCellIdx)

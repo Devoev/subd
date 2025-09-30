@@ -47,7 +47,7 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for 
         self.ref_mesh.num_elems()
     }
     
-    fn elem_iter(&self) -> Self::ElemIter {
+    fn into_elem_iter(self) -> Self::ElemIter {
         self.ref_mesh.elem_iter()
     }
 }

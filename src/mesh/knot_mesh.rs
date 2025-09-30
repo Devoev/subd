@@ -77,7 +77,7 @@ impl <const D: usize> MeshTopology for CartesianWithIncrements<D> {
         self.cartesian.num_elems()
     }
 
-    fn elem_iter(&self) -> Self::ElemIter {
+    fn into_elem_iter(self) -> Self::ElemIter {
         self.increments.iter()
             .map(|increments| increments.span_indices().collect_vec())
             .multi_cartesian_product()

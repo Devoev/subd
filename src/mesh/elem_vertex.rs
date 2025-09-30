@@ -8,6 +8,7 @@ use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U1};
 use std::iter::once;
+use std::slice::Iter;
 use std::vec::IntoIter;
 
 /// Vector of topological cells.
@@ -17,7 +18,7 @@ use std::vec::IntoIter;
 /// with each element pointing to its corner node indices.
 pub struct ElemVec<C>(pub Vec<C>);
 
-impl <C: Clone> MeshTopology for ElemVec<C> {
+impl <C> MeshTopology for ElemVec<C> {
     type Elem = C;
     type ElemIter = IntoIter<Self::Elem>;
     
@@ -25,8 +26,21 @@ impl <C: Clone> MeshTopology for ElemVec<C> {
         self.0.len()
     }
 
-    fn elem_iter(&self) -> Self::ElemIter {
-        self.0.clone().into_iter()
+    fn into_elem_iter(self) -> Self::ElemIter {
+        self.0.into_iter()
+    }
+}
+
+impl <'a, C> MeshTopology for &'a ElemVec<C> {
+    type Elem = &'a C;
+    type ElemIter = Iter<'a, C>;
+
+    fn num_elems(&self) -> usize {
+        self.0.len()
+    }
+
+    fn into_elem_iter(self) -> Self::ElemIter {
+        self.0.iter()
     }
 }
 

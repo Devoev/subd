@@ -6,7 +6,7 @@ use std::ops::Range;
 /// Topology of a mesh consisting of cells.
 ///
 /// A topological mesh is essentially a collection of cells, also called elements.
-/// This trait mainly provides iteration over all mesh elements using [`Self::elem_iter`].
+/// This trait mainly provides iteration over all mesh elements using [`Self::into_elem_iter`].
 pub trait MeshTopology {
     /// Topological element in the mesh.
     type Elem; //: topo::Cell<Const<K>>; todo: add bound
@@ -17,8 +17,8 @@ pub trait MeshTopology {
     /// Returns the total number of elements in this mesh.
     fn num_elems(&self) -> usize;
 
-    /// Returns an iterator over all elements in this mesh.
-    fn elem_iter(&self) -> Self::ElemIter;
+    /// Creates an iterator over all elements in this mesh.
+    fn into_elem_iter(self) -> Self::ElemIter;
 }
 
 /// Storage for the geometrical vertex points of a mesh.
