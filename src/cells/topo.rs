@@ -1,22 +1,9 @@
 use crate::cells::chain::Chain;
-use crate::cells::node::NodeIdx;
+use crate::cells::geo;
+use crate::cells::geo::CellAllocator;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
-use crate::cells::geo;
-use crate::cells::geo::CellAllocator;
-// todo: refactor
-//  - replace T and M with GATs
-//   => T and M MUST be generics and not be moves to GATs, because the concrete GeoCell and Coords impl possibly require stricter variants
-//  - should a topological cell really have knowledge about the geometry? Should this just be a
-//    sub-trait of geo:Cell (i.e. CellInMesh)
-//   => this can't work, because there is exactly one geometry description for multiple different connectivity descriptions
-//  - the associated types don't quite make sense. Ideally this should be independent of the exact mesh used
-//    (for example 2D vs 3D quad mesh should both work for quads, any mesh for (Un-)DirectedEdge).
-//    This can maybe also be fixed by moving the associated types to generics of the method.
-//    Also for all topologies defined by only nodes, the Coords parameter is sufficient.
-//   => just using Coords likely is sufficient, because that is the only way vertex coordinate info is stored anyway.
-//      but move it to a generic parameter of to_geo_cell
 
 /// Topology of a cell inside a mesh.
 ///
@@ -27,7 +14,7 @@ pub trait Cell {
     type Dim: DimName;
 
     /// Node representing the indices of vertices inside a mesh.
-    type Node;
+    type Node: Copy;
 
     /// Returns a slice of node indices corresponding to corner vertices of `self`.
     fn nodes(&self) -> &[Self::Node];
@@ -82,7 +69,7 @@ pub trait CellConnectivity: Cell {
     where Self::Dim: DimNameSub<M>;
 
     /// Returns `true` if the cell contains the given `node`.
-    fn contains_node(&self, node: NodeIdx) -> bool {
+    fn contains_node(&self, node: Self::Node) -> bool {
         self.nodes().contains(&node)
     }
     
@@ -131,7 +118,7 @@ where Self::Dim: DimNameSub<U1> {
     const NUM_SUB_CELLS: usize;
 
     /// Cell topology of the individual sub-cells of the boundary chain.
-    type SubCell: Cell<Dim = DimNameDiff<Self::Dim, U1>>;
+    type SubCell: Cell<Dim = DimNameDiff<Self::Dim, U1>, Node = Self::Node>;
 
     /// Topology of the [`K`]`-1`-dimensional boundary of this cell.
     type Boundary: Chain<Self::SubCell>;

@@ -2,7 +2,6 @@
 
 use crate::cells::chain::Chain;
 use crate::cells::line_segment::LineSegment;
-use crate::cells::node::NodeIdx;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
@@ -12,6 +11,9 @@ use std::hash::Hash;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
+
+/// Node index.
+type Node = usize;
 
 impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVertexMesh<T, F, M>
 where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
@@ -36,7 +38,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
     }
 
     /// Returns all edges connected to the given `node`.
-    pub fn edges_of_node(&self, node: NodeIdx) -> impl Iterator<Item = F::SubCell> + '_ {
+    pub fn edges_of_node(&self, node: F::Node) -> impl Iterator<Item = F::SubCell> + '_ {
         self.edges().filter(move |edge| edge.contains_node(node))
     }
 
@@ -50,21 +52,21 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
-    pub fn valence(&self, node: NodeIdx) -> usize {
+    pub fn valence(&self, node: Node) -> usize {
         self.edges_of_node(node).count()
     }
 
     // todo: this method is probably inefficient, because it iterates over ALL open edges
     /// Returns `true` if the given `node` is a boundary node,
     /// i.e. it is part of an open edge.
-    pub fn is_boundary_node(&self, node: NodeIdx) -> bool {
+    pub fn is_boundary_node(&self, node: F::Node) -> bool {
         self.open_edges().any(|edge| edge.contains_node(node))
     }
 }
 
 impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     /// Returns `true` if the `node` is regular.
-    pub fn is_regular_node(&self, node: NodeIdx) -> bool {
+    pub fn is_regular_node(&self, node: Node) -> bool {
         self.valence(node) == 4
     }
     
@@ -74,7 +76,7 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     }
 
     /// Finds the irregular node of the given `face`, if any exists.
-    pub fn irregular_node_of_face(&self, face: QuadNodes) -> Option<NodeIdx> {
+    pub fn irregular_node_of_face(&self, face: QuadNodes) -> Option<Node> {
         face.nodes()
             .into_iter()
             .find(|&v| self.valence(v) != 4)
@@ -82,7 +84,7 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
 
     /// Finds all boundary nodes of the given `face`,
     /// i.e. all irregular nodes, assuming the face is a boundary face.
-    pub fn boundary_nodes_of_face(&self, face: QuadNodes) -> Vec<NodeIdx> {
+    pub fn boundary_nodes_of_face(&self, face: QuadNodes) -> Vec<Node> {
         face.nodes().into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
 
@@ -134,46 +136,46 @@ mod tests {
 
         // Edge 0 -> 5 and 5 -> 0
         let faces_exp = HashSet::from([&msh.cells[1], &msh.cells[2]]);
-        let edge = DirectedEdge([NodeIdx(0), NodeIdx(5)]);
+        let edge = DirectedEdge([0, 5]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
         
-        let edge = DirectedEdge([NodeIdx(5), NodeIdx(0)]);
+        let edge = DirectedEdge([5, 0]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
         
         // Edge 0 -> 9 and 9 -> 0
         let faces_exp = HashSet::from([&msh.cells[3], &msh.cells[4]]);
-        let edge = DirectedEdge([NodeIdx(0), NodeIdx(9)]);
+        let edge = DirectedEdge([0, 9]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
 
-        let edge = DirectedEdge([NodeIdx(9), NodeIdx(0)]);
+        let edge = DirectedEdge([9, 0]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
         
         // Edge 7 -> 6 and 6 -> 7
         let faces_exp = HashSet::from([&msh.cells[2]]);
-        let edge = DirectedEdge([NodeIdx(7), NodeIdx(6)]);
+        let edge = DirectedEdge([7, 6]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
 
-        let edge = DirectedEdge([NodeIdx(6), NodeIdx(7)]);
+        let edge = DirectedEdge([6, 7]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
         
         // Edge 1 -> 2 and 2 -> 1
         let faces_exp = HashSet::from([&msh.cells[0]]);
-        let edge = DirectedEdge([NodeIdx(1), NodeIdx(2)]);
+        let edge = DirectedEdge([1, 2]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
 
-        let edge = DirectedEdge([NodeIdx(2), NodeIdx(1)]);
+        let edge = DirectedEdge([2, 1]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
         
         // Edge 4 -> 0 (non existent)
-        let edge = DirectedEdge([NodeIdx(4), NodeIdx(0)]);
+        let edge = DirectedEdge([4, 0]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert!(faces.is_empty());
     }
