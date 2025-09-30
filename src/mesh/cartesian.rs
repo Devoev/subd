@@ -1,7 +1,5 @@
 use crate::cells::cartesian::CartCellIdx;
-use crate::cells::node::NodeIdx;
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
-use crate::index::multi_index::MultiIndex;
 use crate::knots::breaks::Breaks;
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use itertools::Itertools;

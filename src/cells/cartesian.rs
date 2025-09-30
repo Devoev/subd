@@ -1,15 +1,14 @@
 use crate::cells::geo;
 use crate::cells::lerp::MultiLerp;
-use crate::cells::topo::{CellToNodes, CellBoundary, Cell};
 use crate::cells::node::NodeIdx;
+use crate::cells::topo::{Cell, CellToNodes};
+use crate::cells::unit_cube::UnitCube;
 use crate::mesh::cartesian::{CartMesh, MultiBreaks};
+use crate::mesh::traits::VertexStorage;
 use itertools::{repeat_n, Itertools};
-use nalgebra::{vector, Const, DefaultAllocator, DimName, DimNameSub, Point, Point1, RealField, SVector, Scalar, U1, U3};
+use nalgebra::{Const, DimName, DimNameSub, Point, Point1, RealField};
 use std::iter::zip;
 use std::ops::RangeInclusive;
-use nalgebra::allocator::Allocator;
-use crate::cells::unit_cube::UnitCube;
-use crate::knots::breaks::Breaks;
 
 /// A [`K`]-dimensional cartesian cell aka. hyper-rectangle.
 /// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
@@ -101,6 +100,13 @@ impl <T: RealField + Copy, const D: usize> geo::Cell<T> for CartCell<T, D> {
 #[derive(Debug, Clone, Copy)]
 pub struct CartCellIdx<const K: usize>(pub [usize; K]);
 
+impl<const K: usize> CartCellIdx<K> {
+    /// Returns the underlying multi-index representing `self`.
+    pub fn as_index(&self) -> &[usize; K] {
+        &self.0
+    }
+}
+
 impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     type GeoCell = CartCell<T, K>;
     type Coords = MultiBreaks<T, K>;
@@ -110,13 +116,10 @@ impl <T: RealField, const K: usize> Cell<T, Const<K>> for CartCellIdx<K> {
     }
 
     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
-        let idx_a = self.0;
-        let idx_b = idx_a.map(|i| i + 1);
-        // todo: move construction of coords_a and coords_b to VertexStorage trait that works for multi indices
-        let coords_a = zip(idx_a, coords).map(|(i, zeta)| zeta[i]).collect_array().unwrap();
-        let coords_b = zip(idx_b, coords).map(|(i, zeta)| zeta[i]).collect_array().unwrap();
-        let a = Point::from(coords_a);
-        let b = Point::from(coords_b);
+        let idx_a = *self.as_index();
+        let idx_b = idx_a.map(|i| i + 1); // todo: implement this in the multi-index trait
+        let a = coords.vertex(idx_a);
+        let b = coords.vertex(idx_b);
         CartCell::new(a, b)
     }
 }
