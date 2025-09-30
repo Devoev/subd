@@ -49,5 +49,5 @@ fn make_mesh() -> QuadVertexMesh<f64, 2> {
             0.0, 1.0, 1.0, 0.0
         ].transpose();
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    QuadVertexMesh::from_matrix(coords_square, quads)
+    QuadVertexMesh::from_coords_matrix(coords_square, quads)
 }

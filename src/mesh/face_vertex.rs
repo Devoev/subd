@@ -11,18 +11,15 @@ use nalgebra::{Point, RealField, U1, U2};
 use std::hash::Hash;
 use crate::mesh::traits::Mesh;
 
-/// A face-vertex mesh with `2`-dimensional faces [`C`].
-pub type FaceVertexMesh<T, C, const M: usize> = ElemVertexMesh<T, C, 2, M>;
-
 /// A face-vertex mesh with quadrilateral faces.
-pub type QuadVertexMesh<T, const M: usize> = FaceVertexMesh<T, QuadNodes, M>;
+pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
 
-impl <T: RealField, F: CellBoundary<Dim = U2>, const M: usize> FaceVertexMesh<T, F, M>
-where Edge2<F>: OrderedCell + OrientedCell + Clone + Eq + Hash
+impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVertexMesh<T, F, M>
+where Edge2<F>: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
-        self.elems.iter()
+        self.cells.0.iter()
             .flat_map(|face| face.boundary().cells().to_owned())
             .map(|edge: Edge2<F> | edge.sorted())
             .unique()
@@ -31,7 +28,7 @@ where Edge2<F>: OrderedCell + OrientedCell + Clone + Eq + Hash
     /// Returns an iterator over all *open* edges,
     /// i.e. edges that are connected to only *one* face.
     pub fn open_edges(&self) -> impl Iterator<Item = Edge2<F>> + '_ {
-        self.elems.iter()
+        self.cells.0.iter()
             .flat_map(|face| face.boundary().cells().to_owned())
             .map(|edge: Edge2<F> | edge.sorted())
             .counts()
@@ -46,7 +43,7 @@ where Edge2<F>: OrderedCell + OrientedCell + Clone + Eq + Hash
 
     /// Returns all faces connected to the given (undirected) `edge`.
     pub fn faces_of_edge(&self, edge: Edge2<F>) -> impl Iterator<Item = &F> + '_ {
-        self.elems.iter()
+        self.cells.0.iter()
             .filter(move |face| {
                 let edges = face.boundary().cells().to_owned();
                 edges.contains(&edge) || edges.contains(&edge.reversed())
@@ -97,7 +94,7 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
 
     /// Returns an iterator over all faces in this mesh.
     pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
-        self.elems.iter().map(|&face| Quad::from_msh(face, self))
+        self.cells.0.iter().map(|&face| Quad::from_msh(face, self))
     }
 }
 
@@ -129,7 +126,7 @@ mod tests {
             QuadNodes::from_indices(9, 0, 1, 10),
         ];
 
-        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+        QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
     }
 
     #[test]
@@ -137,7 +134,7 @@ mod tests {
         let msh = setup();
 
         // Edge 0 -> 5 and 5 -> 0
-        let faces_exp = HashSet::from([&msh.elems[1], &msh.elems[2]]);
+        let faces_exp = HashSet::from([&msh.cells[1], &msh.cells[2]]);
         let edge = DirectedEdge([NodeIdx(0), NodeIdx(5)]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
@@ -147,7 +144,7 @@ mod tests {
         assert_eq!(faces, faces_exp);
         
         // Edge 0 -> 9 and 9 -> 0
-        let faces_exp = HashSet::from([&msh.elems[3], &msh.elems[4]]);
+        let faces_exp = HashSet::from([&msh.cells[3], &msh.cells[4]]);
         let edge = DirectedEdge([NodeIdx(0), NodeIdx(9)]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
@@ -157,7 +154,7 @@ mod tests {
         assert_eq!(faces, faces_exp);
         
         // Edge 7 -> 6 and 6 -> 7
-        let faces_exp = HashSet::from([&msh.elems[2]]);
+        let faces_exp = HashSet::from([&msh.cells[2]]);
         let edge = DirectedEdge([NodeIdx(7), NodeIdx(6)]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);
@@ -167,7 +164,7 @@ mod tests {
         assert_eq!(faces, faces_exp);
         
         // Edge 1 -> 2 and 2 -> 1
-        let faces_exp = HashSet::from([&msh.elems[0]]);
+        let faces_exp = HashSet::from([&msh.cells[0]]);
         let edge = DirectedEdge([NodeIdx(1), NodeIdx(2)]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert_eq!(faces, faces_exp);

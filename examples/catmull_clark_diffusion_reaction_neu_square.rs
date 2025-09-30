@@ -62,7 +62,7 @@ pub fn main() -> io::Result<()> {
 
     // Define mesh
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
+    let mut quad_msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Convergence study
     let mut n_dofs = vec![];

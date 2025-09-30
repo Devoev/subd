@@ -10,7 +10,7 @@ use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Point, RealField, SVector, Scalar, U1, U2};
 use nalgebra::allocator::Allocator;
-use crate::mesh::elem_vertex::{ElemVec, ElemToVertexMesh};
+use crate::mesh::elem_vertex::{ElemVec, ElemVertexMesh};
 use crate::mesh::traits::{Mesh, VertexStorage};
 
 /// A 2d quadrilateral element of topology [`QuadNodes`],

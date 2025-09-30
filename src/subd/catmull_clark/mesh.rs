@@ -5,7 +5,7 @@ use crate::subd::catmull_clark::patch::CatmarkPatchNodes;
 use nalgebra::RealField;
 
 /// Catmull-Clark mesh.
-pub type CatmarkMesh<T, const M: usize> = ElemVertexMesh<T, CatmarkPatchNodes, 2, M>;
+pub type CatmarkMesh<T, const M: usize> = ElemVertexMesh<T, CatmarkPatchNodes, M>;
 
 impl <T: RealField, const M: usize> CatmarkMesh<T, M> {
     
@@ -17,7 +17,7 @@ impl <T: RealField, const M: usize> From<QuadVertexMesh<T, M>> for CatmarkMesh<T
     /// The conversion moves the vector of vertex coordinates and does not re-allocate it.
     /// The [face one-rings](CatmarkPatchNodes) are computed for each `n` quadrilaterals and require reallocation.
     fn from(value: QuadVertexMesh<T, M>) -> Self {
-        let face_one_rings = value.elems
+        let face_one_rings = value.cells.0
             .iter()
             .map(|quad| CatmarkPatchNodes::find(&value, quad))
             .collect();
@@ -31,7 +31,7 @@ impl <T: RealField + Copy, const M: usize> From<CatmarkMesh<T, M>> for QuadVerte
     /// The conversion moves the vector of vertex coordinates and does not re-allocate it.
     /// The [quadrilateral faces](QuadNodes) require reallocation.
     fn from(value: CatmarkMesh<T, M>) -> Self {
-        let faces: Vec<QuadNodes> = value.elems
+        let faces: Vec<QuadNodes> = value.cells.0
             .iter()
             .map(|one_ring| one_ring.center_quad())
             .collect();

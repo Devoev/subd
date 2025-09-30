@@ -46,7 +46,7 @@ pub fn main() -> io::Result<()> {
         ].transpose();
 
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut msh = QuadVertexMesh::from_matrix(coords_square, quads);
+    let mut msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Convergence study
     let mut n_dofs = vec![];

@@ -89,7 +89,7 @@ mod tests {
             QuadNodes::from_indices(9, 0, 1, 10),
         ];
 
-        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+        QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
     }
 
     #[test]

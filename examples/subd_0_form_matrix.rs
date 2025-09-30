@@ -25,7 +25,7 @@ fn main() {
 
     // Define coarse mesh
     let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut msh = QuadVertexMesh::from_matrix(coords_square, quads).lin_subd().lin_subd().lin_subd().unpack();
+    let mut msh = QuadVertexMesh::from_coords_matrix(coords_square, quads).lin_subd().lin_subd().lin_subd().unpack();
     // // Define geometry
     // let coords = make_geo(1.0, 5);
     //

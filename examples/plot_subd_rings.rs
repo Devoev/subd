@@ -35,7 +35,7 @@ fn main() {
         QuadNodes::from_indices(0, 6, 7, 8),
         QuadNodes::from_indices(0, 8, 9, 10),
     ];
-    let mut msh = QuadVertexMesh::from_matrix(coords, faces);
+    let mut msh = QuadVertexMesh::from_coords_matrix(coords, faces);
     msh = msh.lin_subd().lin_subd().unpack();
     plot_faces(&msh, msh.elems.iter().copied()).show();
 

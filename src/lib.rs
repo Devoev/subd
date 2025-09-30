@@ -301,7 +301,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = CatmarkMesh::from(quad_msh);
 
         // Print patches
@@ -339,7 +339,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().unpack();
 
         let g = edge_to_node_incidence(&msh);
@@ -376,7 +376,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let mut msh = CatmarkMesh::from(msh);
         // msh.refine();
@@ -478,7 +478,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let msh = CatmarkMesh::from(msh);
 
@@ -551,7 +551,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let msh = CatmarkMesh::from(msh);
 
