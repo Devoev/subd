@@ -22,6 +22,9 @@ pub trait MeshTopology {
     fn into_cell_iter(self) -> Self::CellIter;
 }
 
+/// The topological cell of the `Cells`.
+pub type CellOfMesh<Cells> = <Cells as MeshTopology>::Cell;
+
 /// Storage for the geometrical vertex points of a mesh.
 ///
 /// Each vertex point of a mesh is represented by an [`OPoint<T,Self::GeoDim>`]
