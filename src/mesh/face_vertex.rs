@@ -92,11 +92,6 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     pub fn geo_edges(&self) -> impl Iterator<Item=LineSegment<T, M>> + '_ {
         self.edges().map(|edge_top| LineSegment::from_msh(edge_top, self))
     }
-
-    /// Returns an iterator over all faces in this mesh.
-    pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
-        self.cells.0.iter().map(|&face| face.to_element(&self.coords))
-    }
 }
 
 #[cfg(test)]
