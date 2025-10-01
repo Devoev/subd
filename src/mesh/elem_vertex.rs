@@ -82,8 +82,7 @@ impl <T: RealField, C: CellConnectivity + Clone, const M: usize> ElemVertexMesh<
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
     pub fn elems_of_node(&self, node: C::Node) -> impl Iterator<Item = &C> {
-        self.cells.0
-            .iter()
+        self.cell_iter()
             .filter(move |elem| elem.contains_node(node))
     }
 
@@ -92,8 +91,7 @@ impl <T: RealField, C: CellConnectivity + Clone, const M: usize> ElemVertexMesh<
     pub fn adjacent_elems<'a>(&'a self, elem: &'a C) -> impl Iterator<Item = &'a C> + 'a
     where C::Dim: DimNameSub<U1> + DimNameSub<DimNameDiff<C::Dim, U1>>
     {
-        self.cells.0
-            .iter()
+        self.cell_iter()
             .filter(move |e| e.is_connected(elem, C::Dim::name().sub(U1)))
     }
 }

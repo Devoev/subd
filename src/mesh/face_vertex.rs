@@ -20,7 +20,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
-        self.cells.0.iter()
+        self.cell_iter()
             .flat_map(|face| face.boundary().cells().to_owned())
             .map(|edge: F::SubCell| edge.sorted())
             .unique()
@@ -29,7 +29,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
     /// Returns an iterator over all *open* edges,
     /// i.e. edges that are connected to only *one* face.
     pub fn open_edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
-        self.cells.0.iter()
+        self.cell_iter()
             .flat_map(|face| face.boundary().cells().to_owned())
             .map(|edge: F::SubCell| edge.sorted())
             .counts()
@@ -44,7 +44,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
 
     /// Returns all faces connected to the given (undirected) `edge`.
     pub fn faces_of_edge(&self, edge: F::SubCell) -> impl Iterator<Item = &F> + '_ {
-        self.cells.0.iter()
+        self.cell_iter()
             .filter(move |face| {
                 let edges = face.boundary().cells().to_owned();
                 edges.contains(&edge) || edges.contains(&edge.reversed())

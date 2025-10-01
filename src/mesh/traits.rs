@@ -117,6 +117,23 @@ where T: Scalar,
     pub fn with_coords_and_cells(coords: Coords, cells: Cells) -> Self {
         Mesh { coords, cells, _phantom_data: PhantomData }
     }
+    
+    /// Consumes `self` and returns an iterator over all topological cells in this mesh.
+    pub fn into_cell_iter(self) -> Cells::ElemIter {
+        self.cells.into_elem_iter()
+    }
+}
+
+impl <'a, T, Coords, Cells: 'a> Mesh<T, Coords, Cells>
+where T: Scalar,
+      Coords: VertexStorage<T>,
+      &'a Cells: MeshTopology,
+      DefaultAllocator: Allocator<Coords::GeoDim>
+{
+    /// Returns an iterator over references to topological cells in this mesh.
+    pub fn cell_iter(&self) -> <&'a Cells as MeshTopology>::ElemIter {
+       self.cells.into_elem_iter()
+    }
 }
 
 // todo: update signature of elems and add more methods
