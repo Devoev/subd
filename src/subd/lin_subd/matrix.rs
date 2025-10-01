@@ -46,22 +46,22 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
 
     // Apply face-midpoint stencil
     let mut idx_offset = num_nodes;
-    for (face_idx, face) in quad_msh.elems.iter().enumerate() {
-        let [Node(a), Node(b), Node(c), Node(d)] = face.nodes();
+    for (face_idx, face) in (&quad_msh.cells).into_elem_iter().enumerate() {
+        let [a, b, c, d] = face.nodes();
         mat.push(face_idx + idx_offset, a, 0.25);
         mat.push(face_idx + idx_offset, b, 0.25);
         mat.push(face_idx + idx_offset, c, 0.25);
         mat.push(face_idx + idx_offset, d, 0.25);
-        face_midpoints.insert(*face, Node(face_idx + idx_offset));
+        face_midpoints.insert(*face, face_idx + idx_offset);
     }
 
     // Apply edge-midpoint stencil
     idx_offset += quad_msh.num_elems();
     for (edge_idx, edge) in edges.into_iter().enumerate() {
-        let [Node(a), Node(b)] = edge.0;
+        let [a, b] = edge.0;
         mat.push(edge_idx + idx_offset, a, 0.5);
         mat.push(edge_idx + idx_offset, b, 0.5);
-        edge_midpoints.insert(edge.into(), Node(edge_idx + idx_offset));
+        edge_midpoints.insert(edge.into(), edge_idx + idx_offset);
     }
 
     (mat, edge_midpoints, face_midpoints)

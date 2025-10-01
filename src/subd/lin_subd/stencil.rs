@@ -1,11 +1,10 @@
 use crate::cells::edge::UndirectedEdge;
 use crate::cells::node::Node;
-use crate::cells::quad::{Quad, QuadNodes};
+use crate::cells::quad::QuadNodes;
+use crate::cells::traits::ToElement;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
 use nalgebra::{center, RealField};
 use std::collections::HashMap;
-use crate::cells::traits::ToElement;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text
@@ -38,7 +37,7 @@ impl EdgeMidpointStencil {
     ) -> Node {
         let a = quad_msh.coords(edge.first());
         let b = quad_msh.coords(edge.second());
-        let node = Node(quad_msh.num_nodes());
+        let node = quad_msh.num_nodes();
         quad_msh.coords.push(center(a, b));
         self.edge_midpoints.insert(edge, node);
         node
@@ -87,6 +86,6 @@ impl FaceMidpointStencil {
         let quad = face.to_element(&quad_msh.coords);
         let center = quad.centroid();
         quad_msh.coords.push(center);
-        Node(quad_msh.num_nodes() - 1)
+        quad_msh.num_nodes() - 1
     }
 }
