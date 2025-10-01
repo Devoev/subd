@@ -1,6 +1,6 @@
 use crate::cells::chain::Chain;
 use crate::cells::edge::{DirectedEdge, UndirectedEdge};
-use crate::cells::topo::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToGeoCell};
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToElement};
 use crate::mesh::traits::VertexStorage;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Point, RealField, U2};
@@ -190,11 +190,11 @@ impl Cell for QuadNodes {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> ToGeoCell<T, Const<M>> for QuadNodes {
-    type GeoCell = Quad<T, M>;
+impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for QuadNodes {
+    type Elem = Quad<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
         Quad::new(self.0.map(|node| coords.vertex(node)))
     }
 }

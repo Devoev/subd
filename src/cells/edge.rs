@@ -1,7 +1,7 @@
 use crate::cells::chain::Chain;
 
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
 use crate::element::line_segment::LineSegment;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U1};
@@ -63,11 +63,11 @@ impl Cell for DirectedEdge {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> ToGeoCell<T, Const<M>> for DirectedEdge {
-    type GeoCell = LineSegment<T, M>;
+impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for DirectedEdge {
+    type Elem = LineSegment<T, M>;
     type Coords = Vec<Point<T, M>>;
 
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
         LineSegment::new(self.0.map(|node| coords.vertex(node.0)))
     }
 }

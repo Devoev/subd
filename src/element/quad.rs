@@ -1,5 +1,5 @@
 use nalgebra::{Point, RealField, SVector};
-use crate::element::geo;
+use crate::element::traits;
 use crate::element::lerp::BiLerp;
 use crate::element::unit_cube::UnitCube;
 
@@ -26,11 +26,11 @@ impl<T: RealField, const M: usize> Quad<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for Quad<T, M> {
-    type ParametricCell = UnitCube<2>;
+impl <T: RealField + Copy, const M: usize> traits::Element<T> for Quad<T, M> {
+    type ParametricElement = UnitCube<2>;
     type GeoMap = BiLerp<T, M>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         UnitCube
     }
 

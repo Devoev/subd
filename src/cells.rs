@@ -1,4 +1,4 @@
-pub mod topo;
+pub mod traits;
 pub mod chain;
 pub mod edge;
 pub mod quad;

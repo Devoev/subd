@@ -8,7 +8,7 @@ use crate::diffgeo::chart::Chart;
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 use nalgebra::allocator::Allocator;
-use crate::cells::topo::ToGeoCell;
+use crate::cells::traits::ToElement;
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
 pub struct GradBasis<B, const D: usize>(B);
@@ -137,12 +137,12 @@ impl <'a, T, B, Coords, Cells, const D: usize> LocalBasis<T> for GradBasisPullba
           Coords: VertexStorage<T>,
           Cells: MeshTopology<Elem = B::Elem>,
           B::Coord<T>: Copy,
-          B::Elem: ToGeoCell<T, Coords::GeoDim>,
-          <B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, B> + HasDim<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, <B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell> + Allocator<Coords::GeoDim>
+          B::Elem: ToElement<T, Coords::GeoDim>,
+          <B::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, <B::Elem as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {
     type Elem = B::Elem;
-    type ElemBasis = GradBasisPullbackLocal<<<B::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell as Cell<T>>::GeoMap, B::ElemBasis, D>;
+    type ElemBasis = GradBasisPullbackLocal<<<B::Elem as ToElement<T, Coords::GeoDim>>::Elem as Cell<T>>::GeoMap, B::ElemBasis, D>;
     type GlobalIndices = B::GlobalIndices;
 
     fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {

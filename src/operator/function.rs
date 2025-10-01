@@ -11,7 +11,7 @@ use itertools::Itertools;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
 use nalgebra::allocator::Allocator;
-use crate::element::geo::{HasBasisCoord, HasDim};
+use crate::element::traits::{HasBasisCoord, HasDim};
 
 /// Assembles a discrete function (load vector).
 pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: usize>(
@@ -65,7 +65,7 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
 {
     // Evaluate all basis functions at every quadrature point
     // and store them into a buffer
-    let ref_elem = elem.ref_cell();
+    let ref_elem = elem.parametric_element();
     let quad_nodes = quad.nodes_elem(elem).collect_vec();
     let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
         .map(|p| sp_local.basis.eval(p)).collect();

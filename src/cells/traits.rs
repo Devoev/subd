@@ -1,9 +1,8 @@
 use crate::cells::chain::Chain;
+use crate::element::traits::{ElemAllocator, Element};
 use crate::mesh::traits::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
-use crate::element::geo;
-use crate::element::geo::CellAllocator;
 
 /// Topology of a cell inside a mesh.
 ///
@@ -20,23 +19,23 @@ pub trait Cell {
     fn nodes(&self) -> &[Self::Node];
 }
 
-/// Conversion of a topological into a geometric cell.
+/// Conversion of a topological cell into a geometric element.
 ///
 /// Given a matching coordinate storage [`Cell::Coords`] of dimension `M`
 /// the geometric representation of the cell can be constructed using [`Cell::to_geo_cell`].
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
-pub trait ToGeoCell<T: Scalar, M: DimName>: Cell
-    where DefaultAllocator: Allocator<M> + CellAllocator<T, Self::GeoCell>
+pub trait ToElement<T: Scalar, M: DimName>: Cell
+    where DefaultAllocator: Allocator<M> + ElemAllocator<T, Self::Elem>
 {
-    /// The geometric cell associated with this topology.
-    type GeoCell: geo::Cell<T>;
+    /// The geometric element associated with this topology.
+    type Elem: Element<T>;
 
     /// Coordinates storage of the associated mesh.
     type Coords: VertexStorage<T, GeoDim = M, NodeIdx = Self::Node>;
 
-    /// Constructs the geometric cell associated with `self` from the given vertex `coords`.
-    fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell;
+    /// Constructs the geometric element associated with `self` from the given vertex `coords`.
+    fn to_element(&self, coords: &Self::Coords) -> Self::Elem;
 }
 
 /// A [topological cell](Cell) with connectivity and neighboring relations.

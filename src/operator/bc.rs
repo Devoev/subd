@@ -1,5 +1,5 @@
 use crate::bspline::space::BsplineSpace;
-use crate::cells::topo::CellBoundary;
+use crate::cells::traits::CellBoundary;
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use itertools::iproduct;

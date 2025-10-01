@@ -1,6 +1,6 @@
 use nalgebra::{Point, RealField};
 use crate::cells::edge::DirectedEdge;
-use crate::element::geo;
+use crate::element::traits;
 use crate::element::lerp::Lerp;
 use crate::element::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -24,11 +24,11 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
-    type ParametricCell = UnitCube<1>;
+impl <T: RealField + Copy, const M: usize> traits::Element<T> for LineSegment<T, M> {
+    type ParametricElement = UnitCube<1>;
     type GeoMap = Lerp<T, M>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         UnitCube
     }
 

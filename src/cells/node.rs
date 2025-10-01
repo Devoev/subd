@@ -1,4 +1,4 @@
-use crate::cells::topo::{Cell, CellConnectivity, ToGeoCell};
+use crate::cells::traits::{Cell, CellConnectivity, ToElement};
 use crate::mesh::traits::VertexStorage;
 use nalgebra::{Const, DimName, DimNameSub, Point, Scalar, U0};
 

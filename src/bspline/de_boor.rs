@@ -3,13 +3,13 @@ use crate::basis::local::{FindElem, LocalBasis};
 use crate::basis::tensor_prod::MultiProd;
 use crate::basis::traits::Basis;
 use crate::bspline::de_boor_span::DeBoorSpan;
-use crate::cells::cartesian::CartCell;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use itertools::{izip, Itertools};
 use nalgebra::{Dyn, RealField, U1};
 use std::ops::RangeInclusive;
+use crate::element::cartesian::CartCell;
 
 /// Scalar univariate B-Spline basis functions on a [`KnotVec<T>`].
 /// 

@@ -8,7 +8,7 @@ use crate::mesh::traits::MeshTopology;
 use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
 use std::vec;
 use itertools::Itertools;
-use crate::cells::topo::CellConnectivity;
+use crate::cells::traits::CellConnectivity;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 

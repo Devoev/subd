@@ -9,7 +9,7 @@ use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, ToTy
 use std::iter::{zip, Product, Sum};
 use nalgebra::allocator::Allocator;
 use num_traits::real::Real;
-use crate::cells::topo::ToGeoCell;
+use crate::cells::traits::ToElement;
 
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, T, Coords, Cells> {
@@ -29,10 +29,10 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
           Cells: MeshTopology,
-          Cells::Elem: ToGeoCell<T, Coords::GeoDim>,
-          <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasDim<T, D>,
+          Cells::Elem: ToElement<T, Coords::GeoDim>,
+          <Cells::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -58,10 +58,10 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
           Cells: MeshTopology,
-          Cells::Elem: ToGeoCell<T, Coords::GeoDim>,
-          <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasDim<T, D>,
+          Cells::Elem: ToElement<T, Coords::GeoDim>,
+          <Cells::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          Quadrature: QuadratureOnParametricCell<T, <Cells::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -75,10 +75,10 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Coords: VertexStorage<T>,
           Cells: MeshTopology<Elem = Basis::Elem>,
           Basis: LocalBasis<T>,
-          Basis::Elem: ToGeoCell<T, Coords::GeoDim>,
-          <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Basis::Elem: ToElement<T, Coords::GeoDim>,
+          <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -90,7 +90,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
                 let ref_elem = geo_elem.ref_cell();
 
                 // Evaluate functions at quadrature nodes of element
-                let uh = quad.nodes_ref::<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
+                let uh = quad.nodes_ref::<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
                 let u = quad.nodes_elem(&geo_elem).map(u);
 
                 // Calculate L2 error on element
@@ -107,10 +107,10 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Coords: VertexStorage<T>,
           Cells: MeshTopology<Elem = Basis::Elem>,
           Basis: LocalBasis<T>,
-          Basis::Elem: ToGeoCell<T, Coords::GeoDim>,
-          <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Basis::Elem: ToElement<T, Coords::GeoDim>,
+          <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToGeoCell<T, Coords::GeoDim>>::GeoCell>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
     {

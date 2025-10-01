@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use itertools::{repeat_n, Itertools};
 use nalgebra::{Point, Point1, RealField};
 use crate::cells::cartesian::CartCellIdx;
-use crate::element::geo;
+use crate::element::traits;
 use crate::element::lerp::MultiLerp;
 use crate::element::unit_cube::UnitCube;
 use crate::mesh::cartesian::CartMesh;
@@ -81,11 +81,11 @@ impl<T: RealField + Copy, const K: usize> CartCell<T, K> {
     }
 }
 
-impl <T: RealField + Copy, const D: usize> geo::Cell<T> for CartCell<T, D> {
-    type ParametricCell = UnitCube<D>;
+impl <T: RealField + Copy, const D: usize> traits::Element<T> for CartCell<T, D> {
+    type ParametricElement = UnitCube<D>;
     type GeoMap = MultiLerp<T, D>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         UnitCube
     }
 

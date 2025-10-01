@@ -23,8 +23,8 @@ use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::LocalBasis;
 use crate::basis::traits::Basis;
-use crate::cells::topo;
-use crate::cells::topo::ToGeoCell;
+use crate::cells::traits;
+use crate::cells::traits::ToElement;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -38,7 +38,7 @@ pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNo
             let edge = Scatter::new(vec![pi.x, pj.x], vec![pi.y, pj.y]);
             plot.add_trace(edge)
         }
-        let quad = face.to_geo_cell(&msh.coords);
+        let quad = face.to_element(&msh.coords);
         let center = quad.centroid();
         let text = Annotation::new()
             .text(num.to_string())
@@ -164,7 +164,7 @@ pub fn write_coords<T: Scalar + Display, const D: usize>(coords: impl Iterator<I
 }
 
 /// Writes the element connectivity of `elems` into a `file`.
-pub fn write_connectivity<C: topo::CellConnectivity>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_connectivity<C: traits::CellConnectivity>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     for elem in elems {
         let str = elem.nodes().iter().map(|n| n.to_string()).collect_vec().join(" ");
         writeln!(file, "{str}")?;

@@ -2,7 +2,7 @@
 
 use crate::cells::chain::Chain;
 use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::topo::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToGeoCell};
+use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U2};
@@ -95,7 +95,7 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
 
     /// Returns an iterator over all faces in this mesh.
     pub fn geo_faces(&self) -> impl Iterator<Item=Quad<T, M>> + '_ {
-        self.cells.0.iter().map(|&face| face.to_geo_cell(&self.coords))
+        self.cells.0.iter().map(|&face| face.to_element(&self.coords))
     }
 }
 

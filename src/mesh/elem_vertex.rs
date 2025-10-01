@@ -2,7 +2,7 @@
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
 use crate::cells::node::NodeIdx;
-use crate::cells::topo::{CellBoundary, CellConnectivity};
+use crate::cells::traits::{CellBoundary, CellConnectivity};
 use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
