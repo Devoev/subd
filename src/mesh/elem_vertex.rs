@@ -3,13 +3,14 @@
 
 use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity};
-use crate::mesh::traits::{Mesh, MeshTopology};
+use crate::mesh::traits::MeshTopology;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U1};
 use std::iter::once;
 use std::slice::Iter;
 use std::vec::IntoIter;
+use crate::mesh::Mesh;
 
 /// Vector of topological cells.
 ///
