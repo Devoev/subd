@@ -7,7 +7,7 @@ use crate::diffgeo::chart::Chart;
 use crate::error::l2_error::L2Norm;
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::QuadratureOnParametricCell;
+use crate::quadrature::traits::QuadratureOnParametricElem;
 use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, U1};
 use std::iter::{Product, Sum};
 use crate::basis::space::Space;
@@ -29,7 +29,7 @@ impl<'a, M> H1Norm<'a, M> {
           M::GeoElem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Q: QuadratureOnParametricElem<T, M::GeoElem>,
           Const<D>: DimMinSelf
     {
         // Calculate ||u||^2 + ||grad u||^2
@@ -44,7 +44,7 @@ impl<'a, M> H1Norm<'a, M> {
           M::GeoElem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Q: QuadratureOnParametricElem<T, M::GeoElem>,
           Const<D>: DimMinSelf
     {
        self.norm_squared(u, u_grad, quad).sqrt()
@@ -61,7 +61,7 @@ impl<'a, M> H1Norm<'a, M> {
           B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Q: QuadratureOnParametricElem<T, M::GeoElem>,
           Const<D>: DimMinSelf,
           DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + SelectCoeffsAllocator<B::LocalBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::LocalBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::LocalBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
@@ -90,7 +90,7 @@ impl<'a, M> H1Norm<'a, M> {
           B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
+          Q: QuadratureOnParametricElem<T, M::GeoElem>,
           Const<D>: DimMinSelf,
           DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + SelectCoeffsAllocator<B::LocalBasis>,
           DefaultAllocator: EvalGradAllocator<GradBasis<B::LocalBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::LocalBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?

@@ -5,7 +5,7 @@ use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
@@ -40,7 +40,7 @@ impl <'a, T, Basis, Coords, Cells, const D: usize> Laplace<'a, T, Basis, Coords,
           Coords: VertexStorage<T>,
           Cells: MeshTopology<Cell= Basis::Cell>,
           Basis: MeshGradBasis<T, D>,
-          Quadrature: QuadratureOnParametricCell<T, Elem>,
+          Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalGradAllocator<Basis::LocalBasis, D> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
     {
@@ -74,7 +74,7 @@ pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
 where T: RealField + Copy + Product<T> + Sum<T>,
       E: HasBasisCoord<T, B> + HasDim<T, D>,
       B: EvalGrad<T, D>,
-      Q: QuadratureOnParametricCell<T, E>,
+      Q: QuadratureOnParametricElem<T, E>,
       DefaultAllocator: EvalGradAllocator<B, D>,
       Const<D>: DimMinSelf
 {

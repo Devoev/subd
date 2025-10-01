@@ -5,7 +5,7 @@ use crate::basis::local::MeshBasis;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector};
 use std::iter::{zip, Product, Sum};
 

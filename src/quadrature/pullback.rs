@@ -1,11 +1,10 @@
-use crate::cells::geo::{Cell, CellAllocator};
 use crate::diffgeo::chart::Chart;
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
 use nalgebra::{Const, DefaultAllocator, DimMin, Point, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
-
+use crate::element::traits::{ElemAllocator, Element};
 // todo: possibly rename and add docs
 
 /// Quadrature rule on an element.
@@ -29,21 +28,21 @@ impl <Q, const D: usize> PullbackQuad<Q, D> {
 
 impl <Q, const D: usize>  PullbackQuad<Q, D> {
     /// Returns an iterator over all nodes in the reference domain.
-    pub fn nodes_ref<'a, T, E>(&'a self, ref_elem: &'a E::ParametricCell) -> impl Iterator<Item = Q::Node> + 'a
+    pub fn nodes_ref<'a, T, Elem>(&'a self, ref_elem: &'a Elem::ParametricElement) -> impl Iterator<Item = Q::Node> + 'a
     where T: RealField + Sum + Product + Copy,
-          E: Cell<T>,
-          Q: Quadrature<T, E::ParametricCell>,
-          DefaultAllocator: CellAllocator<T, E>
+          Elem: Element<T>,
+          Q: Quadrature<T, Elem::ParametricElement>,
+          DefaultAllocator: ElemAllocator<T, Elem>
     {
         self.ref_quad.nodes_elem(ref_elem)
     }
 
     /// Returns an iterator over all weights in the reference domain.
-    pub fn weights_ref<'a, T, E>(&'a self, ref_elem: &'a E::ParametricCell) -> impl Iterator<Item = Q::Weight> + 'a
+    pub fn weights_ref<'a, T, Elem>(&'a self, ref_elem: &'a Elem::ParametricElement) -> impl Iterator<Item = Q::Weight> + 'a
     where T: RealField + Sum + Product + Copy,
-          E: Cell<T>,
-          Q: Quadrature<T, E::ParametricCell>,
-          DefaultAllocator: CellAllocator<T, E>
+          Elem: Element<T>,
+          Q: Quadrature<T, Elem::ParametricElement>,
+          DefaultAllocator: ElemAllocator<T, Elem>
     {
         self.ref_quad.weights_elem(ref_elem)
     }
@@ -58,28 +57,28 @@ pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
 impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
-impl <T, E, Q, const D: usize> Quadrature<T, E> for PullbackQuad<Q, D>
+impl <T, Elem, Quad, const D: usize> Quadrature<T, Elem> for PullbackQuad<Quad, D>
 where T: RealField + Sum + Product + Copy,
-      E: Cell<T>,
-      E::GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-      Q: Quadrature<T, E::ParametricCell, Node = <E::GeoMap as Chart<T>>::Coord>,
+      Elem: Element<T>,
+      Elem::GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>,
+      Quad: Quadrature<T, Elem::ParametricElement, Node = <Elem::GeoMap as Chart<T>>::Coord>,
       Const<D>: DimMinSelf
 {
     type Node = Point<T, D>;
     type Weight = T;
 
-    fn nodes_elem(&self, elem: &E) -> impl Iterator<Item=Point<T, D>> {
+    fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item=Point<T, D>> {
         let res = self
-            .nodes_ref::<T, E>(&elem.ref_cell())
+            .nodes_ref::<T, Elem>(&elem.parametric_element())
             .map(|xi| elem.geo_map().eval(xi))
             .collect_vec(); // todo: remove collect
         res.into_iter()
     }
 
-    fn weights_elem(&self, elem: &E) -> impl Iterator<Item=T> {
-        let ref_elem = elem.ref_cell();
+    fn weights_elem(&self, elem: &Elem) -> impl Iterator<Item=T> {
+        let ref_elem = elem.parametric_element();
         let geo_map = elem.geo_map();
-        let res = zip(self.weights_ref::<T, E>(&ref_elem), self.nodes_ref::<T, E>(&ref_elem))
+        let res = zip(self.weights_ref::<T, Elem>(&ref_elem), self.nodes_ref::<T, Elem>(&ref_elem))
             .map(|(wi, xi)| {
                 let d_phi = geo_map.eval_diff(xi);
                 wi * d_phi.determinant().abs()
@@ -94,11 +93,11 @@ mod tests {
     use super::*;
     use crate::bspline::space::BsplineSpace;
     use crate::bspline::spline_geo::SplineGeo;
-    use crate::cells::cartesian::CartCell;
     use approx::assert_abs_diff_eq;
     use gauss_quad::GaussLegendre;
     use nalgebra::{matrix, point};
-    use crate::cells::bezier_elem::BezierElem;
+    use crate::element::bezier_elem::BezierElem;
+    use crate::element::cartesian::CartCell;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.

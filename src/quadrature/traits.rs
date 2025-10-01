@@ -1,8 +1,8 @@
 use std::iter::{zip, Sum};
 use std::ops::Mul;
 use nalgebra::{DefaultAllocator, Scalar};
-use crate::cells::geo::{Cell, CellCoord};
 use crate::diffgeo::chart::{ChartAllocator};
+use crate::element::traits::{ElemCoord, Element};
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -121,12 +121,12 @@ pub trait Quadrature<T: Sum, Elem> {
 //  if the methods of Cell go to Chart, merging won't work,
 //  because Cell has no information about the Coord anymore
 
-/// Constrains `Self` to be a quadrature on [`C::ParametricCell`]
-/// with the coordinates [`C::GeoMap::Coord`] of the chart.
-pub trait QuadratureOnParametricCell<T: Scalar + Sum, C: Cell<T>>: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>
-where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+/// Constrains `Self` to be a quadrature on [`Elem::ParametricElement`]
+/// with the coordinates [`Elem::GeoMap::Coord`] of the chart.
+pub trait QuadratureOnParametricElem<T: Scalar + Sum, Elem: Element<T>>: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>
+where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
 {}
 
-impl <T: Scalar + Sum, C: Cell<T>, Q: Quadrature<T, C::ParametricCell, Node = CellCoord<T, C>>> QuadratureOnParametricCell<T, C> for Q
-where DefaultAllocator: ChartAllocator<T, C::GeoMap>
+impl <T: Scalar + Sum, Elem: Element<T>, Q: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>> QuadratureOnParametricElem<T, Elem> for Q
+where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
 {}

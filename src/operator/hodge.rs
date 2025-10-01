@@ -4,7 +4,7 @@ use crate::basis::space::Space;
 use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
 use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, Scalar, ToTypenum};
 use nalgebra_sparse::CooMatrix;
@@ -38,7 +38,7 @@ impl <'a, T, Basis, Coords, Cells, const D: usize> Hodge<'a, T, Basis, Coords, C
               Coords: VertexStorage<T>,
               Cells: MeshTopology<Cell= Basis::Cell>,
               Basis: MeshBasis<T>,
-              Quadrature: QuadratureOnParametricCell<T, Elem>,
+              Quadrature: QuadratureOnParametricElem<T, Elem>,
               DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
               Const<D>: DimMinSelf + ToTypenum
     {
@@ -72,7 +72,7 @@ pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
     where T: RealField + Copy + Product<T> + Sum<T>,
           E: HasBasisCoord<T, B> + HasDim<T, D>,
           B: EvalBasis<T>,
-          Q: QuadratureOnParametricCell<T, E>,
+          Q: QuadratureOnParametricElem<T, E>,
           DefaultAllocator: EvalBasisAllocator<B>,
           Const<D>: DimMinSelf
 {

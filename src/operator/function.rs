@@ -6,7 +6,7 @@ use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
 use crate::mesh::traits::{MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
@@ -26,7 +26,7 @@ pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: us
           Basis: MeshBasis<T>,
           Coords: VertexStorage<T>, 
           Cells: MeshTopology<Cell= Basis::Cell>,
-          Quadrature: QuadratureOnParametricCell<T, E>,
+          Quadrature: QuadratureOnParametricElem<T, E>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
 {
@@ -60,7 +60,7 @@ pub fn assemble_function_local<T, E, B, Q, const D: usize>(
     where T: RealField + Copy + Product<T> + Sum<T>,
           E: HasBasisCoord<T, B> + HasDim<T, D>,
           B: EvalBasis<T>,
-          Q: QuadratureOnParametricCell<T, E>,
+          Q: QuadratureOnParametricElem<T, E>,
           DefaultAllocator: EvalBasisAllocator<B> + EvalFunctionAllocator<B>,
           Const<D>: DimMinSelf
 {

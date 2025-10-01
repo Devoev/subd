@@ -4,7 +4,7 @@ use crate::basis::local::MeshBasis;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, ToTypenum};
 use std::iter::{zip, Product, Sum};
 use nalgebra::allocator::Allocator;
@@ -32,7 +32,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Cells::Cell: ToElement<T, Coords::GeoDim>,
           <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Quadrature: QuadratureOnParametricCell<T, <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          Quadrature: QuadratureOnParametricElem<T, <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -61,7 +61,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Cells::Cell: ToElement<T, Coords::GeoDim>,
           <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
-          Quadrature: QuadratureOnParametricCell<T, <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          Quadrature: QuadratureOnParametricElem<T, <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -78,7 +78,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Basis::Cell: ToElement<T, Coords::GeoDim>,
           <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          Quadrature: QuadratureOnParametricElem<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
@@ -110,7 +110,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
           Basis::Cell: ToElement<T, Coords::GeoDim>,
           <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          Quadrature: QuadratureOnParametricElem<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
     {
