@@ -302,10 +302,10 @@ mod tests {
         let msh = CatmarkMesh::from(quad_msh);
 
         // Print patches
-        for elem in msh.elem_iter() {
-            let patch = CatmarkPatch::from_msh(&msh, elem);
+        for cell in msh.cell_iter() {
+            let patch = CatmarkPatch::from_msh(&msh, cell);
             let map = patch.geo_map();
-            println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
+            println!("{:?}", cell.as_slice());
             println!("{}", map.eval((0.5, 0.1)));
             println!("{}", map.eval_diff((0.5, 0.1)));
         }

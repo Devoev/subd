@@ -54,7 +54,7 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=Node>)
     let mut layout = Layout::new();
 
     for (num, node) in nodes.enumerate() {
-        let pos = msh.coords(node);
+        let pos = msh.coords.vertex(node);
         let pos_trace = Scatter::new(vec![pos.x], vec![pos.y]);
         plot.add_trace(pos_trace);
 
@@ -110,18 +110,18 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 /// using `num` evaluation points per parametric direction per element.
 pub fn plot_fn_msh<X, Coords, Cells, F, D>(msh: &Mesh<f64, Coords, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Coords: VertexStorage<f64, GeoDim = U2>,
-          Cells: MeshTopology,
-          CellOfMesh<Cells>: ToElement<f64, U2>,
+          Coords: VertexStorage<f64, GeoDim = U2> + Clone,  // todo: remove cloning
+          Cells: MeshTopology + Clone,
+          CellOfMesh<Cells>: ToElement<f64, U2, Coords = Coords>,
           <ElemOfMesh<f64, Coords, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&CellOfMesh<Cells>, X) -> f64,
           D: Fn(&ElemOfMesh<f64, Coords, Cells>, usize) -> (Vec<f64>, Vec<f64>)
 {
     let mut plot = Plot::new();
-    let elems = msh.elem_iter().collect_vec();
+    let cells = msh.clone().into_cell_iter().collect_vec();
 
-    for elem in elems {
-        let elem_plt = plot_fn_elem(&msh.geo_elem(&elem), &elem, f, num, &mesh_grid);
+    for cell in cells {
+        let elem_plt = plot_fn_elem(&cell.to_element(&msh.coords), &cell, f, num, &mesh_grid);
         plot.add_traces(elem_plt.data().iter().cloned().collect_vec());
     }
 
@@ -148,7 +148,7 @@ pub fn plot_fn_msh<X, Coords, Cells, F, D>(msh: &Mesh<f64, Coords, Cells>, f: &F
 //             })
 //         })
 //         .collect_vec();
-// 
+//
 //     todo!("")
 // }
 
