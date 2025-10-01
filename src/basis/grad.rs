@@ -3,9 +3,11 @@ use crate::basis::lin_combination::LinCombination;
 use crate::basis::local::{LocalBasis, LocalGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
-use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord, HasDim};
+use crate::cells::traits::Cell;
+use crate::element::traits::{HasBasisCoord, HasDim, ElemAllocator};
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::Mesh;
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 use nalgebra::allocator::Allocator;
 use crate::cells::traits::ToElement;
@@ -139,7 +141,7 @@ impl <'a, T, B, Coords, Cells, const D: usize> LocalBasis<T> for GradBasisPullba
           B::Coord<T>: Copy,
           B::Elem: ToElement<T, Coords::GeoDim>,
           <B::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + CellAllocator<T, <B::Elem as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
+          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + ElemAllocator<T, <B::Elem as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {
     type Elem = B::Elem;
     type ElemBasis = GradBasisPullbackLocal<<<B::Elem as ToElement<T, Coords::GeoDim>>::Elem as Cell<T>>::GeoMap, B::ElemBasis, D>;
