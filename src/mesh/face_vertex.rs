@@ -87,11 +87,6 @@ impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     pub fn boundary_nodes_of_face(&self, face: QuadNodes) -> Vec<Node> {
         face.nodes().into_iter().filter(|&v| self.valence(v) != 4).collect()
     }
-
-    /// Returns an iterator over all unique and sorted edges in this mesh.
-    pub fn geo_edges(&self) -> impl Iterator<Item=LineSegment<T, M>> + '_ {
-        self.edges().map(|edge_top| LineSegment::from_msh(edge_top, self))
-    }
 }
 
 #[cfg(test)]

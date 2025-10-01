@@ -1,8 +1,6 @@
-use crate::cells::edge::DirectedEdge;
 use crate::element::lerp::Lerp;
 use crate::element::traits::Element;
 use crate::element::unit_cube::UnitCube;
-use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{Point, RealField};
 
 /// A line segment, i.e. a straight line bounded by 2 points
@@ -16,11 +14,6 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     /// Constructs a new [`LineSegment`] from the given `vertices`.
     pub fn new(vertices: [Point<T, M>; 2]) -> Self {
         LineSegment { vertices }
-    }
-
-    /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: DirectedEdge, msh: &QuadVertexMesh<T, M>) -> Self {
-        LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
     }
 }
 
