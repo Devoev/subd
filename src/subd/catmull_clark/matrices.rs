@@ -1,9 +1,3 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use nalgebra::{dmatrix, dvector, matrix, DMatrix, DVector, Dyn, RealField, RowDVector, SMatrix, Schur};
-use std::iter::once;
-use std::sync::LazyLock;
-use itertools::Itertools;
-use nalgebra_sparse::CooMatrix;
 use crate::cells::edge::UndirectedEdge;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
@@ -11,6 +5,12 @@ use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use crate::subd::patch::quad_nodes_edge_one_ring::QuadNodesEdgeOneRing;
 use crate::subd::patch::quad_nodes_one_ring::QuadNodesOneRing;
+use itertools::Itertools;
+use nalgebra::{dmatrix, dvector, matrix, DMatrix, DVector, RealField, RowDVector, SMatrix};
+use nalgebra_sparse::CooMatrix;
+use std::collections::{HashMap, VecDeque};
+use std::iter::once;
+use std::sync::LazyLock;
 
 /// The `7✕8` matrix `S11` for extended catmull clark subdivision.
 /// Taken from "Stam 1998" without trailing zeroes.
@@ -279,12 +279,12 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
                 mat.push(node_idx, v, 1.0 - beta - gamma);
 
                 // Set weights for edge nodes
-                for e in nodes.iter().step_by(2) {
+                for &e in nodes.iter().step_by(2) {
                     mat.push(node_idx, e, beta / (n as f64));
                 }
 
                 // Set weights for face nodes
-                for f in nodes.iter().skip(1).step_by(2) {
+                for &f in nodes.iter().skip(1).step_by(2) {
                     mat.push(node_idx, f, gamma / (n as f64));
                 }
             }

@@ -36,7 +36,7 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
         let coords = patch_topo
             .as_slice()
             .iter()
-            .map(|node| *msh.coords(*node));
+            .map(|node| msh.coords.vertex(*node));
         match patch_topo {
             CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
             CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
@@ -268,7 +268,7 @@ impl Cell for CatmarkPatchNodes {
     type Node = usize;
 
     fn nodes(&self) -> &[Self::Node] {
-        self.as_slice().iter().map(|node| node).collect()
+        self.as_slice()
     }
 }
 

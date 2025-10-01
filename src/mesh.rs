@@ -40,6 +40,16 @@ where T: Scalar,
     pub fn with_coords_and_cells(coords: Coords, cells: Cells) -> Self {
         Mesh { coords, cells, _phantom_data: PhantomData }
     }
+    
+    /// Returns the total number of elements or cells in `self`.
+    pub fn num_elems(&self) -> usize {
+        self.cells.num_cells()
+    }
+    
+    /// Returns the total number of nodes in `self`.
+    pub fn num_nodes(&self) -> usize {
+        self.coords.num_nodes()
+    }
 
     /// Consumes `self` and returns an iterator over all topological cells in this mesh.
     pub fn into_cell_iter(self) -> Cells::CellIter {

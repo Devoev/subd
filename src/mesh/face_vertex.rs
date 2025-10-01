@@ -61,7 +61,7 @@ impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVerte
     }
 }
 
-impl<T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
+impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
     /// Returns `true` if the `node` is regular.
     pub fn is_regular_node(&self, node: Node) -> bool {
         self.valence(node) == 4

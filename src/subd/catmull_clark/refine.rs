@@ -5,6 +5,7 @@ use crate::mesh::traits::MeshTopology;
 use crate::subd::catmull_clark::matrices::assemble_global_mat;
 use nalgebra::{Point, RealField};
 use nalgebra_sparse::CsrMatrix;
+use crate::mesh::elem_vertex::ElemVec;
 
 /// Catmull-Clark subdivision of a quad-vertex mesh.
 pub struct CatmarkSubd<T: RealField, const M: usize> {
@@ -35,20 +36,20 @@ impl <const M: usize> CatmarkSubd<f64, M> {
         }
 
         // Update connectivity
-        let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.num_elems() * 4);
+        let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.cells.num_cells() * 4);
         let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
-        for elem in &quad_msh.elems {
+        for face in quad_msh.cell_iter() {
             // Get corner nodes
-            let [a, b, c, d] = elem.nodes();
+            let [a, b, c, d] = face.nodes();
 
             // Get edge midpoints
-            let [ab, bc, cd, da] = elem.undirected_edges()
+            let [ab, bc, cd, da] = face.undirected_edges()
                 .map(|edge| edge_midpoints[&edge]);
 
             // Get face midpoint
-            let m = face_midpoints[elem];
+            let m = face_midpoints[face];
 
             // Add refined faces
             add_face_nodes(a, ab, m, da);
@@ -58,7 +59,7 @@ impl <const M: usize> CatmarkSubd<f64, M> {
         }
 
         // Update faces
-        quad_msh.elems = refined_faces
+        quad_msh.cells = ElemVec(refined_faces)
     }
 
     /// Retrieves the refined quad-vertex mesh.

@@ -2,13 +2,11 @@ use crate::basis::eval::{EvalBasis, EvalGrad};
 use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
-use crate::cells::traits::CellConnectivity;
-use crate::mesh::traits::MeshTopology;
+use crate::cells::traits::{Cell};
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
-use itertools::Itertools;
 use nalgebra::{dvector, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
 use std::vec;
@@ -39,9 +37,8 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> MeshBasis<T> for Ca
     }
 
     fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
-        // todo: possibly remove allocation
-        let indices = elem.nodes().iter().map(|node| node.0).collect_vec();
-        indices.into_iter()
+        // todo: possibly remove clone
+        elem.nodes().to_vec().into_iter()
     }
 }
 
