@@ -44,6 +44,7 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
 }
 
 /// Topology of a structured Cartesian grid.
+#[derive(Clone, Debug)]
 pub struct Cartesian<const D: usize> {
     /// Shape of the structured nodes in each parametric directions.
     pub dim_shape: DimShape<D>, // todo: possibly only save element info instead of node info
@@ -77,6 +78,19 @@ impl<const D: usize> MeshTopology for Cartesian<D> {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
         dim_shape_elems.multi_range().map(CartCellIdx)
+    }
+}
+
+impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
+    type Cell = CartCellIdx<D>;
+    type CellIter = CartCellIter<D>;
+
+    fn num_cells(&self) -> usize {
+        (*self).num_cells()
+    }
+
+    fn into_cell_iter(self) -> Self::CellIter {
+        (*self).into_cell_iter()
     }
 }
 
