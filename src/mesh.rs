@@ -5,7 +5,7 @@ use nalgebra::{DefaultAllocator, Scalar};
 use nalgebra::allocator::Allocator;
 use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{CellElementTopology, MeshTopology, VertexStorage};
 
 pub mod elem_vertex;
 pub mod cartesian;
@@ -40,12 +40,12 @@ where T: Scalar,
     pub fn with_coords_and_cells(coords: Coords, cells: Cells) -> Self {
         Mesh { coords, cells, _phantom_data: PhantomData }
     }
-    
+
     /// Returns the total number of elements or cells in `self`.
     pub fn num_elems(&self) -> usize {
         self.cells.len()
     }
-    
+
     /// Returns the total number of nodes in `self`.
     pub fn num_nodes(&self) -> usize {
         self.coords.len()
@@ -57,10 +57,10 @@ where T: Scalar,
     }
 }
 
-impl <'a, T, Coords, Cells: 'a> Mesh<T, Coords, Cells>
+impl <'a, T, Coords, Cells> Mesh<T, Coords, Cells>
 where T: Scalar,
       Coords: VertexStorage<T>,
-      &'a Cells: MeshTopology,
+      &'a Cells: 'a + MeshTopology,
       DefaultAllocator: Allocator<Coords::GeoDim>
 {
     /// Returns an iterator over all topological cells in this mesh.
@@ -77,8 +77,7 @@ pub type ElemOfMesh<T, Coords, Cells> = ElemOfCell<T, <Cells as MeshTopology>::C
 impl <T, Coords, Cells> Mesh<T, Coords, Cells>
 where T: Scalar,
       Coords: VertexStorage<T>,
-      Cells: MeshTopology,
-      Cells::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
+      Cells: CellElementTopology<T, Coords>,
       DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
 {
     /// Consumes `self` and returns an iterator over all geometrical elements in this mesh.
@@ -92,11 +91,10 @@ where T: Scalar,
     }
 }
 
-impl <'a, T, Coords, Cells: 'a> Mesh<T, Coords, Cells>
+impl <'a, T, Coords, Cells> Mesh<T, Coords, Cells>
 where T: Scalar,
       Coords: VertexStorage<T>,
-      &'a Cells: MeshTopology,
-      <&'a Cells as MeshTopology>::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
+      &'a Cells: 'a + CellElementTopology<T, Coords>,
       DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, &'a Cells>>
 {
     /// Returns an iterator over all geometrical elements in this mesh.

@@ -1,6 +1,9 @@
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, Dyn, OMatrix, OPoint, Scalar};
 use std::ops::Range;
+use crate::cells::traits::ToElement;
+use crate::element::traits::ElemAllocator;
+use crate::mesh::ElemOfMesh;
 
 /// Topology of a mesh consisting of cells.
 ///
@@ -23,6 +26,20 @@ pub trait MeshTopology {
 
 /// The topological cell of the `Cells`.
 pub type CellOfMesh<Cells> = <Cells as MeshTopology>::Cell;
+
+/// Mesh topology where every cell implements [`ToElement`].
+pub trait CellElementTopology<T, Coords>: MeshTopology<Cell: ToElement<T, Coords::GeoDim, Coords = Coords>>
+    where T: Scalar,
+          Coords: VertexStorage<T>,
+          DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Self>> {}
+
+impl <T, Coords, Cells> CellElementTopology<T, Coords> for Cells
+    where T: Scalar,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology,
+          CellOfMesh<Cells>: ToElement<T, Coords::GeoDim, Coords = Coords>,
+          DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
+{}
 
 /// Storage for the geometrical vertex points of a mesh.
 ///
