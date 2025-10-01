@@ -20,27 +20,27 @@ use std::vec::IntoIter;
 pub struct ElemVec<C>(pub Vec<C>);
 
 impl <C> MeshTopology for ElemVec<C> {
-    type Elem = C;
-    type ElemIter = IntoIter<Self::Elem>;
+    type Cell = C;
+    type CellIter = IntoIter<Self::Cell>;
     
-    fn num_elems(&self) -> usize {
+    fn num_cells(&self) -> usize {
         self.0.len()
     }
 
-    fn into_elem_iter(self) -> Self::ElemIter {
+    fn into_cell_iter(self) -> Self::CellIter {
         self.0.into_iter()
     }
 }
 
 impl <'a, C> MeshTopology for &'a ElemVec<C> {
-    type Elem = &'a C;
-    type ElemIter = Iter<'a, C>;
+    type Cell = &'a C;
+    type CellIter = Iter<'a, C>;
 
-    fn num_elems(&self) -> usize {
+    fn num_cells(&self) -> usize {
         self.0.len()
     }
 
-    fn into_elem_iter(self) -> Self::ElemIter {
+    fn into_cell_iter(self) -> Self::CellIter {
         self.0.iter()
     }
 }

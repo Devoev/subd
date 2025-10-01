@@ -42,14 +42,14 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
 }
 
 impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for BezierMesh<'a, T, D, M> {
-    type Elem = [KnotSpan; D]; // todo: possibly introduce KnotSpanIdx with multi index
-    type ElemIter = KnotSpanIter<D>;
+    type Cell = [KnotSpan; D]; // todo: possibly introduce KnotSpanIdx with multi index
+    type CellIter = KnotSpanIter<D>;
 
-    fn num_elems(&self) -> usize {
+    fn num_cells(&self) -> usize {
         self.ref_mesh.num_elems()
     }
     
-    fn into_elem_iter(self) -> Self::ElemIter {
+    fn into_cell_iter(self) -> Self::CellIter {
         self.ref_mesh.elem_iter()
     }
 }

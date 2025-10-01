@@ -24,7 +24,7 @@ pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: us
           E: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Basis: LocalBasis<T>,
           Coords: VertexStorage<T>, 
-          Cells: MeshTopology<Elem = Basis::Elem>,
+          Cells: MeshTopology<Cell= Basis::Elem>,
           Quadrature: QuadratureOnParametricCell<T, E>,
           DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum

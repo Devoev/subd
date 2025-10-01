@@ -135,7 +135,7 @@ impl <'a, T, B, Coords, Cells, const D: usize> LocalBasis<T> for GradBasisPullba
     where T: RealField,
           B: LocalGradBasis<T, D>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Elem = B::Elem>,
+          Cells: MeshTopology<Cell= B::Elem>,
           B::Coord<T>: Copy,
           B::Elem: ToElement<T, Coords::GeoDim>,
           <B::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,

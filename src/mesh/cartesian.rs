@@ -63,16 +63,16 @@ impl <const D: usize> Cartesian<D> {
 pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
 impl<const D: usize> MeshTopology for Cartesian<D> {
-    type Elem = CartCellIdx<D>;
-    type ElemIter = CartCellIter<D>;
+    type Cell = CartCellIdx<D>;
+    type CellIter = CartCellIter<D>;
 
-    fn num_elems(&self) -> usize {
+    fn num_cells(&self) -> usize {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
         dim_shape_elems.len()
     }
 
-    fn into_elem_iter(self) -> Self::ElemIter {
+    fn into_cell_iter(self) -> Self::CellIter {
         let mut dim_shape_elems = self.dim_shape;
         dim_shape_elems.shrink(1);
         dim_shape_elems.multi_range().map(CartCellIdx)

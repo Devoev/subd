@@ -389,7 +389,7 @@ impl CatmarkPatchFaces {
     /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
     pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadNodes) -> CatmarkPatchFaces {
         // Find all faces in the 1-ring neighborhood
-        let faces = (&msh.cells).into_elem_iter()
+        let faces = (&msh.cells).into_cell_iter()
             .filter(|other| other.is_touching(center))
             .collect_vec();
 

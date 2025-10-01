@@ -5,20 +5,21 @@ use std::ops::Range;
 
 /// Topology of a mesh consisting of cells.
 ///
-/// A topological mesh is essentially a collection of cells, also called elements.
-/// This trait mainly provides iteration over all mesh elements using [`Self::into_elem_iter`].
+/// A topological mesh is conceptually a collection of cells with some sort of connectivity relation.
+/// This trait mainly provides iteration over all mesh cells using [`Self::into_cell_iter`].
+/// The connectivity relation between cells is provided by each [`Self::Cell`].
 pub trait MeshTopology {
-    /// Topological element in the mesh.
-    type Elem; //: topo::Cell<Const<K>>; todo: add bound
+    /// Topological cell in the mesh.
+    type Cell; //: topo::Cell<Const<K>>; todo: add bound
 
-    /// Element iterator.
-    type ElemIter: Iterator<Item = Self::Elem>;
+    /// Cell iterator.
+    type CellIter: Iterator<Item = Self::Cell>;
 
-    /// Returns the total number of elements in this mesh.
-    fn num_elems(&self) -> usize;
+    /// Returns the total number of cells in this mesh.
+    fn num_cells(&self) -> usize;
 
-    /// Creates an iterator over all elements in this mesh.
-    fn into_elem_iter(self) -> Self::ElemIter;
+    /// Creates an iterator over all cells in this mesh.
+    fn into_cell_iter(self) -> Self::CellIter;
 }
 
 /// Storage for the geometrical vertex points of a mesh.
@@ -119,8 +120,8 @@ where T: Scalar,
     }
     
     /// Consumes `self` and returns an iterator over all topological cells in this mesh.
-    pub fn into_cell_iter(self) -> Cells::ElemIter {
-        self.cells.into_elem_iter()
+    pub fn into_cell_iter(self) -> Cells::CellIter {
+        self.cells.into_cell_iter()
     }
 }
 
@@ -131,8 +132,8 @@ where T: Scalar,
       DefaultAllocator: Allocator<Coords::GeoDim>
 {
     /// Returns an iterator over references to topological cells in this mesh.
-    pub fn cell_iter(&self) -> <&'a Cells as MeshTopology>::ElemIter {
-       self.cells.into_elem_iter()
+    pub fn cell_iter(&self) -> <&'a Cells as MeshTopology>::CellIter {
+       self.cells.into_cell_iter()
     }
 }
 

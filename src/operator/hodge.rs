@@ -36,7 +36,7 @@ impl <'a, T, Basis, Coords, Cells, const D: usize> Hodge<'a, T, Basis, Coords, C
         where T: RealField + Copy + Product<T> + Sum<T>,
               Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
               Coords: VertexStorage<T>,
-              Cells: MeshTopology<Elem = Basis::Elem>,
+              Cells: MeshTopology<Cell= Basis::Elem>,
               Basis: LocalBasis<T>,
               Quadrature: QuadratureOnParametricCell<T, Elem>,
               DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,

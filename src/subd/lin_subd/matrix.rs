@@ -46,7 +46,7 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
 
     // Apply face-midpoint stencil
     let mut idx_offset = num_nodes;
-    for (face_idx, face) in (&quad_msh.cells).into_elem_iter().enumerate() {
+    for (face_idx, face) in (&quad_msh.cells).into_cell_iter().enumerate() {
         let [a, b, c, d] = face.nodes();
         mat.push(face_idx + idx_offset, a, 0.25);
         mat.push(face_idx + idx_offset, b, 0.25);

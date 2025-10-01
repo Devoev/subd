@@ -70,14 +70,14 @@ impl <const D: usize> CartesianWithIncrements<D> {
 pub type KnotSpanIter<const D: usize> = Map<MultiProduct<IntoIter<KnotSpan>>, fn(Vec<KnotSpan>) -> [KnotSpan; D]>;
 
 impl <const D: usize> MeshTopology for CartesianWithIncrements<D> {
-    type Elem = [KnotSpan; D];
-    type ElemIter = KnotSpanIter<D>;
+    type Cell = [KnotSpan; D];
+    type CellIter = KnotSpanIter<D>;
 
-    fn num_elems(&self) -> usize {
-        self.cartesian.num_elems()
+    fn num_cells(&self) -> usize {
+        self.cartesian.num_cells()
     }
 
-    fn into_elem_iter(self) -> Self::ElemIter {
+    fn into_cell_iter(self) -> Self::CellIter {
         self.increments.iter()
             .map(|increments| increments.span_indices().collect_vec())
             .multi_cartesian_product()
