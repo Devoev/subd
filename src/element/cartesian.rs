@@ -1,12 +1,10 @@
-use std::iter::zip;
-use std::ops::RangeInclusive;
-use itertools::{repeat_n, Itertools};
-use nalgebra::{Point, Point1, RealField};
-use crate::cells::cartesian::CartCellIdx;
 use crate::element::lerp::MultiLerp;
 use crate::element::traits::Element;
 use crate::element::unit_cube::UnitCube;
-use crate::mesh::cartesian::CartMesh;
+use itertools::{repeat_n, Itertools};
+use nalgebra::{Point, Point1, RealField};
+use std::iter::zip;
+use std::ops::RangeInclusive;
 
 /// A [`K`]-dimensional cartesian cell aka. hyper-rectangle.
 /// For coordinate vectors `a` and `b` of length `K` it is defined as the set of all points
@@ -45,16 +43,6 @@ impl<T: RealField, const K: usize> CartCell<T, K> {
 
 // todo: update points and ranges methods
 impl<T: RealField + Copy, const K: usize> CartCell<T, K> {
-    /// Constructs a new [`CartCell`] from the given cell index `idx`
-    /// and mesh `msh`.
-    pub fn from_msh_and_idx(idx: CartCellIdx<K>, msh: &CartMesh<T, K>) -> Self {
-        let idx_a = idx.0;
-        let idx_b = idx_a.map(|i| i + 1);
-        let a = msh.vertex(idx_a);
-        let b = msh.vertex(idx_b);
-        CartCell::new(a, b)
-    }
-
     /// Returns an iterator over the corner points of this cell.
     pub fn points(&self) -> impl Iterator<Item=Point<T, K>> + '_ {
         repeat_n([&self.a, &self.b], K)
