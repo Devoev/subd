@@ -42,7 +42,9 @@ pub trait ToElement<T: Scalar, M: DimName>: Cell
 pub type ElemOfCell<T, C, M> = <C as ToElement<T, M>>::Elem;
 
 /// A [topological cell](Cell) with connectivity and neighboring relations.
-pub trait CellConnectivity: Cell {
+pub trait CellConnectivity: Cell 
+    where Self::Node: PartialEq<Self::Node>
+{
     /// Returns `true` if this cell is topologically connected (or adjacent) to the `other` cell
     /// by an [`M`]-dimensional sub-cell with `M <= K`. 
     /// That is if the two cells share a common `M`-cell (up to node ordering and orientation).

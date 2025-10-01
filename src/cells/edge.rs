@@ -56,7 +56,7 @@ impl Cell for DirectedEdge {
     type Node = Node;
 
     fn nodes(&self) -> &[Self::Node] {
-        &self.0.map(|node| node.0)
+        &self.0
     }
 }
 
@@ -65,7 +65,7 @@ impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for DirectedEd
     type Coords = Vec<Point<T, M>>;
 
     fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
-        LineSegment::new(self.0.map(|node| coords.vertex(node.0)))
+        LineSegment::new(self.0.map(|node| coords.vertex(node)))
     }
 }
 
@@ -108,7 +108,7 @@ impl OrderedCell for DirectedEdge {
 
 impl OrientedCell for DirectedEdge {
     fn orientation(&self) -> i8 {
-        clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
+        clamp(self.end() as i8 - self.start() as i8, -1, 1)
     }
 
     fn orientation_eq(&self, other: &Self) -> bool {
@@ -189,7 +189,7 @@ impl Cell for UndirectedEdge {
     type Node = Node;
 
     fn nodes(&self) -> &[Self::Node] {
-        &self.sorted_nodes.map(|node| node.0)
+        &self.sorted_nodes
     }
 }
 
