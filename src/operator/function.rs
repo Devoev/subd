@@ -4,6 +4,7 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
+use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
 use crate::mesh::traits::{MeshTopology, VertexStorage};
 use crate::mesh::Mesh;
@@ -15,8 +16,8 @@ use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealFi
 use std::iter::{zip, Product, Sum};
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells, Quadrature, const D: usize>(
-    msh: &Mesh<T, Coords, Cells>,
+pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, const D: usize>(
+    msh: &'a Mesh<T, Coords, Cells>,
     space: &Space<T, Basis, D>,
     quad: PullbackQuad<Quadrature, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>
@@ -24,8 +25,9 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells, Quadrature, const D:
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Basis: MeshBasis<T>,
+          Basis::Cell: ToElement<T, Coords::GeoDim, Coords = Coords, Elem = Elem>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell = Basis::Cell>,
+          &'a Cells: MeshTopology<Cell = Basis::Cell>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
@@ -34,11 +36,10 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells, Quadrature, const D:
     let mut fi = DVector::<T>::zeros(space.dim());
 
     // Iteration over all mesh elements
-    for elem in msh.elem_iter() {
+    for (elem, cell) in msh.elem_cell_iter() {
         // Build local space and local stiffness matrix
-        let (sp_local, idx) = space.local_space_with_idx(&elem);
-        let geo_elem = msh.geo_elem(&elem);
-        let fi_local = assemble_function_local(&geo_elem, &sp_local, &quad, &f);
+        let (sp_local, idx) = space.local_space_with_idx(&cell);
+        let fi_local = assemble_function_local(&elem, &sp_local, &quad, &f);
 
         // Fill global stiffness matrix with local entries
         let idx_local_global = idx.enumerate();
