@@ -8,6 +8,7 @@ use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U1};
 use std::iter::once;
+use std::ops::Index;
 use std::slice::Iter;
 use std::vec::IntoIter;
 use crate::mesh::Mesh;
@@ -19,6 +20,32 @@ use crate::mesh::Mesh;
 /// with each element pointing to its corner node indices.
 #[derive(Clone, Debug)]
 pub struct ElemVec<C>(pub Vec<C>);
+
+impl <C> Index<usize> for ElemVec<C> {
+    type Output = C;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl<C> IntoIterator for ElemVec<C> {
+    type Item = C;
+    type IntoIter = IntoIter<C>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, C> IntoIterator for &'a ElemVec<C> {
+    type Item = &'a C;
+    type IntoIter = Iter<'a, C>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
 
 impl <C> MeshTopology for ElemVec<C> {
     type Cell = C;
@@ -97,7 +124,7 @@ impl <T: RealField, C: CellConnectivity + Clone, const M: usize> ElemVertexMesh<
     }
 }
 
-impl <T: RealField, C: CellBoundary + Clone, const M: usize> ElemVertexMesh<T, C, M>
+impl <T: RealField, C: CellConnectivity + CellBoundary + Clone, const M: usize> ElemVertexMesh<T, C, M>
     where C::Dim: DimNameSub<U1> + DimNameSub<DimNameDiff<C::Dim, U1>>
 {
     /// Returns `true` if given `elem` is at the boundary of the mesh,
@@ -111,7 +138,7 @@ impl <T: RealField, C: CellBoundary + Clone, const M: usize> ElemVertexMesh<T, C
     //  would be considered boundary nodes by this function.
     /// Returns `true` if the given `node` is a boundary node,
     /// i.e. all elements containing the node are boundary elements.
-    fn is_boundary_node_general(&self, node: Node) -> bool {
+    fn is_boundary_node_general(&self, node: C::Node) -> bool {
         self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
     }
 

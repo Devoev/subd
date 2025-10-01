@@ -1,6 +1,5 @@
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, Dyn, OMatrix, OPoint, Scalar};
-use std::marker::PhantomData;
 use std::ops::Range;
 
 /// Topology of a mesh consisting of cells.
@@ -75,7 +74,7 @@ where DefaultAllocator: Allocator<M>
     }
 
     fn vertex(&self, i: usize) -> OPoint<T, M> {
-        self[i]
+        self[i].clone()
     }
 }
 
@@ -96,6 +95,6 @@ where DefaultAllocator: Allocator<M>
     }
 
     fn vertex(&self, i: usize) -> OPoint<T, Self::GeoDim> {
-        OPoint::from(self.row(i))
+        OPoint::from(self.row(i).transpose())
     }
 }

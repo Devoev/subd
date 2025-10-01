@@ -46,10 +46,10 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for 
     type CellIter = KnotSpanIter<D>;
 
     fn num_cells(&self) -> usize {
-        self.ref_mesh.num_elems()
+        self.ref_mesh.cells.num_cells()
     }
     
     fn into_cell_iter(self) -> Self::CellIter {
-        self.ref_mesh.elem_iter()
+        self.ref_mesh.into_cell_iter()
     }
 }

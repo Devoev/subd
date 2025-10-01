@@ -19,6 +19,7 @@ pub mod knot_mesh;
 ///
 /// A mesh consists of connected topological cells [`Cells`], defining the partition of the domain
 /// and vertex coordinates [`Coords`] defining the embedding into Euclidean space.
+#[derive(Copy, Clone, Debug)]
 pub struct Mesh<T, Coords, Cells> {
     /// Coordinate storage.
     pub coords: Coords,
@@ -53,7 +54,7 @@ where T: Scalar,
       DefaultAllocator: Allocator<Coords::GeoDim>
 {
     /// Returns an iterator over all topological cells in this mesh.
-    pub fn cell_iter(&self) -> <&'a Cells as MeshTopology>::CellIter {
+    pub fn cell_iter(&'a self) -> <&'a Cells as MeshTopology>::CellIter {
         self.cells.into_cell_iter()
     }
 }

@@ -53,6 +53,7 @@ impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiKnotVec<T, D> 
 }
 
 /// Topology of a structured Cartesian grid with knot increments.
+#[derive(Debug, Clone)]
 pub struct CartesianWithIncrements<const D: usize> {
     /// Topology of the structured Cartesian grid without duplicate knots.
     pub cartesian: Cartesian<D>,

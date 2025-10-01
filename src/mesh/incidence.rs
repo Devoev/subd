@@ -1,7 +1,7 @@
 use crate::cells::chain::Chain;
-use crate::cells::traits::{CellConnectivity, CellBoundary, OrientedCell, SubCell};
+use crate::cells::traits::{CellConnectivity, CellBoundary, OrientedCell, SubCell, Cell};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::traits::{MeshTopology, VertexStorage};
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameDiff, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;
@@ -15,7 +15,7 @@ use crate::cells::node::Node;
 pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_nodes = msh.num_nodes();
+    let num_nodes = msh.coords.num_nodes();
 
     assemble_incidence_mat(num_edges, num_nodes, edges.into_iter(), |mat, cell, cell_idx| {
         let  DirectedEdge([start_idx, end_idx]) = cell;
@@ -28,9 +28,9 @@ pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_faces = msh.num_elems();
+    let num_faces = msh.cells.num_cells();
 
-    assemble_incidence_mat(num_faces, num_edges, msh.cells.clone().into_iter(), |mat, cell, cell_idx| {
+    assemble_incidence_mat(num_faces, num_edges, msh.cell_iter().copied(), |mat, cell, cell_idx| {
         populate_by_orientation(mat, cell, cell_idx, &edges)
     })
 }
@@ -59,8 +59,9 @@ fn assemble_incidence_mat<C, F>(num_cells: usize, num_sub_cells: usize, cell_ite
 /// by comparing the orientation of the boundary cells with the global orientation in `sub_cells` .
 fn populate_by_orientation<C>(mat: &mut CooMatrix<i8>, cell: C, cell_idx: usize, sub_cells: &[SubCell<C>])
     where C: CellBoundary,
+          SubCell<C>: OrientedCell + Eq + CellConnectivity,
           C::Dim: DimName + DimNameSub<U1> + DimNameSub<C::Dim>,
-          SubCell<C>: OrientedCell + Eq
+          <C::SubCell as Cell>::Dim: DimNameSub<U1> + DimNameSub<<C::SubCell as Cell>::Dim>,
 {
     // Get sub-cells in boundary of current `cell`
     let boundary = cell.boundary();

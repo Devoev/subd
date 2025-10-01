@@ -42,9 +42,7 @@ pub trait ToElement<T: Scalar, M: DimName>: Cell
 pub type ElemOfCell<T, C, M> = <C as ToElement<T, M>>::Elem;
 
 /// A [topological cell](Cell) with connectivity and neighboring relations.
-pub trait CellConnectivity: Cell 
-    where Self::Node: PartialEq<Self::Node>
-{
+pub trait CellConnectivity: Cell<Node: PartialEq + Sized> {
     /// Returns `true` if this cell is topologically connected (or adjacent) to the `other` cell
     /// by an [`M`]-dimensional sub-cell with `M <= K`. 
     /// That is if the two cells share a common `M`-cell (up to node ordering and orientation).
@@ -70,7 +68,7 @@ pub trait CellConnectivity: Cell
     /// In this case `connected_to(other, U1)` returns `false`
     /// but `connected_to(other, U0)` returns `true`.
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
-    where Self::Dim: DimNameSub<M>;
+        where Self::Dim: DimNameSub<M>;
 
     /// Returns `true` if the cell contains the given `node`.
     fn contains_node(&self, node: Self::Node) -> bool {

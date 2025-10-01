@@ -1,22 +1,19 @@
 //! Special cases of an [`ElemVertexMesh`] for `Dim = 2`, i.e. where the elements are faces.
 
 use crate::cells::chain::Chain;
-use crate::cells::quad::{Quad, QuadNodes};
-use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
+use crate::cells::quad::QuadNodes;
+use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U2};
 use std::hash::Hash;
-use crate::element::line_segment::LineSegment;
+use crate::cells::node::Node;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
 
-/// Node index.
-type Node = usize;
-
 impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVertexMesh<T, F, M>
-where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
+    where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
@@ -52,7 +49,7 @@ where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + H
     }
 
     /// Calculates the valence of the given `node`, i.e. the number of edges connected to the node.
-    pub fn valence(&self, node: Node) -> usize {
+    pub fn valence(&self, node: F::Node) -> usize {
         self.edges_of_node(node).count()
     }
 

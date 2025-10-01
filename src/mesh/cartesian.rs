@@ -33,7 +33,7 @@ impl <T, const D: usize> MultiBreaks<T, D> {
     }
 }
 
-impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
+impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     type GeoDim = Const<D>;
     type NodeIdx = [usize; D];
     type NodeIter = MultiRange<[usize; D]>;
@@ -47,7 +47,7 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     }
 
     fn vertex(&self, i: [usize; D]) -> OPoint<T, Self::GeoDim> {
-        let coords = zip(i, self.breaks)
+        let coords = zip(i, &self.breaks)
             .map(|(i, zeta)| zeta[i])
             .collect_array()
             .unwrap();
@@ -78,7 +78,7 @@ impl <const D: usize> Cartesian<D> {
 /// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
 pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
-impl<const D: usize> MeshTopology for Cartesian<D> {
+impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
@@ -91,16 +91,16 @@ impl<const D: usize> MeshTopology for Cartesian<D> {
     }
 }
 
-impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
+impl<const D: usize> MeshTopology for Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
     fn num_cells(&self) -> usize {
-        (*self).num_cells()
+        (&self).num_cells()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {
-        (*self).into_cell_iter()
+        (&self).into_cell_iter()
     }
 }
 
@@ -130,8 +130,8 @@ impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
     /// The topological information for the shape and strides is constructed from the shape of the breaks.
     pub fn with_breaks(breaks: [Breaks<T>; D]) -> Self {
         let breaks = MultiBreaks::new(breaks);
-        let shape = DimShape::new_of_breaks(&breaks);
-        CartMesh::with_coords_and_cells(breaks, Cartesian::new(shape))
+        let cartesian_topology = Cartesian::new(breaks.nodes_shape);
+        CartMesh::with_coords_and_cells(breaks, cartesian_topology)
     }
 }
 
