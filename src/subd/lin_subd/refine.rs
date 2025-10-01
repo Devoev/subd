@@ -5,6 +5,7 @@ use crate::subd::lin_subd::matrix::assemble_global_mat;
 use crate::subd::lin_subd::stencil::{EdgeMidpointStencil, FaceMidpointStencil};
 use nalgebra::{Point, RealField};
 use nalgebra_sparse::CsrMatrix;
+use crate::mesh::elem_vertex::ElemVec;
 
 /// Linear subdivision of a quad-vertex mesh.
 #[derive(Debug, Clone)]
@@ -13,7 +14,7 @@ pub struct LinSubd<T: RealField, const M: usize> {
     refined_mesh: QuadVertexMesh<T, M>,
 }
 
-impl <T: RealField, const M: usize> LinSubd<T, M> {
+impl <T: RealField + Copy, const M: usize> LinSubd<T, M> {
     /// Constructs a new [`LinSubd`] from the given quad-vertex mesh.
     pub fn new(mut quad_msh: QuadVertexMesh<T, M>) -> Self {
         LinSubd::do_refine(&mut quad_msh);
@@ -31,8 +32,8 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         };
 
         // Refine every mesh face
-        for i in 0..quad_msh.elems.len() {
-            let face = quad_msh.elems[i];
+        for i in 0..quad_msh.num_elems() {
+            let face = quad_msh.cells[i];
 
             // Calculate and add new mid-edge points for each edge
             let midpoints = face
@@ -53,7 +54,7 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         }
 
         // Update faces
-        quad_msh.elems = refined_faces
+        quad_msh.cells = ElemVec(refined_faces)
     }
 
     /// Retrieves the refined quad-vertex mesh.
@@ -90,16 +91,16 @@ impl <const M: usize> LinSubd<f64, M> {
         let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
-        for elem in &quad_msh.elems {
+        for face in quad_msh.cell_iter() {
             // Get corner nodes
-            let [a, b, c, d] = elem.nodes();
+            let [a, b, c, d] = face.nodes();
 
             // Get edge midpoints
-            let [ab, bc, cd, da] = elem.undirected_edges()
+            let [ab, bc, cd, da] = face.undirected_edges()
                 .map(|edge| edge_midpoints[&edge]);
 
             // Get face midpoint
-            let m = face_midpoints[elem];
+            let m = face_midpoints[face];
 
             // Add refined faces
             add_face_nodes(a, ab, m, da);
@@ -109,11 +110,11 @@ impl <const M: usize> LinSubd<f64, M> {
         }
 
         // Update faces
-        quad_msh.elems = refined_faces
+        quad_msh.cells = ElemVec(refined_faces)
     }
 }
 
-impl <T: RealField, const M: usize> QuadVertexMesh<T, M> {
+impl <T: RealField + Copy, const M: usize> QuadVertexMesh<T, M> {
     /// Linearly subdivides this mesh.
     pub fn lin_subd(self) -> LinSubd<T, M> {
         LinSubd::new(self)

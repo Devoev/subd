@@ -5,6 +5,7 @@ use crate::cells::traits::ToElement;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{center, RealField};
 use std::collections::HashMap;
+use crate::mesh::traits::VertexStorage;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text
@@ -35,10 +36,10 @@ impl EdgeMidpointStencil {
         quad_msh: &mut QuadVertexMesh<T, M>,
         edge: UndirectedEdge,
     ) -> Node {
-        let a = quad_msh.coords(edge.first());
-        let b = quad_msh.coords(edge.second());
+        let a = quad_msh.coords.vertex(edge.first());
+        let b = quad_msh.coords.vertex(edge.second());
         let node = quad_msh.num_nodes();
-        quad_msh.coords.push(center(a, b));
+        quad_msh.coords.push(center(&a, &b));
         self.edge_midpoints.insert(edge, node);
         node
     }
@@ -78,7 +79,7 @@ impl FaceMidpointStencil {
 
     /// Refines the given `face` and adds the coordinates of the new midpoint to the `quad_msh`.
     /// The index of the midpoint node is returned.
-    pub fn refine<T: RealField, const M: usize>(
+    pub fn refine<T: RealField + Copy, const M: usize>(
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         face: QuadNodes,

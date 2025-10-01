@@ -5,12 +5,12 @@ use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::mesh::traits::MeshTopology;
-use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
-use std::vec;
-use itertools::Itertools;
-use crate::cells::traits::CellConnectivity;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use itertools::Itertools;
+use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
+use std::vec;
+use crate::cells::traits::Cell;
 
 /// Edge basis functions for Catmull-Clark subdivision.
 pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
@@ -30,8 +30,8 @@ impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for CatmarkEdgeBasis
     type LocalBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
-    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
-        let patch = CatmarkPatch::from_msh(self.0, elem);
+    fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
+        let patch = CatmarkPatch::from_msh(self.0, cell);
         match patch {
             CatmarkPatch::Regular(_) => CatmarkPatchEdgeBasis::Regular,
             CatmarkPatch::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
@@ -40,17 +40,17 @@ impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for CatmarkEdgeBasis
         }
     }
 
-    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
+    fn global_indices(&self, cell: &Self::Cell) -> Self::GlobalIndices {
         // todo: In order to give global indices for edge basis functions,
         //  the edges need a global ordering. This isn't implemented yet.
         //  The code below works, but should probably be updated, 
         //  because there aren't num_nodes * 2 edges
         
         let num_nodes = self.0.num_nodes();
-        let idx_x = elem.nodes().iter().map(|node| node.0);
-        let idx_y = elem.nodes().iter().map(|node| node.0 + num_nodes);
-        let indices = idx_x.chain(idx_y).collect_vec();
-        indices.into_iter()
+        let mut idx_x = cell.nodes().to_vec();
+        let idx_y = cell.nodes().iter().map(|node| node + num_nodes);
+        idx_x.extend(idx_y);
+        idx_x.into_iter()
     }
 }
 
