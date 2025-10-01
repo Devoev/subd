@@ -1,4 +1,3 @@
-use crate::cells::unit_cube::UnitCube;
 use crate::quadrature::traits::Quadrature;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 use itertools::Itertools;
@@ -6,6 +5,7 @@ use nalgebra::RealField;
 use std::iter::Sum;
 use std::marker::PhantomData;
 use numeric_literals::replace_float_literals;
+use crate::element::unit_cube::UnitCube;
 
 /// Quadrature rule on the unit square in [subdivision form](SubdUnitSquare).
 #[derive(Clone, Copy, Debug)]

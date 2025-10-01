@@ -1,20 +1,18 @@
 use crate::cells;
-use crate::cells::geo;
 use crate::cells::edge::DirectedEdge;
 use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
-use crate::cells::unit_cube::UnitCube;
+use crate::cells::traits::{Cell, ToElement};
 use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::traits::{MeshTopology, VertexStorage};
 use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
 use crate::subd::catmull_clark::map::CatmarkMap;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
-use itertools::Itertools;
-use nalgebra::{Const, DefaultAllocator, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U2};
-use nalgebra::allocator::Allocator;
-use num_traits::ToPrimitive;
-use crate::cells::traits::{Cell, ToElement};
-use crate::mesh::traits::VertexStorage;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
+use itertools::Itertools;
+use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
+use num_traits::ToPrimitive;
+use crate::element::traits::Element;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]
@@ -95,11 +93,11 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T> for CatmarkPatch<T, M> {
-    type ParametricCell = SubdUnitSquare;
+impl <T: RealField + Copy + ToPrimitive, const M: usize> Element<T> for CatmarkPatch<T, M> {
+    type ParametricElement = SubdUnitSquare;
     type GeoMap = CatmarkMap<T, M>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         match self {
             CatmarkPatch::Irregular(_, _) => SubdUnitSquare::Irregular,
             _ => SubdUnitSquare::Regular
@@ -270,7 +268,7 @@ impl Cell for CatmarkPatchNodes {
     type Node = usize;
 
     fn nodes(&self) -> &[Self::Node] {
-        self.as_slice().iter().map(|node| node.0).collect()
+        self.as_slice().iter().map(|node| node).collect()
     }
 }
 
@@ -282,7 +280,7 @@ impl <T: RealField + Copy + ToPrimitive, const M: usize> ToElement<T, Const<M>> 
         let coords = self
             .as_slice()
             .iter()
-            .map(|node| coords.vertex(node.0));
+            .map(|node| coords.vertex(*node));
         match self {
             CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
             CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
@@ -391,7 +389,7 @@ impl CatmarkPatchFaces {
     /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
     pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadNodes) -> CatmarkPatchFaces {
         // Find all faces in the 1-ring neighborhood
-        let faces = msh.elems.iter()
+        let faces = (&msh.cells).into_elem_iter()
             .filter(|other| other.is_touching(center))
             .collect_vec();
 
@@ -498,7 +496,7 @@ impl CatmarkPatchFaces {
         faces_irregular.rotate_right(1);
 
         // Find regular faces n..n+4
-        let mut faces_regular = vec![QuadNodes([Node(0); 4]); 5]; // todo: replace with better default value
+        let mut faces_regular = vec![QuadNodes([0; 4]); 5]; // todo: replace with better default value
 
         // Find faces connected to edges 1 and 2
         for (edge_dix, &edge) in center.edges()[1..=2].iter().enumerate() {

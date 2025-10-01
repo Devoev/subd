@@ -246,24 +246,24 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
 
     // Apply node smoothing stencil
     for node_idx in 0..num_nodes {
-        let one_ring = QuadNodesOneRing::find(quad_msh, Node(node_idx));
+        let one_ring = QuadNodesOneRing::find(quad_msh, node_idx);
         match one_ring {
             QuadNodesOneRing::Regular([n0, n1, n2, n3, n4, n5, n6, n7, n8]) => {
-                mat.push(node_idx, n0.0, 0.0625);
-                mat.push(node_idx, n2.0, 0.0625);
-                mat.push(node_idx, n6.0, 0.0625);
-                mat.push(node_idx, n8.0, 0.0625);
-                mat.push(node_idx, n1.0, 0.125);
-                mat.push(node_idx, n3.0, 0.125);
-                mat.push(node_idx, n5.0, 0.125);
-                mat.push(node_idx, n7.0, 0.125);
-                mat.push(node_idx, n4.0, 0.25);
+                mat.push(node_idx, n0, 0.0625);
+                mat.push(node_idx, n2, 0.0625);
+                mat.push(node_idx, n6, 0.0625);
+                mat.push(node_idx, n8, 0.0625);
+                mat.push(node_idx, n1, 0.125);
+                mat.push(node_idx, n3, 0.125);
+                mat.push(node_idx, n5, 0.125);
+                mat.push(node_idx, n7, 0.125);
+                mat.push(node_idx, n4, 0.25);
             }
             QuadNodesOneRing::Boundary([n0, n1, n2, ..]) => {
                 // Interpolatory smoothing
-                mat.push(node_idx, n0.0, 0.125);
-                mat.push(node_idx, n1.0, 0.75);
-                mat.push(node_idx, n2.0, 0.125);
+                mat.push(node_idx, n0, 0.125);
+                mat.push(node_idx, n1, 0.75);
+                mat.push(node_idx, n2, 0.125);
             }
             QuadNodesOneRing::Corner(_) => {
                 // No smoothing
@@ -276,16 +276,16 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
 
                 // Set weight for vertex node
                 let v = nodes.pop_front().unwrap();
-                mat.push(node_idx, v.0, 1.0 - beta - gamma);
+                mat.push(node_idx, v, 1.0 - beta - gamma);
 
                 // Set weights for edge nodes
                 for e in nodes.iter().step_by(2) {
-                    mat.push(node_idx, e.0, beta / (n as f64));
+                    mat.push(node_idx, e, beta / (n as f64));
                 }
 
                 // Set weights for face nodes
                 for f in nodes.iter().skip(1).step_by(2) {
-                    mat.push(node_idx, f.0, gamma / (n as f64));
+                    mat.push(node_idx, f, gamma / (n as f64));
                 }
             }
         }
@@ -293,13 +293,13 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
 
     // Apply face-midpoint stencil
     let mut idx_offset = num_nodes;
-    for (face_idx, face) in quad_msh.elems.iter().enumerate() {
-        let [Node(a), Node(b), Node(c), Node(d)] = face.nodes();
+    for (face_idx, face) in (&quad_msh.cells).into_elem_iter().enumerate() {
+        let [a, b, c, d] = face.nodes();
         mat.push(face_idx + idx_offset, a, 0.25);
         mat.push(face_idx + idx_offset, b, 0.25);
         mat.push(face_idx + idx_offset, c, 0.25);
         mat.push(face_idx + idx_offset, d, 0.25);
-        face_midpoints.insert(*face, Node(face_idx + idx_offset));
+        face_midpoints.insert(*face, face_idx + idx_offset);
     }
 
     // Apply edge-midpoint stencil
@@ -308,19 +308,19 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
         let one_ring = QuadNodesEdgeOneRing::find(quad_msh, edge);
         match one_ring {
             QuadNodesEdgeOneRing::Regular([n0, n1, n2, n3, n4, n5]) => {
-                mat.push(edge_idx + idx_offset, n0.0, 0.0625);
-                mat.push(edge_idx + idx_offset, n1.0, 0.0625);
-                mat.push(edge_idx + idx_offset, n2.0, 0.375);
-                mat.push(edge_idx + idx_offset, n3.0, 0.375);
-                mat.push(edge_idx + idx_offset, n4.0, 0.0625);
-                mat.push(edge_idx + idx_offset, n5.0, 0.0625);
+                mat.push(edge_idx + idx_offset, n0, 0.0625);
+                mat.push(edge_idx + idx_offset, n1, 0.0625);
+                mat.push(edge_idx + idx_offset, n2, 0.375);
+                mat.push(edge_idx + idx_offset, n3, 0.375);
+                mat.push(edge_idx + idx_offset, n4, 0.0625);
+                mat.push(edge_idx + idx_offset, n5, 0.0625);
             }
             QuadNodesEdgeOneRing::Boundary([a, b]) => {
-                mat.push(edge_idx + idx_offset, a.0, 0.5);
-                mat.push(edge_idx + idx_offset, b.0, 0.5);
+                mat.push(edge_idx + idx_offset, a, 0.5);
+                mat.push(edge_idx + idx_offset, b, 0.5);
             }
         }
-        edge_midpoints.insert(edge.into(), Node(edge_idx + idx_offset));
+        edge_midpoints.insert(edge.into(), edge_idx + idx_offset);
     }
 
     (mat, face_midpoints, edge_midpoints)
