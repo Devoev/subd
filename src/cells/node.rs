@@ -1,6 +1,5 @@
-use crate::cells::traits::{Cell, CellConnectivity, ToElement};
-use crate::mesh::traits::VertexStorage;
-use nalgebra::{Const, DimName, DimNameSub, Point, Scalar, U0};
+use crate::cells::traits::{Cell, CellConnectivity};
+use nalgebra::{DimName, DimNameSub, U0};
 
 /// Node in a mesh represented by a global *linear* index.
 pub type Node = usize;
@@ -10,7 +9,7 @@ impl Cell for Node {
     type Node = usize;
 
     fn nodes(&self) -> &[Self::Node] {
-        &[*self]
+        std::slice::from_ref(self)
     }
 }
 
