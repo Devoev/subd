@@ -1,6 +1,6 @@
 use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -73,13 +73,13 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn error_squared<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= Basis::Elem>,
-          Basis: LocalBasis<T>,
-          Basis::Elem: ToElement<T, Coords::GeoDim>,
-          <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Cells: MeshTopology<Cell= Basis::Cell>,
+          Basis: MeshBasis<T>,
+          Basis::Cell: ToElement<T, Coords::GeoDim>,
+          <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
-          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf
     {
         // Iterate over every element and calculate error element-wise
@@ -90,7 +90,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
                 let ref_elem = geo_elem.ref_cell();
 
                 // Evaluate functions at quadrature nodes of element
-                let uh = quad.nodes_ref::<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
+                let uh = quad.nodes_ref::<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>(&ref_elem).map(|x| uh.eval_on_elem(&elem, x));
                 let u = quad.nodes_elem(&geo_elem).map(u);
 
                 // Calculate L2 error on element
@@ -105,13 +105,13 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn error<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= Basis::Elem>,
-          Basis: LocalBasis<T>,
-          Basis::Elem: ToElement<T, Coords::GeoDim>,
-          <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Cells: MeshTopology<Cell= Basis::Cell>,
+          Basis: MeshBasis<T>,
+          Basis::Cell: ToElement<T, Coords::GeoDim>,
+          <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           U: Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>,
-          Quadrature: QuadratureOnParametricCell<T, <Basis::Elem as ToElement<T, Coords::GeoDim>>::Elem>,
-          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
+          Quadrature: QuadratureOnParametricCell<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem>,
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
     {
         self.error_squared(uh, u, quad).sqrt()

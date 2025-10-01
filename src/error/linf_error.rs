@@ -1,7 +1,7 @@
 use crate::diffgeo::chart::Chart;
 use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
 use crate::mesh::traits::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -41,12 +41,12 @@ impl<'a, M> LInfNorm<'a, M> {
     /// by evaluating the functions at the element centroids.
     pub fn error_est<T, B, const D: usize, U>(&self, uh: &LinCombination<T, B, D>, u: &U) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M: Mesh<'a, T, D, D, Elem = B::Cell>,
           M::GeoElem: HasDim<T, D> + HasBasisCoord<T, B>,
-          B: LocalBasis<T>,
+          B: MeshBasis<T>,
           B::Coord<T>: From<[T; D]> + Clone,
           U: Fn(Point<T, D>) -> OVector<T, B::NumComponents>,
-          DefaultAllocator: EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>,
+          DefaultAllocator: EvalBasisAllocator<B::LocalBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::LocalBasis>,
     {
         // Iterate over element centroids and calculate norm
         self.msh.elem_iter()

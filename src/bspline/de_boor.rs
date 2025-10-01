@@ -1,5 +1,5 @@
 use crate::basis::cart_prod;
-use crate::basis::local::{FindElem, LocalBasis};
+use crate::basis::local::{FindElem, MeshBasis};
 use crate::basis::tensor_prod::MultiProd;
 use crate::basis::traits::Basis;
 use crate::bspline::de_boor_span::DeBoorSpan;
@@ -78,23 +78,23 @@ impl<T: RealField> Basis for DeBoor<T> {
     }
 }
 
-impl <T: RealField + Copy> LocalBasis<T> for DeBoor<T> {
-    type Elem = KnotSpan;
-    type ElemBasis = DeBoorSpan<T>;
+impl <T: RealField + Copy> MeshBasis<T> for DeBoor<T> {
+    type Cell = KnotSpan;
+    type LocalBasis = DeBoorSpan<T>;
     type GlobalIndices = RangeInclusive<usize>;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         // todo: replace knots.clone() for efficiency
         DeBoorSpan::new(self.knots.clone(), self.degree, *elem)
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         elem.nonzero_indices(self.degree)
     }
 }
 
 impl <T: RealField + Copy> FindElem<T> for DeBoor<T> {
-    fn find_elem(&self, x: T) -> Self::Elem {
+    fn find_elem(&self, x: T) -> Self::Cell {
         self.find_span(x).unwrap()
     }
 }

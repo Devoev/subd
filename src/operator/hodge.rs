@@ -1,5 +1,5 @@
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
 use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
@@ -36,10 +36,10 @@ impl <'a, T, Basis, Coords, Cells, const D: usize> Hodge<'a, T, Basis, Coords, C
         where T: RealField + Copy + Product<T> + Sum<T>,
               Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
               Coords: VertexStorage<T>,
-              Cells: MeshTopology<Cell= Basis::Elem>,
-              Basis: LocalBasis<T>,
+              Cells: MeshTopology<Cell= Basis::Cell>,
+              Basis: MeshBasis<T>,
               Quadrature: QuadratureOnParametricCell<T, Elem>,
-              DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + Allocator<Coords::GeoDim>,
+              DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + Allocator<Coords::GeoDim>,
               Const<D>: DimMinSelf + ToTypenum
     {
         // Create empty matrix

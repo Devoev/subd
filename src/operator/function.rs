@@ -2,7 +2,7 @@
 
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
 use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -22,11 +22,11 @@ pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: us
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           E: HasBasisCoord<T, Basis> + HasDim<T, D>,
-          Basis: LocalBasis<T>,
+          Basis: MeshBasis<T>,
           Coords: VertexStorage<T>, 
-          Cells: MeshTopology<Cell= Basis::Elem>,
+          Cells: MeshTopology<Cell= Basis::Cell>,
           Quadrature: QuadratureOnParametricCell<T, E>,
-          DefaultAllocator: EvalBasisAllocator<Basis::ElemBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
 {
     // Create empty matrix

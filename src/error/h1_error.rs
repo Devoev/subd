@@ -1,7 +1,7 @@
 use crate::basis::eval::EvalGradAllocator;
 use crate::basis::grad::{GradBasis, GradBasisPullback};
 use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalGradBasis;
+use crate::basis::local::MeshGradBasis;
 use crate::cells::geo::{Cell, HasDim};
 use crate::diffgeo::chart::Chart;
 use crate::error::l2_error::L2Norm;
@@ -54,17 +54,17 @@ impl<'a, M> H1Norm<'a, M> {
     /// with gradient `u_grad`, using the quadrature rule `quad`.
     pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M: Mesh<'a, T, D, D, Elem = B::Cell>,
           M::GeoElem: Cell<T> + HasDim<T, D>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
-          B: LocalGradBasis<T, D> + Clone,
+          B: MeshGradBasis<T, D> + Clone,
           B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: QuadratureOnParametricCell<T, M::GeoElem>,
           Const<D>: DimMinSelf,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
-          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
+          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + SelectCoeffsAllocator<B::LocalBasis>,
+          DefaultAllocator: EvalGradAllocator<GradBasis<B::LocalBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::LocalBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
         // Compute gradient of uh (todo: possibly add as input argument?)
         // todo: very ugly. When GradBasisPullback gets refactored, update this code!
@@ -83,17 +83,17 @@ impl<'a, M> H1Norm<'a, M> {
     /// using the quadrature rule `quad`.
     pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
+          M: Mesh<'a, T, D, D, Elem = B::Cell>,
           M::GeoElem: Cell<T> + HasDim<T, D>,
           <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
-          B: LocalGradBasis<T, D> + Clone,
+          B: MeshGradBasis<T, D> + Clone,
           B::Coord<T>: Copy,
           U: Fn(Point<T, D>) -> OVector<T, U1>,
           UGrad: Fn(Point<T, D>) -> SVector<T, D>,
           Q: QuadratureOnParametricCell<T, M::GeoElem>,
           Const<D>: DimMinSelf,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
-          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
+          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + SelectCoeffsAllocator<B::LocalBasis>,
+          DefaultAllocator: EvalGradAllocator<GradBasis<B::LocalBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::LocalBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
     {
         self.error_squared(uh, u, u_grad, quad).sqrt()
     }

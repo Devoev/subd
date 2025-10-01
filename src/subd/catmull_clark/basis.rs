@@ -1,5 +1,5 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::cells::traits::CellConnectivity;
@@ -27,18 +27,18 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> LocalBasis<T> for CatmarkBasis<'a, T, M> {
-    type Elem = &'a CatmarkPatchNodes;
-    type ElemBasis = CatmarkPatchBasis;
+impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> MeshBasis<T> for CatmarkBasis<'a, T, M> {
+    type Cell = &'a CatmarkPatchNodes;
+    type LocalBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         // todo: move this to `elem` function on CellTopo or else
         let patch = CatmarkPatch::from_msh(self.0, elem);
         patch.basis()
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         // todo: possibly remove allocation
         let indices = elem.nodes().iter().map(|node| node.0).collect_vec();
         indices.into_iter()

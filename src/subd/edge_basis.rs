@@ -1,7 +1,7 @@
 // todo: this is work in progress
 
 use crate::basis::eval::EvalBasis;
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::mesh::traits::MeshTopology;
@@ -25,12 +25,12 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for CatmarkEdgeBasis<'a, T, M> {
-    type Elem = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
-    type ElemBasis = CatmarkPatchEdgeBasis;
+impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for CatmarkEdgeBasis<'a, T, M> {
+    type Cell = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
+    type LocalBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         let patch = CatmarkPatch::from_msh(self.0, elem);
         match patch {
             CatmarkPatch::Regular(_) => CatmarkPatchEdgeBasis::Regular,
@@ -40,7 +40,7 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for CatmarkEdgeBasi
         }
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         // todo: In order to give global indices for edge basis functions,
         //  the edges need a global ordering. This isn't implemented yet.
         //  The code below works, but should probably be updated, 

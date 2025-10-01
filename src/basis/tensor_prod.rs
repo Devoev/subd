@@ -1,5 +1,5 @@
 use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::{FindElem, LocalBasis};
+use crate::basis::local::{FindElem, MeshBasis};
 use crate::basis::traits::Basis;
 use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
 use crate::index::multi_index::MultiIndex;
@@ -115,24 +115,24 @@ impl<T, B, const D: usize> EvalGrad<T, D> for MultiProd<T, B, D>
 
 // todo: also implement DiffBasis and HgradBasis
 
-impl<T, B, const D: usize> LocalBasis<T> for MultiProd<T, B, D>
+impl<T, B, const D: usize> MeshBasis<T> for MultiProd<T, B, D>
     where T: RealField + Copy,
-          B: LocalBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>,
-          B::ElemBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
+          B: MeshBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>,
+          B::LocalBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
-    type Elem = [B::Elem; D]; // todo: possibly change to MultiProd<B::Elem>
-    type ElemBasis = MultiProd<T, B::ElemBasis, D>;
+    type Cell = [B::Cell; D]; // todo: possibly change to MultiProd<B::Elem>
+    type LocalBasis = MultiProd<T, B::LocalBasis, D>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
     
     // todo: update this implementation by making HyperRectangle actually a MultiProd<Interval>
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         let bases = zip(&self.bases, elem)
-            .map(|(b, interval)| b.elem_basis(interval))
+            .map(|(b, interval)| b.local_basis(interval))
             .collect_array().unwrap();
         MultiProd::new(bases)
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         let strides = self.strides();
         zip(&self.bases, elem)
             .map(|(b, b_elem)| b.global_indices(b_elem))
@@ -145,9 +145,9 @@ impl<T, B, const D: usize> LocalBasis<T> for MultiProd<T, B, D>
 impl<T, B, const D: usize> FindElem<T> for MultiProd<T, B, D>
     where T: RealField + Copy,
           B: FindElem<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>,
-          B::ElemBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
+          B::LocalBasis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
-    fn find_elem(&self, x: Self::Coord<T>) -> Self::Elem {
+    fn find_elem(&self, x: Self::Coord<T>) -> Self::Cell {
         zip(&self.bases, x)
             .map( |(bi, xi)| bi.find_elem(xi))
             .collect_array().unwrap()

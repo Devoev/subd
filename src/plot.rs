@@ -21,7 +21,7 @@ use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
 use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::cells::traits;
 use crate::cells::traits::ToElement;
@@ -135,9 +135,9 @@ pub fn eval_at_vertices<'a, T, Msh, B>(msh: &'a Msh, fh: LinCombination<T, B, 2>
     where T: RealField,
           Msh: Mesh<'a, T, 2, 2>,
           Msh::GeoElem: HasBasisCoord<T, B>,
-          B: LocalBasis<T, Elem = Msh::Elem, Coord<T> = (T, T)>,
+          B: MeshBasis<T, Cell= Msh::Elem, Coord<T> = (T, T)>,
           // B::ElemBasis: Basis<Coord<T> = (T, T)>,
-          DefaultAllocator: CellAllocator<T, Msh::GeoElem> + EvalBasisAllocator<B::ElemBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::ElemBasis>
+          DefaultAllocator: CellAllocator<T, Msh::GeoElem> + EvalBasisAllocator<B::LocalBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::LocalBasis>
 {
     let vertices_to_err = msh.elem_iter()
         .flat_map(|elem| {

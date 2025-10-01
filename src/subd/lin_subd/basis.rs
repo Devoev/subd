@@ -2,7 +2,7 @@
 //! todo: move this elsewhere. For example a separate FE module?
 
 use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::LocalBasis;
+use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -28,16 +28,16 @@ impl <'a, T: RealField, const M: usize> Basis for PlBasisQuad<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for PlBasisQuad<'a, T, M> {
-    type Elem = &'a QuadNodes;
-    type ElemBasis = LinBasisQuad;
+impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for PlBasisQuad<'a, T, M> {
+    type Cell = &'a QuadNodes;
+    type LocalBasis = LinBasisQuad;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
-    fn elem_basis(&self, _elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, _elem: &Self::Cell) -> Self::LocalBasis {
         LinBasisQuad
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         elem.0.into_iter().map(|n| n)
     }
 }

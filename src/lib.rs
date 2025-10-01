@@ -21,7 +21,7 @@ pub mod element;
 mod tests {
     use crate::basis::cart_prod;
     use crate::basis::eval::EvalDerivs;
-    use crate::basis::local::{FindElem, LocalBasis};
+    use crate::basis::local::{FindElem, MeshBasis};
     use crate::basis::space::Space;
     use crate::bspline::de_boor;
     use crate::bspline::de_boor::MultiDeBoor;
@@ -192,7 +192,7 @@ mod tests {
         let elem = basis.find_elem(x);
         println!(
             "Derivatives of basis: {}",
-            basis.elem_basis(&elem).eval_derivs::<3>(0.8)
+            basis.local_basis(&elem).eval_derivs::<3>(0.8)
         );
 
         // Jacobian

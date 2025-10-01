@@ -1,6 +1,6 @@
 use crate::basis::eval::{EvalBasis, EvalGrad, EvalGradAllocator};
 use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::{LocalBasis, LocalGradBasis};
+use crate::basis::local::{MeshBasis, MeshGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
 use crate::cells::traits::Cell;
@@ -34,21 +34,21 @@ impl <T: RealField, B: EvalGrad<T, D>, const D: usize> EvalBasis<T> for GradBasi
     }
 }
 
-/// Implement [`LocalBasis`] if `B` is also a local basis.
-impl <T, B, const D: usize> LocalBasis<T> for GradBasis<B, D>
+/// Implement [`MeshBasis`] if `B` is also a local basis.
+impl <T, B, const D: usize> MeshBasis<T> for GradBasis<B, D>
 where T: RealField,
-      B: LocalGradBasis<T, D>,
-      DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
+      B: MeshGradBasis<T, D>,
+      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
 {
-    type Elem = B::Elem;
-    type ElemBasis = GradBasis<B::ElemBasis, D>;
+    type Cell = B::Cell;
+    type LocalBasis = GradBasis<B::LocalBasis, D>;
     type GlobalIndices = B::GlobalIndices;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        GradBasis(self.0.elem_basis(elem))
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
+        GradBasis(self.0.local_basis(elem))
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         self.0.global_indices(elem)
     }
 }
@@ -58,8 +58,8 @@ pub type GradSpace<T, B, const D: usize> = Space<T, GradBasis<B, D>, D>;
 
 impl <T, B, const D: usize> Space<T, B, D>
 where T: RealField,
-      B: LocalGradBasis<T, D>,
-      DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
+      B: MeshGradBasis<T, D>,
+      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
 {
     /// Returns the gradient of this space.
     pub fn grad(self) -> GradSpace<T, B, D> {
@@ -70,8 +70,8 @@ where T: RealField,
 
 impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
     where T: ComplexField,
-          B: LocalGradBasis<T::RealField, D>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>
+          B: MeshGradBasis<T::RealField, D>,
+          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
 {
     /// Returns the gradient of this linear combination in the space `grad_space`.
     pub fn grad(self, grad_space: &'a GradSpace<T::RealField, B, D>) -> LinCombination<'a, T, GradBasis<B, D>, D> {
@@ -133,27 +133,27 @@ where
     }
 }
 
-impl <'a, T, B, Coords, Cells, const D: usize> LocalBasis<T> for GradBasisPullback<'a, T, B, Coords, Cells, D>
+impl <'a, T, B, Coords, Cells, const D: usize> MeshBasis<T> for GradBasisPullback<'a, T, B, Coords, Cells, D>
     where T: RealField,
-          B: LocalGradBasis<T, D>,
+          B: MeshGradBasis<T, D>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= B::Elem>,
+          Cells: MeshTopology<Cell= B::Cell>,
           B::Coord<T>: Copy,
-          B::Elem: ToElement<T, Coords::GeoDim>,
-          <B::Elem as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + ElemAllocator<T, <B::Elem as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
+          B::Cell: ToElement<T, Coords::GeoDim>,
+          <B::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
+          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + ElemAllocator<T, <B::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {
-    type Elem = B::Elem;
-    type ElemBasis = GradBasisPullbackLocal<<<B::Elem as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, B::ElemBasis, D>;
+    type Cell = B::Cell;
+    type LocalBasis = GradBasisPullbackLocal<<<B::Cell as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, B::LocalBasis, D>;
     type GlobalIndices = B::GlobalIndices;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        let parametric_basis = self.grad_basis.elem_basis(elem);
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
+        let parametric_basis = self.grad_basis.local_basis(elem);
         let chart = self.msh.geo_elem(elem).geo_map();
         GradBasisPullbackLocal { chart, grad_basis: parametric_basis }
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         self.grad_basis.global_indices(elem)
     }
 }
