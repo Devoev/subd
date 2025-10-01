@@ -5,37 +5,49 @@ use crate::mesh::traits::{MeshTopology, VertexStorage};
 use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::{Const, OPoint, Point, RealField, Scalar};
-use std::iter::{zip, Map, Once};
+use std::iter::{zip, Map};
 
 /// `D`-variate cartesian product of [breakpoints](Breaks).
 ///
 /// Given `d` breakpoint vectors `zi`, the cartesian product is defined as
 /// `z = z1 × ... × zd`. The elements of that product are gridpoints in a cartesian mesh.
 #[derive(Clone, Debug)]
-pub struct MultiBreaks<T, const D: usize>([Breaks<T>; D]);
+pub struct MultiBreaks<T, const D: usize> {
+    /// Breaks in each parametric direction.
+    breaks: [Breaks<T>; D],
+
+    /// Shape of the structured gridpoints in each parametric direction.
+    nodes_shape: DimShape<D>
+}
 
 impl <T, const D: usize> MultiBreaks<T, D> {
+    /// Constructs new `MultiBreaks` from the given `breaks` in each parametric direction.
+    pub fn new(breaks: [Breaks<T>; D]) -> Self {
+        let nodes_shape = DimShape::new_of_breaks(&breaks);
+        MultiBreaks { breaks, nodes_shape }
+    }
+
     /// Returns the internal array of breaks in each parametric direction.
     pub fn as_breaks(&self) -> &[Breaks<T>; D] {
-        &self.0
+        &self.breaks
     }
 }
 
 impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     type GeoDim = Const<D>;
     type NodeIdx = [usize; D];
-    type NodeIter = Once<[usize; D]>; // todo
+    type NodeIter = MultiRange<[usize; D]>;
 
     fn num_nodes(&self) -> usize {
-        self.0.iter().map(|zeta| zeta.len()).product()
+        self.nodes_shape.len()
     }
 
     fn node_iter(&self) -> Self::NodeIter {
-        todo!("Implement node using multi cartesian product");
+        self.nodes_shape.multi_range()
     }
 
     fn vertex(&self, i: [usize; D]) -> OPoint<T, Self::GeoDim> {
-        let coords = zip(i, self.0)
+        let coords = zip(i, self.breaks)
             .map(|(i, zeta)| zeta[i])
             .collect_array()
             .unwrap();
@@ -46,18 +58,20 @@ impl <T: Scalar, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
 /// Topology of a structured Cartesian grid.
 #[derive(Clone, Debug)]
 pub struct Cartesian<const D: usize> {
-    /// Shape of the structured nodes in each parametric directions.
-    pub dim_shape: DimShape<D>, // todo: possibly only save element info instead of node info
+    /// Shape of the cartesian cells in each parametric directions.
+    pub cells_shape: DimShape<D>,
 
     /// Strides for each parametric direction.
     pub strides: Strides<D>
 }
 
 impl <const D: usize> Cartesian<D> {
-    /// Constructs a new [`Cartesian`] topology of the given `shape`.
-    pub fn with_shape(shape: DimShape<D>) -> Self {
-        let strides = Strides::from(shape);
-        Cartesian { dim_shape: shape, strides }
+    /// Constructs a new [`Cartesian`] topology of the given `nodes_shape`.
+    pub fn new(mut nodes_shape: DimShape<D>) -> Self {
+        // There are exactly one less cells than nodes in each direction
+        nodes_shape.shrink(1);
+        let strides = Strides::from(nodes_shape);
+        Cartesian { cells_shape: nodes_shape, strides }
     }
 }
 
@@ -69,15 +83,11 @@ impl<const D: usize> MeshTopology for Cartesian<D> {
     type CellIter = CartCellIter<D>;
 
     fn num_cells(&self) -> usize {
-        let mut dim_shape_elems = self.dim_shape;
-        dim_shape_elems.shrink(1);
-        dim_shape_elems.len()
+        self.cells_shape.len()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {
-        let mut dim_shape_elems = self.dim_shape;
-        dim_shape_elems.shrink(1);
-        dim_shape_elems.multi_range().map(CartCellIdx)
+        self.cells_shape.multi_range().map(CartCellIdx)
     }
 }
 
@@ -119,15 +129,15 @@ impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
     ///
     /// The topological information for the shape and strides is constructed from the shape of the breaks.
     pub fn with_breaks(breaks: [Breaks<T>; D]) -> Self {
-        let breaks = MultiBreaks(breaks);
+        let breaks = MultiBreaks::new(breaks);
         let shape = DimShape::new_of_breaks(&breaks);
-        CartMesh::with_coords_and_cells(breaks, Cartesian::with_shape(shape))
+        CartMesh::with_coords_and_cells(breaks, Cartesian::new(shape))
     }
 }
 
 impl<T: RealField, const D: usize> CartMesh<T, D> {
     /// Returns an iterator over all multi-indices in this grid.
     pub fn indices(&self) -> MultiRange<[usize; D]> {
-        self.cells.dim_shape.multi_range()
+        self.cells.cells_shape.multi_range()
     }
 }

@@ -63,7 +63,7 @@ pub struct CartesianWithIncrements<const D: usize> {
 impl <const D: usize> CartesianWithIncrements<D> {
     /// Constructs a new `CartesianWithIncrements` with the given `shape` and `increments`.
     pub fn with_shape_and_increments(shape: DimShape<D>, increments: [Increments; D]) -> Self {
-        CartesianWithIncrements { cartesian: Cartesian::with_shape(shape), increments }
+        CartesianWithIncrements { cartesian: Cartesian::new(shape), increments }
     }
 }
 
