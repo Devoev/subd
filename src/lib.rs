@@ -38,29 +38,28 @@ mod tests {
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::mesh::knot_mesh::KnotMesh;
-    use crate::mesh::traits::{Mesh, MeshTopology};
     use crate::operator::function::assemble_function;
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
     use crate::quadrature::pullback::{GaussLegendrePullback, PullbackQuad};
     use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
-    use crate::quadrature::traits::Quadrature;
     use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
     use crate::subd::catmull_clark::patch::CatmarkPatch;
+    use crate::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
     use crate::subd::edge_basis::CatmarkEdgeBasis;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowDVector, RowSVector, SMatrix, SVector, U2};
+    use nalgebra::{matrix, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowDVector, RowSVector, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
+    use crate::element::traits::Element;
 
     // #[test]
     fn splines() {
@@ -223,13 +222,12 @@ mod tests {
         // let quad = GaussLegendre::new(5).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
-        let msh = CartMesh::from_breaks([breaks.clone()]);
+        let msh = CartMesh::with_breaks([breaks.clone()]);
 
         // find_span
         println!("--- Finding span indices with `breaks` and `find_span` ---");
-        for idx in msh.elems() {
+        for (elem, idx) in msh.into_elem_cell_iter() {
             let elem_idx = idx.0[0];
-            let elem = msh.geo_elem(&idx);
             let span = basis.find_span(elem.a.x).unwrap();
             let span_idx = span.0;
 
@@ -316,10 +314,9 @@ mod tests {
     // #[test]
     fn cart_mesh() {
         let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
-        let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
+        let msh = CartMesh::with_breaks([breaks.clone(), breaks]);
 
-        for idx in msh.elems() {
-            let elem = msh.geo_elem(&idx);
+        for elem in msh.into_elem_iter() {
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
@@ -381,13 +378,13 @@ mod tests {
         // msh.refine();
         
         // Convert back to quad mesh
-        let quads = msh.elems.iter()
+        let quads = msh.cell_iter()
             .map(|patch| patch.center_quad())
             .collect_vec();
         let msh = QuadVertexMesh::new(msh.coords, quads);
 
         // Plot
-        let plot = plot_faces(&msh, msh.elems.clone().into_iter());
+        let plot = plot_faces(&msh, msh.cells.clone().into_iter());
         plot.show();
     }
 
@@ -845,10 +842,9 @@ mod tests {
         // find_span
         let start = Instant::now();
         let breaks = Breaks::from_knots(knots.clone());
-        let msh = CartMesh::from_breaks([breaks.clone()]);
+        let msh = CartMesh::with_breaks([breaks.clone()]);
         let mut spans_1 = vec![0; breaks.len() - 1];
-        for idx in msh.elems() {
-            let elem = msh.geo_elem(&idx);
+        for (elem, idx) in msh.into_elem_cell_iter() {
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 
