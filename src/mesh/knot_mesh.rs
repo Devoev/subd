@@ -35,7 +35,7 @@ impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiKnotVec<T, D> 
     type NodeIdx = [usize; D];
     type NodeIter = Once<[usize; D]>;
 
-    fn num_nodes(&self) -> usize {
+    fn len(&self) -> usize {
         self.0.iter().map(|xi| xi.len()).product()
     }
 
@@ -76,8 +76,8 @@ impl <const D: usize> MeshTopology for CartesianWithIncrements<D> {
     type Cell = [KnotSpan; D];
     type CellIter = KnotSpanIter<D>;
 
-    fn num_cells(&self) -> usize {
-        self.cartesian.num_cells()
+    fn len(&self) -> usize {
+        self.cartesian.len()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {

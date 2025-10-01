@@ -14,8 +14,8 @@ pub trait MeshTopology {
     /// Cell iterator.
     type CellIter: Iterator<Item = Self::Cell>;
 
-    /// Returns the total number of cells in this mesh.
-    fn num_cells(&self) -> usize;
+    /// Returns the total number of cells in `self`.
+    fn len(&self) -> usize;
 
     /// Creates an iterator over all cells in this mesh.
     fn into_cell_iter(self) -> Self::CellIter;
@@ -33,7 +33,7 @@ pub type CellOfMesh<Cells> = <Cells as MeshTopology>::Cell;
 /// given an index of type [`Self::NodeIdx`]. This is usually either a `usize`
 /// or a multi-index.
 /// Iteration over all vertices can be achieved
-/// by the [`Self::node_iter`] and [`Self::num_nodes`] methods.
+/// by the [`Self::node_iter`] and [`Self::len`] methods.
 pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDim> {
     /// Dimension of the embedding Euclidean space.
     type GeoDim: DimName;
@@ -44,8 +44,8 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     /// Node iterator.
     type NodeIter: Iterator<Item = Self::NodeIdx>;
 
-    /// Returns the total number of nodes in this mesh.
-    fn num_nodes(&self) -> usize;
+    /// Returns the total number of nodes in `self`.
+    fn len(&self) -> usize;
 
     /// Iterates over all nodes in this mesh in ascending order.
     fn node_iter(&self) -> Self::NodeIter;
@@ -65,7 +65,7 @@ where DefaultAllocator: Allocator<M>
     type NodeIdx = usize;
     type NodeIter = Range<usize>;
 
-    fn num_nodes(&self) -> usize {
+    fn len(&self) -> usize {
         self.len()
     }
 
@@ -86,7 +86,7 @@ where DefaultAllocator: Allocator<M>
     type NodeIdx = usize;
     type NodeIter = Range<usize>;
 
-    fn num_nodes(&self) -> usize {
+    fn len(&self) -> usize {
         self.nrows()
     }
 

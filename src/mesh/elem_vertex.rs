@@ -51,7 +51,7 @@ impl <C> MeshTopology for ElemVec<C> {
     type Cell = C;
     type CellIter = IntoIter<Self::Cell>;
     
-    fn num_cells(&self) -> usize {
+    fn len(&self) -> usize {
         self.0.len()
     }
 
@@ -64,7 +64,7 @@ impl <'a, C> MeshTopology for &'a ElemVec<C> {
     type Cell = &'a C;
     type CellIter = Iter<'a, C>;
 
-    fn num_cells(&self) -> usize {
+    fn len(&self) -> usize {
         self.0.len()
     }
 

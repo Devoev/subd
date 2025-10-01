@@ -15,7 +15,7 @@ use crate::cells::node::Node;
 pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_nodes = msh.coords.num_nodes();
+    let num_nodes = msh.coords.len();
 
     assemble_incidence_mat(num_edges, num_nodes, edges.into_iter(), |mat, cell, cell_idx| {
         let  DirectedEdge([start_idx, end_idx]) = cell;
@@ -28,7 +28,7 @@ pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_faces = msh.cells.num_cells();
+    let num_faces = msh.cells.len();
 
     assemble_incidence_mat(num_faces, num_edges, msh.cell_iter().copied(), |mat, cell, cell_idx| {
         populate_by_orientation(mat, cell, cell_idx, &edges)

@@ -43,12 +43,12 @@ where T: Scalar,
     
     /// Returns the total number of elements or cells in `self`.
     pub fn num_elems(&self) -> usize {
-        self.cells.num_cells()
+        self.cells.len()
     }
     
     /// Returns the total number of nodes in `self`.
     pub fn num_nodes(&self) -> usize {
-        self.coords.num_nodes()
+        self.coords.len()
     }
 
     /// Consumes `self` and returns an iterator over all topological cells in this mesh.

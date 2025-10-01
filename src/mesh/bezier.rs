@@ -45,8 +45,8 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for 
     type Cell = [KnotSpan; D]; // todo: possibly introduce KnotSpanIdx with multi index
     type CellIter = KnotSpanIter<D>;
 
-    fn num_cells(&self) -> usize {
-        self.ref_mesh.cells.num_cells()
+    fn len(&self) -> usize {
+        self.ref_mesh.cells.len()
     }
     
     fn into_cell_iter(self) -> Self::CellIter {

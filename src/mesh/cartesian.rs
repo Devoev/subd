@@ -38,7 +38,7 @@ impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
     type NodeIdx = [usize; D];
     type NodeIter = MultiRange<[usize; D]>;
 
-    fn num_nodes(&self) -> usize {
+    fn len(&self) -> usize {
         self.nodes_shape.len()
     }
 
@@ -82,7 +82,7 @@ impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
-    fn num_cells(&self) -> usize {
+    fn len(&self) -> usize {
         self.cells_shape.len()
     }
 
@@ -95,8 +95,8 @@ impl<const D: usize> MeshTopology for Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
-    fn num_cells(&self) -> usize {
-        (&self).num_cells()
+    fn len(&self) -> usize {
+        (&self).len()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {

@@ -36,7 +36,7 @@ impl <const M: usize> CatmarkSubd<f64, M> {
         }
 
         // Update connectivity
-        let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.cells.num_cells() * 4);
+        let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.cells.len() * 4);
         let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
