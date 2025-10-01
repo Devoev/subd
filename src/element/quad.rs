@@ -1,7 +1,7 @@
-use nalgebra::{Point, RealField, SVector};
-use crate::element::traits;
 use crate::element::lerp::BiLerp;
+use crate::element::traits::Element;
 use crate::element::unit_cube::UnitCube;
+use nalgebra::{Point, RealField, SVector};
 
 /// An `M` dimensional quadrilateral element, defined by four `vertices`.
 #[derive(Debug, Clone, Copy)]
@@ -26,7 +26,7 @@ impl<T: RealField, const M: usize> Quad<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> traits::Element<T> for Quad<T, M> {
+impl <T: RealField + Copy, const M: usize> Element<T> for Quad<T, M> {
     type ParametricElement = UnitCube<2>;
     type GeoMap = BiLerp<T, M>;
 

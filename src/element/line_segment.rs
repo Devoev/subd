@@ -1,9 +1,9 @@
-use nalgebra::{Point, RealField};
 use crate::cells::edge::DirectedEdge;
-use crate::element::traits;
 use crate::element::lerp::Lerp;
+use crate::element::traits::Element;
 use crate::element::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
+use nalgebra::{Point, RealField};
 
 /// A line segment, i.e. a straight line bounded by 2 points
 /// in [`M`]-dimensional space.
@@ -24,7 +24,7 @@ impl<T: RealField, const M: usize> LineSegment<T, M> {
     }
 }
 
-impl <T: RealField + Copy, const M: usize> traits::Element<T> for LineSegment<T, M> {
+impl <T: RealField + Copy, const M: usize> Element<T> for LineSegment<T, M> {
     type ParametricElement = UnitCube<1>;
     type GeoMap = Lerp<T, M>;
 
