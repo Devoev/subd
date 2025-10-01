@@ -4,29 +4,29 @@ use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::lin_combination::EvalFunctionAllocator;
 use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
+use crate::element::traits::{HasBasisCoord, HasDim};
 use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
+use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
 use std::iter::{zip, Product, Sum};
-use nalgebra::allocator::Allocator;
-use crate::element::traits::{HasBasisCoord, HasDim};
-use crate::mesh::Mesh;
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, E, Basis, Coords, Cells, Quadrature, const D: usize>(
+pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells, Quadrature, const D: usize>(
     msh: &Mesh<T, Coords, Cells>,
     space: &Space<T, Basis, D>,
     quad: PullbackQuad<Quadrature, D>,
     f: impl Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          E: HasBasisCoord<T, Basis> + HasDim<T, D>,
+          Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Basis: MeshBasis<T>,
-          Coords: VertexStorage<T>, 
-          Cells: MeshTopology<Cell= Basis::Cell>,
-          Quadrature: QuadratureOnParametricElem<T, E>,
+          Coords: VertexStorage<T>,
+          Cells: MeshTopology<Cell = Basis::Cell>,
+          Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
 {

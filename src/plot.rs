@@ -1,30 +1,26 @@
-use std::collections::BTreeMap;
-use std::fmt::Display;
-use std::fs;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::iter::zip;
-use approx::relative_eq;
-use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord};
-use crate::cells::edge::LineSegment;
+use crate::basis::eval::EvalBasisAllocator;
+use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
+use crate::basis::local::MeshBasis;
 use crate::cells::node::Node;
-use crate::cells::quad::{Quad, QuadNodes};
+use crate::cells::quad::QuadNodes;
+use crate::cells::traits;
+use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::Mesh;
 use itertools::Itertools;
-use nalgebra::{ComplexField, Const, DefaultAllocator, Dim, DimName, DimNameSub, Dyn, Point, RealField, Scalar, U2};
+use nalgebra::{ComplexField, DefaultAllocator, Point, RealField, Scalar, U2};
 use numeric_literals::replace_float_literals;
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
-use crate::basis::eval::EvalBasisAllocator;
-use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::MeshBasis;
-use crate::basis::traits::Basis;
-use crate::cells::traits;
-use crate::cells::traits::ToElement;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::Write;
+use std::iter::zip;
+use crate::element::traits::Element;
+use crate::mesh::{ElemOfMesh, Mesh};
+use crate::mesh::traits::{CellOfMesh, MeshTopology, VertexStorage};
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -33,7 +29,7 @@ pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNo
 
     for (num, face) in faces.enumerate() {
         for edge in face.edges() {
-            let line = LineSegment::from_msh(edge, msh);
+            let line = edge.to_element(&msh.coords);
             let [pi, pj] = line.vertices;
             let edge = Scatter::new(vec![pi.x, pj.x], vec![pi.y, pj.y]);
             plot.add_trace(edge)
@@ -78,7 +74,7 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=Node>)
 /// using `num` evaluation points per parametric direction.
 pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num: usize, mesh_grid: &D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Patch: Cell<f64>,
+          Patch: Element<f64>,
           Patch::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&Elem, X) -> f64,
           D: Fn(&Patch, usize) -> (Vec<f64>, Vec<f64>)
@@ -112,12 +108,14 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 
 /// Plots the function `f` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid: D) -> Plot
+pub fn plot_fn_msh<X, Coords, Cells, F, D>(msh: &Mesh<f64, Coords, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Msh: Mesh<'a, f64, 2, 2>,
-          <Msh::GeoElem as Cell<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
-          F: Fn(&Msh::Elem, X) -> f64,
-          D: Fn(&Msh::GeoElem, usize) -> (Vec<f64>, Vec<f64>)
+          Coords: VertexStorage<f64, GeoDim = U2>,
+          Cells: MeshTopology,
+          CellOfMesh<Cells>: ToElement<f64, U2>,
+          <ElemOfMesh<f64, Coords, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
+          F: Fn(&CellOfMesh<Cells>, X) -> f64,
+          D: Fn(&ElemOfMesh<f64, Coords, Cells>, usize) -> (Vec<f64>, Vec<f64>)
 {
     let mut plot = Plot::new();
     let elems = msh.elem_iter().collect_vec();
@@ -130,29 +128,29 @@ pub fn plot_fn_msh<'a, X, Msh, F, D>(msh: &'a Msh, f: &F, num: usize, mesh_grid:
     plot
 }
 
-#[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
-pub fn eval_at_vertices<'a, T, Msh, B>(msh: &'a Msh, fh: LinCombination<T, B, 2>)
-    where T: RealField,
-          Msh: Mesh<'a, T, 2, 2>,
-          Msh::GeoElem: HasBasisCoord<T, B>,
-          B: MeshBasis<T, Cell= Msh::Elem, Coord<T> = (T, T)>,
-          // B::ElemBasis: Basis<Coord<T> = (T, T)>,
-          DefaultAllocator: CellAllocator<T, Msh::GeoElem> + EvalBasisAllocator<B::LocalBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::LocalBasis>
-{
-    let vertices_to_err = msh.elem_iter()
-        .flat_map(|elem| {
-            let patch = msh.geo_elem(&elem);
-            let phi = patch.geo_map();
-            [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
-                let p = phi.eval(uv.clone());
-                let err = fh.eval_on_elem(&elem, uv).norm();
-                (p, err)
-            })
-        })
-        .collect_vec();
-
-    todo!("")
-}
+// #[replace_float_literals(T::from_f64(literal).expect("Literal must fit in T"))]
+// pub fn eval_at_vertices<'a, T, Msh, B>(msh: &'a Msh, fh: LinCombination<T, B, 2>)
+//     where T: RealField,
+//           Msh: Mesh<'a, T, 2, 2>,
+//           Msh::GeoElem: HasBasisCoord<T, B>,
+//           B: MeshBasis<T, Cell= Msh::Elem, Coord<T> = (T, T)>,
+//           // B::ElemBasis: Basis<Coord<T> = (T, T)>,
+//           DefaultAllocator: CellAllocator<T, Msh::GeoElem> + EvalBasisAllocator<B::LocalBasis> + EvalFunctionAllocator<B> + SelectCoeffsAllocator<B::LocalBasis>
+// {
+//     let vertices_to_err = msh.elem_iter()
+//         .flat_map(|elem| {
+//             let patch = msh.geo_elem(&elem);
+//             let phi = patch.geo_map();
+//             [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
+//                 let p = phi.eval(uv.clone());
+//                 let err = fh.eval_on_elem(&elem, uv).norm();
+//                 (p, err)
+//             })
+//         })
+//         .collect_vec();
+// 
+//     todo!("")
+// }
 
 /// Writes the coordinates of control points `coords` into a `file`.
 pub fn write_coords<T: Scalar + Display, const D: usize>(coords: impl Iterator<Item = Point<T, D>>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
