@@ -97,27 +97,27 @@ mod tests {
         let msh = setup();
 
         // Edge 0 -> 5
-        let edge = DirectedEdge([Node(0), Node(5)]);
+        let edge = DirectedEdge([0, 5]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [7, 6, 0, 5, 3, 4].map(Node);
+        let nodes_exp = [7, 6, 0, 5, 3, 4];
         assert_eq!(ring, QuadNodesEdgeOneRing::Regular(nodes_exp));
         
         // Edge 9 -> 0
-        let edge = DirectedEdge([Node(9), Node(0)]);
+        let edge = DirectedEdge([9, 0]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [8, 7, 9, 0, 10, 1].map(Node);
+        let nodes_exp = [8, 7, 9, 0, 10, 1];
         assert_eq!(ring, QuadNodesEdgeOneRing::Regular(nodes_exp));
         
         // Edge 3 -> 4
-        let edge = DirectedEdge([Node(3), Node(4)]);
+        let edge = DirectedEdge([3, 4]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [3, 4].map(Node);
+        let nodes_exp = [3, 4];
         assert_eq!(ring, QuadNodesEdgeOneRing::Boundary(nodes_exp));
         
         // Edge 1 -> 10
-        let edge = DirectedEdge([Node(1), Node(10)]);
+        let edge = DirectedEdge([1, 10]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [1, 10].map(Node);
+        let nodes_exp = [1, 10];
         assert_eq!(ring, QuadNodesEdgeOneRing::Boundary(nodes_exp));
     }
 }

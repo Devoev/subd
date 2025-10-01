@@ -223,11 +223,11 @@ mod tests {
         let msh = setup_regular();
 
         // Regular case (test against 4 alignments, because this case is rotationally symmetric)
-        let patch = QuadNodesOneRing::find(&msh, Node(4));
-        let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(Node);
-        let nodes_exp_right_align = [2, 5, 8, 1, 4, 7, 0, 3, 6].map(Node);
-        let nodes_exp_top_align = [8, 7, 6, 5, 4, 3, 2, 1, 0].map(Node);
-        let nodes_exp_left_align = [6, 3, 0, 7, 4, 1, 8, 5, 2].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 4);
+        let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let nodes_exp_right_align = [2, 5, 8, 1, 4, 7, 0, 3, 6];
+        let nodes_exp_top_align = [8, 7, 6, 5, 4, 3, 2, 1, 0];
+        let nodes_exp_left_align = [6, 3, 0, 7, 4, 1, 8, 5, 2];
         assert!(
             patch == QuadNodesOneRing::Regular(nodes_exp_bottom_align)
             || patch == QuadNodesOneRing::Regular(nodes_exp_right_align)
@@ -236,37 +236,37 @@ mod tests {
         );
 
         // Boundary case
-        let patch = QuadNodesOneRing::find(&msh, Node(1));
-        let nodes_exp_bottom_bnd = [0, 1, 2, 3, 4, 5].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 1);
+        let nodes_exp_bottom_bnd = [0, 1, 2, 3, 4, 5];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_bottom_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(3));
-        let nodes_exp_left_bnd = [6, 3, 0, 7, 4, 1].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 3);
+        let nodes_exp_left_bnd = [6, 3, 0, 7, 4, 1];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_left_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(5));
-        let nodes_exp_right_bnd = [2, 5, 8, 1, 4, 7].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 5);
+        let nodes_exp_right_bnd = [2, 5, 8, 1, 4, 7];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_right_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(7));
-        let nodes_exp_top_bnd = [8, 7, 6, 5, 4, 3].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 7);
+        let nodes_exp_top_bnd = [8, 7, 6, 5, 4, 3];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_top_bnd));
 
         // Corner case
-        let patch = QuadNodesOneRing::find(&msh, Node(0));
-        let nodes_exp_bottom_left_corner = [0, 1, 3, 4].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 0);
+        let nodes_exp_bottom_left_corner = [0, 1, 3, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_bottom_left_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(2));
-        let nodes_exp_bottom_right_corner = [2, 5, 1, 4].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 2);
+        let nodes_exp_bottom_right_corner = [2, 5, 1, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_bottom_right_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(6));
-        let nodes_exp_top_left_corner = [6, 3, 7, 4].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 6);
+        let nodes_exp_top_left_corner = [6, 3, 7, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_top_left_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, Node(8));
-        let nodes_exp_top_right_corner = [8, 7, 5, 4].map(Node);
+        let patch = QuadNodesOneRing::find(&msh, 8);
+        let nodes_exp_top_right_corner = [8, 7, 5, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_top_right_corner));
     }
 
@@ -275,9 +275,9 @@ mod tests {
         let msh = setup_irregular();
 
         // Irregular case (test against 5 alignments, because of rotational symmetry)
-        let patch = QuadNodesOneRing::find(&msh, Node(0));
-        let nodes_exp_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].into_iter().map(Node).collect();
-        let nodes_exp_2 = [0, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8].into_iter().map(Node).collect();
+        let patch = QuadNodesOneRing::find(&msh, 0);
+        let nodes_exp_1 = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let nodes_exp_2 = vec![0, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8];
         assert!(
             patch == QuadNodesOneRing::Irregular(nodes_exp_1, 5)
             || patch == QuadNodesOneRing::Irregular(nodes_exp_2, 5)
