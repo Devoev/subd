@@ -38,6 +38,9 @@ pub trait ToElement<T: Scalar, M: DimName>: Cell
     fn to_element(&self, coords: &Self::Coords) -> Self::Elem;
 }
 
+/// The geometrical element associated with the topological cell `C`.
+pub type ElemOfCell<T, C, M> = <C as ToElement<T, M>>::Elem;
+
 /// A [topological cell](Cell) with connectivity and neighboring relations.
 pub trait CellConnectivity: Cell {
     /// Returns `true` if this cell is topologically connected (or adjacent) to the `other` cell

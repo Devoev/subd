@@ -3,6 +3,8 @@
 use std::marker::PhantomData;
 use nalgebra::{DefaultAllocator, Scalar};
 use nalgebra::allocator::Allocator;
+use crate::cells::traits::{ElemOfCell, ToElement};
+use crate::element::traits::ElemAllocator;
 use crate::mesh::traits::{MeshTopology, VertexStorage};
 
 pub mod elem_vertex;
@@ -50,8 +52,47 @@ where T: Scalar,
       &'a Cells: MeshTopology,
       DefaultAllocator: Allocator<Coords::GeoDim>
 {
-    /// Returns an iterator over references to topological cells in this mesh.
+    /// Returns an iterator over all topological cells in this mesh.
     pub fn cell_iter(&self) -> <&'a Cells as MeshTopology>::CellIter {
         self.cells.into_cell_iter()
+    }
+}
+
+/// The geometrical element of the [`Mesh<T,Coords,Cells>`].
+pub type ElemOfMesh<T, Coords, Cells> = ElemOfCell<T, <Cells as MeshTopology>::Cell, <Coords as VertexStorage<T>>::GeoDim>;
+
+impl <T, Coords, Cells> Mesh<T, Coords, Cells>
+where T: Scalar,
+      Coords: VertexStorage<T>,
+      Cells: MeshTopology,
+      Cells::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
+      DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
+{
+    /// Consumes `self` and returns an iterator over all geometrical elements in this mesh.
+    pub fn into_elem_iter(self) -> impl Iterator<Item = ElemOfMesh<T, Coords, Cells>> {
+        self.cells.into_cell_iter().map(move |cell| cell.to_element(&self.coords))
+    }
+
+    /// Consumes `self` and returns an iterator over `(elem,cell)` pairs.
+    pub fn into_elem_cell_iter(self) -> impl Iterator<Item = (ElemOfMesh<T, Coords, Cells>, Cells::Cell)>  {
+        self.cells.into_cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
+    }
+}
+
+impl <'a, T, Coords, Cells: 'a> Mesh<T, Coords, Cells>
+where T: Scalar,
+      Coords: VertexStorage<T>,
+      &'a Cells: MeshTopology,
+      <&'a Cells as MeshTopology>::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
+      DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, &'a Cells>>
+{
+    /// Returns an iterator over all geometrical elements in this mesh.
+    pub fn elem_iter(&'a self) -> impl Iterator<Item = ElemOfMesh<T, Coords, &'a Cells>> {
+        self.cell_iter().map(move |cell| cell.to_element(&self.coords))
+    }
+
+    /// Returns an iterator over `(elem,cell)` pairs.
+    pub fn elem_cell_iter(&'a self) -> impl Iterator<Item = (ElemOfMesh<T, Coords, &'a Cells>, <&'a Cells as MeshTopology>::Cell)>  {
+        self.cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
     }
 }
