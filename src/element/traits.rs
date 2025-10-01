@@ -30,15 +30,15 @@ pub trait Element<T: Scalar>: Sized
     // todo: maybe merge Chart and Cell traits?
 }
 
-/// Coordinate of the [`Element::GeoMap`] of `C`.
-pub type ElemCoord<T, C> = <<C as Element<T>>::GeoMap as Chart<T>>::Coord;
+/// Coordinate of the [`Element::GeoMap`] of `Elem`.
+pub type ElemCoord<T, Elem> = <<Elem as Element<T>>::GeoMap as Chart<T>>::Coord;
 
 /// Constrains `Self` to have a chart with coordinate [`B::Coord`].
 pub trait HasBasisCoord<T: Scalar, B: Basis>: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>
     where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
-impl <T: Scalar, B: Basis, C: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>> HasBasisCoord<T, B> for C
+impl <T: Scalar, B: Basis, Elem: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>> HasBasisCoord<T, B> for Elem
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
@@ -47,6 +47,6 @@ pub trait HasDim<T: Scalar, const D: usize>: Element<T, GeoMap: Chart<T, Paramet
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
-impl <T: Scalar, const D: usize, C: Element<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>> HasDim<T, D> for C
+impl <T: Scalar, const D: usize, Elem: Element<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>> HasDim<T, D> for Elem
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
