@@ -1,15 +1,16 @@
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::{HasBasisCoord, HasDim};
-use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, Scalar, ToTypenum};
+use nalgebra::allocator::Allocator;
+use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
-use nalgebra::allocator::Allocator;
+use crate::element::traits::{HasBasisCoord, HasDim};
 
 /// The weak discrete Hodge operator
 /// ```text

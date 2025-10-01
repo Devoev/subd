@@ -1,15 +1,15 @@
 use crate::basis::eval::EvalBasisAllocator;
 use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
 use crate::basis::local::MeshBasis;
-use crate::cells::geo::{Cell, HasBasisCoord, HasDim};
-use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
+use crate::cells::traits::ToElement;
+use crate::element::traits::{HasBasisCoord, HasDim};
+use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
+use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, ToTypenum};
 use std::iter::{zip, Product, Sum};
-use nalgebra::allocator::Allocator;
-use num_traits::real::Real;
-use crate::cells::traits::ToElement;
 
 /// L2-norm on a mesh.
 pub struct L2Norm<'a, T, Coords, Cells> {

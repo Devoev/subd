@@ -1,9 +1,8 @@
 use crate::basis::eval::{EvalGrad, EvalGradAllocator};
 use crate::basis::local::MeshGradBasis;
 use crate::basis::space::Space;
-use crate::cells::geo::{HasBasisCoord, HasDim};
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::{Mesh, MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology, VertexStorage};
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use itertools::Itertools;
@@ -11,6 +10,8 @@ use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
+use crate::element::traits::{HasBasisCoord, HasDim};
+use crate::mesh::Mesh;
 
 /// The weak discrete Laplace operator
 /// ```text
