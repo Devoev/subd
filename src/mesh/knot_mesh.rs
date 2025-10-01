@@ -10,6 +10,7 @@ use itertools::{Itertools, MultiProduct};
 use nalgebra::{Const, OPoint, RealField, Scalar};
 use std::iter::{zip, Map, Once};
 use std::vec::IntoIter;
+use crate::knots::breaks::Breaks;
 
 /// `D`-variate cartesian product of [knot vectors](KnotVec).
 ///
@@ -29,7 +30,7 @@ impl <T: Scalar, const D: usize> MultiKnotVec<T, D> {
     }
 }
 
-impl <T: Scalar, const D: usize> VertexStorage<T> for MultiKnotVec<T, D> {
+impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiKnotVec<T, D> {
     type GeoDim = Const<D>;
     type NodeIdx = [usize; D];
     type NodeIter = Once<[usize; D]>;
@@ -91,7 +92,7 @@ impl <const D: usize> MeshTopology for CartesianWithIncrements<D> {
 /// Same as a Cartesian mesh but with multiplicities of breakpoints.
 pub type KnotMesh<T, const D: usize> = Mesh<T, MultiKnotVec<T, D>, CartesianWithIncrements<D>>;
 
-impl <T: RealField, const D: usize> KnotMesh<T, D> {
+impl <T: RealField + Copy, const D: usize> KnotMesh<T, D> {
     // todo: this implementation is ugly and inefficient. Probably change this.
     /// Constructs a new [`KnotMesh`] from the given `knots`.
     /// The breaks and knot multiplicities are computed using [`BreaksWithMultiplicity::from_knots`].
@@ -104,7 +105,7 @@ impl <T: RealField, const D: usize> KnotMesh<T, D> {
         // Compute shape of breaks
         let shape = DimShape::from_breaks(breaks
             .clone()
-            .map(|zeta| zeta.to_breaks())
+            .map(|zeta| Breaks::from(zeta))
         );
 
         // Compute increments
