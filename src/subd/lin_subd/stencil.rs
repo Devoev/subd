@@ -1,5 +1,5 @@
 use crate::cells::edge::UndirectedEdge;
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
@@ -14,7 +14,7 @@ use crate::cells::traits::ToElement;
 #[derive(Debug, Clone, Default)]
 pub struct EdgeMidpointStencil {
     /// Edge-to-midpoint map.
-    edge_midpoints: HashMap<UndirectedEdge, NodeIdx>
+    edge_midpoints: HashMap<UndirectedEdge, Node>
 }
 
 impl EdgeMidpointStencil {
@@ -25,7 +25,7 @@ impl EdgeMidpointStencil {
 
     /// Returns the midpoint node corresponding to the given `edge` or `None`,
     /// if the edge is not refined yet.
-    pub fn get(&self, edge: &UndirectedEdge) -> Option<&NodeIdx> {
+    pub fn get(&self, edge: &UndirectedEdge) -> Option<&Node> {
         self.edge_midpoints.get(edge)
     }
 
@@ -35,10 +35,10 @@ impl EdgeMidpointStencil {
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         edge: UndirectedEdge,
-    ) -> NodeIdx {
+    ) -> Node {
         let a = quad_msh.coords(edge.first());
         let b = quad_msh.coords(edge.second());
-        let node = NodeIdx(quad_msh.num_nodes());
+        let node = Node(quad_msh.num_nodes());
         quad_msh.coords.push(center(a, b));
         self.edge_midpoints.insert(edge, node);
         node
@@ -50,7 +50,7 @@ impl EdgeMidpointStencil {
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         edge: UndirectedEdge,
-    ) -> NodeIdx {
+    ) -> Node {
         match self.get(&edge) {
             Some(node) => *node,
             None => {
@@ -83,10 +83,10 @@ impl FaceMidpointStencil {
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         face: QuadNodes,
-    ) -> NodeIdx {
+    ) -> Node {
         let quad = face.to_element(&quad_msh.coords);
         let center = quad.centroid();
         quad_msh.coords.push(center);
-        NodeIdx(quad_msh.num_nodes() - 1)
+        Node(quad_msh.num_nodes() - 1)
     }
 }

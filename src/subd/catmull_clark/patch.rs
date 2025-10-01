@@ -1,7 +1,7 @@
 use crate::cells;
 use crate::cells::geo;
 use crate::cells::edge::DirectedEdge;
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
 use crate::cells::unit_cube::UnitCube;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -128,7 +128,7 @@ pub enum CatmarkPatchNodes {
     ///   0 --- 1 --- 2 --- 3
     /// ```
     /// where `p` is the center face of the patch.
-    Regular([NodeIdx; 16]),
+    Regular([Node; 16]),
 
     /// The regular boundary case of valence `n=3`.
     /// The nodes are ordered in lexicographical order
@@ -141,7 +141,7 @@ pub enum CatmarkPatchNodes {
     ///  0 --- 1 --- 2 --- 3
     /// ```
     /// where `p` is the center face of the patch.
-    Boundary([NodeIdx; 12]),
+    Boundary([Node; 12]),
 
     /// The regular corner case of valence `n=2`.
     /// The nodes are ordered in lexicographical order
@@ -154,7 +154,7 @@ pub enum CatmarkPatchNodes {
     ///  0 --- 1 --- 2 ---
     /// ```
     /// where `p` is the center face of the patch.
-    Corner([NodeIdx; 9]),
+    Corner([Node; 9]),
 
     /// The irregular interior case of valence `n≠4`.
     /// The nodes are ordered in the following order
@@ -170,7 +170,7 @@ pub enum CatmarkPatchNodes {
     ///   ○ - 8
     /// ```
     /// where `p` is the center face of the patch and node `0` is the irregular node.
-    Irregular(Vec<NodeIdx>, usize)
+    Irregular(Vec<Node>, usize)
 
     // todo: add IrregularBoundary/Corner case of valence = 4
 }
@@ -237,7 +237,7 @@ impl CatmarkPatchNodes {
     }
 
     /// Returns a slice containing the nodes.
-    pub fn as_slice(&self) -> &[NodeIdx] {
+    pub fn as_slice(&self) -> &[Node] {
         match self {
             CatmarkPatchNodes::Regular(val) => val.as_slice(),
             CatmarkPatchNodes::Boundary(val) => val.as_slice(),
@@ -304,7 +304,7 @@ impl cells::traits::CellConnectivity for CatmarkPatchNodes {
     // todo: does it make sense to override the method here? or change signature of trait
 
     /// Returns `true` if the center face of this patch contains the given node.
-    fn contains_node(&self, node: NodeIdx) -> bool {
+    fn contains_node(&self, node: Node) -> bool {
         self.center_quad().contains_node(node)
     }
 }
@@ -498,7 +498,7 @@ impl CatmarkPatchFaces {
         faces_irregular.rotate_right(1);
 
         // Find regular faces n..n+4
-        let mut faces_regular = vec![QuadNodes([NodeIdx(0); 4]); 5]; // todo: replace with better default value
+        let mut faces_regular = vec![QuadNodes([Node(0); 4]); 5]; // todo: replace with better default value
 
         // Find faces connected to edges 1 and 2
         for (edge_dix, &edge) in center.edges()[1..=2].iter().enumerate() {

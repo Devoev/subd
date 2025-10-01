@@ -1,4 +1,4 @@
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::subd::lin_subd::matrix::assemble_global_mat;
@@ -26,7 +26,7 @@ impl <T: RealField, const M: usize> LinSubd<T, M> {
         let mut face_stencil = FaceMidpointStencil::new();
 
         let mut refined_faces = Vec::<QuadNodes>::new();
-        let mut add_face_nodes = |a: NodeIdx, b: NodeIdx, c: NodeIdx, d: NodeIdx| {
+        let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
 
@@ -87,7 +87,7 @@ impl <const M: usize> LinSubd<f64, M> {
 
         // Update connectivity
         let mut refined_faces = Vec::<QuadNodes>::new();
-        let mut add_face_nodes = |a: NodeIdx, b: NodeIdx, c: NodeIdx, d: NodeIdx| {
+        let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
         for elem in &quad_msh.elems {

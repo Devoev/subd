@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
 use nalgebra::{matrix, Matrix5x4, RealField};
@@ -26,10 +26,10 @@ static S: LazyLock<Matrix5x4<f64>> = LazyLock::new(|| {
 //  maybe index-vectors to directly construct incidence matrices?
 
 /// Edge to midpoint index map.
-type EdgeMidpoints = HashMap<UndirectedEdge, NodeIdx>;
+type EdgeMidpoints = HashMap<UndirectedEdge, Node>;
 
 /// Face to midpoint index map.
-type FaceMidpoints = HashMap<QuadNodes, NodeIdx>;
+type FaceMidpoints = HashMap<QuadNodes, Node>;
 
 /// Assembles the global subdivision matrix for the given `quad_msh`.
 pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMesh<T, M>) -> (CooMatrix<f64>, EdgeMidpoints, FaceMidpoints) {
@@ -47,21 +47,21 @@ pub fn assemble_global_mat<T: RealField, const M: usize>(quad_msh: &QuadVertexMe
     // Apply face-midpoint stencil
     let mut idx_offset = num_nodes;
     for (face_idx, face) in quad_msh.elems.iter().enumerate() {
-        let [NodeIdx(a), NodeIdx(b), NodeIdx(c), NodeIdx(d)] = face.nodes();
+        let [Node(a), Node(b), Node(c), Node(d)] = face.nodes();
         mat.push(face_idx + idx_offset, a, 0.25);
         mat.push(face_idx + idx_offset, b, 0.25);
         mat.push(face_idx + idx_offset, c, 0.25);
         mat.push(face_idx + idx_offset, d, 0.25);
-        face_midpoints.insert(*face, NodeIdx(face_idx + idx_offset));
+        face_midpoints.insert(*face, Node(face_idx + idx_offset));
     }
 
     // Apply edge-midpoint stencil
     idx_offset += quad_msh.num_elems();
     for (edge_idx, edge) in edges.into_iter().enumerate() {
-        let [NodeIdx(a), NodeIdx(b)] = edge.0;
+        let [Node(a), Node(b)] = edge.0;
         mat.push(edge_idx + idx_offset, a, 0.5);
         mat.push(edge_idx + idx_offset, b, 0.5);
-        edge_midpoints.insert(edge.into(), NodeIdx(edge_idx + idx_offset));
+        edge_midpoints.insert(edge.into(), Node(edge_idx + idx_offset));
     }
 
     (mat, edge_midpoints, face_midpoints)

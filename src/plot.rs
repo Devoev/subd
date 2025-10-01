@@ -7,7 +7,7 @@ use std::iter::zip;
 use approx::relative_eq;
 use crate::cells::geo::{Cell, CellAllocator, HasBasisCoord};
 use crate::cells::edge::LineSegment;
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadNodes};
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
@@ -53,7 +53,7 @@ pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNo
 }
 
 /// Plots the given `nodes` of a 2D quad-vertex `msh`.
-pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=NodeIdx>) -> Plot {
+pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=Node>) -> Plot {
     let mut plot = Plot::new();
     let mut layout = Layout::new();
 

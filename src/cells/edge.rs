@@ -1,15 +1,12 @@
 use crate::cells::chain::Chain;
 
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
 use crate::element::line_segment::LineSegment;
 use crate::mesh::traits::VertexStorage;
 use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
-
-/// Node index.
-type Node = usize;
 
 /// A *directed* edge between two nodes.
 /// The topological structure is
@@ -56,7 +53,7 @@ impl DirectedEdge {
 
 impl Cell for DirectedEdge {
     type Dim = U1;
-    type Node = usize;
+    type Node = Node;
 
     fn nodes(&self) -> &[Self::Node] {
         &self.0.map(|node| node.0)
@@ -95,7 +92,7 @@ impl CellConnectivity for DirectedEdge {
 
 impl CellBoundary for DirectedEdge {
     const NUM_SUB_CELLS: usize = 2;
-    type SubCell = NodeIdx;
+    type SubCell = Node;
     type Boundary = NodePair;
 
     fn boundary(&self) -> Self::Boundary {
@@ -124,10 +121,10 @@ impl OrientedCell for DirectedEdge {
 }
 
 /// Pair of two disjoint nodes.
-pub struct NodePair(pub [NodeIdx; 2]);
+pub struct NodePair(pub [Node; 2]);
 
-impl Chain<NodeIdx> for NodePair {
-    fn cells(&self) -> &[NodeIdx] {
+impl Chain<Node> for NodePair {
+    fn cells(&self) -> &[Node] {
         &self.0
     }
 }
@@ -189,7 +186,7 @@ impl From<UndirectedEdge> for DirectedEdge {
 
 impl Cell for UndirectedEdge {
     type Dim = U1;
-    type Node = usize;
+    type Node = Node;
 
     fn nodes(&self) -> &[Self::Node] {
         &self.sorted_nodes.map(|node| node.0)

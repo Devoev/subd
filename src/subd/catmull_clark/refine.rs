@@ -1,4 +1,4 @@
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::traits::MeshTopology;
@@ -36,7 +36,7 @@ impl <const M: usize> CatmarkSubd<f64, M> {
 
         // Update connectivity
         let mut refined_faces = Vec::<QuadNodes>::with_capacity(quad_msh.num_elems() * 4);
-        let mut add_face_nodes = |a: NodeIdx, b: NodeIdx, c: NodeIdx, d: NodeIdx| {
+        let mut add_face_nodes = |a: Node, b: Node, c: Node, d: Node| {
             refined_faces.push(QuadNodes([a, b, c, d]))
         };
         for elem in &quad_msh.elems {

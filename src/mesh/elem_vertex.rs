@@ -1,7 +1,7 @@
 //! Data structures for an element-to-vertex mesh.
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity};
 use crate::mesh::traits::{Mesh, MeshTopology};
 use itertools::Itertools;
@@ -16,6 +16,7 @@ use std::vec::IntoIter;
 /// Contains the mesh connectivity information by
 /// directly storing each (volumetric) element inside a [`Vec<C>`],
 /// with each element pointing to its corner node indices.
+#[derive(Clone, Debug)]
 pub struct ElemVec<C>(pub Vec<C>);
 
 impl <C> MeshTopology for ElemVec<C> {
@@ -80,7 +81,7 @@ impl <T: RealField, C: CellConnectivity + Clone, const M: usize> ElemVertexMesh<
     }
 
     /// Finds all elements which contain the given `node` and returns them as an iterator.
-    pub fn elems_of_node(&self, node: NodeIdx) -> impl Iterator<Item = &C> {
+    pub fn elems_of_node(&self, node: C::Node) -> impl Iterator<Item = &C> {
         self.cells.0
             .iter()
             .filter(move |elem| elem.contains_node(node))
@@ -111,15 +112,15 @@ impl <T: RealField, C: CellBoundary + Clone, const M: usize> ElemVertexMesh<T, C
     //  would be considered boundary nodes by this function.
     /// Returns `true` if the given `node` is a boundary node,
     /// i.e. all elements containing the node are boundary elements.
-    fn is_boundary_node_general(&self, node: NodeIdx) -> bool {
+    fn is_boundary_node_general(&self, node: Node) -> bool {
         self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
     }
 
     /// Returns an iterator over all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item =NodeIdx> + '_ {
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = Node> + '_ {
         // self.node_iter().filter(|&n| self.is_boundary_node_general(n))
         todo!();
-        once(NodeIdx(0))
+        once(0)
     }
 
     // todo: add info about regular/ irregular adjacency
