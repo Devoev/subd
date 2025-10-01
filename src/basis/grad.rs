@@ -139,7 +139,7 @@ impl <'a, T, B, Coords, Cells, const D: usize> MeshBasis<T> for GradBasisPullbac
           Coords: VertexStorage<T>,
           Cells: MeshTopology<Cell= B::Cell>,
           B::Coord<T>: Copy,
-          B::Cell: ToElement<T, Coords::GeoDim>,
+          B::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
           <B::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
           DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + ElemAllocator<T, <B::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {
@@ -147,9 +147,9 @@ impl <'a, T, B, Coords, Cells, const D: usize> MeshBasis<T> for GradBasisPullbac
     type LocalBasis = GradBasisPullbackLocal<<<B::Cell as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, B::LocalBasis, D>;
     type GlobalIndices = B::GlobalIndices;
 
-    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
-        let parametric_basis = self.grad_basis.local_basis(elem);
-        let chart = self.msh.geo_elem(elem).geo_map();
+    fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
+        let parametric_basis = self.grad_basis.local_basis(cell);
+        let chart = cell.to_element(&self.msh.coords).geo_map();
         GradBasisPullbackLocal { chart, grad_basis: parametric_basis }
     }
 
