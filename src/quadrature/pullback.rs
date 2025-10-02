@@ -10,15 +10,15 @@ use crate::element::traits::{ElemAllocator, Element};
 /// Quadrature rule on an element.
 /// Integration is performed by pulling back the function to the reference domain.
 #[derive(Clone, Debug)]
-pub struct PullbackQuad<Q, const D: usize> {
+pub struct PullbackQuad<Q> {
     /// Quadrature rule on the reference domain.
     ref_quad: Q,
 }
 
 /// Pullback version of [`GaussLegendreMulti`].
-pub type GaussLegendrePullback<const D: usize> = PullbackQuad<GaussLegendreMulti<D>, D>;
+pub type GaussLegendrePullback<const D: usize> = PullbackQuad<GaussLegendreMulti<D>>;
 
-impl <Q, const D: usize> PullbackQuad<Q, D> {
+impl <Q> PullbackQuad<Q> {
     /// Constructs a new [`PullbackQuad`] from the given
     /// quadrature rule `ref_quad` on the reference domain.
     pub fn new(ref_quad: Q) -> Self {
@@ -26,7 +26,7 @@ impl <Q, const D: usize> PullbackQuad<Q, D> {
     }
 }
 
-impl <Q, const D: usize>  PullbackQuad<Q, D> {
+impl <Q>  PullbackQuad<Q> {
     /// Returns an iterator over all nodes in the reference domain.
     pub fn nodes_ref<'a, T, Elem>(&'a self, ref_elem: &'a Elem::ParametricElement) -> impl Iterator<Item = Q::Node> + 'a
     where T: RealField + Sum + Product + Copy,
@@ -57,7 +57,7 @@ pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
 impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
-impl <T, Elem, Quad, const D: usize> Quadrature<T, Elem> for PullbackQuad<Quad, D>
+impl <T, Elem, Quad, const D: usize> Quadrature<T, Elem> for PullbackQuad<Quad>
 where T: RealField + Sum + Product + Copy,
       Elem: Element<T>,
       Elem::GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>,
