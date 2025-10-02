@@ -82,6 +82,7 @@ impl CubicBspline {
 impl BasisFunctions for CubicBspline {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U1;
     type Coord<T> = T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -105,7 +106,7 @@ impl <T: RealField + Copy> EvalBasis<T> for CubicBspline {
     }
 }
 
-impl<T: RealField + Copy> EvalGrad<T, 1> for CubicBspline {
+impl<T: RealField + Copy> EvalGrad<T> for CubicBspline {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Self::NumBasis> {
         match self {
             CubicBspline::Smooth => {

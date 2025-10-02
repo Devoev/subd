@@ -21,7 +21,7 @@ use crate::space::Space;
 /// - [`T`]: Scalar type for coefficients.
 /// - [`X`]: Type of parametric values in the reference domain.
 /// - [`D`]: Dimension of the parametric domain.
-pub type BsplineSpace<T, const D: usize> = Space<T, MultiDeBoor<T, D>, D>;
+pub type BsplineSpace<T, const D: usize> = Space<T, MultiDeBoor<T, D>>;
 
 /// Functions space of univariate scalar B-Splines.
 pub type BsplineSpace1d<T> = BsplineSpace<T, 1>;
@@ -33,7 +33,7 @@ pub type BsplineSpace2d<T> = BsplineSpace<T, 2>;
 pub type BsplineSpace3d<T> = BsplineSpace<T, 3>;
 
 /// Function space of 2D vector B-Splines.
-pub type BsplineSpaceVec2d<T> = Space<T, DeBoorVec2d<T>, 2>;
+pub type BsplineSpaceVec2d<T> = Space<T, DeBoorVec2d<T>>;
 
 impl<T, const D: usize> BsplineSpace<T, D> {
     /// Returns an array of the knot vectors for each parametric direction.

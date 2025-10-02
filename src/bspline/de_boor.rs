@@ -2,7 +2,7 @@ use crate::space::cart_prod;
 use crate::space::local::{FindElem, MeshBasis};
 use crate::space::tensor_prod::MultiProd;
 use crate::space::basis::BasisFunctions;
-use crate::bspline::de_boor_span::DeBoorSpan;
+use crate::bspline::de_boor_span::DeBoorLocal;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
@@ -71,6 +71,7 @@ impl <T: RealField + Copy> DeBoor<T> {
 impl<T: RealField> BasisFunctions for DeBoor<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U1;
     type Coord<_T> = _T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -80,12 +81,12 @@ impl<T: RealField> BasisFunctions for DeBoor<T> {
 
 impl <T: RealField + Copy> MeshBasis<T> for DeBoor<T> {
     type Cell = KnotSpan;
-    type LocalBasis = DeBoorSpan<T>;
+    type LocalBasis = DeBoorLocal<T>;
     type GlobalIndices = RangeInclusive<usize>;
 
-    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
+    fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
         // todo: replace knots.clone() for efficiency
-        DeBoorSpan::new(self.knots.clone(), self.degree, *elem)
+        DeBoorLocal::new(self.knots.clone(), self.degree, *cell)
     }
 
     fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {

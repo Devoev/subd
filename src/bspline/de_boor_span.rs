@@ -7,7 +7,7 @@ use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVecto
 
 /// Scalar univariate B-Spline basis functions, restricted to a local [`KnotSpan`].
 #[derive(Debug, Clone)]
-pub struct DeBoorSpan<T: RealField> {
+pub struct DeBoorLocal<T: RealField> {
     /// Global knot vector.
     knots: KnotVec<T>, // todo: replace with local knot vector copy
 
@@ -18,19 +18,20 @@ pub struct DeBoorSpan<T: RealField> {
     pub span: KnotSpan,
 }
 
-/// Basis of [`D`]-variate [local B-Splines](DeBoorSpan) on a local knot span.
-pub type MultiDeBoorSpan<T, const D: usize> = MultiProd<T, DeBoorSpan<T>, D>;
+/// Basis of [`D`]-variate [local B-Splines](DeBoorLocal) on a local knot span.
+pub type MultiDeBoorSpan<T, const D: usize> = MultiProd<T, DeBoorLocal<T>, D>;
 
-impl <T: RealField> DeBoorSpan<T> {
-    /// Constructs a new [`DeBoorSpan`] from the given `global_basis` and `span`.
+impl <T: RealField> DeBoorLocal<T> {
+    /// Constructs a new [`DeBoorLocal`] from the given `global_basis` and `span`.
     pub fn new(knots: KnotVec<T>, degree: usize, span: KnotSpan) -> Self {
         Self { knots, degree, span }
     }
 }
 
-impl<T: RealField> BasisFunctions for DeBoorSpan<T> {
+impl<T: RealField> BasisFunctions for DeBoorLocal<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U1;
     type Coord<_T> = _T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -38,7 +39,7 @@ impl<T: RealField> BasisFunctions for DeBoorSpan<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalBasis<T> for DeBoorSpan<T> {
+impl<T: RealField + Copy> EvalBasis<T> for DeBoorLocal<T> {
     fn eval(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let knots = &self.knots;
         let span_idx = self.span.0;
@@ -64,7 +65,7 @@ impl<T: RealField + Copy> EvalBasis<T> for DeBoorSpan<T> {
     }
 }
 
-impl <T: RealField + Copy> EvalDerivs<T> for DeBoorSpan<T> {
+impl <T: RealField + Copy> EvalDerivs<T> for DeBoorLocal<T> {
     fn eval_derivs<const K: usize>(&self, x: T) -> OMatrix<T, DimNameSum<Const<K>, U1>, Dyn>
     where
         Const<K>: DimNameAdd<U1>
@@ -159,7 +160,7 @@ impl <T: RealField + Copy> EvalDerivs<T> for DeBoorSpan<T> {
     }
 }
 
-impl<T: RealField + Copy> EvalGrad<T, 1> for DeBoorSpan<T> {
+impl<T: RealField + Copy> EvalGrad<T> for DeBoorLocal<T> {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Dyn> {
         let derivs = self.eval_derivs::<1>(x);
         derivs.row(1).into_owned()
@@ -176,7 +177,7 @@ mod tests {
     use nalgebra::{dmatrix, dvector};
     use rand::random_range;
 
-    fn setup_eval() -> ([f64; 10], [DeBoorSpan<f64>; 10]) {
+    fn setup_eval() -> ([f64; 10], [DeBoorLocal<f64>; 10]) {
         // Define knot vector
         let p = 2;
         let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]);
@@ -186,11 +187,11 @@ mod tests {
         let spans = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3];
 
         // Constructs local bases
-        let local_bases = spans.map(|idx| DeBoorSpan::new(xi.clone(), p, KnotSpan(idx)));
+        let local_bases = spans.map(|idx| DeBoorLocal::new(xi.clone(), p, KnotSpan(idx)));
         (ts, local_bases)
     }
 
-    fn setup_eval_derivs() -> (f64, DeBoorSpan<f64>) {
+    fn setup_eval_derivs() -> (f64, DeBoorLocal<f64>) {
         // Get random parametric value
         let t = random_range(0.0..=1.0);
 
@@ -199,11 +200,11 @@ mod tests {
         let n = 5;
         let xi = KnotVec(vec![0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0]);
         let idx = KnotSpan::find(&xi, n, t).unwrap();
-        let basis = DeBoorSpan::new(xi, p, idx);
+        let basis = DeBoorLocal::new(xi, p, idx);
         (t, basis)
     }
 
-    fn setup_eval_derivs_sum() -> (f64, DeBoorSpan<f64>, DeBoorSpan<f64>) {
+    fn setup_eval_derivs_sum() -> (f64, DeBoorLocal<f64>, DeBoorLocal<f64>) {
         // Get random parametric value
         let t = random_range(0.0..=1.0);
 
@@ -212,14 +213,14 @@ mod tests {
         let p = 3;
         let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]);
         let idx = KnotSpan::find(&xi, n, t).unwrap();
-        let b1 = DeBoorSpan::new(xi, p, idx);
+        let b1 = DeBoorLocal::new(xi, p, idx);
 
         // Define second knot vector
         let n = 6;
         let p = 3;
         let xi = KnotVec(vec![0.0, 0.0, 0.0, 0.0, 1.0/3.0, 2.0/3.0, 1.0, 1.0, 1.0, 1.0]);
         let idx = KnotSpan::find(&xi, n, t).unwrap();
-        let b2 = DeBoorSpan::new(xi, p, idx);
+        let b2 = DeBoorLocal::new(xi, p, idx);
 
         (t, b1, b2)
     }
