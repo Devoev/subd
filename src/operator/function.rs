@@ -6,7 +6,7 @@ use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
 use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
-use crate::mesh::traits::{MeshTopology};
+use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -28,7 +28,7 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, cons
           Basis: MeshBasis<T>,
           Basis::Cell: ToElement<T, Coords::GeoDim, Coords = Coords, Elem = Elem>,
           Coords: VertexStorage<T>,
-          &'a Cells: MeshTopology<Cell = Basis::Cell>,
+          &'a Cells: CellTopology<Cell = Basis::Cell>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum

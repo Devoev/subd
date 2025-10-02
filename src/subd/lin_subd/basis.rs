@@ -6,7 +6,7 @@ use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use nalgebra::{matrix, Dyn, OMatrix, RealField, U1, U2, U4};
 use numeric_literals::replace_float_literals;
 use crate::basis::space::Space;

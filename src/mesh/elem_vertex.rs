@@ -3,7 +3,7 @@
 
 use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity};
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U1};
@@ -47,7 +47,7 @@ impl<'a, C> IntoIterator for &'a ElemVec<C> {
     }
 }
 
-impl <C> MeshTopology for ElemVec<C> {
+impl <C> CellTopology for ElemVec<C> {
     type Cell = C;
     type CellIter = IntoIter<Self::Cell>;
     
@@ -60,7 +60,7 @@ impl <C> MeshTopology for ElemVec<C> {
     }
 }
 
-impl <'a, C> MeshTopology for &'a ElemVec<C> {
+impl <'a, C> CellTopology for &'a ElemVec<C> {
     type Cell = &'a C;
     type CellIter = Iter<'a, C>;
 

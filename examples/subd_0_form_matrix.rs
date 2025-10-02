@@ -5,7 +5,7 @@ use rand::random_range;
 use subd::basis::space::Space;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::MeshTopology;
+use subd::mesh::cell_topology::CellTopology;
 use subd::operator::hodge::Hodge;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;

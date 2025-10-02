@@ -1,7 +1,7 @@
 use crate::bspline::space::BsplineSpace;
 use crate::cells::traits::CellBoundary;
 use crate::mesh::elem_vertex::ElemVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use itertools::iproduct;
 use nalgebra::{Const, DMatrix, DVector, DimNameDiff, DimNameSub, RealField, Scalar, U1};
 use nalgebra_sparse::CsrMatrix;

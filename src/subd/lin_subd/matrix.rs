@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::cells::node::Node;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use nalgebra::{matrix, Matrix5x4, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::sync::LazyLock;

@@ -2,7 +2,7 @@
 
 use approx::assert_abs_diff_eq;
 use crate::common::mesh_examples::make_pentagon_mesh;
-use subd::mesh::traits::Mesh;
+use subd::mesh::cell_topology::Mesh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 use subd::quadrature::traits::Quadrature;

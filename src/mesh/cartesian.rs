@@ -1,7 +1,7 @@
 use crate::cells::cartesian::CartCellIdx;
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::knots::breaks::Breaks;
-use crate::mesh::traits::{MeshTopology};
+use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::{Const, OPoint, Point, RealField, Scalar};
@@ -79,7 +79,7 @@ impl <const D: usize> Cartesian<D> {
 /// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
 pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
-impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
+impl <'a, const D: usize> CellTopology for &'a Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
@@ -92,7 +92,7 @@ impl <'a, const D: usize> MeshTopology for &'a Cartesian<D> {
     }
 }
 
-impl<const D: usize> MeshTopology for Cartesian<D> {
+impl<const D: usize> CellTopology for Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 

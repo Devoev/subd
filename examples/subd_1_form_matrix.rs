@@ -9,7 +9,7 @@ use subd::cells::geo::Cell;
 use subd::cells::quad::{Quad, QuadNodes};
 use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::{Mesh, MeshTopology};
+use subd::mesh::cell_topology::{Mesh, CellTopology};
 use subd::operator::hodge::{assemble_hodge_local, Hodge};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;

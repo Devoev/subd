@@ -4,7 +4,7 @@ use crate::basis::eval::EvalBasis;
 use crate::basis::local::MeshBasis;
 use crate::basis::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 use itertools::Itertools;

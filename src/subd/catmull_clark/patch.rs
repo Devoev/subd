@@ -4,7 +4,7 @@ use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
 use crate::cells::traits::{Cell, ToElement};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
 use crate::subd::catmull_clark::map::CatmarkMap;

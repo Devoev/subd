@@ -6,7 +6,7 @@ use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::diffgeo::chart::Chart;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
+use subd::mesh::cell_topology::Mesh;
 use subd::plot::{plot_faces, plot_fn_msh, write_connectivity, write_coords_with_fn};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;

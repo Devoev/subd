@@ -4,7 +4,7 @@ use crate::knots::increments::Increments;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use crate::mesh::cartesian::Cartesian;
-use crate::mesh::traits::{MeshTopology};
+use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::Mesh;
 use itertools::{Itertools, MultiProduct};
 use nalgebra::{Const, OPoint, RealField, Scalar};
@@ -73,7 +73,7 @@ impl <const D: usize> CartesianWithIncrements<D> {
 /// An iterator over the elements (`[KnotSpan;D]`) of a [`KnotMesh`] mesh.
 pub type KnotSpanIter<const D: usize> = Map<MultiProduct<IntoIter<KnotSpan>>, fn(Vec<KnotSpan>) -> [KnotSpan; D]>;
 
-impl <const D: usize> MeshTopology for CartesianWithIncrements<D> {
+impl <const D: usize> CellTopology for CartesianWithIncrements<D> {
     type Cell = [KnotSpan; D];
     type CellIter = KnotSpanIter<D>;
 

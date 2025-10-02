@@ -2,7 +2,7 @@ use crate::basis::eval::{EvalGrad, EvalGradAllocator};
 use crate::basis::local::MeshGradBasis;
 use crate::basis::space::Space;
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::{MeshTopology};
+use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
@@ -40,7 +40,7 @@ impl <'a, T, Basis, Coords, Cells, const D: usize> Laplace<'a, T, Basis, Coords,
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= Basis::Cell>,
+          Cells: CellTopology<Cell= Basis::Cell>,
           Basis: MeshGradBasis<T, D>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalGradAllocator<Basis::LocalBasis, D> + Allocator<Coords::GeoDim>,

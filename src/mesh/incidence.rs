@@ -2,7 +2,7 @@ use crate::cells::chain::Chain;
 use crate::cells::edge::DirectedEdge;
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, SubCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use itertools::Itertools;
 use nalgebra::{DimName, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;

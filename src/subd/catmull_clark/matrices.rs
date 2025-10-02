@@ -2,7 +2,7 @@ use crate::cells::edge::UndirectedEdge;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use crate::subd::patch::quad_nodes_edge_one_ring::QuadNodesEdgeOneRing;
 use crate::subd::patch::quad_nodes_one_ring::QuadNodesOneRing;
 use itertools::Itertools;

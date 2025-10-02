@@ -24,7 +24,7 @@ use subd::diffgeo::chart::Chart;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
+use subd::mesh::cell_topology::Mesh;
 use subd::operator::bc::DirichletBcHom;
 use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;

@@ -3,7 +3,7 @@ use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, Selec
 use crate::basis::local::MeshBasis;
 use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
-use crate::mesh::traits::{MeshTopology};
+use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -29,7 +29,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn norm_squared<const N: usize, const D: usize, U, Quadrature>(&self, u: U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology,
+          Cells: CellTopology,
           Cells::Cell: ToElement<T, Coords::GeoDim>,
           <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
@@ -58,7 +58,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn norm<const N: usize, const D: usize, U, Quadrature>(&self, u: U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology,
+          Cells: CellTopology,
           Cells::Cell: ToElement<T, Coords::GeoDim>,
           <Cells::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasDim<T, D>,
           U: Fn(Point<T, D>) -> SVector<T, N>,
@@ -74,7 +74,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn error_squared<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= Basis::Cell>,
+          Cells: CellTopology<Cell= Basis::Cell>,
           Basis: MeshBasis<T>,
           Basis::Cell: ToElement<T, Coords::GeoDim>,
           <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
@@ -106,7 +106,7 @@ impl<'a, T, Coords, Cells> L2Norm<'a, T, Coords, Cells> {
     pub fn error<Basis, const D: usize, U, Quadrature>(&self, uh: &LinCombination<T, Basis, D>, u: &U, quad: &PullbackQuad<Quadrature, D>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Coords: VertexStorage<T>,
-          Cells: MeshTopology<Cell= Basis::Cell>,
+          Cells: CellTopology<Cell= Basis::Cell>,
           Basis: MeshBasis<T>,
           Basis::Cell: ToElement<T, Coords::GeoDim>,
           <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,

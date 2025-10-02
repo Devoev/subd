@@ -1,7 +1,7 @@
 use crate::bspline::spline_geo::SplineGeo;
 use crate::knots::knot_span::KnotSpan;
 use crate::mesh::knot_mesh::{KnotMesh, KnotSpanIter};
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use nalgebra::RealField;
 
 // todo: REFACTOR. Replace with type alias to Mesh
@@ -41,7 +41,7 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> MeshTopology for BezierMesh<'a, T, D, M> {
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> CellTopology for BezierMesh<'a, T, D, M> {
     type Cell = [KnotSpan; D]; // todo: possibly introduce KnotSpanIdx with multi index
     type CellIter = KnotSpanIter<D>;
 

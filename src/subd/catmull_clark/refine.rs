@@ -1,7 +1,7 @@
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use crate::subd::catmull_clark::matrices::assemble_global_mat;
 use nalgebra::{Point, RealField};
 use nalgebra_sparse::CsrMatrix;

@@ -20,7 +20,7 @@ use std::io::Write;
 use std::iter::zip;
 use crate::element::traits::Element;
 use crate::mesh::{ElemOfMesh, Mesh};
-use crate::mesh::traits::{CellOfMesh, MeshTopology};
+use crate::mesh::cell_topology::{CellOfMesh, CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
@@ -112,7 +112,7 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 pub fn plot_fn_msh<X, Coords, Cells, F, D>(msh: &Mesh<f64, Coords, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
           Coords: VertexStorage<f64, GeoDim = U2> + Clone,  // todo: remove cloning
-          Cells: MeshTopology + Clone,
+          Cells: CellTopology + Clone,
           CellOfMesh<Cells>: ToElement<f64, U2, Coords = Coords>,
           <ElemOfMesh<f64, Coords, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&CellOfMesh<Cells>, X) -> f64,
