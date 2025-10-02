@@ -33,10 +33,11 @@ impl<B1: BasisFunctions, B2: BasisFunctions> NumBasisAdd<B2> for B1
 
 impl<T, B1, B2> BasisFunctions for Prod<T, B1, B2>
 where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
-      B2: BasisFunctions<NumComponents = U1, Coord<T> = B1::Coord<T>>,
+      B2: BasisFunctions<NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
+    type ParametricDim = B1::ParametricDim;
     type Coord<_T> = B1::Coord<_T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -48,7 +49,7 @@ where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
 impl <T, B1, B2> EvalBasis<T> for Prod<T, B1, B2>
 where T: RealField,
       B1: EvalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: EvalBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>, 
+      B2: EvalBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1> + EvalBasisAllocator<B2> + EvalBasisAllocator<Self>,
 {
@@ -65,7 +66,7 @@ where T: RealField,
 impl <T, B1, B2> MeshBasis<T> for Prod<T, B1, B2>
 where T: RealField,
       B1: MeshBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: MeshBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
+      B2: MeshBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       B1::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,
@@ -88,7 +89,7 @@ where T: RealField,
 impl <T, B1, B2> FindElem<T> for Prod<T, B1, B2>
 where T: RealField,
       B1: FindElem<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: FindElem<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
+      B2: FindElem<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       Self::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,

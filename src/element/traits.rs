@@ -1,6 +1,6 @@
 use crate::space::basis::BasisFunctions;
 use crate::diffgeo::chart::{Chart, ChartAllocator};
-use nalgebra::{Const, DefaultAllocator, Scalar};
+use nalgebra::{Const, DefaultAllocator, DimName, Scalar};
 
 /// A [`ChartAllocator`] for the [`C::GeoMap`] of an element.
 pub trait ElemAllocator<T: Scalar, C: Element<T>>: ChartAllocator<T, C::GeoMap>
@@ -43,10 +43,10 @@ where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
 /// Constrains `Self` to have a chart with both parametric and geometry dimension [`D`].
-pub trait HasDim<T: Scalar, const D: usize>: Element<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>
+pub trait HasDim<T: Scalar, D: DimName>: Element<T, GeoMap: Chart<T, ParametricDim = D, GeometryDim = D>>
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
-impl <T: Scalar, const D: usize, Elem: Element<T, GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>>> HasDim<T, D> for Elem
+impl <T: Scalar, D: DimName, Elem: Element<T, GeoMap: Chart<T, ParametricDim = D, GeometryDim = D>>> HasDim<T, D> for Elem
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}

@@ -3,7 +3,7 @@ use crate::space::lin_combination::LinCombination;
 use crate::space::local::{MeshBasis, MeshGradBasis};
 use crate::space::basis::BasisFunctions;
 use crate::cells::traits::ToElement;
-use crate::diffgeo::chart::Chart;
+use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
@@ -13,12 +13,13 @@ use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 use crate::space::Space;
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
-pub struct GradBasis<B, const D: usize>(B);
+pub struct GradBasis<Basis>(Basis);
 
-impl<B: BasisFunctions<NumComponents = U1>, const D: usize> BasisFunctions for GradBasis<B, D> {
-    type NumBasis = B::NumBasis;
-    type NumComponents = Const<D>;
-    type Coord<T> = B::Coord<T>;
+impl<Basis: BasisFunctions<NumComponents = U1>> BasisFunctions for GradBasis<Basis> {
+    type NumBasis = Basis::NumBasis;
+    type NumComponents = Basis::ParametricDim;
+    type ParametricDim = Basis::ParametricDim;
+    type Coord<T> = Basis::Coord<T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.0.num_basis_generic()
@@ -26,8 +27,8 @@ impl<B: BasisFunctions<NumComponents = U1>, const D: usize> BasisFunctions for G
 }
 
 /// Implement [`EvalBasis`] if `B` implements [`EvalBasis`].
-impl <T: RealField, B: EvalGrad<T, D>, const D: usize> EvalBasis<T> for GradBasis<B, D>
-    where DefaultAllocator: EvalGradAllocator<B, D>
+impl <T: RealField, Basis: EvalGrad<T>> EvalBasis<T> for GradBasis<Basis>
+    where DefaultAllocator: EvalGradAllocator<Basis>
 {
     fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         self.0.eval_grad(x)
@@ -35,14 +36,14 @@ impl <T: RealField, B: EvalGrad<T, D>, const D: usize> EvalBasis<T> for GradBasi
 }
 
 /// Implement [`MeshBasis`] if `B` is also a local basis.
-impl <T, B, const D: usize> MeshBasis<T> for GradBasis<B, D>
+impl <T, Basis> MeshBasis<T> for GradBasis<Basis>
 where T: RealField,
-      B: MeshGradBasis<T, D>,
-      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
+      Basis: MeshGradBasis<T>,
+      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis>
 {
-    type Cell = B::Cell;
-    type LocalBasis = GradBasis<B::LocalBasis, D>;
-    type GlobalIndices = B::GlobalIndices;
+    type Cell = Basis::Cell;
+    type LocalBasis = GradBasis<Basis::LocalBasis>;
+    type GlobalIndices = Basis::GlobalIndices;
 
     fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         GradBasis(self.0.local_basis(elem))
@@ -54,56 +55,57 @@ where T: RealField,
 }
 
 /// Space of gradients of basis functions in `B`.
-pub type GradSpace<T, B, const D: usize> = Space<T, GradBasis<B, D>, D>;
+pub type GradSpace<T, Basis> = Space<T, GradBasis<Basis>>;
 
-impl <T, B, const D: usize> Space<T, B, D>
+impl <T, Basis> Space<T, Basis>
 where T: RealField,
-      B: MeshGradBasis<T, D>,
-      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
+      Basis: MeshGradBasis<T>,
+      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis>
 {
     /// Returns the gradient of this space.
-    pub fn grad(self) -> GradSpace<T, B, D> {
+    pub fn grad(self) -> GradSpace<T, Basis> {
         let basis = self.basis;
         Space::new(GradBasis(basis))
     }
 }
 
-impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
+impl <'a, T, Basis> LinCombination<'a, T, Basis>
     where T: ComplexField,
-          B: MeshGradBasis<T::RealField, D>,
-          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
+          Basis: MeshGradBasis<T::RealField>,
+          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis>
 {
     /// Returns the gradient of this linear combination in the space `grad_space`.
-    pub fn grad(self, grad_space: &'a GradSpace<T::RealField, B, D>) -> LinCombination<'a, T, GradBasis<B, D>, D> {
+    pub fn grad(self, grad_space: &'a GradSpace<T::RealField, Basis>) -> LinCombination<'a, T, GradBasis<Basis>> {
         LinCombination::new(self.coeffs, grad_space).unwrap()
     }
 }
 
 /// [`GradBasis`] mapped to the physical domain of a single element.
-pub struct GradBasisPullbackLocal<C, B, const D: usize> {
+pub struct GradBasisPullbackLocal<C, Basis> {
     chart: C,
-    grad_basis: GradBasis<B, D>,
+    grad_basis: GradBasis<Basis>,
 }
 
-impl<C, B, const D: usize> BasisFunctions for GradBasisPullbackLocal<C, B, D>
+impl<C, Basis> BasisFunctions for GradBasisPullbackLocal<C, Basis>
 where
-    B: BasisFunctions<NumComponents = U1>,
+    Basis: BasisFunctions<NumComponents = U1>,
 {
-    type NumBasis = B::NumBasis;
-    type NumComponents = Const<D>;
-    type Coord<T> = B::Coord<T>;
+    type NumBasis = Basis::NumBasis;
+    type NumComponents = Basis::ParametricDim;
+    type ParametricDim = Basis::ParametricDim;
+    type Coord<T> = Basis::Coord<T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.grad_basis.num_basis_generic()
     }
 }
 
-impl<T, C, B, const D: usize> EvalBasis<T> for GradBasisPullbackLocal<C, B, D>
+impl<T, GeoMap, Basis> EvalBasis<T> for GradBasisPullbackLocal<GeoMap, Basis>
     where T: RealField,
-          B: EvalGrad<T, D>,
-          B::Coord<T>: Copy,
-          C: Chart<T, Coord = B::Coord<T>, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-          DefaultAllocator: EvalGradAllocator<B, D>
+          Basis: EvalGrad<T>,
+          Basis::Coord<T>: Copy,
+          GeoMap: Chart<T, Coord = Basis::Coord<T>, ParametricDim = Basis::ParametricDim, GeometryDim = Basis::ParametricDim>,
+          DefaultAllocator: EvalGradAllocator<Basis> + ChartAllocator<T, GeoMap>
 {
     fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Self::NumComponents, Self::NumBasis> {
         let d_phi = self.chart.eval_diff(x);
@@ -115,37 +117,38 @@ impl<T, C, B, const D: usize> EvalBasis<T> for GradBasisPullbackLocal<C, B, D>
 //  should we differentiate between Basis in the parametric and physical domain in general?
 
 /// [`GradBasis`] mapped to the physical domain by inverse pullbacks.
-pub struct GradBasisPullback<'a, T, Basis, Coords, Cells, const D: usize> {
+pub struct GradBasisPullback<'a, T, Basis, Coords, Cells> {
     pub msh: &'a Mesh<T, Coords, Cells>,
-    pub grad_basis: GradBasis<Basis, D>
+    pub grad_basis: GradBasis<Basis>
 }
 
-impl<'a, T, B, Coords, Cells, const D: usize> BasisFunctions for GradBasisPullback<'a, T, B, Coords, Cells, D>
+impl<'a, T, Basis, Coords, Cells> BasisFunctions for GradBasisPullback<'a, T, Basis, Coords, Cells>
 where
-    B: BasisFunctions<NumComponents = U1>,
+    Basis: BasisFunctions<NumComponents = U1>,
 {
-    type NumBasis = B::NumBasis;
-    type NumComponents = Const<D>;
-    type Coord<_T> = B::Coord<_T>;
+    type NumBasis = Basis::NumBasis;
+    type NumComponents = Basis::ParametricDim;
+    type ParametricDim = Basis::ParametricDim;
+    type Coord<_T> = Basis::Coord<_T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.grad_basis.num_basis_generic()
     }
 }
 
-impl <'a, T, B, Coords, Cells, const D: usize> MeshBasis<T> for GradBasisPullback<'a, T, B, Coords, Cells, D>
+impl <'a, T, Basis, Coords, Cells> MeshBasis<T> for GradBasisPullback<'a, T, Basis, Coords, Cells>
     where T: RealField,
-          B: MeshGradBasis<T, D>,
+          Basis: MeshGradBasis<T>,
           Coords: VertexStorage<T>,
-          Cells: ElementTopology<T, Coords, Cell= B::Cell>,
-          B::Coord<T>: Copy,
-          B::Cell: ToElement<T, Coords::GeoDim>,
-          <B::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + ElemAllocator<T, <B::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
+          Cells: ElementTopology<T, Coords, Cell= Basis::Cell>,
+          Basis::Coord<T>: Copy,
+          Basis::Cell: ToElement<T, Coords::GeoDim>,
+          <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, Basis::ParametricDim>,
+          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis> + ElemAllocator<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {
-    type Cell = B::Cell;
-    type LocalBasis = GradBasisPullbackLocal<<<B::Cell as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, B::LocalBasis, D>;
-    type GlobalIndices = B::GlobalIndices;
+    type Cell = Basis::Cell;
+    type LocalBasis = GradBasisPullbackLocal<<<Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, Basis::LocalBasis>;
+    type GlobalIndices = Basis::GlobalIndices;
 
     fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
         let parametric_basis = self.grad_basis.local_basis(cell);
