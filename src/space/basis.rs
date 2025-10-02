@@ -34,4 +34,14 @@ pub trait BasisFunctions {
     fn num_components(&self) -> usize {
         Self::NumComponents::dim()
     }
+
+    /// Returns the dimension of the parametric domain wrapped into [`Self::ParametricDim`] (`Const`).
+    fn parametric_dim_generic(&self) -> Self::ParametricDim {
+        Self::ParametricDim::name()
+    }
+
+    /// Returns the dimension of the parametric domain.
+    fn parametric_dim(&self) -> usize {
+        Self::ParametricDim::dim()
+    }
 }
