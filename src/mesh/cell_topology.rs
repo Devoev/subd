@@ -34,7 +34,7 @@ pub type CellOfMesh<Cells> = <Cells as CellTopology>::Cell;
 pub trait ElementTopology<T, Verts>: CellTopology<Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>>
     where T: Scalar,
           Verts: VertexStorage<T>,
-          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Self::Cell, Verts::GeoDim>>, {}
+          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Self::Cell, Verts::GeoDim>> {}
 
 impl <T, Verts, Cells> ElementTopology<T, Verts> for Cells
     where T: Scalar,

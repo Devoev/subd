@@ -1,7 +1,11 @@
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::basis::traits::Basis;
+use crate::cells::traits::{ElemOfCell, ToElement};
+use crate::element::traits::{ElemAllocator, HasBasisCoord};
+use crate::mesh::cell_topology::ElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar, U1};
-
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
 
 /// Basis functions defined on a mesh.
@@ -29,6 +33,19 @@ pub trait MeshBasis<T: Scalar>: Basis<NumBasis = Dyn>
     /// Returns an iterator over all global indices of the local basis of `cell`.
     fn global_indices(&self, cell: &Self::Cell) -> Self::GlobalIndices;
 }
+
+// todo: from where should the dimension D for geometry and parametric domain come from?
+/// Basis on a mesh where each cell implements [`ToElement`].
+///
+/// The cells are required to match the [`Cells::Cell`] of the element topology `Cells`.
+/// For compatibility with the basis functions, the elements must match the [`Basis::Coord<T>`]
+/// and the geometric and parametric dimensions.
+pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<T, Cell = Cells::Cell> + Sized
+where T: Scalar,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      ElemOfCell<T, Cells::Cell, Verts::GeoDim>: HasBasisCoord<T, Self>,
+      DefaultAllocator: Allocator<Verts::GeoDim> + EvalBasisAllocator<Self::LocalBasis> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
 
 /// Local basis functions with [gradient evaluations](EvalGrad).
 pub trait MeshGradBasis<T: RealField, const D: usize>: MeshBasis<T, LocalBasis: EvalGrad<T, D>, NumComponents = U1>
