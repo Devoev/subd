@@ -2,7 +2,7 @@
 #![feature(cmp_minmax)]
 extern crate core;
 
-pub mod basis;
+pub mod space;
 pub mod bspline;
 pub mod cells;
 pub mod index;
@@ -19,10 +19,10 @@ pub mod element;
 
 #[cfg(test)]
 mod tests {
-    use crate::basis::cart_prod;
-    use crate::basis::eval::EvalDerivs;
-    use crate::basis::local::{FindElem, MeshBasis};
-    use crate::basis::space::Space;
+    use crate::space::cart_prod;
+    use crate::space::eval::EvalDerivs;
+    use crate::space::local::{FindElem, MeshBasis};
+    use crate::space::space::Space;
     use crate::bspline::de_boor;
     use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};

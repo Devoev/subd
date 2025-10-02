@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::{FindElem, MeshBasis};
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::local::{FindElem, MeshBasis};
+use crate::space::traits::Basis;
 use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;

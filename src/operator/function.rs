@@ -1,9 +1,9 @@
 // todo: rename
 
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::lin_combination::EvalFunctionAllocator;
-use crate::basis::local::MeshBasis;
-use crate::basis::space::Space;
+use crate::space::eval::{EvalBasis, EvalBasisAllocator};
+use crate::space::lin_combination::EvalFunctionAllocator;
+use crate::space::local::MeshBasis;
+use crate::space::Space;
 use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
 use crate::mesh::cell_topology::{CellTopology, ElementTopology};

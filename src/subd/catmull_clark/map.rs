@@ -1,4 +1,4 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
+use crate::space::eval::{EvalBasis, EvalGrad};
 use crate::diffgeo::chart::Chart;
 use nalgebra::{Const, Point, RealField, SMatrix, U2};
 use num_traits::ToPrimitive;

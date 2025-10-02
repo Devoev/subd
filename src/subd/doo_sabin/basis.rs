@@ -1,7 +1,7 @@
-use crate::basis::traits::Basis;
+use crate::space::traits::Basis;
 use crate::bspline::quadratic::QuadraticBspline;
 use nalgebra::{Dyn, OMatrix, RealField, RowDVector, RowSVector, U1};
-use crate::basis::eval::EvalBasis;
+use crate::space::eval::EvalBasis;
 
 /// Basis functions on a Doo-Sabin patch.
 pub enum DooSabinPatchBasis {

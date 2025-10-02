@@ -1,4 +1,3 @@
-use crate::basis::space::Space;
 use crate::bspline::de_boor::{DeBoor, DeBoorVec2d, MultiDeBoor};
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
@@ -7,7 +6,7 @@ use itertools::Itertools;
 use nalgebra::RealField;
 use std::collections::HashSet;
 use std::iter::zip;
-
+use crate::space::Space;
 // todo: the vector valued spaces are not special cases. Change this somehow?
 
 /// Function space of [`D`]-variate B-Splines.

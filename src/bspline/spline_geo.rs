@@ -1,4 +1,4 @@
-use crate::basis::error::CoeffsSpaceDimError;
+use crate::space::error::CoeffsSpaceDimError;
 use crate::bspline::space::BsplineSpace;
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;

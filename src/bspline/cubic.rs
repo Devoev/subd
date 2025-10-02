@@ -1,5 +1,5 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::traits::Basis;
 use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1};
 use std::sync::LazyLock;
 

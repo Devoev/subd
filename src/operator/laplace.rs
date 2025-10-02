@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalGrad, EvalGradAllocator};
-use crate::basis::local::MeshGradBasis;
-use crate::basis::space::Space;
+use crate::space::eval::{EvalGrad, EvalGradAllocator};
+use crate::space::local::MeshGradBasis;
+use crate::space::Space;
 use crate::diffgeo::chart::Chart;
 use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;

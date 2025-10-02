@@ -1,6 +1,6 @@
-use crate::basis::eval::EvalBasisAllocator;
-use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::MeshBasis;
+use crate::space::eval::EvalBasisAllocator;
+use crate::space::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
+use crate::space::local::MeshBasis;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::cells::traits;

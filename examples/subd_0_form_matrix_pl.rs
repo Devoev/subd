@@ -1,7 +1,7 @@
 use nalgebra::{matrix, DMatrix, RowDVector};
 use nalgebra_sparse::CsrMatrix;
 use rand::random_range;
-use subd::basis::space::Space;
+use subd::space::space::Space;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::cell_topology::CellTopology;

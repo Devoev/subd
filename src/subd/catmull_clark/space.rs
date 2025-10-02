@@ -1,4 +1,4 @@
-use crate::basis::space::Space;
+use crate::space::Space;
 use crate::subd::catmull_clark::basis::CatmarkBasis;
 
 /// Function space for Catmull-Clark basis functions.

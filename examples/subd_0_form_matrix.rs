@@ -2,7 +2,7 @@ use nalgebra::{center, matrix, point, DMatrix, Point2, RowDVector};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use rand::random_range;
-use subd::basis::space::Space;
+use subd::space::space::Space;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::cell_topology::CellTopology;

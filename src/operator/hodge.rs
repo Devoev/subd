@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::local::MeshBasis;
-use crate::basis::space::Space;
+use crate::space::eval::{EvalBasis, EvalBasisAllocator};
+use crate::space::local::MeshBasis;
+use crate::space::Space;
 use crate::mesh::cell_topology::{CellTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;

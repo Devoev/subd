@@ -1,15 +1,15 @@
 //! Piecewise-linear basis functions.
 //! todo: move this elsewhere. For example a separate FE module?
 
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::MeshBasis;
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::local::MeshBasis;
+use crate::space::traits::Basis;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::cell_topology::CellTopology;
 use nalgebra::{matrix, Dyn, OMatrix, RealField, U1, U2, U4};
 use numeric_literals::replace_float_literals;
-use crate::basis::space::Space;
+use crate::space::Space;
 
 /// Space spanned by piecewise-linear basis functions on a quad mesh.
 pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>, 2>;

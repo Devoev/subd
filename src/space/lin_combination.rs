@@ -1,10 +1,10 @@
-use crate::basis::error::CoeffsSpaceDimError;
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::basis::local::{FindElem, MeshBasis, MeshGradBasis};
-use crate::basis::space::Space;
-use crate::basis::traits::Basis;
+use crate::space::error::CoeffsSpaceDimError;
+use crate::space::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::space::local::{FindElem, MeshBasis, MeshGradBasis};
+use crate::space::traits::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
+use crate::space::Space;
 
 /// Linear combination of coefficients with basis functions.
 #[derive(Clone, Debug)]

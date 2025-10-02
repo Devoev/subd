@@ -1,8 +1,8 @@
 // todo: this is work in progress
 
-use crate::basis::eval::EvalBasis;
-use crate::basis::local::MeshBasis;
-use crate::basis::traits::Basis;
+use crate::space::eval::EvalBasis;
+use crate::space::local::MeshBasis;
+use crate::space::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::mesh::cell_topology::CellTopology;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;

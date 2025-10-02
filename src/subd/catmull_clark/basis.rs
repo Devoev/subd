@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::MeshBasis;
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::local::MeshBasis;
+use crate::space::traits::Basis;
 use crate::bspline::cubic::CubicBspline;
 use crate::cells::traits::{Cell};
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};

@@ -1,12 +1,21 @@
-use crate::basis::error::CoeffsSpaceDimError;
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::{FindElem, MeshBasis, MeshGradBasis};
-use crate::basis::traits::Basis;
+use crate::space::error::CoeffsSpaceDimError;
+use crate::space::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::space::lin_combination::LinCombination;
+use crate::space::local::{FindElem, MeshBasis, MeshGradBasis};
+use crate::space::traits::Basis;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, RealField};
 use std::iter::zip;
 use std::marker::PhantomData;
 use std::ops::AddAssign;
+
+pub mod tensor_prod;
+pub mod local;
+pub mod traits;
+pub mod lin_combination;
+pub mod eval;
+pub mod error;
+pub mod cart_prod;
+pub mod grad;
 
 /// Function space spanned by a set of basis functions of type [`B`]
 /// as `V = span{b[1],...,b[n]}`.
@@ -48,7 +57,7 @@ type LocalSpace<T, B, const D: usize> = Space<T, <B as MeshBasis<T>>::LocalBasis
 type LocalSpaceWithIdx<T, B, const D: usize> = (LocalSpace<T, B, D>, <B as MeshBasis<T>>::GlobalIndices);
 
 impl <T: RealField, B: MeshBasis<T>, const D: usize> Space<T, B, D>
-    where DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
+where DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
 {
     /// Returns this space restricted to the local element `elem`.
     pub fn local_space(&self, elem: &B::Cell) -> LocalSpace<T, B, D> {
@@ -71,7 +80,7 @@ type EvalLocal<T, B> = OMatrix<T, <B as Basis>::NumComponents, <<B as MeshBasis<
 type EvalLocalWithIdx<T, B> = (EvalLocal<T, B>, <B as MeshBasis<T>>::GlobalIndices);
 
 impl <T: RealField, B: MeshBasis<T>, const D: usize> Space<T, B, D>
-    where DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
+where DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
 {
     /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
     pub fn eval_on_elem(&self, elem: &B::Cell, x: B::Coord<T>) -> EvalLocal<T, B> {
@@ -88,7 +97,7 @@ impl <T: RealField, B: MeshBasis<T>, const D: usize> Space<T, B, D>
         (b, idx)
     }
 
-    /// Populates the global basis matrix `global` 
+    /// Populates the global basis matrix `global`
     /// with the local basis values on `elem` evaluated at `x`.
     pub fn populate_global_on_elem(&self, global: &mut OMatrix<T, B::NumComponents, B::NumBasis>, elem: &B::Cell, x: B::Coord<T>) {
         let (b, idx) = self.eval_on_elem_with_idx(elem, x);
@@ -99,8 +108,8 @@ impl <T: RealField, B: MeshBasis<T>, const D: usize> Space<T, B, D>
 }
 
 impl <T: RealField, B: FindElem<T>, const D: usize> Space<T, B, D>
-    where B::Coord<T>: Copy,
-          DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
+where B::Coord<T>: Copy,
+      DefaultAllocator: EvalBasisAllocator<B::LocalBasis>
 {
     /// Evaluates only the local basis functions at the parametric point `x`.
     pub fn eval_local(&self, x: B::Coord<T>) -> EvalLocal<T, B> {
@@ -131,9 +140,9 @@ type EvalGradLocal<T, B, const D: usize> = OMatrix<T, Const<D>, <<B as MeshBasis
 type EvalGradLocalWithIdx<T, B, const D: usize> = (EvalGradLocal<T, B, D>, <B as MeshBasis<T>>::GlobalIndices);
 
 impl <T, B, const D: usize> Space<T, B, D>
-    where T: RealField,
-          B: MeshGradBasis<T, D>,
-          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
+where T: RealField,
+      B: MeshGradBasis<T, D>,
+      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
 {
     /// Evaluates the gradients of only local basis functions on the given `elem` at the parametric point `x`.
     pub fn eval_grad_on_elem(&self, elem: &B::Cell, x: B::Coord<T>) -> EvalGradLocal<T, B, D> {
@@ -161,10 +170,10 @@ impl <T, B, const D: usize> Space<T, B, D>
 }
 
 impl <T, B, const D: usize> Space<T, B, D>
-    where T: RealField,
-          B: FindElem<T> + MeshGradBasis<T, D>,
-          B::Coord<T>: Copy,
-          DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
+where T: RealField,
+      B: FindElem<T> + MeshGradBasis<T, D>,
+      B::Coord<T>: Copy,
+      DefaultAllocator: EvalGradAllocator<B::LocalBasis, D>
 {
     /// Evaluates the gradients of only local basis functions at the parametric point `x`.
     pub fn eval_grad_local(&self, x: B::Coord<T>) -> EvalGradLocal<T, B, D> {

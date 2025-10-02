@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalDerivs, EvalGrad};
-use crate::basis::tensor_prod::MultiProd;
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalDerivs, EvalGrad};
+use crate::space::tensor_prod::MultiProd;
+use crate::space::traits::Basis;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};

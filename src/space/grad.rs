@@ -1,16 +1,16 @@
-use crate::basis::eval::{EvalBasis, EvalGrad, EvalGradAllocator};
-use crate::basis::lin_combination::LinCombination;
-use crate::basis::local::{MeshBasis, MeshGradBasis};
-use crate::basis::space::Space;
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalGrad, EvalGradAllocator};
+use crate::space::lin_combination::LinCombination;
+use crate::space::local::{MeshBasis, MeshGradBasis};
+use crate::space::traits::Basis;
 use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
-use crate::mesh::cell_topology::{CellTopology, ElementTopology};
+use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
+use crate::space::Space;
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
 pub struct GradBasis<B, const D: usize>(B);

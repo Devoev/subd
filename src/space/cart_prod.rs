@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::local::{FindElem, MeshBasis};
-use crate::basis::traits::Basis;
+use crate::space::eval::{EvalBasis, EvalBasisAllocator};
+use crate::space::local::{FindElem, MeshBasis};
+use crate::space::traits::Basis;
 use nalgebra::{stack, DefaultAllocator, DimAdd, DimSum, OMatrix, RealField, U1, U2};
 use std::iter::once;
 use std::marker::PhantomData;
