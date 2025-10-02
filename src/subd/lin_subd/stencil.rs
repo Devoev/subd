@@ -5,7 +5,7 @@ use crate::cells::traits::ToElement;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{center, RealField};
 use std::collections::HashMap;
-use crate::mesh::traits::VertexStorage;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text

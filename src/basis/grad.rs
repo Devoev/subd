@@ -3,14 +3,14 @@ use crate::basis::lin_combination::LinCombination;
 use crate::basis::local::{MeshBasis, MeshGradBasis};
 use crate::basis::space::Space;
 use crate::basis::traits::Basis;
-use crate::cells::traits::Cell;
-use crate::element::traits::{HasBasisCoord, HasDim, ElemAllocator, Element};
-use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
-use crate::mesh::Mesh;
-use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
-use nalgebra::allocator::Allocator;
 use crate::cells::traits::ToElement;
+use crate::diffgeo::chart::Chart;
+use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
+use crate::mesh::traits::MeshTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::Mesh;
+use nalgebra::allocator::Allocator;
+use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
 pub struct GradBasis<B, const D: usize>(B);

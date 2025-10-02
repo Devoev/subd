@@ -3,7 +3,7 @@ use crate::cells::chain::Chain;
 use crate::cells::node::Node;
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
 use crate::element::line_segment::LineSegment;
-use crate::mesh::traits::VertexStorage;
+use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U1};
 use std::cmp::minmax;
 use std::hash::Hash;

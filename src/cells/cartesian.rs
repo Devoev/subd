@@ -1,6 +1,6 @@
 use crate::cells::traits::{Cell, CellConnectivity, ToElement};
 use crate::mesh::cartesian::MultiBreaks;
-use crate::mesh::traits::VertexStorage;
+use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::{Const, DimName, DimNameSub, RealField};
 use crate::element::cartesian::CartCell;
 

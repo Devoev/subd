@@ -1,7 +1,7 @@
 use crate::cells::chain::Chain;
 use crate::cells::edge::{DirectedEdge, UndirectedEdge};
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToElement};
-use crate::mesh::traits::VertexStorage;
+use crate::mesh::vertex_storage::VertexStorage;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Point, RealField, U2};
 use std::iter::zip;

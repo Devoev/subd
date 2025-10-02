@@ -5,7 +5,8 @@ use nalgebra::{DefaultAllocator, Scalar};
 use nalgebra::allocator::Allocator;
 use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
-use crate::mesh::traits::{CellElementTopology, MeshTopology, VertexStorage};
+use crate::mesh::traits::{CellElementTopology, MeshTopology};
+use crate::mesh::vertex_storage::VertexStorage;
 
 pub mod elem_vertex;
 pub mod cartesian;
@@ -14,6 +15,7 @@ pub mod traits;
 pub mod face_vertex;
 pub mod incidence;
 pub mod knot_mesh;
+pub mod vertex_storage;
 
 /// The most generic mesh type.
 ///

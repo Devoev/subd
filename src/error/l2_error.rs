@@ -3,7 +3,8 @@ use crate::basis::lin_combination::{EvalFunctionAllocator, LinCombination, Selec
 use crate::basis::local::MeshBasis;
 use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology};
+use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};

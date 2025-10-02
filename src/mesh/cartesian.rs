@@ -1,11 +1,12 @@
 use crate::cells::cartesian::CartCellIdx;
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::knots::breaks::Breaks;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology};
 use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::{Const, OPoint, Point, RealField, Scalar};
 use std::iter::{zip, Map};
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// `D`-variate cartesian product of [breakpoints](Breaks).
 ///

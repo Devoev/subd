@@ -20,7 +20,8 @@ use std::io::Write;
 use std::iter::zip;
 use crate::element::traits::Element;
 use crate::mesh::{ElemOfMesh, Mesh};
-use crate::mesh::traits::{CellOfMesh, MeshTopology, VertexStorage};
+use crate::mesh::traits::{CellOfMesh, MeshTopology};
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {

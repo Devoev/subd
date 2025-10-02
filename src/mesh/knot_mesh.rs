@@ -4,13 +4,14 @@ use crate::knots::increments::Increments;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use crate::mesh::cartesian::Cartesian;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology};
 use crate::mesh::Mesh;
 use itertools::{Itertools, MultiProduct};
 use nalgebra::{Const, OPoint, RealField, Scalar};
 use std::iter::{zip, Map, Once};
 use std::vec::IntoIter;
 use crate::knots::breaks::Breaks;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// `D`-variate cartesian product of [knot vectors](KnotVec).
 ///

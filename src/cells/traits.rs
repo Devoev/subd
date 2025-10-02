@@ -1,6 +1,6 @@
 use crate::cells::chain::Chain;
 use crate::element::traits::{ElemAllocator, Element};
-use crate::mesh::traits::VertexStorage;
+use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
 

@@ -1,7 +1,8 @@
 use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
 use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
-use crate::mesh::traits::{MeshTopology, VertexStorage};
+use crate::mesh::traits::{MeshTopology};
+use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};

@@ -4,6 +4,7 @@ use std::ops::Range;
 use crate::cells::traits::ToElement;
 use crate::element::traits::ElemAllocator;
 use crate::mesh::ElemOfMesh;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// Topology of a mesh consisting of cells.
 ///
@@ -40,78 +41,3 @@ impl <T, Coords, Cells> CellElementTopology<T, Coords> for Cells
           CellOfMesh<Cells>: ToElement<T, Coords::GeoDim, Coords = Coords>,
           DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
 {}
-
-/// Storage for the geometrical vertex points of a mesh.
-///
-/// Each vertex point of a mesh is represented by an [`OPoint<T,Self::GeoDim>`]
-/// with [`Self::GeoDim`] being the dimension of the embedding Euclidean space.
-///
-/// Access to individual vertices is given by the [`Self::vertex`] method,
-/// given an index of type [`Self::NodeIdx`]. This is usually either a `usize`
-/// or a multi-index.
-/// Iteration over all vertices can be achieved
-/// by the [`Self::node_iter`] and [`Self::len`] methods.
-pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDim> {
-    /// Dimension of the embedding Euclidean space.
-    type GeoDim: DimName;
-
-    /// Node index defining a global ordering of vertices.
-    type NodeIdx;
-
-    /// Node iterator.
-    type NodeIter: Iterator<Item = Self::NodeIdx>;
-
-    /// Returns the total number of nodes in `self`.
-    fn len(&self) -> usize;
-
-    /// Iterates over all nodes in this mesh in ascending order.
-    fn node_iter(&self) -> Self::NodeIter;
-
-    /// Gets the vertex point of the `i`-th node in the mesh.
-    fn vertex(&self, i: Self::NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
-}
-
-/// The node index of the vertex storage `Coords`.
-pub type NodeIdx<T, Coords> = <Coords as VertexStorage<T>>::NodeIdx;
-
-/// Vector of control points.
-impl <T: Scalar, M: DimName> VertexStorage<T> for Vec<OPoint<T, M>>
-where DefaultAllocator: Allocator<M>
-{
-    type GeoDim = M;
-    type NodeIdx = usize;
-    type NodeIter = Range<usize>;
-
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    fn node_iter(&self) -> Self::NodeIter {
-        0..self.len()
-    }
-
-    fn vertex(&self, i: usize) -> OPoint<T, M> {
-        self[i].clone()
-    }
-}
-
-/// Matrix of row-wise control points.
-impl <T: Scalar, M: DimName> VertexStorage<T> for OMatrix<T, Dyn, M>
-where DefaultAllocator: Allocator<M>
-{
-    type GeoDim = M;
-    type NodeIdx = usize;
-    type NodeIter = Range<usize>;
-
-    fn len(&self) -> usize {
-        self.nrows()
-    }
-
-    fn node_iter(&self) -> Self::NodeIter {
-        0..self.nrows()
-    }
-
-    fn vertex(&self, i: usize) -> OPoint<T, Self::GeoDim> {
-        OPoint::from(self.row(i).transpose())
-    }
-}
