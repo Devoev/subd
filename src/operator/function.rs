@@ -6,7 +6,7 @@ use crate::basis::local::MeshBasis;
 use crate::basis::space::Space;
 use crate::cells::traits::ToElement;
 use crate::element::traits::{HasBasisCoord, HasDim};
-use crate::mesh::cell_topology::{CellTopology};
+use crate::mesh::cell_topology::{CellTopology, ElementTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
@@ -26,9 +26,9 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, cons
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Basis: MeshBasis<T>,
-          Basis::Cell: ToElement<T, Coords::GeoDim, Coords = Coords, Elem = Elem>,
+          Basis::Cell: ToElement<T, Coords::GeoDim, Coords = Coords, Elem = Elem>, // todo: this is STILL required, because ElementTopology does not restrict Elem = Elem right now
           Coords: VertexStorage<T>,
-          &'a Cells: CellTopology<Cell = Basis::Cell>,
+          &'a Cells: ElementTopology<T, Coords, Cell = Basis::Cell>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim>,
           Const<D>: DimMinSelf + ToTypenum
