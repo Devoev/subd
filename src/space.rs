@@ -18,20 +18,20 @@ pub mod cart_prod;
 pub mod grad;
 
 /// The most generic function space type.
-/// 
+///
 /// A function space is spanned by a set of `Basis` functions
 /// as `V = span{b[1],...,b[n]}`.
 ///
 /// See the [`BasisFunctions`] trait for information about basis functions.
 #[derive(Debug, Clone, Copy)]
-pub struct Space<T, Basis, const D: usize> {
+pub struct Space<T, Basis> {
     /// Set of basis functions spanning this function space.
     pub basis: Basis,
 
     _phantom_data: PhantomData<T>
 }
 
-impl <T, Basis: BasisFunctions, const D: usize> Space<T, Basis, D> {
+impl <T, Basis: BasisFunctions> Space<T, Basis> {
     /// Constructs a new `Space` from the given `basis`.
     pub fn new(basis: Basis) -> Self {
         Self { basis, _phantom_data: PhantomData }
@@ -43,32 +43,32 @@ impl <T, Basis: BasisFunctions, const D: usize> Space<T, Basis, D> {
     }
 }
 
-impl <T: RealField, Basis: BasisFunctions, const D: usize> Space<T, Basis, D> {
+impl <T: RealField, Basis: BasisFunctions> Space<T, Basis> {
     /// Calculates the linear combination of the given `coeffs` with the basis function of this space,
     /// and returns the resulting [`LinCombination`].
-    pub fn linear_combination(&self, coeffs: DVector<T>) -> Result<LinCombination<T, Basis, D>, CoeffsSpaceDimError> {
+    pub fn linear_combination(&self, coeffs: DVector<T>) -> Result<LinCombination<T, Basis>, CoeffsSpaceDimError> {
         LinCombination::new(coeffs, self)
     }
 }
 
 /// Space of local basis functions of [`MeshBasis::local_basis`].
-type LocalSpace<T, Basis, const D: usize> = Space<T, <Basis as MeshBasis<T>>::LocalBasis, D>;
+type LocalSpace<T, Basis> = Space<T, <Basis as MeshBasis<T>>::LocalBasis>;
 
 /// The local space [`LocalSpace`] paired with the indices [`MeshBasis::global_indices`]
 /// of nonzero basis functions.
-type LocalSpaceWithIdx<T, Basis, const D: usize> = (LocalSpace<T, Basis, D>, <Basis as MeshBasis<T>>::GlobalIndices);
+type LocalSpaceWithIdx<T, Basis> = (LocalSpace<T, Basis>, <Basis as MeshBasis<T>>::GlobalIndices);
 
-impl <T: RealField, Basis: MeshBasis<T>, const D: usize> Space<T, Basis, D>
+impl <T: RealField, Basis: MeshBasis<T>> Space<T, Basis>
 where DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis>
 {
     /// Returns this space restricted to the local element `elem`.
-    pub fn local_space(&self, elem: &Basis::Cell) -> LocalSpace<T, Basis, D> {
+    pub fn local_space(&self, elem: &Basis::Cell) -> LocalSpace<T, Basis> {
         Space::new(self.basis.local_basis(elem))
     }
 
     /// Returns this space restricted to the local element `elem`
     /// as well the indices corresponding to the global numbering of local basis functions.
-    pub fn local_space_with_idx(&self, elem: &Basis::Cell) -> LocalSpaceWithIdx<T, Basis, D> {
+    pub fn local_space_with_idx(&self, elem: &Basis::Cell) -> LocalSpaceWithIdx<T, Basis> {
         (self.local_space(elem), self.basis.global_indices(elem))
     }
 }
@@ -81,7 +81,7 @@ type EvalLocal<T, Basis> = OMatrix<T, <Basis as BasisFunctions>::NumComponents, 
 /// of nonzero basis functions.
 type EvalLocalWithIdx<T, Basis> = (EvalLocal<T, Basis>, <Basis as MeshBasis<T>>::GlobalIndices);
 
-impl <T: RealField, Basis: MeshBasis<T>, const D: usize> Space<T, Basis, D>
+impl <T: RealField, Basis: MeshBasis<T>> Space<T, Basis>
 where DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis>
 {
     /// Evaluates only the local basis functions on the given `elem` at the parametric point `x`.
@@ -109,7 +109,7 @@ where DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis>
     }
 }
 
-impl <T: RealField, Basis: FindElem<T>, const D: usize> Space<T, Basis, D>
+impl <T: RealField, Basis: FindElem<T>> Space<T, Basis>
 where Basis::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis>
 {
@@ -135,26 +135,26 @@ where Basis::Coord<T>: Copy,
 
 /// The owned matrix of [`D`] rows and [`BasisFunctions::NumBasis`] columns,
 /// storing the gradients of basis functions of [EvalGrad::eval_grad].
-type EvalGradLocal<T, Basis, const D: usize> = OMatrix<T, Const<D>, <<Basis as MeshBasis<T>>::LocalBasis as BasisFunctions>::NumBasis>;
+type EvalGradLocal<T, Basis> = OMatrix<T, <Basis as BasisFunctions>::ParametricDim, <<Basis as MeshBasis<T>>::LocalBasis as BasisFunctions>::NumBasis>;
 
 /// The gradient matrix [`EvalGradLocal`] paired with the indices [`MeshBasis::global_indices`]
 /// of nonzero basis functions.
-type EvalGradLocalWithIdx<T, Basis, const D: usize> = (EvalGradLocal<T, Basis, D>, <Basis as MeshBasis<T>>::GlobalIndices);
+type EvalGradLocalWithIdx<T, Basis> = (EvalGradLocal<T, Basis>, <Basis as MeshBasis<T>>::GlobalIndices);
 
-impl <T, Basis, const D: usize> Space<T, Basis, D>
+impl <T, Basis> Space<T, Basis>
 where T: RealField,
-      Basis: MeshGradBasis<T, D>,
-      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis, D>
+      Basis: MeshGradBasis<T>,
+      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis>
 {
     /// Evaluates the gradients of only local basis functions on the given `elem` at the parametric point `x`.
-    pub fn eval_grad_on_elem(&self, elem: &Basis::Cell, x: Basis::Coord<T>) -> EvalGradLocal<T, Basis, D> {
+    pub fn eval_grad_on_elem(&self, elem: &Basis::Cell, x: Basis::Coord<T>) -> EvalGradLocal<T, Basis> {
         let local_basis = self.basis.local_basis(elem);
         local_basis.eval_grad(x)
     }
 
     /// valuates the gradients of only local basis functions at the parametric point `x`.
     /// Returns the evaluated gradients as well the indices corresponding to the global numbering.
-    pub fn eval_grad_on_elem_with_idx(&self, elem: &Basis::Cell, x: Basis::Coord<T>) -> EvalGradLocalWithIdx<T, Basis, D> {
+    pub fn eval_grad_on_elem_with_idx(&self, elem: &Basis::Cell, x: Basis::Coord<T>) -> EvalGradLocalWithIdx<T, Basis> {
         let local_basis = self.basis.local_basis(elem);
         let b = local_basis.eval_grad(x);
         let idx = self.basis.global_indices(elem);
@@ -163,7 +163,7 @@ where T: RealField,
 
     /// Populates the global basis gradient matrix `global`
     /// with the local basis gradient values evaluated at `x`.
-    pub fn populate_grad_global_on_elem(&self, global: &mut OMatrix<T, Const<D>, Basis::NumBasis>, elem: &Basis::Cell, x: Basis::Coord<T>) {
+    pub fn populate_grad_global_on_elem(&self, global: &mut OMatrix<T, Basis::ParametricDim, Basis::NumBasis>, elem: &Basis::Cell, x: Basis::Coord<T>) {
         let (b, idx) = self.eval_grad_on_elem_with_idx(elem, x);
         for (i_global, bi) in zip(idx, b.column_iter()) {
             global.column_mut(i_global).add_assign(bi) // todo: should this be replace with copy_from?
@@ -171,26 +171,26 @@ where T: RealField,
     }
 }
 
-impl <T, Basis, const D: usize> Space<T, Basis, D>
+impl <T, Basis> Space<T, Basis>
 where T: RealField,
-      Basis: FindElem<T> + MeshGradBasis<T, D>,
+      Basis: FindElem<T> + MeshGradBasis<T>,
       Basis::Coord<T>: Copy,
-      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis, D>
+      DefaultAllocator: EvalGradAllocator<Basis::LocalBasis>
 {
     /// Evaluates the gradients of only local basis functions at the parametric point `x`.
-    pub fn eval_grad_local(&self, x: Basis::Coord<T>) -> EvalGradLocal<T, Basis, D> {
+    pub fn eval_grad_local(&self, x: Basis::Coord<T>) -> EvalGradLocal<T, Basis> {
         self.eval_grad_on_elem(&self.basis.find_elem(x), x)
     }
 
     /// valuates the gradients of only local basis functions at the parametric point `x`.
     /// Returns the evaluated gradients as well the indices corresponding to the global numbering.
-    pub fn eval_grad_local_with_idx(&self, x: Basis::Coord<T>) -> EvalGradLocalWithIdx<T, Basis, D> {
+    pub fn eval_grad_local_with_idx(&self, x: Basis::Coord<T>) -> EvalGradLocalWithIdx<T, Basis> {
         self.eval_grad_on_elem_with_idx(&self.basis.find_elem(x), x)
     }
 
     /// Populates the global basis gradient matrix `global`
     /// with the local basis gradient values evaluated at `x`.
-    pub fn populate_grad_global(&self, global: &mut OMatrix<T, Const<D>, Basis::NumBasis>, x: Basis::Coord<T>) {
+    pub fn populate_grad_global(&self, global: &mut OMatrix<T, Basis::ParametricDim, Basis::NumBasis>, x: Basis::Coord<T>) {
         let (b, idx) = self.eval_grad_local_with_idx(x);
         for (i_global, bi) in zip(idx, b.column_iter()) {
             global.column_mut(i_global).add_assign(bi) // todo: should this be replace with copy_from?

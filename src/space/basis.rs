@@ -8,8 +8,11 @@ pub trait BasisFunctions {
     /// Number of components for each basis function.
     /// This is usually either
     /// - `1` for scalar fields.
-    /// - `D` (dimension of the domain) for vector fields.
+    /// - [`Self::ParametricDim`] for vector fields.
     type NumComponents: DimName;
+
+    /// Dimension of the parametric domain.
+    type ParametricDim: DimName;
 
     /// Coordinate of a parametric point over type [`T`].
     type Coord<T>;

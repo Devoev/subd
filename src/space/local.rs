@@ -6,7 +6,7 @@ use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar, U1};
-
+use crate::space::grad::GradBasis;
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
 
 /// Basis functions defined on a mesh.
@@ -21,7 +21,7 @@ pub trait MeshBasis<T: Scalar>: BasisFunctions<NumBasis = Dyn>
     type Cell;
     
     /// Restriction of the local basis on a cell.
-    type LocalBasis: EvalBasis<T, NumComponents = Self::NumComponents, Coord<T> = Self::Coord<T>>;
+    type LocalBasis: EvalBasis<T, NumComponents = Self::NumComponents, ParametricDim = Self::ParametricDim, Coord<T> = Self::Coord<T>>;
 
     // todo: possibly change to IntoIterator or separate trait/ struct all together
     /// Iterator over linear global indices.
@@ -49,12 +49,12 @@ where T: Scalar,
       DefaultAllocator: Allocator<Verts::GeoDim> + EvalBasisAllocator<Self::LocalBasis> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
 
 /// Local basis functions with [gradient evaluations](EvalGrad).
-pub trait MeshGradBasis<T: RealField, const D: usize>: MeshBasis<T, LocalBasis: EvalGrad<T, D>, NumComponents = U1>
-    where DefaultAllocator: EvalGradAllocator<Self::LocalBasis, D> {}
+pub trait MeshGradBasis<T: RealField>: MeshBasis<T, LocalBasis: EvalGrad<T>, NumComponents = U1>
+    where DefaultAllocator: EvalGradAllocator<Self::LocalBasis> {}
 
-impl <T: RealField, const D: usize, B> MeshGradBasis<T, D> for B
-where B: MeshBasis<T, LocalBasis: EvalGrad<T, D>, NumComponents = U1>,
-      DefaultAllocator: EvalGradAllocator<Self::LocalBasis, D>
+impl <T: RealField, B> MeshGradBasis<T> for B
+where B: MeshBasis<T, LocalBasis: EvalGrad<T>, NumComponents = U1>,
+      DefaultAllocator: EvalGradAllocator<Self::LocalBasis>
 {}
 
 /// Local basis functions that can find the local element by parametric value.
