@@ -1,4 +1,4 @@
-use crate::space::eval::{EvalBasis, EvalBasisAllocator};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
 use crate::space::local::MeshBasis;
 use crate::space::Space;
 use crate::mesh::cell_topology::{CellTopology};

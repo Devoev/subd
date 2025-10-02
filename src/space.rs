@@ -1,8 +1,8 @@
 use crate::space::error::CoeffsSpaceDimError;
-use crate::space::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::space::lin_combination::LinCombination;
 use crate::space::local::{FindElem, MeshBasis, MeshGradBasis};
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, RealField};
 use std::iter::zip;
 use std::marker::PhantomData;
@@ -10,9 +10,9 @@ use std::ops::AddAssign;
 
 pub mod tensor_prod;
 pub mod local;
-pub mod traits;
+pub mod basis;
 pub mod lin_combination;
-pub mod eval;
+pub mod eval_basis;
 pub mod error;
 pub mod cart_prod;
 pub mod grad;

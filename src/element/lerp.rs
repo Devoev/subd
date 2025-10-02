@@ -1,4 +1,4 @@
-use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::cells::quad::Quad;
 use crate::diffgeo::chart::Chart;
 use crate::subd::lin_subd::basis::LinBasisQuad;

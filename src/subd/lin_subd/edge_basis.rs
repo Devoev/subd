@@ -1,6 +1,6 @@
-use crate::space::eval::{EvalBasis, EvalScalarCurl};
+use crate::space::eval_basis::{EvalBasis, EvalScalarCurl};
 use crate::space::local::MeshBasis;
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use crate::cells::edge::UndirectedEdge;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;

@@ -1,4 +1,4 @@
-use crate::space::eval::{EvalGrad, EvalGradAllocator};
+use crate::space::eval_basis::{EvalGrad, EvalGradAllocator};
 use crate::space::local::MeshGradBasis;
 use crate::space::Space;
 use crate::diffgeo::chart::Chart;

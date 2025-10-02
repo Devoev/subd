@@ -1,4 +1,4 @@
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowOVector, RowVector, Scalar, U1, U2};
 

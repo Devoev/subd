@@ -1,6 +1,6 @@
 // todo: rename
 
-use crate::space::eval::{EvalBasis, EvalBasisAllocator};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
 use crate::space::lin_combination::EvalFunctionAllocator;
 use crate::space::local::MeshBasis;
 use crate::space::Space;

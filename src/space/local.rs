@@ -1,5 +1,5 @@
-use crate::space::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::space::traits::Basis;
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::space::basis::Basis;
 use crate::cells::traits::ElemOfCell;
 use crate::element::traits::{ElemAllocator, HasBasisCoord};
 use crate::mesh::cell_topology::ElementTopology;

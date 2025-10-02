@@ -1,9 +1,9 @@
 //! Piecewise-linear basis functions.
 //! todo: move this elsewhere. For example a separate FE module?
 
-use crate::space::eval::{EvalBasis, EvalGrad};
+use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::MeshBasis;
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::cell_topology::CellTopology;

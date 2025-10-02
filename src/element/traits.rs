@@ -1,4 +1,4 @@
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use crate::diffgeo::chart::{Chart, ChartAllocator};
 use nalgebra::{Const, DefaultAllocator, Scalar};
 

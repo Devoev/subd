@@ -20,7 +20,7 @@ pub mod element;
 #[cfg(test)]
 mod tests {
     use crate::space::cart_prod;
-    use crate::space::eval::EvalDerivs;
+    use crate::space::eval_basis::EvalDerivs;
     use crate::space::local::{FindElem, MeshBasis};
     use crate::space::space::Space;
     use crate::bspline::de_boor;

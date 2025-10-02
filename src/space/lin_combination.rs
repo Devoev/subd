@@ -1,7 +1,7 @@
 use crate::space::error::CoeffsSpaceDimError;
-use crate::space::eval::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::space::local::{FindElem, MeshBasis, MeshGradBasis};
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
 use crate::space::Space;

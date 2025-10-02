@@ -1,7 +1,7 @@
-use crate::space::eval::{EvalBasis, EvalGrad, EvalGradAllocator};
+use crate::space::eval_basis::{EvalBasis, EvalGrad, EvalGradAllocator};
 use crate::space::lin_combination::LinCombination;
 use crate::space::local::{MeshBasis, MeshGradBasis};
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};

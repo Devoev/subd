@@ -1,7 +1,7 @@
 use crate::space::cart_prod;
 use crate::space::local::{FindElem, MeshBasis};
 use crate::space::tensor_prod::MultiProd;
-use crate::space::traits::Basis;
+use crate::space::basis::Basis;
 use crate::bspline::de_boor_span::DeBoorSpan;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;

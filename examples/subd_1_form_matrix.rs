@@ -3,7 +3,7 @@ use std::iter::zip;
 use itertools::Itertools;
 use nalgebra::{center, point, DMatrix, OMatrix, Point2, SMatrix, U2, U4};
 use nalgebra_sparse::{CooMatrix, CsrMatrix};
-use subd::space::eval::EvalBasis;
+use subd::space::eval_basis::EvalBasis;
 use subd::space::space::Space;
 use subd::cells::geo::Cell;
 use subd::cells::quad::{Quad, QuadNodes};
