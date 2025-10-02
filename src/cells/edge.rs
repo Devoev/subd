@@ -62,9 +62,11 @@ impl Cell for DirectedEdge {
 
 impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for DirectedEdge {
     type Elem = LineSegment<T, M>;
-    type Coords = Vec<Point<T, M>>;
 
-    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
         LineSegment::new(self.0.map(|node| coords.vertex(node)))
     }
 }

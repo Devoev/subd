@@ -21,7 +21,7 @@ pub trait Cell {
 
 /// Conversion of a topological cell into a geometric element.
 ///
-/// Given a matching coordinate storage [`Cell::Coords`] of dimension `M`
+/// Given a matching coordinate storage of dimension `M`
 /// the geometric representation of the cell can be constructed using [`Cell::to_geo_cell`].
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
@@ -31,15 +31,13 @@ pub trait ToElement<T: Scalar, M: DimName>: Cell
     /// The geometric element associated with this topology.
     type Elem: Element<T>;
 
-    /// Coordinates storage of the associated mesh.
-    type Coords: VertexStorage<T, GeoDim = M, NodeIdx = Self::Node>;
-
     /// Constructs the geometric element associated with `self` from the given vertex `coords`.
-    fn to_element(&self, coords: &Self::Coords) -> Self::Elem;
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+        where Coords: VertexStorage<T, GeoDim = M, NodeIdx = Self::Node>;
 }
 
-/// The geometrical element associated with the topological cell `C`.
-pub type ElemOfCell<T, C, M> = <C as ToElement<T, M>>::Elem;
+/// The geometrical element associated with the topological cell `Cell`.
+pub type ElemOfCell<T, Cell, GeoDim> = <Cell as ToElement<T, GeoDim>>::Elem;
 
 /// A [topological cell](Cell) with connectivity and neighboring relations.
 pub trait CellConnectivity: Cell<Node: PartialEq + Sized> {

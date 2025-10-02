@@ -192,9 +192,11 @@ impl Cell for QuadNodes {
 
 impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for QuadNodes {
     type Elem = Quad<T, M>;
-    type Coords = Vec<Point<T, M>>;
 
-    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
         Quad::new(self.0.map(|node| coords.vertex(node)))
     }
 }

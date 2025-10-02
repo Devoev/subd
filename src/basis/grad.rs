@@ -6,7 +6,7 @@ use crate::basis::traits::Basis;
 use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
-use crate::mesh::cell_topology::CellTopology;
+use crate::mesh::cell_topology::{CellTopology, ElementTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::Mesh;
 use nalgebra::allocator::Allocator;
@@ -137,9 +137,9 @@ impl <'a, T, B, Coords, Cells, const D: usize> MeshBasis<T> for GradBasisPullbac
     where T: RealField,
           B: MeshGradBasis<T, D>,
           Coords: VertexStorage<T>,
-          Cells: CellTopology<Cell= B::Cell>,
+          Cells: ElementTopology<T, Coords, Cell= B::Cell>,
           B::Coord<T>: Copy,
-          B::Cell: ToElement<T, Coords::GeoDim, Coords = Coords>,
+          B::Cell: ToElement<T, Coords::GeoDim>,
           <B::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, B> + HasDim<T, D>,
           DefaultAllocator: EvalGradAllocator<B::LocalBasis, D> + ElemAllocator<T, <B::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
 {

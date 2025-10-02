@@ -26,7 +26,7 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, cons
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: HasBasisCoord<T, Basis> + HasDim<T, D>,
           Basis: MeshBasis<T>,
-          Basis::Cell: ToElement<T, Coords::GeoDim, Coords = Coords, Elem = Elem>, // todo: this is STILL required, because ElementTopology does not restrict Elem = Elem right now
+          Basis::Cell: ToElement<T, Coords::GeoDim, Elem = Elem>, // todo: this is STILL required, because ElementTopology does not restrict Elem = Elem right now
           Coords: VertexStorage<T>,
           &'a Cells: ElementTopology<T, Coords, Cell = Basis::Cell>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,

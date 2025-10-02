@@ -26,9 +26,11 @@ impl <const K: usize> Cell for CartCellIdx<K> {
 
 impl <T: RealField + Copy, const K: usize> ToElement<T, Const<K>> for CartCellIdx<K> {
     type Elem = CartCell<T, K>;
-    type Coords = MultiBreaks<T, K>;
 
-    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<K>, NodeIdx=Self::Node>
+    {
         let idx_a = *self.as_index();
         let idx_b = idx_a.map(|i| i + 1); // todo: implement this in the multi-index trait
         let a = coords.vertex(idx_a);

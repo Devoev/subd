@@ -275,9 +275,11 @@ impl Cell for CatmarkPatchNodes {
 
 impl <T: RealField + Copy + ToPrimitive, const M: usize> ToElement<T, Const<M>> for CatmarkPatchNodes {
     type Elem = CatmarkPatch<T, M>;
-    type Coords = Vec<Point<T, M>>;
 
-    fn to_element(&self, coords: &Self::Coords) -> Self::Elem {
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
         let coords = self
             .as_slice()
             .iter()

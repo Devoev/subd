@@ -1,7 +1,6 @@
-use crate::cells::traits::ToElement;
+use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::mesh::ElemOfMesh;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Scalar};
 
@@ -28,15 +27,19 @@ pub trait CellTopology {
 pub type CellOfMesh<Cells> = <Cells as CellTopology>::Cell;
 
 /// Cell topology where every cell implements [`ToElement`].
-pub trait ElementTopology<T, Coords>: CellTopology<Cell: ToElement<T, Coords::GeoDim, Coords = Coords>>
+/// 
+/// The cells are required to be compatible with the vertex storage `Verts`,
+/// by having the same geometrical dimension [`Verts::GeoDim`]
+/// and the same node index [`Verts::NodeIdx`].
+pub trait ElementTopology<T, Verts>: CellTopology<Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>>
     where T: Scalar,
-          Coords: VertexStorage<T>,
-          DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Self>> {}
+          Verts: VertexStorage<T>,
+          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Self::Cell, Verts::GeoDim>>, {}
 
-impl <T, Coords, Cells> ElementTopology<T, Coords> for Cells
+impl <T, Verts, Cells> ElementTopology<T, Verts> for Cells
     where T: Scalar,
-          Coords: VertexStorage<T>,
+          Verts: VertexStorage<T>,
           Cells: CellTopology,
-          CellOfMesh<Cells>: ToElement<T, Coords::GeoDim, Coords = Coords>,
-          DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
+          Cells::Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>,
+          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
 {}
