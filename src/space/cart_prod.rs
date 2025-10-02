@@ -1,6 +1,6 @@
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
 use crate::space::local::{FindElem, MeshBasis};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use nalgebra::{stack, DefaultAllocator, DimAdd, DimSum, OMatrix, RealField, U1, U2};
 use std::iter::once;
 use std::marker::PhantomData;
@@ -26,14 +26,14 @@ impl <T, B1, B2> Prod<T, B1, B2> {
 
 /// Constrains that [`Self::NumBasis`] and [`Other::NumBasis`] can be added, i.e.
 /// `Self::NumBasis: DimAdd<Other::NumBasis>`.
-pub trait NumBasisAdd<Other: Basis>: Basis<NumBasis: DimAdd<Other::NumBasis>> {}
+pub trait NumBasisAdd<Other: BasisFunctions>: BasisFunctions<NumBasis: DimAdd<Other::NumBasis>> {}
 
-impl<B1: Basis, B2: Basis> NumBasisAdd<B2> for B1
+impl<B1: BasisFunctions, B2: BasisFunctions> NumBasisAdd<B2> for B1
     where B1::NumBasis: DimAdd<B2::NumBasis> {}
 
-impl<T, B1, B2> Basis for Prod<T, B1, B2>
-where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
-      B2: Basis<NumComponents = U1, Coord<T> = B1::Coord<T>>,
+impl<T, B1, B2> BasisFunctions for Prod<T, B1, B2>
+where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
+      B2: BasisFunctions<NumComponents = U1, Coord<T> = B1::Coord<T>>,
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;

@@ -1,7 +1,7 @@
 use crate::space::cart_prod;
 use crate::space::local::{FindElem, MeshBasis};
 use crate::space::tensor_prod::MultiProd;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::bspline::de_boor_span::DeBoorSpan;
 use crate::knots::error::OutsideKnotRangeError;
 use crate::knots::knot_span::KnotSpan;
@@ -68,7 +68,7 @@ impl <T: RealField + Copy> DeBoor<T> {
     }
 }
 
-impl<T: RealField> Basis for DeBoor<T> {
+impl<T: RealField> BasisFunctions for DeBoor<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<_T> = _T;

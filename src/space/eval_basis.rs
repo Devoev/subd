@@ -1,18 +1,18 @@
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowOVector, RowVector, Scalar, U1, U2};
 
 /// Allocator for the [`B::NumComponents`] ✕ [`B::NumBasis`] matrix of basis evaluations.
-pub trait EvalBasisAllocator<B: Basis>: Allocator<B::NumComponents, B::NumBasis> {}
+pub trait EvalBasisAllocator<B: BasisFunctions>: Allocator<B::NumComponents, B::NumBasis> {}
 
-impl <B: Basis> EvalBasisAllocator<B> for DefaultAllocator
+impl <B: BasisFunctions> EvalBasisAllocator<B> for DefaultAllocator
     where DefaultAllocator: Allocator<B::NumComponents, B::NumBasis> {}
 
 /// Pointwise evaluation of basis functions.
 ///
-/// The set of all [basis functions](Basis) can be evaluated at arbitrary parametric points of type [`Self::Coord<T>`]
+/// The set of all [basis functions](BasisFunctions) can be evaluated at arbitrary parametric points of type [`Self::Coord<T>`]
 /// using [`Self::eval`].
-pub trait EvalBasis<T: Scalar>: Basis + Sized
+pub trait EvalBasis<T: Scalar>: BasisFunctions + Sized
     where DefaultAllocator: EvalBasisAllocator<Self>
 {
     /// Evaluates all basis functions at the parametric point `x`
@@ -44,11 +44,11 @@ pub trait EvalDerivs<T: RealField>: EvalBasis<T, NumComponents = U1>
 }
 
 /// Allocator for basis evaluations and the [`D`] ✕ [`B::NumBasis`] matrix of gradient evaluations.
-pub trait EvalGradAllocator<B: Basis, const D: usize>:
+pub trait EvalGradAllocator<B: BasisFunctions, const D: usize>:
     EvalBasisAllocator<B>
     + Allocator<Const<D>, B::NumBasis> {}
 
-impl <B: Basis, const D: usize> EvalGradAllocator<B, D> for DefaultAllocator
+impl <B: BasisFunctions, const D: usize> EvalGradAllocator<B, D> for DefaultAllocator
     where DefaultAllocator: EvalBasisAllocator<B> + Allocator<Const<D>, B::NumBasis> {}
 
 /// Evaluation of gradients of basis functions.
@@ -64,9 +64,9 @@ pub trait EvalGrad<T: RealField, const D: usize> : EvalBasis<T, NumComponents = 
 }
 
 /// Allocator for basis evaluations and the row vector of [`B::NumBasis`] scalar curl evaluations.
-pub trait EvalScalarCurlAllocator<B: Basis>: EvalBasisAllocator<B> + Allocator<U1, B::NumBasis> {}
+pub trait EvalScalarCurlAllocator<B: BasisFunctions>: EvalBasisAllocator<B> + Allocator<U1, B::NumBasis> {}
 
-impl <B: Basis> EvalScalarCurlAllocator<B> for DefaultAllocator
+impl <B: BasisFunctions> EvalScalarCurlAllocator<B> for DefaultAllocator
     where DefaultAllocator: EvalBasisAllocator<B> + Allocator<U1, B::NumBasis> {}
 
 /// Evaluation of scalar curls of basis functions.

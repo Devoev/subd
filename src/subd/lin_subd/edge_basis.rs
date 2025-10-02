@@ -1,6 +1,6 @@
 use crate::space::eval_basis::{EvalBasis, EvalScalarCurl};
 use crate::space::local::MeshBasis;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::cells::edge::UndirectedEdge;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -23,7 +23,7 @@ impl <'a, T: RealField, const M: usize> WhitneyEdgeQuad<'a, T, M>  {
     }
 }
 
-impl<'a, T: RealField, const M: usize> Basis for WhitneyEdgeQuad<'a, T, M> {
+impl<'a, T: RealField, const M: usize> BasisFunctions for WhitneyEdgeQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
     type Coord<_T> = (_T, _T);
@@ -60,7 +60,7 @@ impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for WhitneyEdgeQuad<
 #[derive(Copy, Clone, Debug)]
 pub struct WhitneyEdgeQuadLocal;
 
-impl Basis for WhitneyEdgeQuadLocal {
+impl BasisFunctions for WhitneyEdgeQuadLocal {
     type NumBasis = U4;
     type NumComponents = U2;
     type Coord<T> = (T, T);

@@ -1,7 +1,7 @@
 use crate::space::eval_basis::{EvalBasis, EvalGrad, EvalGradAllocator};
 use crate::space::lin_combination::LinCombination;
 use crate::space::local::{MeshBasis, MeshGradBasis};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
@@ -15,7 +15,7 @@ use crate::space::Space;
 /// Gradient of basis functions `grad B = { grad b[i] : b[i] ∈ B }`.
 pub struct GradBasis<B, const D: usize>(B);
 
-impl<B: Basis<NumComponents = U1>, const D: usize> Basis for GradBasis<B, D> {
+impl<B: BasisFunctions<NumComponents = U1>, const D: usize> BasisFunctions for GradBasis<B, D> {
     type NumBasis = B::NumBasis;
     type NumComponents = Const<D>;
     type Coord<T> = B::Coord<T>;
@@ -85,9 +85,9 @@ pub struct GradBasisPullbackLocal<C, B, const D: usize> {
     grad_basis: GradBasis<B, D>,
 }
 
-impl<C, B, const D: usize> Basis for GradBasisPullbackLocal<C, B, D>
+impl<C, B, const D: usize> BasisFunctions for GradBasisPullbackLocal<C, B, D>
 where
-    B: Basis<NumComponents = U1>,
+    B: BasisFunctions<NumComponents = U1>,
 {
     type NumBasis = B::NumBasis;
     type NumComponents = Const<D>;
@@ -120,9 +120,9 @@ pub struct GradBasisPullback<'a, T, Basis, Coords, Cells, const D: usize> {
     pub grad_basis: GradBasis<Basis, D>
 }
 
-impl<'a, T, B, Coords, Cells, const D: usize> Basis for GradBasisPullback<'a, T, B, Coords, Cells, D>
+impl<'a, T, B, Coords, Cells, const D: usize> BasisFunctions for GradBasisPullback<'a, T, B, Coords, Cells, D>
 where
-    B: Basis<NumComponents = U1>,
+    B: BasisFunctions<NumComponents = U1>,
 {
     type NumBasis = B::NumBasis;
     type NumComponents = Const<D>;

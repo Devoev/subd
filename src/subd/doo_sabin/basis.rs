@@ -1,4 +1,4 @@
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::bspline::quadratic::QuadraticBspline;
 use nalgebra::{Dyn, OMatrix, RealField, RowDVector, RowSVector, U1};
 use crate::space::eval_basis::EvalBasis;
@@ -31,7 +31,7 @@ impl DooSabinPatchBasis {
     }
 }
 
-impl Basis for DooSabinPatchBasis {
+impl BasisFunctions for DooSabinPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<T> = (T, T);

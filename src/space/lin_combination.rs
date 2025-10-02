@@ -1,7 +1,7 @@
 use crate::space::error::CoeffsSpaceDimError;
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use crate::space::local::{FindElem, MeshBasis, MeshGradBasis};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, DVector, DefaultAllocator, Dim, Dyn, Matrix, OMatrix, OVector, SVector, Scalar, U1};
 use crate::space::Space;
@@ -16,7 +16,7 @@ pub struct LinCombination<'a, T: ComplexField, B, const D: usize> {
     pub space: &'a Space<T::RealField, B, D>,
 }
 
-impl <'a, T: ComplexField, B: Basis, const D: usize> LinCombination<'a, T, B, D> {
+impl <'a, T: ComplexField, B: BasisFunctions, const D: usize> LinCombination<'a, T, B, D> {
     /// Constructs a new [`LinCombination`] from the given `coeffs` and `space`.
     /// 
     /// # Errors
@@ -34,9 +34,9 @@ impl <'a, T: ComplexField, B: Basis, const D: usize> LinCombination<'a, T, B, D>
 // todo: possibly rename
 
 /// Allocator for the vector of [`B::NumComponents`] evaluated function components.
-pub trait EvalFunctionAllocator<B: Basis>: Allocator<B::NumComponents> {}
+pub trait EvalFunctionAllocator<B: BasisFunctions>: Allocator<B::NumComponents> {}
 
-impl <B: Basis> EvalFunctionAllocator<B> for DefaultAllocator
+impl <B: BasisFunctions> EvalFunctionAllocator<B> for DefaultAllocator
     where DefaultAllocator: Allocator<B::NumComponents>{}
 
 impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
@@ -58,9 +58,9 @@ impl <'a, T, B, const D: usize> LinCombination<'a, T, B, D>
 //  and why is Allocator<U1/Dyn> really necessary? Seems to be for self.coeffs
 /// Allocator for selection of [`B::NumBasis`] (local) coefficients
 /// and [`Dyn`] (global) coefficients.
-pub trait SelectCoeffsAllocator<B: Basis>: Allocator<B::NumBasis> + Allocator<Dyn> {}
+pub trait SelectCoeffsAllocator<B: BasisFunctions>: Allocator<B::NumBasis> + Allocator<Dyn> {}
 
-impl <B: Basis> SelectCoeffsAllocator<B> for DefaultAllocator
+impl <B: BasisFunctions> SelectCoeffsAllocator<B> for DefaultAllocator
     where DefaultAllocator: Allocator<Dyn>,
           DefaultAllocator: Allocator<B::NumBasis> {}
 

@@ -1,6 +1,6 @@
 use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::{FindElem, MeshBasis};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
@@ -38,7 +38,7 @@ impl<T, B: Clone, const D: usize> MultiProd<T, B, D> {
 
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
-impl<T, B: Basis, const D: usize> MultiProd<T, B, D> {
+impl<T, B: BasisFunctions, const D: usize> MultiProd<T, B, D> {
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn shape(&self) -> DimShape<D> {
         let arr = self.bases.iter()
@@ -83,7 +83,7 @@ impl<T: RealField, B: EvalGrad<T, 1, NumBasis = Dyn, Coord<T> = T>, const D: usi
 
 // todo: differentiate between X = T, (T,T), (T,T,T) and [T;D] for efficiency!
 
-impl<T: RealField, B: Basis<NumComponents = U1, NumBasis = Dyn>, const D: usize> Basis for MultiProd<T, B, D> {
+impl<T: RealField, B: BasisFunctions<NumComponents = U1, NumBasis = Dyn>, const D: usize> BasisFunctions for MultiProd<T, B, D> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<_T> = [_T; D];

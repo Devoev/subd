@@ -1,5 +1,5 @@
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::cells::traits::ElemOfCell;
 use crate::element::traits::{ElemAllocator, HasBasisCoord};
 use crate::mesh::cell_topology::ElementTopology;
@@ -14,7 +14,7 @@ use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar, U1};
 /// Each function has local support on a [cell](Self::Cell) and can thus be evaluated
 /// by restricting the basis to a local one. 
 /// The local basis on a given `cell` can be obtained using the method [`Self::local_basis`].
-pub trait MeshBasis<T: Scalar>: Basis<NumBasis = Dyn>
+pub trait MeshBasis<T: Scalar>: BasisFunctions<NumBasis = Dyn>
     where DefaultAllocator: EvalBasisAllocator<Self::LocalBasis>
 {
     /// Local cell in a mesh.
@@ -39,7 +39,7 @@ pub trait MeshBasis<T: Scalar>: Basis<NumBasis = Dyn>
 /// Basis on a mesh where each cell belongs to an [`ElementTopology`].
 ///
 /// The cells are required to match the [`Cells::Cell`] of the element topology `Cells`.
-/// For compatibility with the basis functions, the elements must match the [`Basis::Coord<T>`]
+/// For compatibility with the basis functions, the elements must match the [`BasisFunctions::Coord<T>`]
 /// and the geometric and parametric dimensions.
 pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<T, Cell = Cells::Cell> + Sized
 where T: Scalar,

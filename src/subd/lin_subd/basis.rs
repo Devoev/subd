@@ -3,7 +3,7 @@
 
 use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::MeshBasis;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::cell_topology::CellTopology;
@@ -18,7 +18,7 @@ pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>, 2>
 #[derive(Debug, Clone)]
 pub struct PlBasisQuad<'a, T: RealField, const M: usize>(pub &'a QuadVertexMesh<T, M>);
 
-impl <'a, T: RealField, const M: usize> Basis for PlBasisQuad<'a, T, M> {
+impl <'a, T: RealField, const M: usize> BasisFunctions for PlBasisQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<_T> = (_T, _T);
@@ -46,7 +46,7 @@ impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for PlBasisQuad<'a, 
 #[derive(Debug, Clone)]
 pub struct LinBasisQuad;
 
-impl Basis for LinBasisQuad {
+impl BasisFunctions for LinBasisQuad {
     type NumBasis = U4;
     type NumComponents = U1;
     type Coord<T> = (T, T);

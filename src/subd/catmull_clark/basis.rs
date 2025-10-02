@@ -1,6 +1,6 @@
 use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::MeshBasis;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::bspline::cubic::CubicBspline;
 use crate::cells::traits::{Cell};
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
@@ -15,7 +15,7 @@ use std::vec;
 #[derive(Clone, Debug)]
 pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T, M>);
 
-impl <'a, T: RealField, const M: usize> Basis for CatmarkBasis<'a, T, M> {
+impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<_T> = (_T, _T);
@@ -173,7 +173,7 @@ impl CatmarkPatchBasis {
     }
 }
 
-impl Basis for CatmarkPatchBasis {
+impl BasisFunctions for CatmarkPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<T> = (T, T);

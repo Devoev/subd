@@ -1,5 +1,5 @@
 use crate::space::eval_basis::{EvalBasis, EvalGrad};
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1};
 use std::sync::LazyLock;
 
@@ -79,7 +79,7 @@ impl CubicBspline {
     }
 }
 
-impl Basis for CubicBspline {
+impl BasisFunctions for CubicBspline {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<T> = T;

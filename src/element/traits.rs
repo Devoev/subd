@@ -1,4 +1,4 @@
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::diffgeo::chart::{Chart, ChartAllocator};
 use nalgebra::{Const, DefaultAllocator, Scalar};
 
@@ -34,11 +34,11 @@ pub trait Element<T: Scalar>: Sized
 pub type ElemCoord<T, Elem> = <<Elem as Element<T>>::GeoMap as Chart<T>>::Coord;
 
 /// Constrains `Self` to have a chart with coordinate [`B::Coord`].
-pub trait HasBasisCoord<T: Scalar, B: Basis>: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>
+pub trait HasBasisCoord<T: Scalar, B: BasisFunctions>: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>
     where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 
-impl <T: Scalar, B: Basis, Elem: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>> HasBasisCoord<T, B> for Elem
+impl <T: Scalar, B: BasisFunctions, Elem: Element<T, GeoMap: Chart<T, Coord = B::Coord<T>>>> HasBasisCoord<T, B> for Elem
 where DefaultAllocator: ChartAllocator<T, Self::GeoMap>
 {}
 

@@ -1,7 +1,7 @@
 use nalgebra::{Dim, DimName};
 
 /// Set of [`Self::NumBasis`] basis functions with [`Self::NumComponents`].
-pub trait Basis {
+pub trait BasisFunctions {
     /// Number of basis functions.
     type NumBasis: Dim;
 

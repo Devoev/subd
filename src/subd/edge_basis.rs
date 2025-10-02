@@ -2,7 +2,7 @@
 
 use crate::space::eval_basis::EvalBasis;
 use crate::space::local::MeshBasis;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::bspline::cubic::CubicBspline;
 use crate::mesh::cell_topology::CellTopology;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
@@ -15,7 +15,7 @@ use crate::cells::traits::Cell;
 /// Edge basis functions for Catmull-Clark subdivision.
 pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
 
-impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
+impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkEdgeBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
     type Coord<_T> = (_T, _T);
@@ -61,7 +61,7 @@ pub enum CatmarkPatchEdgeBasis {
     Corner
 }
 
-impl Basis for CatmarkPatchEdgeBasis {
+impl BasisFunctions for CatmarkPatchEdgeBasis {
     type NumBasis = Dyn;
     type NumComponents = U2;
     type Coord<T> = (T, T);

@@ -1,6 +1,6 @@
 use crate::space::eval_basis::{EvalBasis, EvalDerivs, EvalGrad};
 use crate::space::tensor_prod::MultiProd;
-use crate::space::basis::Basis;
+use crate::space::basis::BasisFunctions;
 use crate::knots::knot_span::KnotSpan;
 use crate::knots::knot_vec::KnotVec;
 use nalgebra::{Const, DimNameAdd, DimNameSum, Dyn, OMatrix, RealField, RowDVector, U1};
@@ -28,7 +28,7 @@ impl <T: RealField> DeBoorSpan<T> {
     }
 }
 
-impl<T: RealField> Basis for DeBoorSpan<T> {
+impl<T: RealField> BasisFunctions for DeBoorSpan<T> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type Coord<_T> = _T;
