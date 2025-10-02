@@ -1,12 +1,11 @@
-use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
-use crate::space::basis::BasisFunctions;
 use crate::cells::traits::ElemOfCell;
-use crate::element::traits::{ElemAllocator, HasBasisCoord};
+use crate::element::traits::{ElemAllocator, ElemCoord};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
+use crate::space::basis::BasisFunctions;
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator, EvalGrad, EvalGradAllocator};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dyn, RealField, Scalar, U1};
-use crate::space::grad::GradBasis;
 // todo: NumBasis from basis super-trait is never used. Can this be removed?
 
 /// Basis functions defined on a mesh.
@@ -35,17 +34,23 @@ pub trait MeshBasis<T: Scalar>: BasisFunctions<NumBasis = Dyn>
     fn global_indices(&self, cell: &Self::Cell) -> Self::GlobalIndices;
 }
 
-// todo: from where should the dimension D for geometry and parametric domain come from?
+// todo: update MeshElemBasis. Is the HasBasisCoord requirement really properly enforced?
+//  What about HasDim? Should that be enforced on the elements/cell topology itself?
+
 /// Basis on a mesh where each cell belongs to an [`ElementTopology`].
 ///
 /// The cells are required to match the [`Cells::Cell`] of the element topology `Cells`.
 /// For compatibility with the basis functions, the elements must match the [`BasisFunctions::Coord<T>`]
-/// and the geometric and parametric dimensions.
-pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<T, Cell = Cells::Cell> + Sized
+/// and the geometric and parametric dimensions must equal [`Verts::GeoDim`].
+pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<
+    T,
+    Cell = Cells::Cell,
+    Coord<T> = ElemCoord<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
+> + Sized
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
-      ElemOfCell<T, Cells::Cell, Verts::GeoDim>: HasBasisCoord<T, Self>,
+      // ElemOfCell<T, Cells::Cell, Verts::GeoDim>: HasBasisCoord<T, Self> + HasDim<T, Verts::GeoDim>,
       DefaultAllocator: Allocator<Verts::GeoDim> + EvalBasisAllocator<Self::LocalBasis> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
 
 /// Local basis functions with [gradient evaluations](EvalGrad).
