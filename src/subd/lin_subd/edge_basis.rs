@@ -26,6 +26,7 @@ impl <'a, T: RealField, const M: usize> WhitneyEdgeQuad<'a, T, M>  {
 impl<'a, T: RealField, const M: usize> BasisFunctions for WhitneyEdgeQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -63,6 +64,7 @@ pub struct WhitneyEdgeQuadLocal;
 impl BasisFunctions for WhitneyEdgeQuadLocal {
     type NumBasis = U4;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {

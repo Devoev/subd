@@ -18,6 +18,7 @@ pub struct CatmarkBasis<'a, T: RealField, const M: usize>(pub &'a CatmarkMesh<T,
 impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -176,6 +177,7 @@ impl CatmarkPatchBasis {
 impl BasisFunctions for CatmarkPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -208,7 +210,7 @@ impl <T: RealField + Copy + ToPrimitive> EvalBasis<T> for CatmarkPatchBasis {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive> EvalGrad<T, 2> for CatmarkPatchBasis {
+impl <T: RealField + Copy + ToPrimitive> EvalGrad<T> for CatmarkPatchBasis {
     fn eval_grad(&self, x: (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         let (u, v) = x;
         match self {

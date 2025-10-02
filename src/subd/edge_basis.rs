@@ -18,6 +18,7 @@ pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a Cat
 impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkEdgeBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -64,6 +65,7 @@ pub enum CatmarkPatchEdgeBasis {
 impl BasisFunctions for CatmarkPatchEdgeBasis {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {

@@ -6,13 +6,12 @@ use crate::space::local::MeshBasis;
 use crate::space::basis::BasisFunctions;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::cell_topology::CellTopology;
 use nalgebra::{matrix, Dyn, OMatrix, RealField, U1, U2, U4};
 use numeric_literals::replace_float_literals;
 use crate::space::Space;
 
 /// Space spanned by piecewise-linear basis functions on a quad mesh.
-pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>, 2>;
+pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>>;
 
 /// Piecewise-linear basis functions on a quadrilateral mesh.
 #[derive(Debug, Clone)]
@@ -21,6 +20,7 @@ pub struct PlBasisQuad<'a, T: RealField, const M: usize>(pub &'a QuadVertexMesh<
 impl <'a, T: RealField, const M: usize> BasisFunctions for PlBasisQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -49,6 +49,7 @@ pub struct LinBasisQuad;
 impl BasisFunctions for LinBasisQuad {
     type NumBasis = U4;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -68,7 +69,7 @@ impl <T: RealField + Copy> EvalBasis<T> for LinBasisQuad {
     }
 }
 
-impl <T: RealField + Copy> EvalGrad<T, 2> for LinBasisQuad {
+impl <T: RealField + Copy> EvalGrad<T> for LinBasisQuad {
     fn eval_grad(&self, (u, v): (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         matrix![
             -(T::one() - v), (T::one() - v), v, -v; // u-derivatives

@@ -1,6 +1,6 @@
 use crate::space::basis::BasisFunctions;
 use crate::bspline::quadratic::QuadraticBspline;
-use nalgebra::{Dyn, OMatrix, RealField, RowDVector, RowSVector, U1};
+use nalgebra::{Dyn, OMatrix, RealField, RowDVector, RowSVector, U1, U2};
 use crate::space::eval_basis::EvalBasis;
 
 /// Basis functions on a Doo-Sabin patch.
@@ -34,6 +34,7 @@ impl DooSabinPatchBasis {
 impl BasisFunctions for DooSabinPatchBasis {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
