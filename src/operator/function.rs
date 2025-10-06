@@ -3,7 +3,7 @@
 use crate::element::traits::{ElemAllocator, ElemDim, VolumeElement};
 use crate::mesh::cell_topology::VolumetricElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::mesh::{ElemOfMesh, Mesh};
+use crate::mesh::{Mesh, MeshAllocator};
 use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
@@ -26,7 +26,7 @@ pub fn assemble_function<'a, T, Basis, Verts, Cells: 'a, Quadrature>(
           &'a Cells: VolumetricElementTopology<T, Verts>,
           Basis: MeshElemBasis<T, Verts, &'a Cells>,
           Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + ElemAllocator<T, ElemOfMesh<T, Verts, &'a Cells>>
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + MeshAllocator<T, Verts, &'a Cells>
 {
     // Create empty matrix
     let mut fi = DVector::<T>::zeros(space.dim());
