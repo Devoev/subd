@@ -4,7 +4,7 @@ use crate::space::local::MeshBasis;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::cells::traits;
-use crate::cells::traits::ToElement;
+use crate::cells::traits::{Cell, ToElement};
 use crate::diffgeo::chart::Chart;
 use crate::index::dimensioned::Dimensioned;
 use crate::mesh::face_vertex::QuadVertexMesh;
@@ -18,9 +18,9 @@ use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
 use std::iter::zip;
-use crate::element::traits::Element;
-use crate::mesh::{ElemOfMesh, Mesh};
-use crate::mesh::cell_topology::{CellOfMesh, CellTopology};
+use crate::element::traits::{ElemCoord, ElemGeoDim, Element};
+use crate::mesh::{ElemOfMesh, Mesh, MeshAllocator};
+use crate::mesh::cell_topology::{CellOfMesh, CellTopology, VolumetricElementTopology};
 use crate::mesh::vertex_storage::VertexStorage;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
@@ -109,14 +109,16 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 
 /// Plots the function `f` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_fn_msh<X, Coords, Cells, F, D>(msh: &Mesh<f64, Coords, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
+pub fn plot_fn_msh<X, Verts, Cells, F, D>(msh: &Mesh<f64, Verts, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
     where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Coords: VertexStorage<f64, GeoDim = U2> + Clone,  // todo: remove cloning
-          Cells: CellTopology + Clone,
-          CellOfMesh<Cells>: ToElement<f64, U2, Coords = Coords>,
-          <ElemOfMesh<f64, Coords, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
+          Verts: VertexStorage<f64> + Clone,  // todo: remove cloning
+          Cells: VolumetricElementTopology<f64, Verts> + Clone,
+          <Cells as CellTopology>::Cell: ToElement<f64, U2>,
+          ElemCoord<f64, ElemOfMesh<f64, Verts, Cells>>:  Dimensioned<f64, 2> + From<(f64, f64)>,
+          // <ElemOfMesh<f64, Verts, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
           F: Fn(&CellOfMesh<Cells>, X) -> f64,
-          D: Fn(&ElemOfMesh<f64, Coords, Cells>, usize) -> (Vec<f64>, Vec<f64>)
+          D: Fn(&ElemOfMesh<f64, Verts, Cells>, usize) -> (Vec<f64>, Vec<f64>),
+          DefaultAllocator: MeshAllocator<f64, Verts, Cells>
 {
     let mut plot = Plot::new();
     let cells = msh.clone().into_cell_iter().collect_vec();

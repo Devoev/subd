@@ -65,14 +65,18 @@ where T: Scalar,
 
 /// Local basis on a single element.
 ///
-/// The [`BasisFunctions::Coord<T>`] must match the coordinates of the `Elem`.
-pub trait ElemBasis<T: Scalar, Elem: Element<T>>: BasisFunctions<Coord<T> = ElemCoord<T, Elem>>
-    where DefaultAllocator: ElemAllocator<T, Elem> {}
+/// For compatibility with the element, the basis is required to match
+/// - The [parametric dimension](ElemDim) of `Elem`
+/// - The [coordinates](ElemCoord) of `Elem`.
+pub trait ElemBasis<T, Elem>: BasisFunctions<ParametricDim = ElemDim<T, Elem>, Coord<T> = ElemCoord<T, Elem>>
+where T: Scalar,
+      Elem: Element<T>,
+      DefaultAllocator: ElemAllocator<T, Elem> {}
 
 impl <T, Elem, Basis> ElemBasis<T, Elem> for Basis
 where T: Scalar,
       Elem: Element<T>,
-      Basis: BasisFunctions<Coord<T> = ElemCoord<T, Elem>>,
+      Basis: BasisFunctions<ParametricDim = ElemDim<T, Elem>, Coord<T> = ElemCoord<T, Elem>>,
       DefaultAllocator: ElemAllocator<T, Elem> {}
 
 /// Local basis functions with [gradient evaluations](EvalGrad).
