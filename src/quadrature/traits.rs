@@ -1,8 +1,13 @@
 use std::iter::{zip, Sum};
 use std::ops::Mul;
 use nalgebra::{DefaultAllocator, Scalar};
+use nalgebra::allocator::Allocator;
+use crate::cells::traits::ElemOfCell;
 use crate::diffgeo::chart::{ChartAllocator};
-use crate::element::traits::{ElemCoord, Element};
+use crate::element::traits::{ElemAllocator, ElemCoord, Element};
+use crate::mesh::cell_topology::ElementTopology;
+use crate::mesh::ElemOfMesh;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -121,6 +126,8 @@ pub trait Quadrature<T: Sum, Elem> {
 //  if the methods of Cell go to Chart, merging won't work,
 //  because Cell has no information about the Coord anymore
 
+/// Quadrature rule on a parametric element.
+///
 /// Constrains `Self` to be a quadrature on [`Elem::ParametricElement`]
 /// with the coordinates [`Elem::GeoMap::Coord`] of the chart.
 pub trait QuadratureOnParametricElem<T: Scalar + Sum, Elem: Element<T>>: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>
@@ -130,3 +137,19 @@ where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
 impl <T: Scalar + Sum, Elem: Element<T>, Q: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>> QuadratureOnParametricElem<T, Elem> for Q
 where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
 {}
+
+/// Quadrature rule on a mesh.
+///
+/// Constrains `Self` to be a [`QuadratureOnParametricElem`] with elements of a `Mesh<T,Verts,Cells>`.
+pub trait QuadratureOnMesh<T, Verts, Cells>: QuadratureOnParametricElem<T, ElemOfMesh<T, Verts, Cells>>
+where T: Scalar + Sum,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
+
+impl <T, Verts, Cells, Quadrature> QuadratureOnMesh<T, Verts, Cells> for Quadrature
+where T: Scalar + Sum,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      Quadrature: QuadratureOnParametricElem<T, ElemOfMesh<T, Verts, Cells>>,
+      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}

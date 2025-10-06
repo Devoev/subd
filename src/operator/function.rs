@@ -1,11 +1,11 @@
 // todo: rename
 
 use crate::element::traits::{ElemAllocator, ElemDim, VolumeElement};
-use crate::mesh::cell_topology::ElementTopology;
+use crate::mesh::cell_topology::VolumetricElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::{ElemOfMesh, Mesh};
 use crate::quadrature::pullback::PullbackQuad;
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
+use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
 use crate::space::lin_combination::EvalFunctionAllocator;
 use crate::space::local::{ElemBasis, MeshElemBasis};
@@ -23,10 +23,9 @@ pub fn assemble_function<'a, T, Basis, Verts, Cells: 'a, Quadrature>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: ElementTopology<T, Verts>,
-          ElemOfMesh<T, Verts, &'a Cells>: VolumeElement<T>, // todo: move this requirement to a sub-trait VolumeElementTopology
+          &'a Cells: VolumetricElementTopology<T, Verts>,
           Basis: MeshElemBasis<T, Verts, &'a Cells>,
-          Quadrature: QuadratureOnParametricElem<T, ElemOfMesh<T, Verts, &'a Cells>>, // todo: possibly introduce MeshQuadrature trait
+          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
           DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + ElemAllocator<T, ElemOfMesh<T, Verts, &'a Cells>>
 {
     // Create empty matrix
