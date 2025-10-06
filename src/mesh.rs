@@ -20,11 +20,11 @@ pub mod vertex_storage;
 /// The most generic mesh type.
 ///
 /// A mesh consists of connected topological cells [`Cells`], defining the partition of the domain
-/// and vertex coordinates [`Coords`] defining the embedding into Euclidean space.
+/// and vertex coordinates [`Verts`] defining the embedding into Euclidean space.
 #[derive(Copy, Clone, Debug)]
-pub struct Mesh<T, Coords, Cells> {
+pub struct Mesh<T, Verts, Cells> {
     /// Coordinate storage.
-    pub coords: Coords,
+    pub coords: Verts,
 
     /// Mesh cell topology.
     pub cells: Cells,
@@ -32,14 +32,14 @@ pub struct Mesh<T, Coords, Cells> {
     _phantom_data: PhantomData<T>,
 }
 
-impl <T, Coords, Cells> Mesh<T, Coords, Cells>
+impl <T, Verts, Cells> Mesh<T, Verts, Cells>
 where T: Scalar,
-      Coords: VertexStorage<T>,
+      Verts: VertexStorage<T>,
       Cells: CellTopology,
-      DefaultAllocator: Allocator<Coords::GeoDim>
+      DefaultAllocator: Allocator<Verts::GeoDim>
 {
-    /// Constructs a new [`Mesh<T,Coords,Cells>`] with the given `coords` and `cells`.
-    pub fn with_coords_and_cells(coords: Coords, cells: Cells) -> Self {
+    /// Constructs a new [`Mesh<T, Verts,Cells>`] with the given `coords` and `cells`.
+    pub fn with_coords_and_cells(coords: Verts, cells: Cells) -> Self {
         Mesh { coords, cells, _phantom_data: PhantomData }
     }
 
@@ -59,11 +59,11 @@ where T: Scalar,
     }
 }
 
-impl <'a, T, Coords, Cells> Mesh<T, Coords, Cells>
+impl <'a, T, Verts, Cells> Mesh<T, Verts, Cells>
 where T: Scalar,
-      Coords: VertexStorage<T>,
+      Verts: VertexStorage<T>,
       &'a Cells: 'a + CellTopology,
-      DefaultAllocator: Allocator<Coords::GeoDim>
+      DefaultAllocator: Allocator<Verts::GeoDim>
 {
     /// Returns an iterator over all topological cells in this mesh.
     pub fn cell_iter(&'a self) -> <&'a Cells as CellTopology>::CellIter {
@@ -73,39 +73,54 @@ where T: Scalar,
 
 // todo: introduce Iterator types IntoElemIter, IntoElemCellIter...
 
-/// The geometrical element of the [`Mesh<T,Coords,Cells>`].
-pub type ElemOfMesh<T, Coords, Cells> = ElemOfCell<T, <Cells as CellTopology>::Cell, <Coords as VertexStorage<T>>::GeoDim>;
+/// The geometrical element of the [`Mesh<T, Verts,Cells>`].
+pub type ElemOfMesh<T, Verts, Cells> = ElemOfCell<T, <Cells as CellTopology>::Cell, <Verts as VertexStorage<T>>::GeoDim>;
 
-impl <T, Coords, Cells> Mesh<T, Coords, Cells>
+/// Allocator for a [`Mesh<T,Verts,Cells>`].
+///
+/// Combines the point allocator of the vertex storage and the [`ElemAllocator`] for the mesh elements.
+pub trait MeshAllocator<T, Verts, Cells>: ElemAllocator<T, ElemOfMesh<T, Verts, Cells>>
 where T: Scalar,
-      Coords: VertexStorage<T>,
-      Cells: ElementTopology<T, Coords>,
-      DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, Cells>>
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
+
+impl <T, Verts, Cells> MeshAllocator<T, Verts, Cells> for DefaultAllocator
+where T: Scalar,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
+
+impl <T, Verts, Cells> Mesh<T, Verts, Cells>
+where T: Scalar,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      DefaultAllocator: MeshAllocator<T, Verts, Cells>
 {
     /// Consumes `self` and returns an iterator over all geometrical elements in this mesh.
-    pub fn into_elem_iter(self) -> impl Iterator<Item = ElemOfMesh<T, Coords, Cells>> {
+    pub fn into_elem_iter(self) -> impl Iterator<Item = ElemOfMesh<T, Verts, Cells>> {
         self.cells.into_cell_iter().map(move |cell| cell.to_element(&self.coords))
     }
 
     /// Consumes `self` and returns an iterator over `(elem,cell)` pairs.
-    pub fn into_elem_cell_iter(self) -> impl Iterator<Item = (ElemOfMesh<T, Coords, Cells>, Cells::Cell)>  {
+    pub fn into_elem_cell_iter(self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, Cells>, Cells::Cell)>  {
         self.cells.into_cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
     }
 }
 
-impl <'a, T, Coords, Cells> Mesh<T, Coords, Cells>
+impl <'a, T, Verts, Cells> Mesh<T, Verts, Cells>
 where T: Scalar,
-      Coords: VertexStorage<T>,
-      &'a Cells: 'a + ElementTopology<T, Coords>,
-      DefaultAllocator: Allocator<Coords::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Coords, &'a Cells>>
+      Verts: VertexStorage<T>,
+      &'a Cells: 'a + ElementTopology<T, Verts>,
+      DefaultAllocator: MeshAllocator<T, Verts, &'a Cells>
 {
     /// Returns an iterator over all geometrical elements in this mesh.
-    pub fn elem_iter(&'a self) -> impl Iterator<Item = ElemOfMesh<T, Coords, &'a Cells>> {
+    pub fn elem_iter(&'a self) -> impl Iterator<Item = ElemOfMesh<T, Verts, &'a Cells>> {
         self.cell_iter().map(move |cell| cell.to_element(&self.coords))
     }
 
     /// Returns an iterator over `(elem,cell)` pairs.
-    pub fn elem_cell_iter(&'a self) -> impl Iterator<Item = (ElemOfMesh<T, Coords, &'a Cells>, <&'a Cells as CellTopology>::Cell)>  {
+    pub fn elem_cell_iter(&'a self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, &'a Cells>, <&'a Cells as CellTopology>::Cell)>  {
         self.cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
     }
 }
