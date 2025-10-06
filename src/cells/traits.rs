@@ -3,6 +3,7 @@ use crate::element::traits::{ElemAllocator, Element};
 use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
+use crate::diffgeo::chart::Chart;
 
 /// Topology of a cell inside a mesh.
 ///
@@ -28,8 +29,8 @@ pub trait Cell {
 pub trait ToElement<T: Scalar, M: DimName>: Cell
     where DefaultAllocator: Allocator<M> + ElemAllocator<T, Self::Elem>
 {
-    /// The geometric element associated with this topology.
-    type Elem: Element<T>;
+    /// The geometric element in `M` dimensions, associated with this topology.
+    type Elem: Element<T, GeoMap: Chart<T, GeometryDim = M>>;
 
     /// Constructs the geometric element associated with `self` from the given vertex `coords`.
     fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem

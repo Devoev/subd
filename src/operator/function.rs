@@ -1,38 +1,33 @@
 // todo: rename
 
-use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
-use crate::space::lin_combination::EvalFunctionAllocator;
-use crate::space::local::MeshBasis;
-use crate::space::Space;
-use crate::cells::traits::ToElement;
-use crate::element::traits::{HasBasisCoord, HasDim};
+use crate::element::traits::{ElemAllocator, ElemCoord, ElemDim, VolumeElement};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::mesh::Mesh;
-use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
+use crate::mesh::{ElemOfMesh, Mesh};
+use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
+use crate::space::lin_combination::EvalFunctionAllocator;
+use crate::space::local::{MeshElemBasis};
+use crate::space::Space;
 use itertools::Itertools;
-use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DVector, DefaultAllocator, OMatrix, OVector, Point, RealField, ToTypenum};
+use nalgebra::{DVector, DefaultAllocator, OMatrix, OPoint, OVector, RealField};
 use std::iter::{zip, Product, Sum};
-use crate::diffgeo::chart::ChartAllocator;
 
 /// Assembles a discrete function (load vector).
-pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, const D: usize>(
-    msh: &'a Mesh<T, Coords, Cells>,
+pub fn assemble_function<'a, T, Basis, Verts, Cells: 'a, Quadrature>(
+    msh: &'a Mesh<T, Verts, Cells>,
     space: &Space<T, Basis>,
     quad: PullbackQuad<Quadrature>,
-    f: impl Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>
+    f: impl Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          Elem: HasBasisCoord<T, Basis> + HasDim<T, Coords::GeoDim>,
-          Basis: MeshBasis<T>,
-          Basis::Cell: ToElement<T, Coords::GeoDim, Elem = Elem>, // todo: this is STILL required, because ElementTopology does not restrict Elem = Elem right now
-          Coords: VertexStorage<T, GeoDim = Const<D>>,
-          &'a Cells: ElementTopology<T, Coords, Cell = Basis::Cell>,
-          Quadrature: QuadratureOnParametricElem<T, Elem>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + Allocator<Coords::GeoDim> + ChartAllocator<T, Elem::GeoMap>,
-          Const<D>: DimMinSelf + ToTypenum
+          Verts: VertexStorage<T>,
+          &'a Cells: ElementTopology<T, Verts>,
+          ElemOfMesh<T, Verts, &'a Cells>: VolumeElement<T>, // todo: move this requirement to a sub-trait VolumeElementTopology
+          Basis: MeshElemBasis<T, Verts, &'a Cells>,
+          Quadrature: QuadratureOnParametricElem<T, ElemOfMesh<T, Verts, &'a Cells>>, // todo: possibly introduce MeshQuadrature trait
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + ElemAllocator<T, ElemOfMesh<T, Verts, &'a Cells>>
 {
     // Create empty matrix
     let mut fi = DVector::<T>::zeros(space.dim());
@@ -54,18 +49,17 @@ pub fn assemble_function<'a, T, Elem, Basis, Coords, Cells: 'a, Quadrature, cons
 }
 
 /// Assembles a local discrete function vector.
-pub fn assemble_function_local<T, Elem, Basis, Quadrature, const D: usize>(
+pub fn assemble_function_local<T, Elem, Basis, Quadrature>(
     elem: &Elem,
     sp_local: &Space<T, Basis>,
     quad: &PullbackQuad<Quadrature>,
-    f: &impl Fn(Point<T, D>) -> OVector<T, Basis::NumComponents>
+    f: &impl Fn(OPoint<T, ElemDim<T, Elem>>) -> OVector<T, Basis::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          Elem: HasBasisCoord<T, Basis> + HasDim<T, Const<D>>,
-          Basis: EvalBasis<T>,
+          Elem: VolumeElement<T>,
+          Basis: EvalBasis<T, Coord<T> = ElemCoord<T, Elem>>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
-          DefaultAllocator: EvalBasisAllocator<Basis> + EvalFunctionAllocator<Basis>,
-          Const<D>: DimMinSelf
+          DefaultAllocator: EvalBasisAllocator<Basis> + EvalFunctionAllocator<Basis> + ElemAllocator<T, Elem>
 {
     // Evaluate all basis functions at every quadrature point
     // and store them into a buffer
@@ -75,7 +69,7 @@ pub fn assemble_function_local<T, Elem, Basis, Quadrature, const D: usize>(
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product f * v
-    let fv_pullback = |b: &OMatrix<T, Basis::NumComponents, Basis::NumBasis>, p: Point<T, D>, j: usize| {
+    let fv_pullback = |b: &OMatrix<T, Basis::NumComponents, Basis::NumBasis>, p: OPoint<T, ElemDim<T, Elem>>, j: usize| {
         b.column(j).dot(&f(p))
     };
 
@@ -83,7 +77,7 @@ pub fn assemble_function_local<T, Elem, Basis, Quadrature, const D: usize>(
     let num_basis = sp_local.dim();
     let fi = (0..num_basis).map(|j| {
             let integrand = zip(&buf, &quad_nodes)
-                .map(|(b, &p)| fv_pullback(b, p, j));
+                .map(|(b, p)| fv_pullback(b, p.clone(), j));
 
             quad.integrate_elem(elem, integrand)
         });

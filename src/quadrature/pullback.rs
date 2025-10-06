@@ -1,10 +1,10 @@
 use crate::diffgeo::chart::Chart;
+use crate::element::traits::{ElemAllocator, ElemCoord, ElemDim, Element, VolumeElement};
 use crate::quadrature::tensor_prod::GaussLegendreMulti;
 use crate::quadrature::traits::Quadrature;
 use itertools::Itertools;
-use nalgebra::{Const, DefaultAllocator, DimMin, Point, RealField, SquareMatrix};
+use nalgebra::{DefaultAllocator, DimMin, DimName, OPoint, RealField, SquareMatrix};
 use std::iter::{zip, Product, Sum};
-use crate::element::traits::{ElemAllocator, Element};
 // todo: possibly rename and add docs
 
 /// Quadrature rule on an element.
@@ -57,17 +57,16 @@ pub trait DimMinSelf: DimMin<Self, Output = Self> {}
 
 impl <D: DimMin<Self, Output = Self>> DimMinSelf for D {}
 
-impl <T, Elem, Quad, const D: usize> Quadrature<T, Elem> for PullbackQuad<Quad>
+impl <T, Elem, Quad> Quadrature<T, Elem> for PullbackQuad<Quad>
 where T: RealField + Sum + Product + Copy,
-      Elem: Element<T>,
-      Elem::GeoMap: Chart<T, ParametricDim = Const<D>, GeometryDim = Const<D>>,
-      Quad: Quadrature<T, Elem::ParametricElement, Node = <Elem::GeoMap as Chart<T>>::Coord>,
-      Const<D>: DimMinSelf
+      Elem: VolumeElement<T>,
+      Quad: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>,
+      DefaultAllocator: ElemAllocator<T, Elem> // todo: is this really the required allocator?
 {
-    type Node = Point<T, D>;
+    type Node = OPoint<T, ElemDim<T, Elem>>;
     type Weight = T;
 
-    fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item=Point<T, D>> {
+    fn nodes_elem(&self, elem: &Elem) -> impl Iterator<Item=OPoint<T, ElemDim<T, Elem>>> {
         let res = self
             .nodes_ref::<T, Elem>(&elem.parametric_element())
             .map(|xi| elem.geo_map().eval(xi))
@@ -93,11 +92,11 @@ mod tests {
     use super::*;
     use crate::bspline::space::BsplineSpace;
     use crate::bspline::spline_geo::SplineGeo;
+    use crate::element::bezier_elem::BezierElem;
+    use crate::element::cartesian::CartCell;
     use approx::assert_abs_diff_eq;
     use gauss_quad::GaussLegendre;
     use nalgebra::{matrix, point};
-    use crate::element::bezier_elem::BezierElem;
-    use crate::element::cartesian::CartCell;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2`
     /// in both `x`-direction and `y`-direction.
