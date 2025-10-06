@@ -1,5 +1,5 @@
 use crate::cells::traits::ElemOfCell;
-use crate::element::traits::{ElemAllocator, ElemCoord};
+use crate::element::traits::{ElemAllocator, ElemCoord, Element};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::space::basis::BasisFunctions;
@@ -34,14 +34,11 @@ pub trait MeshBasis<T: Scalar>: BasisFunctions<NumBasis = Dyn>
     fn global_indices(&self, cell: &Self::Cell) -> Self::GlobalIndices;
 }
 
-// todo: update MeshElemBasis. Is the HasBasisCoord requirement really properly enforced?
-//  What about HasDim? Should that be enforced on the elements/cell topology itself?
-
 /// Basis on a mesh where each cell belongs to an [`ElementTopology`].
 ///
 /// The cells are required to match the [`Cells::Cell`] of the element topology `Cells`.
 /// For compatibility with the basis functions, the elements must match the [`BasisFunctions::Coord<T>`]
-/// and the geometric and parametric dimensions must equal [`Verts::GeoDim`].
+/// and the geometric dimension must equal [`Verts::GeoDim`].
 pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<
     T,
     Cell = Cells::Cell,
@@ -50,8 +47,30 @@ pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
-      // ElemOfCell<T, Cells::Cell, Verts::GeoDim>: HasBasisCoord<T, Self> + HasDim<T, Verts::GeoDim>,
       DefaultAllocator: Allocator<Verts::GeoDim> + EvalBasisAllocator<Self::LocalBasis> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
+
+impl <T, Verts, Cells, Basis> MeshElemBasis<T, Verts, Cells> for Basis
+where T: Scalar,
+      Verts: VertexStorage<T>,
+      Cells: ElementTopology<T, Verts>,
+      Basis: MeshBasis<
+          T, 
+          Cell = Cells::Cell,
+          Coord<T> = ElemCoord<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
+      > + Sized,
+      DefaultAllocator: Allocator<Verts::GeoDim> + EvalBasisAllocator<Self::LocalBasis> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
+
+/// Local basis on a single element.
+/// 
+/// The [`BasisFunctions::Coord<T>`] must match the coordinates of the `Elem`.
+pub trait ElemBasis<T: Scalar, Elem: Element<T>>: BasisFunctions<Coord<T> = ElemCoord<T, Elem>>
+    where DefaultAllocator: ElemAllocator<T, Elem> {}
+
+impl <T, Elem, Basis> ElemBasis<T, Elem> for Basis
+where T: Scalar, 
+      Elem: Element<T>, 
+      Basis: BasisFunctions<Coord<T> = ElemCoord<T, Elem>>, 
+      DefaultAllocator: ElemAllocator<T, Elem> {}
 
 /// Local basis functions with [gradient evaluations](EvalGrad).
 pub trait MeshGradBasis<T: RealField>: MeshBasis<T, LocalBasis: EvalGrad<T>, NumComponents = U1>

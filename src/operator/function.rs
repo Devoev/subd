@@ -1,6 +1,6 @@
 // todo: rename
 
-use crate::element::traits::{ElemAllocator, ElemCoord, ElemDim, VolumeElement};
+use crate::element::traits::{ElemAllocator, ElemDim, VolumeElement};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::{ElemOfMesh, Mesh};
@@ -8,7 +8,7 @@ use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::{Quadrature, QuadratureOnParametricElem};
 use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
 use crate::space::lin_combination::EvalFunctionAllocator;
-use crate::space::local::{MeshElemBasis};
+use crate::space::local::{ElemBasis, MeshElemBasis};
 use crate::space::Space;
 use itertools::Itertools;
 use nalgebra::{DVector, DefaultAllocator, OMatrix, OPoint, OVector, RealField};
@@ -57,7 +57,7 @@ pub fn assemble_function_local<T, Elem, Basis, Quadrature>(
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: VolumeElement<T>,
-          Basis: EvalBasis<T, Coord<T> = ElemCoord<T, Elem>>,
+          Basis: EvalBasis<T> + ElemBasis<T, Elem>,
           Quadrature: QuadratureOnParametricElem<T, Elem>,
           DefaultAllocator: EvalBasisAllocator<Basis> + EvalFunctionAllocator<Basis> + ElemAllocator<T, Elem>
 {
