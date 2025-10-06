@@ -31,11 +31,17 @@ pub trait Element<T: Scalar>: Sized
     // todo: maybe merge Chart and Cell traits?
 }
 
+/// The [`Element::GeoMap`] of `Elem`.
+pub type ElemChart<T, Elem> = <Elem as Element<T>>::GeoMap;
+
 /// Coordinate of the [`Element::GeoMap`] of `Elem`.
-pub type ElemCoord<T, Elem> = <<Elem as Element<T>>::GeoMap as Chart<T>>::Coord;
+pub type ElemCoord<T, Elem> = <ElemChart<T, Elem> as Chart<T>>::Coord;
+
+/// The (parametric) dimension of the `Elem`.
+pub type ElemDim<T, Elem> = <ElemChart<T, Elem> as Chart<T>>::ParametricDim;
 
 /// The geometrical dimension of the `Elem`.
-pub type ElemDim<T, Elem> = <<Elem as Element<T>>::GeoMap as Chart<T>>::GeometryDim;
+pub type ElemGeoDim<T, Elem> = <ElemChart<T, Elem> as Chart<T>>::GeometryDim;
 
 /// Volumetric element where the [parametric dimension][Chart::ParametricDim]
 /// equals the [geometric dimension][Chart::GeometryDim].
@@ -46,8 +52,8 @@ pub trait VolumeElement<T: Scalar>: Element<T, GeoMap: Chart<
 >>
     where DefaultAllocator: ElemAllocator<T, Self> {}
 
-impl <T, Elem> VolumeElement<T> for Elem 
-    where T: Scalar, 
+impl <T, Elem> VolumeElement<T> for Elem
+    where T: Scalar,
           Elem: Element<T, GeoMap: Chart<
               T,
               GeometryDim: DimMinSelf,

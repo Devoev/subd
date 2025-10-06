@@ -1,5 +1,5 @@
 use crate::cells::traits::ElemOfCell;
-use crate::element::traits::{ElemAllocator, ElemCoord, Element};
+use crate::element::traits::{ElemAllocator, ElemCoord, ElemDim, Element};
 use crate::mesh::cell_topology::ElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::MeshAllocator;
@@ -36,12 +36,14 @@ pub trait MeshBasis<T: Scalar>: BasisFunctions<NumBasis = Dyn>
 
 /// Basis on a mesh where each cell belongs to an [`ElementTopology`].
 ///
-/// The cells are required to match the [`Cells::Cell`] of the element topology `Cells`.
-/// For compatibility with the basis functions, the elements must match the [`BasisFunctions::Coord<T>`]
-/// and the geometric dimension must equal [`Verts::GeoDim`].
+/// For compatibility with the mesh, the basis is required to match
+/// - The [cells](Cells::Cell) of the element topology `Cells`
+/// - The [parametric dimension](ElemDim) of the elements
+/// - The [coordinates](ElemCoord) of the elements.
 pub trait MeshElemBasis<T, Verts, Cells>: MeshBasis<
     T,
     Cell = Cells::Cell,
+    ParametricDim = ElemDim<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>,
     Coord<T> = ElemCoord<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
 > + Sized
 where T: Scalar,
@@ -56,6 +58,7 @@ where T: Scalar,
       Basis: MeshBasis<
           T,
           Cell = Cells::Cell,
+          ParametricDim = ElemDim<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>,
           Coord<T> = ElemCoord<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
       > + Sized,
       DefaultAllocator: EvalBasisAllocator<Self::LocalBasis> + MeshAllocator<T, Verts, Cells> {}

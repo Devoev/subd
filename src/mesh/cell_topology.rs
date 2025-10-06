@@ -51,12 +51,12 @@ impl <T, Verts, Cells> ElementTopology<T, Verts> for Cells
 pub trait VolumetricElementTopology<T, Verts>: ElementTopology<T, Verts, Cell: ToElement<T, Verts::GeoDim, Elem: VolumeElement<T>>>
 where T: Scalar,
       Verts: VertexStorage<T>,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Self::Cell, Verts::GeoDim>> {}
+      DefaultAllocator: MeshAllocator<T, Verts, Self>{}
 
 impl <T, Verts, Cells> VolumetricElementTopology<T, Verts> for Cells
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
       Cells::Cell: ToElement<T, Verts::GeoDim, Elem: VolumeElement<T>>,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
+      DefaultAllocator: MeshAllocator<T, Verts, Self>
 {}

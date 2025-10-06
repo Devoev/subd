@@ -1,13 +1,13 @@
 use crate::space::eval_basis::{EvalBasis, EvalGrad, EvalGradAllocator};
 use crate::space::lin_combination::LinCombination;
-use crate::space::local::{MeshBasis, MeshGradBasis};
+use crate::space::local::{MeshBasis, MeshElemBasis, MeshGradBasis};
 use crate::space::basis::BasisFunctions;
 use crate::cells::traits::ToElement;
 use crate::diffgeo::chart::{Chart, ChartAllocator};
 use crate::element::traits::{ElemAllocator, Element, HasBasisCoord, HasDim};
-use crate::mesh::cell_topology::ElementTopology;
+use crate::mesh::cell_topology::{ElementTopology, VolumetricElementTopology};
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::mesh::Mesh;
+use crate::mesh::{ElemOfMesh, Mesh, MeshAllocator};
 use nalgebra::allocator::Allocator;
 use nalgebra::{ComplexField, Const, DefaultAllocator, OMatrix, RealField, U1};
 use crate::space::Space;
@@ -136,18 +136,16 @@ where
     }
 }
 
-impl <'a, T, Basis, Coords, Cells> MeshBasis<T> for GradBasisPullback<'a, T, Basis, Coords, Cells>
+impl <'a, T, Basis, Verts, Cells> MeshBasis<T> for GradBasisPullback<'a, T, Basis, Verts, Cells>
     where T: RealField,
-          Basis: MeshGradBasis<T>,
-          Coords: VertexStorage<T>,
-          Cells: ElementTopology<T, Coords, Cell= Basis::Cell>,
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshGradBasis<T> + MeshElemBasis<T, Verts, Cells>,
           Basis::Coord<T>: Copy,
-          Basis::Cell: ToElement<T, Coords::GeoDim>,
-          <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem: HasBasisCoord<T, Basis> + HasDim<T, Basis::ParametricDim>,
-          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis> + ElemAllocator<T, <Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem> + Allocator<Coords::GeoDim>
+          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, Cells>
 {
     type Cell = Basis::Cell;
-    type LocalBasis = GradBasisPullbackLocal<<<Basis::Cell as ToElement<T, Coords::GeoDim>>::Elem as Element<T>>::GeoMap, Basis::LocalBasis>;
+    type LocalBasis = GradBasisPullbackLocal<<ElemOfMesh<T, Verts, Cells> as Element<T>>::GeoMap, Basis::LocalBasis>;
     type GlobalIndices = Basis::GlobalIndices;
 
     fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {

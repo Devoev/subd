@@ -1,6 +1,6 @@
 // todo: rename
 
-use crate::element::traits::{ElemAllocator, ElemDim, VolumeElement};
+use crate::element::traits::{ElemAllocator, ElemGeoDim, VolumeElement};
 use crate::mesh::cell_topology::VolumetricElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::{Mesh, MeshAllocator};
@@ -52,7 +52,7 @@ pub fn assemble_function_local<T, Elem, Basis, Quadrature>(
     elem: &Elem,
     sp_local: &Space<T, Basis>,
     quad: &PullbackQuad<Quadrature>,
-    f: &impl Fn(OPoint<T, ElemDim<T, Elem>>) -> OVector<T, Basis::NumComponents>
+    f: &impl Fn(OPoint<T, ElemGeoDim<T, Elem>>) -> OVector<T, Basis::NumComponents>
 ) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Elem: VolumeElement<T>,
@@ -68,7 +68,7 @@ pub fn assemble_function_local<T, Elem, Basis, Quadrature>(
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product f * v
-    let fv_pullback = |b: &OMatrix<T, Basis::NumComponents, Basis::NumBasis>, p: OPoint<T, ElemDim<T, Elem>>, j: usize| {
+    let fv_pullback = |b: &OMatrix<T, Basis::NumComponents, Basis::NumBasis>, p: OPoint<T, ElemGeoDim<T, Elem>>, j: usize| {
         b.column(j).dot(&f(p))
     };
 
