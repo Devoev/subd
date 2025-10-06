@@ -3,6 +3,7 @@ use crate::element::traits::{ElemAllocator, VolumeElement};
 use crate::mesh::vertex_storage::VertexStorage;
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Scalar};
+use crate::mesh::MeshAllocator;
 
 /// Topology of a mesh consisting of cells.
 ///
@@ -31,21 +32,21 @@ pub type CellOfMesh<Cells> = <Cells as CellTopology>::Cell;
 /// The cells are required to be compatible with the vertex storage `Verts`,
 /// by having the same geometrical dimension [`Verts::GeoDim`]
 /// and the same node index [`Verts::NodeIdx`].
-pub trait ElementTopology<T, Verts>: CellTopology<Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>>
+pub trait ElementTopology<T, Verts>: CellTopology<Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>> + Sized
     where T: Scalar,
           Verts: VertexStorage<T>,
-          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Self::Cell, Verts::GeoDim>> {}
+          DefaultAllocator: MeshAllocator<T, Verts, Self> {}
 
 impl <T, Verts, Cells> ElementTopology<T, Verts> for Cells
     where T: Scalar,
           Verts: VertexStorage<T>,
           Cells: CellTopology,
           Cells::Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>,
-          DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>>
+          DefaultAllocator: MeshAllocator<T, Verts, Self>
 {}
 
 /// Cell topology of volumetric elements.
-/// 
+///
 /// Same as [`ElementTopology`] but with the extra requirement that every element is a [`VolumeElement`].
 pub trait VolumetricElementTopology<T, Verts>: ElementTopology<T, Verts, Cell: ToElement<T, Verts::GeoDim, Elem: VolumeElement<T>>>
 where T: Scalar,

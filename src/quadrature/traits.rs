@@ -1,13 +1,11 @@
+use crate::diffgeo::chart::ChartAllocator;
+use crate::element::traits::{ElemCoord, Element};
+use crate::mesh::cell_topology::ElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{ElemOfMesh, MeshAllocator};
+use nalgebra::{DefaultAllocator, Scalar};
 use std::iter::{zip, Sum};
 use std::ops::Mul;
-use nalgebra::{DefaultAllocator, Scalar};
-use nalgebra::allocator::Allocator;
-use crate::cells::traits::ElemOfCell;
-use crate::diffgeo::chart::{ChartAllocator};
-use crate::element::traits::{ElemAllocator, ElemCoord, Element};
-use crate::mesh::cell_topology::ElementTopology;
-use crate::mesh::ElemOfMesh;
-use crate::mesh::vertex_storage::VertexStorage;
 
 /// Performs the numerical integration by evaluating the sum
 /// ```text
@@ -130,13 +128,16 @@ pub trait Quadrature<T: Sum, Elem> {
 ///
 /// Constrains `Self` to be a quadrature on [`Elem::ParametricElement`]
 /// with the coordinates [`Elem::GeoMap::Coord`] of the chart.
-pub trait QuadratureOnParametricElem<T: Scalar + Sum, Elem: Element<T>>: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>
-where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
-{}
+pub trait QuadratureOnParametricElem<T, Elem>: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>
+where T: Scalar + Sum, 
+      Elem: Element<T>,
+      DefaultAllocator: ChartAllocator<T, Elem::GeoMap> {}
 
-impl <T: Scalar + Sum, Elem: Element<T>, Q: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>> QuadratureOnParametricElem<T, Elem> for Q
-where DefaultAllocator: ChartAllocator<T, Elem::GeoMap>
-{}
+impl <T, Elem, Quad> QuadratureOnParametricElem<T, Elem> for Quad
+where T: Scalar + Sum,
+      Elem: Element<T>,
+      Quad: Quadrature<T, Elem::ParametricElement, Node = ElemCoord<T, Elem>>,
+      DefaultAllocator: ChartAllocator<T, Elem::GeoMap> {}
 
 /// Quadrature rule on a mesh.
 ///
@@ -145,11 +146,11 @@ pub trait QuadratureOnMesh<T, Verts, Cells>: QuadratureOnParametricElem<T, ElemO
 where T: Scalar + Sum,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
+      DefaultAllocator: MeshAllocator<T, Verts, Cells> {}
 
 impl <T, Verts, Cells, Quadrature> QuadratureOnMesh<T, Verts, Cells> for Quadrature
 where T: Scalar + Sum,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
       Quadrature: QuadratureOnParametricElem<T, ElemOfMesh<T, Verts, Cells>>,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfCell<T, Cells::Cell, Verts::GeoDim>> {}
+      DefaultAllocator: MeshAllocator<T, Verts, Cells> {}

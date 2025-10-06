@@ -73,7 +73,7 @@ where T: Scalar,
 
 // todo: introduce Iterator types IntoElemIter, IntoElemCellIter...
 
-/// The geometrical element of the [`Mesh<T, Verts,Cells>`].
+/// The geometrical element of the [`Mesh<T,Verts,Cells>`].
 pub type ElemOfMesh<T, Verts, Cells> = ElemOfCell<T, <Cells as CellTopology>::Cell, <Verts as VertexStorage<T>>::GeoDim>;
 
 /// Allocator for a [`Mesh<T,Verts,Cells>`].
