@@ -19,10 +19,9 @@ pub mod element;
 
 #[cfg(test)]
 mod tests {
-    use crate::space::cart_prod;
+    use crate::space::{cart_prod, Space};
     use crate::space::eval_basis::EvalDerivs;
     use crate::space::local::{FindElem, MeshBasis};
-    use crate::space::space::Space;
     use crate::bspline::de_boor;
     use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
@@ -59,6 +58,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use crate::cells::traits::ToElement;
     use crate::element::traits::Element;
 
     // #[test]
@@ -226,7 +226,8 @@ mod tests {
 
         // find_span
         println!("--- Finding span indices with `breaks` and `find_span` ---");
-        for (elem, idx) in msh.into_elem_cell_iter() {
+        for idx in msh.cell_iter() {
+            let elem = idx.to_element(&msh.coords);
             let elem_idx = idx.0[0];
             let span = basis.find_span(elem.a.x).unwrap();
             let span_idx = span.0;
@@ -316,7 +317,8 @@ mod tests {
         let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
         let msh = CartMesh::with_breaks([breaks.clone(), breaks]);
 
-        for elem in msh.into_elem_iter() {
+        for idx in msh.cell_iter() {
+            let elem = idx.to_element(&msh.coords);
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
@@ -553,7 +555,7 @@ mod tests {
 
         // Construct basis and space
         let basis = CatmarkEdgeBasis(&msh);
-        let space = Space::<f64, _, 2>::new(basis);
+        let space = Space::<f64, _>::new(basis);
 
         let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
@@ -629,7 +631,7 @@ mod tests {
         let start = Instant::now();
         let knots = KnotVec::new_open_uniform(n, p);
         let basis = de_boor::DeBoor::new(knots, n, p);
-        let space = Space::<_,_,1>::new(basis);
+        let space = Space::<_,_>::new(basis);
         for t in grid.clone() {
             let _ = black_box(space.eval_local(t));
         }
@@ -844,7 +846,7 @@ mod tests {
         let breaks = Breaks::from_knots(knots.clone());
         let msh = CartMesh::with_breaks([breaks.clone()]);
         let mut spans_1 = vec![0; breaks.len() - 1];
-        for (elem, idx) in msh.into_elem_cell_iter() {
+        for (elem, idx) in msh.elem_cell_iter() {
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 
