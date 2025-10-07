@@ -1,16 +1,14 @@
-use crate::space::eval_basis::EvalBasisAllocator;
-use crate::space::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::space::local::MeshBasis;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
-use crate::cells::traits;
-use crate::cells::traits::{Cell, ToElement};
+use crate::cells::traits::{CellConnectivity, ElemOfCell, ToElement};
 use crate::diffgeo::chart::Chart;
-use crate::index::dimensioned::Dimensioned;
+use crate::element::traits::{ElemAllocator, ElemCoord, Element};
+use crate::mesh::cell_topology::{CellOfMesh, CellTopology, VolumetricElementTopology};
 use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{ElemOfMesh, Mesh, MeshAllocator};
 use itertools::Itertools;
-use nalgebra::{ComplexField, DefaultAllocator, Point, RealField, Scalar, U2};
-use numeric_literals::replace_float_literals;
+use nalgebra::{DefaultAllocator, Point, Scalar, U2};
 use plotly::common::{ColorScale, ColorScalePalette};
 use plotly::layout::Annotation;
 use plotly::{Layout, Plot, Scatter, Surface};
@@ -18,10 +16,6 @@ use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
 use std::iter::zip;
-use crate::element::traits::{ElemCoord, ElemGeoDim, Element};
-use crate::mesh::{ElemOfMesh, Mesh, MeshAllocator};
-use crate::mesh::cell_topology::{CellOfMesh, CellTopology, VolumetricElementTopology};
-use crate::mesh::vertex_storage::VertexStorage;
 
 /// Plots the given `faces` of a 2D quad-vertex `msh`.
 pub fn plot_faces(msh: &QuadVertexMesh<f64, 2>, faces: impl Iterator<Item=QuadNodes>) -> Plot {
@@ -73,16 +67,16 @@ pub fn plot_nodes(msh: &QuadVertexMesh<f64, 2>, nodes: impl Iterator<Item=Node>)
 
 /// Plots the function `f` on the given `elem`/`patch`
 /// using `num` evaluation points per parametric direction.
-pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num: usize, mesh_grid: &D) -> Plot
-    where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Patch: Element<f64>,
-          Patch::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
-          F: Fn(&Elem, X) -> f64,
-          D: Fn(&Patch, usize) -> (Vec<f64>, Vec<f64>)
+pub fn plot_fn_elem<Cell, F, Discretize>(elem: &ElemOfCell<f64, Cell, U2>, cell: &Cell, f: &F, num: usize, mesh_grid: &Discretize) -> Plot
+    where Cell: ToElement<f64, U2>,
+          ElemCoord<f64, ElemOfCell<f64, Cell, U2>>: From<(f64, f64)>,
+          F: Fn(&Cell, ElemCoord<f64, ElemOfCell<f64, Cell, U2>>) -> f64,
+          Discretize: Fn(&ElemOfCell<f64, Cell, U2>, usize) -> (Vec<f64>, Vec<f64>),
+          DefaultAllocator: ElemAllocator<f64, ElemOfCell<f64, Cell, U2>>,
 {
     let mut plot = Plot::new();
-    let phi = cell.geo_map();
-    let (u_range, v_range) = mesh_grid(cell, num);
+    let phi = elem.geo_map();
+    let (u_range, v_range) = mesh_grid(elem, num);
 
     let mut x = vec![vec![0.0; num]; num];
     let mut y = vec![vec![0.0; num]; num];
@@ -94,9 +88,9 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
             let pos = phi.eval((u, v).into());
 
             // Set coordinates
-            x[i][j] = pos.x;
-            y[i][j] = pos.y;
-            z[i][j] = f(elem, (u, v).into());
+            x[i][j] = pos[0];
+            y[i][j] = pos[1];
+            z[i][j] = f(cell, (u, v).into());
         }
     }
 
@@ -109,15 +103,13 @@ pub fn plot_fn_elem<X, Patch, Elem, F, D>(cell: &Patch, elem: &Elem, f: &F, num:
 
 /// Plots the function `f` on the entire `msh`
 /// using `num` evaluation points per parametric direction per element.
-pub fn plot_fn_msh<X, Verts, Cells, F, D>(msh: &Mesh<f64, Verts, Cells>, f: &F, num: usize, mesh_grid: D) -> Plot
-    where X: Dimensioned<f64, 2> + From<(f64, f64)>,
-          Verts: VertexStorage<f64> + Clone,  // todo: remove cloning
+pub fn plot_fn_msh<Verts, Cells, F, Discretize>(msh: &Mesh<f64, Verts, Cells>, f: &F, num: usize, mesh_grid: Discretize) -> Plot
+    where Verts: VertexStorage<f64, GeoDim = U2> + Clone,  // todo: remove cloning
           Cells: VolumetricElementTopology<f64, Verts> + Clone,
-          <Cells as CellTopology>::Cell: ToElement<f64, U2>,
-          ElemCoord<f64, ElemOfMesh<f64, Verts, Cells>>:  Dimensioned<f64, 2> + From<(f64, f64)>,
-          // <ElemOfMesh<f64, Verts, Cells> as Element<f64>>::GeoMap: Chart<f64, Coord = X, ParametricDim = U2, GeometryDim = U2>,
-          F: Fn(&CellOfMesh<Cells>, X) -> f64,
-          D: Fn(&ElemOfMesh<f64, Verts, Cells>, usize) -> (Vec<f64>, Vec<f64>),
+          <Cells as CellTopology>::Cell: ToElement<f64, U2>, // fixme: why is this bound required? should VolumetricElementTopology enforce this?
+          ElemCoord<f64, ElemOfMesh<f64, Verts, Cells>>: From<(f64, f64)>,
+          F: Fn(&CellOfMesh<Cells>, ElemCoord<f64, ElemOfMesh<f64, Verts, Cells>>) -> f64,
+          Discretize: Fn(&ElemOfMesh<f64, Verts, Cells>, usize) -> (Vec<f64>, Vec<f64>),
           DefaultAllocator: MeshAllocator<f64, Verts, Cells>
 {
     let mut plot = Plot::new();
@@ -165,7 +157,7 @@ pub fn write_coords<T: Scalar + Display, const D: usize>(coords: impl Iterator<I
 }
 
 /// Writes the element connectivity of `elems` into a `file`.
-pub fn write_connectivity<C: traits::CellConnectivity>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_connectivity<C: CellConnectivity<Node = Node>>(elems: impl Iterator<Item = C>, file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     for elem in elems {
         let str = elem.nodes().iter().map(|n| n.to_string()).collect_vec().join(" ");
         writeln!(file, "{str}")?;
