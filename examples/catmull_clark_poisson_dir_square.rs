@@ -23,7 +23,7 @@ use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::cell_topology::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
+use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;

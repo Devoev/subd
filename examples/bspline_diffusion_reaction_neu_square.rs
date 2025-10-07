@@ -27,7 +27,7 @@ use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
 use subd::mesh::cell_topology::Mesh;
-use subd::operator::function::assemble_function;
+use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;

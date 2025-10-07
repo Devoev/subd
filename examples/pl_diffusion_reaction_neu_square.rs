@@ -20,7 +20,7 @@ use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::mesh::cell_topology::CellTopology;
-use subd::operator::function::assemble_function;
+use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::quadrature::pullback::PullbackQuad;

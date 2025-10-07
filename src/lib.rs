@@ -37,7 +37,7 @@ mod tests {
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::mesh::knot_mesh::KnotMesh;
-    use crate::operator::function::assemble_function;
+    use crate::operator::linear_form::assemble_function;
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
