@@ -1,14 +1,12 @@
 use crate::cells::chain::Chain;
 use crate::cells::edge::{DirectedEdge, UndirectedEdge};
+use crate::cells::node::Node;
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToElement};
+pub(crate) use crate::element::quad::Quad;
 use crate::mesh::vertex_storage::VertexStorage;
 use itertools::Itertools;
-use nalgebra::{Const, DimName, DimNameSub, Point, RealField, U2};
+use nalgebra::{Const, DimName, DimNameSub, RealField, U2};
 use std::iter::zip;
-pub(crate) use crate::element::quad::Quad;
-
-/// Node index.
-type Node = usize;
 
 /// Face-to-nodes topology of a 2D quadrilateral given by
 /// ```text
