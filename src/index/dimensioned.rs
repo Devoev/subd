@@ -197,9 +197,13 @@ mod tests {
     fn len() {
         let (a, b, c, d) = setup();
         assert_eq!(a.len(), 8);
+        assert!(!a.is_empty());
         assert_eq!(b.len(), 120);
+        assert!(!b.is_empty());
         assert_eq!(c.len(), 0);
+        assert!(c.is_empty());
         assert_eq!(d.len(), 16);
+        assert!(!d.is_empty());
     }
 
     #[test]

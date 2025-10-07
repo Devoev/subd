@@ -99,7 +99,7 @@ impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cells::edge::DirectedEdge;
+    use crate::cells::edge::{DirectedEdge, UndirectedEdge};
     use nalgebra::SMatrix;
     use std::collections::HashSet;
 
@@ -175,5 +175,31 @@ mod tests {
         let edge = DirectedEdge([4, 0]);
         let faces: HashSet<&QuadNodes> = msh.faces_of_edge(edge).collect();
         assert!(faces.is_empty());
+    }
+
+    #[test]
+    fn boundary() {
+        let msh = setup();
+
+        // Boundary edges
+        let edges: HashSet<UndirectedEdge> = msh.open_edges().map(|edge| edge.into()).collect();
+        let edges_exp = HashSet::from([
+            UndirectedEdge::new(1, 2),
+            UndirectedEdge::new(2, 3),
+            UndirectedEdge::new(3, 4),
+            UndirectedEdge::new(4, 5),
+            UndirectedEdge::new(5, 6),
+            UndirectedEdge::new(6, 7),
+            UndirectedEdge::new(7, 8),
+            UndirectedEdge::new(8, 9),
+            UndirectedEdge::new(9, 10),
+            UndirectedEdge::new(10, 1),
+        ]);
+        assert_eq!(edges, edges_exp);
+
+        // Boundary nodes
+        let nodes: HashSet<Node> = msh.boundary_nodes().collect();
+        let nodes_exp = HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        assert_eq!(nodes, nodes_exp);
     }
 }
