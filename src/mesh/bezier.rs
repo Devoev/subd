@@ -48,7 +48,11 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> CellTopology for 
     fn len(&self) -> usize {
         self.ref_mesh.cells.len()
     }
-    
+
+    fn is_empty(&self) -> bool {
+        self.ref_mesh.cells.is_empty()
+    }
+
     fn into_cell_iter(self) -> Self::CellIter {
         self.ref_mesh.into_cell_iter()
     }

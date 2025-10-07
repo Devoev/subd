@@ -87,6 +87,10 @@ impl <const D: usize> CellTopology for &Cartesian<D> {
         self.cells_shape.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.cells_shape.is_empty()
+    }
+
     fn into_cell_iter(self) -> Self::CellIter {
         self.cells_shape.multi_range().map(CartCellIdx)
     }
@@ -98,6 +102,10 @@ impl<const D: usize> CellTopology for Cartesian<D> {
 
     fn len(&self) -> usize {
         (&self).len()
+    }
+
+    fn is_empty(&self) -> bool {
+        (&self).is_empty()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {

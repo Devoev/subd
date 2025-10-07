@@ -81,6 +81,10 @@ impl <const D: usize> CellTopology for CartesianWithIncrements<D> {
         self.cartesian.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.cartesian.is_empty()
+    }
+
     fn into_cell_iter(self) -> Self::CellIter {
         self.increments.iter()
             .map(|increments| increments.span_indices().collect_vec())

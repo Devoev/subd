@@ -18,6 +18,9 @@ pub trait CellTopology {
 
     /// Returns the total number of cells in `self`.
     fn len(&self) -> usize;
+    
+    /// Returns `true` if the mesh contains no cells.
+    fn is_empty(&self) -> bool;
 
     /// Creates an iterator over all cells in this mesh.
     fn into_cell_iter(self) -> Self::CellIter;

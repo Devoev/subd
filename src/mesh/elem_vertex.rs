@@ -53,6 +53,10 @@ impl <C> CellTopology for ElemVec<C> {
         self.0.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     fn into_cell_iter(self) -> Self::CellIter {
         self.0.into_iter()
     }
@@ -64,6 +68,10 @@ impl <'a, C> CellTopology for &'a ElemVec<C> {
 
     fn len(&self) -> usize {
         self.0.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     fn into_cell_iter(self) -> Self::CellIter {

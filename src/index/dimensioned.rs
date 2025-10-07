@@ -86,6 +86,11 @@ impl<const D: usize> DimShape<D> {
         self.0.iter().product()
     }
 
+    /// Returns `true` if the shape is empty, i.e. it has zero length in at least one direction.
+    pub fn is_empty(&self) -> bool {
+        self.0.contains(&0)
+    }
+
     /// Returns an iterator over multi indices of type `I` in range of this shape.
     pub fn multi_range<I: MultiIndex<usize, D> + From<[usize; D]>>(&self) -> MultiRange<I> {
         let ranges = self.0.map(|n| 0..n);
