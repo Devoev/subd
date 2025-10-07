@@ -1,17 +1,15 @@
 //! Data structures for an element-to-vertex mesh.
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity};
 use crate::mesh::cell_topology::CellTopology;
+use crate::mesh::Mesh;
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
 use nalgebra::{Const, DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Dyn, OMatrix, Point, RealField, Scalar, U1};
-use std::iter::once;
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec::IntoIter;
-use crate::mesh::Mesh;
 
 /// Vector of topological cells.
 ///
@@ -131,22 +129,6 @@ impl <T: RealField, C: CellConnectivity + CellBoundary + Clone, const M: usize> 
     /// i.e. it has less than [`C::NUM_SUB_CELLS`] adjacent elements.
     pub fn is_boundary_elem(&self, elem: &C) -> bool {
         self.adjacent_elems(elem).count() < C::NUM_SUB_CELLS
-    }
-
-    // todo: is_boundary_node_general is inefficient. Update this by not calling is_boundary_elem ?
-    // fixme: it is INCORRECT. Consider the case of width 2. The nodes in between the 2 elements
-    //  would be considered boundary nodes by this function.
-    /// Returns `true` if the given `node` is a boundary node,
-    /// i.e. all elements containing the node are boundary elements.
-    fn is_boundary_node_general(&self, node: C::Node) -> bool {
-        self.elems_of_node(node).all(|elem| self.is_boundary_elem(elem))
-    }
-
-    /// Returns an iterator over all boundary nodes in this mesh.
-    pub fn boundary_nodes(&self) -> impl Iterator<Item = Node> + '_ {
-        // self.node_iter().filter(|&n| self.is_boundary_node_general(n))
-        todo!();
-        once(0)
     }
 
     // todo: add info about regular/ irregular adjacency

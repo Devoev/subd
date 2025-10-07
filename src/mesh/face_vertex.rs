@@ -2,7 +2,7 @@
 
 use crate::cells::chain::Chain;
 use crate::cells::quad::QuadNodes;
-use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
 use nalgebra::{RealField, U2};
@@ -12,8 +12,11 @@ use crate::cells::node::Node;
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
 
-impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVertexMesh<T, F, M>
-    where F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
+impl <T: RealField, F, const M: usize> ElemVertexMesh<T, F, M>
+    where T: RealField,
+          F: CellBoundary<Dim = U2>,
+          F::Node: Eq + Hash,
+          F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
 {
     /// Returns an iterator over all unique and sorted edges in this mesh.
     pub fn edges(&self) -> impl Iterator<Item = F::SubCell> + '_ {
@@ -58,6 +61,13 @@ impl <T: RealField, F: CellBoundary<Dim = U2> + Clone, const M: usize> ElemVerte
     /// i.e. it is part of an open edge.
     pub fn is_boundary_node(&self, node: F::Node) -> bool {
         self.open_edges().any(|edge| edge.contains_node(node))
+    }
+
+    /// Returns an iterator over all boundary nodes.
+    pub fn boundary_nodes(&self) -> impl Iterator<Item = F::Node> + '_ {
+        self.open_edges()
+            .flat_map(|edge| edge.nodes().to_vec())
+            .unique()
     }
 }
 
