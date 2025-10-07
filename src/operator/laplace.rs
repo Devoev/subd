@@ -1,18 +1,18 @@
-use crate::space::eval_basis::{EvalBasisAllocator, EvalGrad, EvalGradAllocator};
+use crate::diffgeo::chart::Chart;
+use crate::element::traits::{ElemAllocator, VolumeElement};
+use crate::mesh::cell_topology::VolumetricElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{Mesh, MeshAllocator};
+use crate::quadrature::pullback::PullbackQuad;
+use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
+use crate::space::eval_basis::{EvalGrad, EvalGradAllocator};
 use crate::space::local::{ElemBasis, MeshElemBasis, MeshGradBasis};
 use crate::space::Space;
-use crate::diffgeo::chart::Chart;
-use crate::mesh::cell_topology::{CellTopology, VolumetricElementTopology};
-use crate::mesh::vertex_storage::VertexStorage;
-use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
 use itertools::Itertools;
 use nalgebra::allocator::Allocator;
-use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, SquareMatrix, ToTypenum, U1};
+use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField, U1};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
-use crate::element::traits::{ElemAllocator, ElemDim, HasBasisCoord, HasDim, VolumeElement};
-use crate::mesh::{Mesh, MeshAllocator};
 
 /// The weak discrete Laplace operator
 /// ```text
@@ -42,7 +42,7 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
           &'a Cells: VolumetricElementTopology<T, Verts>,
           Basis: MeshElemBasis<T, Verts, &'a Cells> + MeshGradBasis<T>,
           Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, &'a Cells> + EvalGradAllocator<Basis::LocalBasis>,
+          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + EvalGradAllocator<Basis::LocalBasis> + Allocator<U1, Basis::ParametricDim> // todo: last allocator is the same as below
     {
         // Create empty matrix
         let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
@@ -51,7 +51,7 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
         for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local stiffness matrix
             let (sp_local, idx) = self.space.local_space_with_idx(&cell);
-            let kij_local = assemble_laplace_local(&elem, &sp_local, &quad); // fixme: what even is this error??? Where does NumBasis come from?
+            let kij_local = assemble_laplace_local(&elem, &sp_local, &quad);
 
             // Fill global stiffness matrix with local entries
             let idx_local_global = idx.enumerate();
@@ -74,7 +74,7 @@ where T: RealField + Copy + Product<T> + Sum<T>,
       Elem: VolumeElement<T>,
       Basis: EvalGrad<T> + ElemBasis<T, Elem>,
       Quadrature: QuadratureOnParametricElem<T, Elem>,
-      DefaultAllocator: EvalGradAllocator<Basis> + ElemAllocator<T, Elem> + Allocator<Basis::ParametricDim, Basis::ParametricDim> + Allocator<U1, Basis::ParametricDim>
+      DefaultAllocator: EvalGradAllocator<Basis> + ElemAllocator<T, Elem> + Allocator<U1, Basis::ParametricDim> // todo: the last allocator bound is for the single gradient evaluations. Possibly hide that behind trait?
 {
     // Evaluate all basis functions and inverse gram matrices at every quadrature point
     // and store them into buffers
