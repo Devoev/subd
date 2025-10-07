@@ -79,7 +79,7 @@ impl <const D: usize> Cartesian<D> {
 /// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
 pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
-impl <'a, const D: usize> CellTopology for &'a Cartesian<D> {
+impl <const D: usize> CellTopology for &Cartesian<D> {
     type Cell = CartCellIdx<D>;
     type CellIter = CartCellIter<D>;
 
