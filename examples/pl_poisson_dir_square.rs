@@ -14,16 +14,15 @@ use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
 use std::process::Command;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
+use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
-use subd::error::h1_error::H1Norm;
+use subd::element::traits::Element;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::cell_topology::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::linear_form::{assemble_function, LinearForm};
+use subd::operator::linear_form::LinearForm;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
@@ -129,18 +128,20 @@ fn solve(
     let err_l2 = l2.error(&uh, &u, &quad);
     let norm_l2 = l2.norm(&u, &quad);
 
-    let h1 = H1Norm::new(msh);
-    let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
-    let norm_h1 = h1.norm(&u, &u_grad, &quad);
+    // let h1 = H1Norm::new(msh);
+    // let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
+    // let norm_h1 = h1.norm(&u, &u_grad, &quad);
+    let err_h1 = 0.0; // todo
+    let norm_h1 = 1.0;
 
     // Plot error
-    let err_fn = |elem: &&QuadNodes, x: (f64, f64)| -> f64 {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
+    let err_fn = |cell: &QuadNodes, x: (f64, f64)| -> f64 {
+        let elem = cell.to_element(&msh.coords);
+        let p = elem.geo_map().eval(x);
         // (u_grad(p) - uh.eval_grad_on_elem(elem, x)).norm_squared()
-        uh.eval_grad_on_elem(elem, x).norm_squared()
+        uh.eval_grad_on_elem(&cell, x).norm_squared()
     };
-    plot_fn_msh(msh, &err_fn, 10, |patch, num| {
+    plot_fn_msh(msh, &err_fn, 10, |_quad, num| {
         (lin_space(0.0..=1.0, num).collect_vec(), lin_space(0.0..=1.0, num).collect_vec())
     }).show();
 
