@@ -97,6 +97,26 @@ impl <const D: usize> CellTopology for CartesianWithIncrements<D> {
     }
 }
 
+impl <const D: usize> CellTopology for &CartesianWithIncrements<D> {
+    type Cell = [KnotSpan; D];
+    type CellIter = KnotSpanIter<D>;
+
+    fn len(&self) -> usize {
+        self.cartesian.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.cartesian.is_empty()
+    }
+
+    fn into_cell_iter(self) -> Self::CellIter {
+        self.increments.iter()
+            .map(|increments| increments.span_indices().collect_vec())
+            .multi_cartesian_product()
+            .map(|vec| vec.into_iter().collect_array().unwrap())
+    }
+}
+
 /// Cartesian mesh built by tensor product of [`KnotVec<T>`].
 ///
 /// Same as a Cartesian mesh but with multiplicities of breakpoints.
