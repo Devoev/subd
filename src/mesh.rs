@@ -83,13 +83,13 @@ pub trait MeshAllocator<T, Verts, Cells>: ElemAllocator<T, ElemOfMesh<T, Verts, 
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts> + ?Sized,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
+      DefaultAllocator: ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
 
 impl <T, Verts, Cells> MeshAllocator<T, Verts, Cells> for DefaultAllocator
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts> + ?Sized,
-      DefaultAllocator: Allocator<Verts::GeoDim> + ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
+      DefaultAllocator: ElemAllocator<T, ElemOfMesh<T, Verts, Cells>> {}
 
 impl <T, Verts, Cells> Mesh<T, Verts, Cells>
 where T: Scalar,

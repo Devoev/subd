@@ -1,7 +1,7 @@
 use crate::cells::traits::ToElement;
-use crate::element::traits::VolumeElement;
+use crate::element::traits::{ElemAllocator, VolumeElement};
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::mesh::MeshAllocator;
+use crate::mesh::{ElemOfMesh, MeshAllocator};
 use nalgebra::{DefaultAllocator, Scalar};
 
 /// Topology of a mesh consisting of cells.
@@ -37,14 +37,14 @@ pub type CellOfMesh<Cells> = <Cells as CellTopology>::Cell;
 pub trait ElementTopology<T, Verts>: CellTopology<Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>>
     where T: Scalar,
           Verts: VertexStorage<T>,
-          DefaultAllocator: MeshAllocator<T, Verts, Self> {}
+          DefaultAllocator: ElemAllocator<T, ElemOfMesh<T, Verts, Self>> {} // fixme: cant use MeshAllocator here, because it depends on ElementTopology => cyclical dependency
 
 impl <T, Verts, Cells> ElementTopology<T, Verts> for Cells
     where T: Scalar,
           Verts: VertexStorage<T>,
           Cells: CellTopology,
           Cells::Cell: ToElement<T, Verts::GeoDim, Node = Verts::NodeIdx>,
-          DefaultAllocator: MeshAllocator<T, Verts, Self>
+          DefaultAllocator: ElemAllocator<T, ElemOfMesh<T, Verts, Cells>>
 {}
 
 /// Cell topology of volumetric elements.
@@ -60,5 +60,5 @@ where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: ElementTopology<T, Verts>,
       Cells::Cell: ToElement<T, Verts::GeoDim, Elem: VolumeElement<T>>,
-      DefaultAllocator: MeshAllocator<T, Verts, Self>
+      DefaultAllocator: MeshAllocator<T, Verts, Cells>
 {}

@@ -1,9 +1,8 @@
 use crate::cells::chain::Chain;
+use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, Element};
 use crate::mesh::vertex_storage::VertexStorage;
-use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, DimName, DimNameDiff, DimNameSub, Scalar, U1};
-use crate::diffgeo::chart::Chart;
 
 /// Topology of a cell inside a mesh.
 ///
@@ -27,7 +26,7 @@ pub trait Cell {
 /// This is useful for 'extracting' geometric information
 /// about a part of a computational domain from the mesh (see [`Cell::GeoCell`]).
 pub trait ToElement<T: Scalar, M: DimName>: Cell
-    where DefaultAllocator: Allocator<M> + ElemAllocator<T, Self::Elem>
+    where DefaultAllocator: ElemAllocator<T, Self::Elem>
 {
     /// The geometric element in `M` dimensions, associated with this topology.
     type Elem: Element<T, GeoMap: Chart<T, GeometryDim = M>>;
