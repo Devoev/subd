@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::element::traits::Element;
 use crate::mesh::cell_topology::VolumetricElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
@@ -28,11 +29,11 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
     pub fn norm_squared<Quadrature, U, N>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
           U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, N>,
           N: DimName,
-          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + Allocator<N>
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + Allocator<N>
     {
         // Iterate over every element and calculate error element-wise
         self.msh.elem_iter()
@@ -52,11 +53,11 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
     pub fn norm<Quadrature, U, N>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
           U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, N>,
           N: DimName,
-          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + Allocator<N>
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + Allocator<N>
     {
         self.norm_squared(u, quad).sqrt()
     }
@@ -66,11 +67,11 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
     pub fn error_squared<Basis, Quadrature, U>(&self, uh: &LinCombination<T, Basis>, u: &U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Basis: MeshElemBasis<T, Verts, &'a Cells>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
           U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, &'a Cells>
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, Cells>
     {
         // Iterate over every element and calculate error element-wise
         self.msh.elem_cell_iter()
@@ -79,7 +80,7 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
                 let parametric_elem = elem.parametric_element();
 
                 // Evaluate functions at quadrature nodes of element
-                let uh = quad.nodes_ref(&parametric_elem).map(|x| uh.eval_on_elem(&cell, x));
+                let uh = quad.nodes_ref(&parametric_elem).map(|x| uh.eval_on_elem(cell.borrow(), x));
                 let u = quad.nodes_elem(&elem).map(u);
 
                 // Calculate L2 error on element
@@ -94,11 +95,11 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
     pub fn error<Basis, Quadrature, U>(&self, uh: &LinCombination<T, Basis>, u: &U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Basis: MeshElemBasis<T, Verts, &'a Cells>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
           U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, &'a Cells>
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, Cells>
     {
         self.error_squared(uh, u, quad).sqrt()
     }
