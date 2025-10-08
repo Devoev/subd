@@ -18,7 +18,6 @@ use itertools::Itertools;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
-use subd::cells::geo::Cell;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
@@ -26,13 +25,12 @@ use subd::knots::knot_span::KnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::mesh::cell_topology::Mesh;
-use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::operator::linear_form::LinearForm;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::GaussLegendreMulti;
+use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
 
 /// Number of refinements for the convergence study.
 const NUM_REFINE: u8 = 4;
@@ -105,15 +103,16 @@ fn solve(
 ) -> (usize, f64, f64) {
     // Define quadrature
     let p = space.basis.bases[0].degree + 1;
-    let ref_quad = GaussLegendreMulti::with_degrees([p, p]);
+    let ref_quad = GaussLegendreBi::with_degrees(p, p);
     let quad = PullbackQuad::new(ref_quad);
 
     // Assemble system
     let hodge = Hodge::new(&msh, &space);
     let laplace = Laplace::new(&msh, &space);
-    let f = assemble_function(&msh, &space, quad.clone(), f);
-    let m_coo = hodge.assemble(quad.clone());
-    let k_coo = laplace.assemble(quad.clone());
+    let f = LinearForm::new(&msh, &space, f);
+    let m_coo = hodge.assemble(&quad);
+    let k_coo = laplace.assemble(&quad);
+    let f = f.assemble(&quad);
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 

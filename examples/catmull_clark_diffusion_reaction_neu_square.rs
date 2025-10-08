@@ -15,16 +15,14 @@ use std::iter::zip;
 use std::process::Command;
 use iter_num_tools::lin_space;
 use itertools::Itertools;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::cell_topology::Mesh;
-use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::operator::linear_form::LinearForm;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
@@ -117,9 +115,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     // Assemble system
     let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
-    let m_coo = hodge.assemble(quad.clone());
-    let k_coo = laplace.assemble(quad.clone());
+    let f = LinearForm::new(&msh, &space, f);
+    let m_coo = hodge.assemble(&quad);
+    let k_coo = laplace.assemble(&quad);
+    let f = f.assemble(&quad);
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 
