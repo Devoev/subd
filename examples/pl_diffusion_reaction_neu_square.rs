@@ -7,24 +7,22 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use nalgebra::{matrix, DVector, Point2, Vector1, Vector2};
+use itertools::izip;
+use nalgebra::{matrix, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
-use std::iter::zip;
 use std::process::Command;
-use itertools::izip;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::cell_topology::CellTopology;
-use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
@@ -106,9 +104,10 @@ fn solve(
     // Assemble system
     let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
+    let f = LinearForm::new(msh, &space, f);
     let m_coo = hodge.assemble(quad.clone());
     let k_coo = laplace.assemble(quad.clone());
+    let f = f.assemble(&quad);
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 
