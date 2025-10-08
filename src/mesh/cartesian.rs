@@ -144,7 +144,7 @@ impl<T: RealField + Copy, const D: usize> CartMesh<T, D> {
     pub fn with_breaks(breaks: [Breaks<T>; D]) -> Self {
         let breaks = MultiBreaks::new(breaks);
         let cartesian_topology = Cartesian::new(breaks.nodes_shape);
-        CartMesh::with_coords_and_cells(breaks, cartesian_topology)
+        CartMesh::from_coords_and_cells(breaks, cartesian_topology)
     }
 }
 

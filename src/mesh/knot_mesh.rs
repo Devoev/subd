@@ -142,6 +142,6 @@ impl <T: RealField + Copy, const D: usize> KnotMesh<T, D> {
         let increments = breaks
             .map(|zeta| Increments::from_multiplicities(zeta));
 
-        KnotMesh::with_coords_and_cells(MultiKnotVec(knots), CartesianWithIncrements::with_shape_and_increments(shape, increments))
+        KnotMesh::from_coords_and_cells(MultiKnotVec(knots), CartesianWithIncrements::with_shape_and_increments(shape, increments))
     }
 }

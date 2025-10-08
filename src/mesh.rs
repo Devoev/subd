@@ -32,17 +32,19 @@ pub struct Mesh<T, Verts, Cells> {
     _phantom_data: PhantomData<T>,
 }
 
+impl <T, Verts, Cells> Mesh<T, Verts, Cells> {
+    /// Constructs a new [`Mesh<T,Verts,Cells>`] with the given `coords` and `cells`.
+    pub fn from_coords_and_cells(coords: Verts, cells: Cells) -> Self {
+        Mesh { coords, cells, _phantom_data: PhantomData }
+    }   
+}
+
 impl <T, Verts, Cells> Mesh<T, Verts, Cells>
 where T: Scalar,
       Verts: VertexStorage<T>,
       Cells: CellTopology,
       DefaultAllocator: Allocator<Verts::GeoDim>
 {
-    /// Constructs a new [`Mesh<T, Verts,Cells>`] with the given `coords` and `cells`.
-    pub fn with_coords_and_cells(coords: Verts, cells: Cells) -> Self {
-        Mesh { coords, cells, _phantom_data: PhantomData }
-    }
-
     /// Returns the total number of elements or cells in `self`.
     pub fn num_elems(&self) -> usize {
         self.cells.len()

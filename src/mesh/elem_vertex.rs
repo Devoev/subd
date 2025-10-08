@@ -88,7 +88,7 @@ pub type ElemVertexMesh<T, C, const M: usize> = Mesh<T, Vec<Point<T, M>>, ElemVe
 impl <T: Scalar, C: Clone, const M: usize> ElemVertexMesh<T, C, M> {
     /// Constructs a new [`ElemVertexMesh`] from the given `coords` and `elems`.
     pub fn new(coords: Vec<Point<T, M>>, elems: Vec<C>) -> Self {
-        ElemVertexMesh::with_coords_and_cells(coords, ElemVec(elems))
+        ElemVertexMesh::from_coords_and_cells(coords, ElemVec(elems))
     }
 }
 

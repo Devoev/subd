@@ -62,6 +62,6 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierMesh<'a, T,
     /// Constructs a new [`BezierMesh`] from the given `parametric_mesh` and `geo_map`.
     pub fn new(parametric_mesh: KnotMesh<T, D>, geo_map: SplineGeo<'a, T, D, M>) -> Self {
         let knots = BsplineKnotVec { parametric_knots: parametric_mesh.coords, geo_map };
-        Mesh::with_coords_and_cells(knots, parametric_mesh.cells)
+        Mesh::from_coords_and_cells(knots, parametric_mesh.cells)
     }
 }
