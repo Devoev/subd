@@ -112,7 +112,7 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
     let f = LinearForm::new(msh, &space, f);
-    let k_coo = laplace.assemble(quad.clone());
+    let k_coo = laplace.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
     let f = f.assemble(&quad);
 

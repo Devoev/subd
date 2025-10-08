@@ -36,7 +36,7 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<Quadrature>(&self, quad: PullbackQuad<Quadrature>) -> CooMatrix<T>
+    pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
           &'a Cells: VolumetricElementTopology<T, Verts>,
@@ -51,7 +51,7 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
         for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local stiffness matrix
             let (sp_local, idx) = self.space.local_space_with_idx(&cell);
-            let kij_local = assemble_laplace_local(&elem, &sp_local, &quad);
+            let kij_local = assemble_laplace_local(&elem, &sp_local, quad);
 
             // Fill global stiffness matrix with local entries
             let idx_local_global = idx.enumerate();

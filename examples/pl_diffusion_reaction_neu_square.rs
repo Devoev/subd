@@ -105,8 +105,8 @@ fn solve(
     let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
     let f = LinearForm::new(msh, &space, f);
-    let m_coo = hodge.assemble(quad.clone());
-    let k_coo = laplace.assemble(quad.clone());
+    let m_coo = hodge.assemble(&quad);
+    let k_coo = laplace.assemble(&quad);
     let f = f.assemble(&quad);
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);

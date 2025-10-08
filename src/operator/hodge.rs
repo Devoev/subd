@@ -33,7 +33,7 @@ impl <'a, T, Basis, Verts, Cells> Hodge<'a, T, Basis, Verts, Cells> {
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<Quadrature>(&self, quad: PullbackQuad<Quadrature>) -> CooMatrix<T>
+    pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
               Verts: VertexStorage<T>,
               &'a Cells: VolumetricElementTopology<T, Verts>,
@@ -48,7 +48,7 @@ impl <'a, T, Basis, Verts, Cells> Hodge<'a, T, Basis, Verts, Cells> {
         for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local mass matrix
             let (sp_local, idx) = self.space.local_space_with_idx(&cell);
-            let mij_local = assemble_hodge_local(&elem, &sp_local, &quad);
+            let mij_local = assemble_hodge_local(&elem, &sp_local, quad);
 
             // Fill global mass matrix with local entries
             let idx_local_global = idx.enumerate();

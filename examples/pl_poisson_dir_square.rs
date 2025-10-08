@@ -109,7 +109,7 @@ fn solve(
     let laplace = Laplace::new(msh, &space);
     let f = LinearForm::new(msh, &space, f);
     let f = f.assemble(&quad);
-    let k_coo = laplace.assemble(quad.clone());
+    let k_coo = laplace.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
