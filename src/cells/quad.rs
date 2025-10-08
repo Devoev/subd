@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::cells::chain::Chain;
 use crate::cells::edge::{DirectedEdge, UndirectedEdge};
 use crate::cells::node::Node;
@@ -179,23 +180,23 @@ impl QuadNodes {
     }
 }
 
-impl Cell for QuadNodes {
+impl <B: Borrow<QuadNodes>> Cell for B {
     type Dim = U2;
     type Node = usize;
 
     fn nodes(&self) -> &[Self::Node] {
-        &self.0
+        &self.borrow().0
     }
 }
 
-impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for QuadNodes {
+impl <B: Borrow<QuadNodes>, T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for B {
     type Elem = Quad<T, M>;
 
     fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
     where
         Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
     {
-        Quad::new(self.0.map(|node| coords.vertex(node)))
+        Quad::new(self.borrow().0.map(|node| coords.vertex(node)))
     }
 }
 
