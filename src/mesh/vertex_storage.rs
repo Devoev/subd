@@ -32,7 +32,7 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     fn node_iter(&self) -> Self::NodeIter;
 
     /// Gets the vertex point of the `i`-th node in the mesh.
-    fn vertex(&self, i: Self::NodeIdx) -> OPoint<T, Self::GeoDim>; // todo: possibly also allow for multi index?
+    fn vertex(&self, i: Self::NodeIdx) -> OPoint<T, Self::GeoDim>;
 }
 
 /// The node index of the vertex storage `Coords`.
