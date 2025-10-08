@@ -19,6 +19,7 @@ use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
 use subd::element::traits::Element;
+use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::operator::bc::DirichletBcHom;
@@ -128,11 +129,9 @@ fn solve(
     let err_l2 = l2.error(&uh, &u, &quad);
     let norm_l2 = l2.norm(&u, &quad);
 
-    // let h1 = H1Norm::new(msh);
-    // let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
-    // let norm_h1 = h1.norm(&u, &u_grad, &quad);
-    let err_h1 = 0.0; // todo
-    let norm_h1 = 1.0;
+    let h1 = H1Norm::new(msh);
+    let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
+    let norm_h1 = h1.norm(&u, &u_grad, &quad);
 
     // Plot error
     let err_fn = |cell: &QuadNodes, x: (f64, f64)| -> f64 {

@@ -6,8 +6,9 @@ use crate::quadrature::pullback::PullbackQuad;
 use crate::quadrature::traits::{Quadrature, QuadratureOnMesh};
 use crate::space::eval_basis::EvalBasisAllocator;
 use crate::space::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
-use crate::space::local::{MeshBasis, MeshElemBasis};
-use nalgebra::{DefaultAllocator, OPoint, OVector, RealField, SVector};
+use crate::space::local::MeshElemBasis;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, DimName, OPoint, OVector, RealField};
 use std::iter::{zip, Product, Sum};
 
 /// L2-norm on a mesh.
@@ -24,13 +25,14 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
 
     /// Calculates the squared L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<Quadrature, U, const N: usize>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
+    pub fn norm_squared<Quadrature, U, N>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
           &'a Cells: VolumetricElementTopology<T, Verts>,
           Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
-          U: Fn(OPoint<T, Verts::GeoDim>) -> SVector<T, N>,
-          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells>
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, N>,
+          N: DimName,
+          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + Allocator<N>
     {
         // Iterate over every element and calculate error element-wise
         self.msh.elem_iter()
@@ -47,13 +49,14 @@ impl<'a, T, Verts, Cells> L2Norm<'a, T, Verts, Cells> {
 
     /// Calculates the L2 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<Quadrature, U, const N: usize>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
+    pub fn norm<Quadrature, U, N>(&self, u: U, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
           &'a Cells: VolumetricElementTopology<T, Verts>,
           Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
-          U: Fn(OPoint<T, Verts::GeoDim>) -> SVector<T, N>,
-          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells>
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, N>,
+          N: DimName,
+          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + Allocator<N>
     {
         self.norm_squared(u, quad).sqrt()
     }

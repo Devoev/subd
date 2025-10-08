@@ -136,16 +136,17 @@ where
     }
 }
 
+// todo: possibly remove &'a when updating CellTopology trait
 impl <'a, T, Basis, Verts, Cells> MeshBasis<T> for GradBasisPullback<'a, T, Basis, Verts, Cells>
     where T: RealField,
           Verts: VertexStorage<T>,
-          Cells: VolumetricElementTopology<T, Verts>,
-          Basis: MeshGradBasis<T> + MeshElemBasis<T, Verts, Cells>,
+          &'a Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshGradBasis<T> + MeshElemBasis<T, Verts, &'a Cells>,
           Basis::Coord<T>: Copy,
-          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, Cells>
+          DefaultAllocator: EvalGradAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, &'a Cells>
 {
     type Cell = Basis::Cell;
-    type LocalBasis = GradBasisPullbackLocal<<ElemOfMesh<T, Verts, Cells> as Element<T>>::GeoMap, Basis::LocalBasis>;
+    type LocalBasis = GradBasisPullbackLocal<<ElemOfMesh<T, Verts, &'a Cells> as Element<T>>::GeoMap, Basis::LocalBasis>;
     type GlobalIndices = Basis::GlobalIndices;
 
     fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
