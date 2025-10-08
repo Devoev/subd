@@ -29,7 +29,7 @@ impl <'a, T: RealField, const M: usize> BasisFunctions for PlBasisQuad<'a, T, M>
 }
 
 impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for PlBasisQuad<'a, T, M> {
-    type Cell = &'a QuadNodes;
+    type Cell = QuadNodes;
     type LocalBasis = LinBasisQuad;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
@@ -38,7 +38,7 @@ impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for PlBasisQuad<'a, 
     }
 
     fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
-        elem.0.into_iter().map(|n| n)
+        elem.0.into_iter()
     }
 }
 
