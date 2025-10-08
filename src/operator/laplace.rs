@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::diffgeo::chart::Chart;
 use crate::element::traits::{ElemAllocator, VolumeElement};
 use crate::mesh::cell_topology::VolumetricElementTopology;
@@ -39,10 +40,10 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
     pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Basis: MeshElemBasis<T, Verts, &'a Cells> + MeshGradBasis<T>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
-          DefaultAllocator: MeshAllocator<T, Verts, &'a Cells> + EvalGradAllocator<Basis::LocalBasis> + Allocator<U1, Basis::ParametricDim> // todo: last allocator is the same as below
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells> + MeshGradBasis<T>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + EvalGradAllocator<Basis::LocalBasis> + Allocator<U1, Basis::ParametricDim> // todo: last allocator is the same as below
     {
         // Create empty matrix
         let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
@@ -50,7 +51,7 @@ impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
         // Iteration over all mesh elements
         for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local stiffness matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&cell);
+            let (sp_local, idx) = self.space.local_space_with_idx(cell.borrow());
             let kij_local = assemble_laplace_local(&elem, &sp_local, quad);
 
             // Fill global stiffness matrix with local entries

@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::element::traits::{ElemAllocator, ElemGeoDim, VolumeElement};
 use crate::mesh::cell_topology::VolumetricElementTopology;
 use crate::mesh::vertex_storage::VertexStorage;
@@ -38,11 +39,11 @@ impl <'a, T, Verts, Cells, Basis, F> LinearForm<'a, T, Verts, Cells, Basis, F> {
     pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> DVector<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
           Verts: VertexStorage<T>,
-          &'a Cells: VolumetricElementTopology<T, Verts>,
-          Basis: MeshElemBasis<T, Verts, &'a Cells>,
-          Quadrature: QuadratureOnMesh<T, Verts, &'a Cells>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
           F: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>,
-          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + MeshAllocator<T, Verts, &'a Cells>
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalFunctionAllocator<Basis> + MeshAllocator<T, Verts, Cells>
     {
         // Create empty vector
         let mut fi = DVector::<T>::zeros(self.space.dim());
@@ -50,7 +51,7 @@ impl <'a, T, Verts, Cells, Basis, F> LinearForm<'a, T, Verts, Cells, Basis, F> {
         // Iteration over all mesh elements
         for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local stiffness matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&cell);
+            let (sp_local, idx) = self.space.local_space_with_idx(cell.borrow());
             let fi_local = assemble_linear_form_local(&elem, &sp_local, quad, &self.f);
 
             // Fill global stiffness matrix with local entries
