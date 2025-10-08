@@ -1,12 +1,14 @@
 //! Mesh data structures.
 
-use std::marker::PhantomData;
-use nalgebra::{DefaultAllocator, Scalar};
-use nalgebra::allocator::Allocator;
 use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
-use crate::mesh::cell_topology::{ElementTopology, CellTopology};
+use crate::mesh::cell_topology::{CellTopology, ElementTopology};
 use crate::mesh::vertex_storage::VertexStorage;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, Scalar};
+use std::borrow::Borrow;
+use std::iter::zip;
+use std::marker::PhantomData;
 
 pub mod elem_vertex;
 pub mod cartesian;
@@ -55,21 +57,9 @@ where T: Scalar,
         self.coords.len()
     }
 
-    /// Consumes `self` and returns an iterator over all topological cells in this mesh.
-    pub fn into_cell_iter(self) -> Cells::CellIter {
-        self.cells.into_cell_iter()
-    }
-}
-
-impl <'a, T, Verts, Cells> Mesh<T, Verts, Cells>
-where T: Scalar,
-      Verts: VertexStorage<T>,
-      &'a Cells: 'a + CellTopology,
-      DefaultAllocator: Allocator<Verts::GeoDim>
-{
     /// Returns an iterator over all topological cells in this mesh.
-    pub fn cell_iter(&'a self) -> <&'a Cells as CellTopology>::CellIter {
-        self.cells.into_cell_iter()
+    pub fn cell_iter(&self) -> Cells::CellIter<'_> {
+        self.cells.cell_iter()
     }
 }
 
@@ -100,29 +90,29 @@ where T: Scalar,
       DefaultAllocator: MeshAllocator<T, Verts, Cells>
 {
     /// Consumes `self` and returns an iterator over all geometrical elements in this mesh.
-    pub fn into_elem_iter(self) -> impl Iterator<Item = ElemOfMesh<T, Verts, Cells>> {
-        self.cells.into_cell_iter().map(move |cell| cell.to_element(&self.coords))
+    pub fn elem_iter(&self) -> impl Iterator<Item = ElemOfMesh<T, Verts, Cells>> + '_ {
+        self.cells.cell_iter().map(move |cell| cell.borrow().to_element(&self.coords))
     }
 
     /// Consumes `self` and returns an iterator over `(elem,cell)` pairs.
-    pub fn into_elem_cell_iter(self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, Cells>, Cells::Cell)>  {
-        self.cells.into_cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
+    pub fn elem_cell_iter(&self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, Cells>, Cells::BorrowCell<'_>)> {
+        zip(self.elem_iter(), self.cell_iter())
     }
 }
-
-impl <'a, T, Verts, Cells> Mesh<T, Verts, Cells>
-where T: Scalar,
-      Verts: VertexStorage<T>,
-      &'a Cells: 'a + ElementTopology<T, Verts>,
-      DefaultAllocator: MeshAllocator<T, Verts, &'a Cells>
-{
-    /// Returns an iterator over all geometrical elements in this mesh.
-    pub fn elem_iter(&'a self) -> impl Iterator<Item = ElemOfMesh<T, Verts, &'a Cells>> {
-        self.cell_iter().map(move |cell| cell.to_element(&self.coords))
-    }
-
-    /// Returns an iterator over `(elem,cell)` pairs.
-    pub fn elem_cell_iter(&'a self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, &'a Cells>, <&'a Cells as CellTopology>::Cell)>  {
-        self.cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
-    }
-}
+// 
+// impl <'a, T, Verts, Cells> Mesh<T, Verts, Cells>
+// where T: Scalar,
+//       Verts: VertexStorage<T>,
+//       &'a Cells: 'a + ElementTopology<T, Verts>,
+//       DefaultAllocator: MeshAllocator<T, Verts, &'a Cells>
+// {
+//     /// Returns an iterator over all geometrical elements in this mesh.
+//     pub fn elem_iter(&'a self) -> impl Iterator<Item = ElemOfMesh<T, Verts, &'a Cells>> {
+//         self.cell_iter().map(move |cell| cell.to_element(&self.coords))
+//     }
+// 
+//     /// Returns an iterator over `(elem,cell)` pairs.
+//     pub fn elem_cell_iter(&'a self) -> impl Iterator<Item = (ElemOfMesh<T, Verts, &'a Cells>, <&'a Cells as CellTopology>::Cell)>  {
+//         self.cell_iter().map(move |cell| (cell.to_element(&self.coords), cell))
+//     }
+// }

@@ -1,4 +1,5 @@
-use crate::cells::traits::ToElement;
+use std::borrow::Borrow;
+use crate::cells::traits::{Cell, ToElement};
 use crate::element::traits::{ElemAllocator, VolumeElement};
 use crate::mesh::vertex_storage::VertexStorage;
 use crate::mesh::{ElemOfMesh, MeshAllocator};
@@ -7,14 +8,17 @@ use nalgebra::{DefaultAllocator, Scalar};
 /// Topology of a mesh consisting of cells.
 ///
 /// A topological mesh is conceptually a collection of cells with some sort of connectivity relation.
-/// This trait mainly provides iteration over all mesh cells using [`Self::into_cell_iter`].
+/// This trait mainly provides iteration over all mesh cells using [`Self::cell_iter`].
 /// The connectivity relation between cells is provided by each [`Self::Cell`].
 pub trait CellTopology {
     /// Topological cell in the mesh.
-    type Cell; //: topo::Cell<Const<K>>; todo: add bound
+    type Cell: Cell;
+
+    /// Cell that can be borrowed as a [`Self::Cell`].
+    type BorrowCell<'a>: Borrow<Self::Cell> where Self: 'a;
 
     /// Cell iterator.
-    type CellIter: Iterator<Item = Self::Cell>;
+    type CellIter<'a>: Iterator<Item = Self::BorrowCell<'a>> where Self: 'a;
 
     /// Returns the total number of cells in `self`.
     fn len(&self) -> usize;
@@ -23,7 +27,7 @@ pub trait CellTopology {
     fn is_empty(&self) -> bool;
 
     /// Creates an iterator over all cells in this mesh.
-    fn into_cell_iter(self) -> Self::CellIter;
+    fn cell_iter(&self) -> Self::CellIter<'_>;
 }
 
 /// The topological cell of the `Cells`.

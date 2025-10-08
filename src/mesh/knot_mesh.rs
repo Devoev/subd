@@ -1,7 +1,7 @@
 use crate::index::dimensioned::DimShape;
 use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
 use crate::knots::increments::Increments;
-use crate::knots::knot_span::KnotSpan;
+use crate::knots::knot_span::{KnotSpan, MultiKnotSpan};
 use crate::knots::knot_vec::KnotVec;
 use crate::mesh::cartesian::Cartesian;
 use crate::mesh::cell_topology::{CellTopology};
@@ -75,11 +75,12 @@ impl <const D: usize> CartesianWithIncrements<D> {
 }
 
 /// An iterator over the elements (`[KnotSpan;D]`) of a [`KnotMesh`] mesh.
-pub type KnotSpanIter<const D: usize> = Map<MultiProduct<IntoIter<KnotSpan>>, fn(Vec<KnotSpan>) -> [KnotSpan; D]>;
+pub type KnotSpanIter<const D: usize> = Map<MultiProduct<IntoIter<KnotSpan>>, fn(Vec<KnotSpan>) -> MultiKnotSpan<D>>;
 
 impl <const D: usize> CellTopology for CartesianWithIncrements<D> {
-    type Cell = [KnotSpan; D];
-    type CellIter = KnotSpanIter<D>;
+    type Cell = MultiKnotSpan<D>;
+    type BorrowCell<'a> = MultiKnotSpan<D>;
+    type CellIter<'a> = KnotSpanIter<D>;
 
     fn len(&self) -> usize {
         self.cartesian.len()
@@ -89,31 +90,11 @@ impl <const D: usize> CellTopology for CartesianWithIncrements<D> {
         self.cartesian.is_empty()
     }
 
-    fn into_cell_iter(self) -> Self::CellIter {
+    fn cell_iter(&self) -> Self::CellIter<'_> {
         self.increments.iter()
             .map(|increments| increments.span_indices().collect_vec())
             .multi_cartesian_product()
-            .map(|vec| vec.into_iter().collect_array().unwrap())
-    }
-}
-
-impl <const D: usize> CellTopology for &CartesianWithIncrements<D> {
-    type Cell = [KnotSpan; D];
-    type CellIter = KnotSpanIter<D>;
-
-    fn len(&self) -> usize {
-        self.cartesian.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.cartesian.is_empty()
-    }
-
-    fn into_cell_iter(self) -> Self::CellIter {
-        self.increments.iter()
-            .map(|increments| increments.span_indices().collect_vec())
-            .multi_cartesian_product()
-            .map(|vec| vec.into_iter().collect_array().unwrap())
+            .map(|vec| MultiKnotSpan(vec.into_iter().collect_array().unwrap()))
     }
 }
 

@@ -83,9 +83,10 @@ impl <const D: usize> Cartesian<D> {
 /// An iterator over the elements ([`CartCellIdx<D>`]) of a [`CartMesh`] mesh.
 pub type CartCellIter<const D: usize> = Map<MultiRange<[usize; D]>, fn([usize; D]) -> CartCellIdx<D>>;
 
-impl <const D: usize> CellTopology for &Cartesian<D> {
+impl<const D: usize> CellTopology for Cartesian<D> {
     type Cell = CartCellIdx<D>;
-    type CellIter = CartCellIter<D>;
+    type BorrowCell<'a> = CartCellIdx<D>;
+    type CellIter<'a> = CartCellIter<D>;
 
     fn len(&self) -> usize {
         self.cells_shape.len()
@@ -95,25 +96,8 @@ impl <const D: usize> CellTopology for &Cartesian<D> {
         self.cells_shape.is_empty()
     }
 
-    fn into_cell_iter(self) -> Self::CellIter {
+    fn cell_iter(&self) -> Self::CellIter<'_> {
         self.cells_shape.multi_range().map(CartCellIdx)
-    }
-}
-
-impl<const D: usize> CellTopology for Cartesian<D> {
-    type Cell = CartCellIdx<D>;
-    type CellIter = CartCellIter<D>;
-
-    fn len(&self) -> usize {
-        (&self).len()
-    }
-
-    fn is_empty(&self) -> bool {
-        (&self).is_empty()
-    }
-
-    fn into_cell_iter(self) -> Self::CellIter {
-        (&self).into_cell_iter()
     }
 }
 

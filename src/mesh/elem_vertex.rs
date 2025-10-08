@@ -1,7 +1,7 @@
 //! Data structures for an element-to-vertex mesh.
 //! In 2D the mesh is a [face-vertex mesh](https://en.wikipedia.org/wiki/Polygon_mesh#Face-vertex_meshes).
 
-use crate::cells::traits::{CellBoundary, CellConnectivity};
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity};
 use crate::mesh::cell_topology::CellTopology;
 use crate::mesh::Mesh;
 use itertools::Itertools;
@@ -45,9 +45,10 @@ impl<'a, C> IntoIterator for &'a ElemVec<C> {
     }
 }
 
-impl <C> CellTopology for ElemVec<C> {
+impl <C: Cell> CellTopology for ElemVec<C> {
     type Cell = C;
-    type CellIter = IntoIter<Self::Cell>;
+    type BorrowCell<'a> = &'a C where C: 'a;
+    type CellIter<'a> = Iter<'a, Self::Cell> where C: 'a;
     
     fn len(&self) -> usize {
         self.0.len()
@@ -57,24 +58,7 @@ impl <C> CellTopology for ElemVec<C> {
         self.0.is_empty()
     }
 
-    fn into_cell_iter(self) -> Self::CellIter {
-        self.0.into_iter()
-    }
-}
-
-impl <'a, C> CellTopology for &'a ElemVec<C> {
-    type Cell = &'a C;
-    type CellIter = Iter<'a, C>;
-
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    fn into_cell_iter(self) -> Self::CellIter {
+    fn cell_iter(&self) -> Self::CellIter<'_> {
         self.0.iter()
     }
 }
