@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::cells::traits::{CellConnectivity, ElemOfCell, ToElement};
@@ -113,10 +114,9 @@ pub fn plot_fn_msh<Verts, Cells, F, Discretize>(msh: &Mesh<f64, Verts, Cells>, f
           DefaultAllocator: MeshAllocator<f64, Verts, Cells>
 {
     let mut plot = Plot::new();
-    let cells = msh.clone().into_cell_iter().collect_vec();
 
-    for cell in cells {
-        let elem_plt = plot_fn_elem(&cell.to_element(&msh.coords), &cell, f, num, &mesh_grid);
+    for (elem, cell) in msh.elem_cell_iter() {
+        let elem_plt = plot_fn_elem(&elem, cell.borrow(), f, num, &mesh_grid);
         plot.add_traces(elem_plt.data().iter().cloned().collect_vec());
     }
 
