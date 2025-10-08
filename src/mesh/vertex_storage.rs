@@ -25,6 +25,9 @@ pub trait VertexStorage<T: Scalar> where DefaultAllocator: Allocator<Self::GeoDi
     /// Returns the total number of nodes in `self`.
     fn len(&self) -> usize;
 
+    /// Returns `true` if `self` contains no vertices.
+    fn is_empty(&self) -> bool;
+
     /// Iterates over all nodes in this mesh in ascending order.
     fn node_iter(&self) -> Self::NodeIter;
 
@@ -47,6 +50,10 @@ where DefaultAllocator: Allocator<M>
         self.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+
     fn node_iter(&self) -> Self::NodeIter {
         0..self.len()
     }
@@ -66,6 +73,10 @@ where DefaultAllocator: Allocator<M>
 
     fn len(&self) -> usize {
         self.nrows()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
     }
 
     fn node_iter(&self) -> Self::NodeIter {

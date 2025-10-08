@@ -26,6 +26,10 @@ impl<'a, T: RealField + Copy, const D: usize, const M: usize> VertexStorage<T> f
         self.parametric_knots.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.parametric_knots.is_empty()
+    }
+
     fn node_iter(&self) -> Self::NodeIter {
         self.parametric_knots.node_iter()
     }

@@ -17,7 +17,7 @@ use crate::mesh::vertex_storage::VertexStorage;
 ///
 /// Similar to `MultiBreaks` but breakpoints are replaced with knot vectors.
 #[derive(Debug, Clone)]
-pub struct MultiKnotVec<T, const D: usize>([KnotVec<T>; D]);
+pub struct MultiKnotVec<T, const D: usize>([KnotVec<T>; D]); // todo: add nodes_shape, similar to MultiBreaks
 
 impl <T: Scalar, const D: usize> MultiKnotVec<T, D> {
     /// Constructs a new [`MultiKnotVec`] with the given `knots` for each parametric direction.
@@ -38,6 +38,10 @@ impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiKnotVec<T, D> 
 
     fn len(&self) -> usize {
         self.0.iter().map(|xi| xi.len()).product()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.iter().any(|xi| xi.is_empty())
     }
 
     fn node_iter(&self) -> Self::NodeIter {

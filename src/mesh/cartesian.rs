@@ -43,6 +43,10 @@ impl <T: Scalar + Copy, const D: usize> VertexStorage<T> for MultiBreaks<T, D> {
         self.nodes_shape.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.nodes_shape.is_empty()
+    }
+
     fn node_iter(&self) -> Self::NodeIter {
         self.nodes_shape.multi_range()
     }
