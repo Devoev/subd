@@ -18,9 +18,6 @@ pub struct DeBoorLocal<T: RealField> {
     pub span: KnotSpan,
 }
 
-/// Basis of [`D`]-variate [local B-Splines](DeBoorLocal) on a local knot span.
-pub type MultiDeBoorSpan<T, const D: usize> = MultiProd<T, DeBoorLocal<T>, D>;
-
 impl <T: RealField> DeBoorLocal<T> {
     /// Constructs a new [`DeBoorLocal`] from the given `global_basis` and `span`.
     pub fn new(knots: KnotVec<T>, degree: usize, span: KnotSpan) -> Self {

@@ -27,7 +27,7 @@ pub struct DeBoor<T> {
 }
 
 /// Basis of [`D`]-variate B-Splines on an entire knot vector.
-pub type MultiDeBoor<T, const D: usize> = MultiProd<T, DeBoor<T>, D>;
+pub type MultiDeBoor<T, const D: usize> = MultiProd<DeBoor<T>, D>;
 
 /// Basis of 2D vector valued B-Splines.
 pub type DeBoorVec2d<T> = cart_prod::Prod<T, MultiDeBoor<T, 2>, MultiDeBoor<T, 2>>;

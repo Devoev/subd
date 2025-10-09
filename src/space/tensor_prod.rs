@@ -4,7 +4,7 @@ use crate::space::basis::BasisFunctions;
 use crate::index::dimensioned::{DimShape, Dimensioned, Strides};
 use crate::index::multi_index::MultiIndex;
 use itertools::Itertools;
-use nalgebra::{Const, Dyn, Matrix, OMatrix, RealField, RowDVector, U1};
+use nalgebra::{Const, Dyn, Matrix, OMatrix, RealField, RowDVector, Scalar, U1};
 use std::iter::zip;
 use std::marker::PhantomData;
 
@@ -15,21 +15,19 @@ use std::marker::PhantomData;
 /// bᵢ: X×...×X ⟶ ℝ   x ↦ bᵢ[1](x[1]) ... bᵢ[d](x[d])
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct MultiProd<T, Basis, const D: usize> {
+pub struct MultiProd<Basis, const D: usize> {
     /// The bases for each parametric direction.
-    pub bases: [Basis; D],
-
-    _phantom_data: PhantomData<T>,
+    pub bases: [Basis; D]
 }
 
-impl<T, Basis, const D: usize> MultiProd<T, Basis, D> {
+impl<Basis, const D: usize> MultiProd<Basis, D> {
     /// Constructs a new [`MultiProd`] from the given array `bases` of `D` univariate bases.
     pub fn new(bases: [Basis; D]) -> Self {
-        MultiProd { bases, _phantom_data: Default::default() }
+        MultiProd { bases}
     }
 }
 
-impl<T, Basis: Clone, const D: usize> MultiProd<T, Basis, D> {
+impl<Basis: Clone, const D: usize> MultiProd<Basis, D> {
     /// Constructs a new [`MultiProd`] using the given `basis` for every parametric direction.
     pub fn repeat(basis: Basis) -> Self {
         Self::new(std::array::from_fn(|_| basis.clone()))
@@ -38,7 +36,7 @@ impl<T, Basis: Clone, const D: usize> MultiProd<T, Basis, D> {
 
 // todo: implement shape and strides for GlobalBasis as well, be using super-trait GlobalBasis: Basis
 
-impl<T, Basis: BasisFunctions, const D: usize> MultiProd<T, Basis, D> {
+impl<Basis: BasisFunctions, const D: usize> MultiProd<Basis, D> {
     /// Returns the number of basis functions per parametric direction as a [`DimShape`].
     pub fn shape(&self) -> DimShape<D> {
         let arr = self.bases.iter()
@@ -53,76 +51,79 @@ impl<T, Basis: BasisFunctions, const D: usize> MultiProd<T, Basis, D> {
     }
 }
 
-impl<T: RealField, Basis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn, Coord<T> = T>, const D: usize> MultiProd<T, Basis, D> {
-    /// Computes the evaluated tensor product basis using [`Matrix::kronecker`],
-    /// given an iterator `b` of univariate basis functions for each parametric direction.
-    fn compute_multi_prod(&self, b: impl Iterator<Item = RowDVector<T>>) -> RowDVector<T> {
-        b.reduce(|acc, bi| acc.kronecker(&bi))
-            .expect("Dimension D must be greater than 0!")
-    }
+/// Computes an evaluated tensor product basis.
+///
+/// Given an iterator `b` of basis functions for each parametric direction
+/// (the coordinate representation of each basis evaluation is given by a [`RowDVector`]),
+/// the tensor product basis `b[1] ⊗ ... ⊗ b[D]` is computed.
+/// This is done by iteratively calling [`RowDVector::kronecker`] to compute the tensor product
+/// of respectively two bases.
+fn compute_multi_prod<T: RealField>(b: impl Iterator<Item = RowDVector<T>>) -> RowDVector<T> {
+    b.reduce(|acc, bi| acc.kronecker(&bi))
+        .expect("Dimension D must be greater than 0!")
 }
 
-impl<T: RealField, Basis: EvalGrad<T, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>, const D: usize> MultiProd<T, Basis, D> {
-    // todo: move this to separate trait or Hgrad trait
-    /// Evaluates the partial derivatives of all basis functions with respect to the `i`-th direction
-    /// at the parametric point `x` as the column-wise vector `(b[1],...,b[i]/dx[i]...,b[n])`.
-    fn eval_partial_deriv(&self, x: [T; D], i: usize) -> RowDVector<T> {
-        let b = zip(&self.bases, x)
-            .enumerate()
-            .map(|(j, (b, xi))| {
-                if j == i {
-                    b.eval_grad(xi) // in 1D this is just the normal derivative
-                } else {
-                    b.eval(xi)
-                }
-            });
+/// Evaluates the partial derivatives of all basis functions with respect to the `i`-th direction
+/// at the parametric point `x` as the column-wise vector `(b[1],...,b[i]/dx[i]...,b[n])`.
+fn eval_partial_deriv<T, Basis, const D: usize>(bases: &[Basis; D], x: [T; D], i: usize) -> RowDVector<T>
+where T: RealField,
+      Basis: EvalGrad<T, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>,
+{
+    let b = zip(bases, x)
+        .enumerate()
+        .map(|(j, (b, xi))| {
+            if j == i {
+                b.eval_grad(xi) // in 1D this is just the normal derivative
+            } else {
+                b.eval(xi)
+            }
+        });
 
-        self.compute_multi_prod(b)
-    }
+    compute_multi_prod(b)
 }
 
 // todo: differentiate between X = T, (T,T), (T,T,T) and [T;D] for efficiency!
 
-impl<T: RealField, Basis: BasisFunctions<NumComponents = U1, ParametricDim = U1, NumBasis = Dyn>, const D: usize> BasisFunctions for MultiProd<T, Basis, D> {
+impl<Basis: BasisFunctions<NumComponents = U1, ParametricDim = U1, NumBasis = Dyn>, const D: usize> BasisFunctions for MultiProd<Basis, D> {
     type NumBasis = Dyn;
     type NumComponents = U1;
     type ParametricDim = Const<D>;
-    type Coord<_T> = [_T; D];
+    type Coord<T> = [T; D];
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         Dyn(self.shape().len())
     }
 }
 
-impl<T, Basis, const D: usize> EvalBasis<T> for MultiProd<T, Basis, D>
+impl<T, Basis, const D: usize> EvalBasis<T> for MultiProd<Basis, D>
     where T: RealField,
           Basis: EvalBasis<T, NumComponents = U1, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>
 {
     fn eval(&self, x: Self::Coord<T>) -> OMatrix<T, Const<1>, Dyn> {
         let b = zip(&self.bases, x.into_arr()).map(|(b, xi)| b.eval(xi));
-        self.compute_multi_prod(b)
+        compute_multi_prod(b)
     }
 }
 
-impl<T, Basis, const D: usize> EvalGrad<T> for MultiProd<T, Basis, D>
+impl<T, Basis, const D: usize> EvalGrad<T> for MultiProd<Basis, D>
     where T: RealField + Copy,
           Basis: EvalGrad<T, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>
 {
     fn eval_grad(&self, x: Self::Coord<T>) -> OMatrix<T, Const<D>, Dyn> {
-        let partial_derivs = (0..D).map(|i| self.eval_partial_deriv(x, i)).collect_vec();
+        let partial_derivs = (0..D).map(|i| eval_partial_deriv(&self.bases, x, i)).collect_vec();
         Matrix::from_rows(&partial_derivs)
     }
 }
 
 // todo: also implement DiffBasis and HgradBasis
 
-impl<T, Basis, const D: usize> MeshBasis<T> for MultiProd<T, Basis, D>
+impl<T, Basis, const D: usize> MeshBasis<T> for MultiProd<Basis, D>
     where T: RealField + Copy,
           Basis: MeshBasis<T, NumComponents = U1, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>,
           Basis::LocalBasis: EvalBasis<T, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
 {
     type Cell = [Basis::Cell; D]; // todo: possibly change to MultiProd<B::Elem>
-    type LocalBasis = MultiProd<T, Basis::LocalBasis, D>;
+    type LocalBasis = MultiProd<Basis::LocalBasis, D>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
     
     // todo: update this implementation by making HyperRectangle actually a MultiProd<Interval>
@@ -143,7 +144,7 @@ impl<T, Basis, const D: usize> MeshBasis<T> for MultiProd<T, Basis, D>
     }
 }
 
-impl<T, B, const D: usize> FindElem<T> for MultiProd<T, B, D>
+impl<T, B, const D: usize> FindElem<T> for MultiProd<B, D>
     where T: RealField + Copy,
           B: FindElem<T, NumComponents = U1, NumBasis = Dyn, ParametricDim = U1, Coord<T> = T>,
           B::LocalBasis: EvalBasis<T, NumBasis = Dyn> // todo: NumBasis = Dyn is not generic enough!
