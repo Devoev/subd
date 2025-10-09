@@ -7,8 +7,8 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use nalgebra::{matrix, Point2, Vector1};
-use nalgebra_sparse::CsrMatrix;
+use nalgebra::{matrix, DVector, Point2, Vector1};
+use nalgebra_sparse::{CooMatrix, CsrMatrix};
 use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
@@ -110,9 +110,12 @@ fn solve(
     let hodge = Hodge::new(&msh, &space);
     let laplace = Laplace::new(&msh, &space);
     let f = LinearForm::new(&msh, &space, f);
-    let m_coo = hodge.assemble(&quad);
-    let k_coo = laplace.assemble(&quad);
-    let f = f.assemble(&quad);
+    // let m_coo = hodge.assemble(&quad);
+    // let k_coo = laplace.assemble(&quad);
+    // let f = f.assemble(&quad);
+    let m_coo: CooMatrix<f64> = todo!("Fix bspline basis cell type");
+    let k_coo: CooMatrix<f64> = todo!();
+    let f: DVector<f64> = todo!();
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 
@@ -122,20 +125,20 @@ fn solve(
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Calculate error
-    let l2 = L2Norm::new(&msh);
-    let err_l2 = l2.error(&uh, &u, &quad);
-    let norm_l2 = l2.norm(&u, &quad);
-
-    // Plot error
-    let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        u(p).x - uh.eval_on_elem(elem, x).x
-    };
-    plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
-        let [u_range, v_range] = patch.ref_elem.ranges();
-        (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
-    }).show();
-
-    (space.dim(), err_l2, norm_l2)
+    // let l2 = L2Norm::new(&msh);
+    // let err_l2 = l2.error(&uh, &u, &quad);
+    // let norm_l2 = l2.norm(&u, &quad);
+    // 
+    // // Plot error
+    // let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
+    //     let patch = msh.geo_elem(elem);
+    //     let p = patch.geo_map().eval(x);
+    //     u(p).x - uh.eval_on_elem(elem, x).x
+    // };
+    // plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
+    //     let [u_range, v_range] = patch.ref_elem.ranges();
+    //     (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
+    // }).show();
+    // 
+    // (space.dim(), err_l2, norm_l2)
 }

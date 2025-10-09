@@ -1,10 +1,10 @@
 use iter_num_tools::lin_space;
 use itertools::Itertools;
-use nalgebra::{matrix, DVector, RowDVector};
+use nalgebra::matrix;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
-use subd::knots::knot_span::KnotSpan;
+use subd::knots::knot_span::MultiKnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
@@ -31,15 +31,16 @@ fn main() {
     let space = BsplineSpace::new(basis);
 
     // Plot boundary basis functions
-    let bnd_basis = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
-        space.eval_on_elem(elem, x)[0]
+    let bnd_basis = |elem: &MultiKnotSpan<2>, x: [f64; 2]| -> f64 {
+        space.eval_on_elem(&elem.0, x)[0]
         // let mut global = RowDVector::zeros(space.dim());
         // space.populate_global(&mut global, x);
         // global[10]
     };
 
-    plot_fn_msh(&msh, &bnd_basis, 10, |patch, num| {
-        let [u_range, v_range] = patch.ref_elem.ranges();
+    plot_fn_msh(&msh, &bnd_basis, 10, |_elem, num| {
+        let u_range = 0.0..=1.0;
+        let v_range = 0.0..=1.0;
         (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
     }).show();
 }

@@ -7,18 +7,16 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
+use iter_num_tools::lin_space;
+use itertools::{izip, Itertools};
 use nalgebra::{matrix, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
-use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
-use itertools::{izip, Itertools};
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
-use subd::cells::geo::Cell;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
 use subd::error::h1_error::H1Norm;
@@ -27,11 +25,10 @@ use subd::knots::knot_span::KnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::mesh::cell_topology::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::linear_form::assemble_function;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
+use subd::operator::linear_form::LinearForm;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
@@ -119,44 +116,45 @@ fn solve(
     // Assemble system
     let hodge = Hodge::new(&msh, &space);
     let laplace = Laplace::new(&msh, &space);
-    let f = assemble_function(&msh, &space, quad.clone(), f);
-    let m_coo = hodge.assemble(quad.clone());
-    let k_coo = laplace.assemble(quad.clone());
-    let m = CsrMatrix::from(&m_coo);
-    let k = CsrMatrix::from(&k_coo);
-    let a = k + m;
-
-    // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::from_bspline_space(&space);
-    let (a, f) = dirichlet.deflate(a, f);
-
-    // Solve system
-    let uh_dof = cg(&a, &f, f.clone(), f.len(), 1e-13);
-
-    // Inflate system
-    let uh = dirichlet.inflate(uh_dof);
-    let uh = space.linear_combination(uh)
-        .expect("Number of coefficients doesn't match dimension of discrete space");
-
-    // Calculate error
-    let l2 = L2Norm::new(&msh);
-    let err_l2 = l2.error(&uh, &u, &quad);
-    let norm_l2 = l2.norm(&u, &quad);
-
-    let h1 = H1Norm::new(&msh);
-    let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
-    let norm_h1 = h1.norm(&u, &u_grad, &quad);
-
-    // Plot error
-    let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        u(p).x - uh.eval_on_elem(elem, x).x
-    };
-    plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
-        let [u_range, v_range] = patch.ref_elem.ranges();
-        (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
-    }).show();
-
-    (space.dim(), err_h1, norm_h1, err_l2, norm_l2)
+    let form = LinearForm::new(&msh, &space, f);
+    todo!()
+    // let m_coo = hodge.assemble(&quad);
+    // let k_coo = laplace.assemble(&quad);
+    // let m = CsrMatrix::from(&m_coo);
+    // let k = CsrMatrix::from(&k_coo);
+    // let a = k + m;
+    //
+    // // Deflate system (homogeneous BC)
+    // let dirichlet = DirichletBcHom::from_bspline_space(&space);
+    // let (a, f) = dirichlet.deflate(a, f);
+    //
+    // // Solve system
+    // let uh_dof = cg(&a, &f, f.clone(), f.len(), 1e-13);
+    //
+    // // Inflate system
+    // let uh = dirichlet.inflate(uh_dof);
+    // let uh = space.linear_combination(uh)
+    //     .expect("Number of coefficients doesn't match dimension of discrete space");
+    //
+    // // Calculate error
+    // let l2 = L2Norm::new(&msh);
+    // let err_l2 = l2.error(&uh, &u, &quad);
+    // let norm_l2 = l2.norm(&u, &quad);
+    //
+    // let h1 = H1Norm::new(&msh);
+    // let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
+    // let norm_h1 = h1.norm(&u, &u_grad, &quad);
+    //
+    // // Plot error
+    // let err_fn = |elem: &[KnotSpan; 2], x: [f64; 2]| -> f64 {
+    //     let patch = msh.geo_elem(elem);
+    //     let p = patch.geo_map().eval(x);
+    //     u(p).x - uh.eval_on_elem(elem, x).x
+    // };
+    // plot_fn_msh(&msh, &err_fn, 10, |patch, num| {
+    //     let [u_range, v_range] = patch.ref_elem.ranges();
+    //     (lin_space(u_range, num).collect_vec(), lin_space(v_range, num).collect_vec())
+    // }).show();
+    //
+    // (space.dim(), err_h1, norm_h1, err_l2, norm_l2)
 }
