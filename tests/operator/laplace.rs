@@ -40,7 +40,7 @@ fn catmark_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
+    let stiff_matrix = DMatrix::from(&laplace.assemble(&quad));
 
     // Do tests
     assert_is_symmetric(&stiff_matrix, 1e-13);
@@ -75,7 +75,8 @@ fn bspline_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build stiffness matrix
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
+    // let stiff_matrix = DMatrix::from(&laplace.assemble(&quad));
+    let stiff_matrix: DMatrix<f64> = todo!("Fix bspline basis cell type");
 
     // Do tests
     assert_is_symmetric(&stiff_matrix, 1e-13);
@@ -95,7 +96,7 @@ fn pl_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = DMatrix::from(&laplace.assemble(quad.clone()));
+    let stiff_matrix = DMatrix::from(&laplace.assemble(&quad));
 
     assert_is_symmetric(&stiff_matrix, 1e-13);
     assert_has_rank(&stiff_matrix, space.dim() - 1, 1e-13);
@@ -106,7 +107,7 @@ fn pl_stiffness_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     let laplace = Laplace::new(&msh, &space);
-    let stiff_matrix = DMatrix::from(&laplace.assemble(quad));
+    let stiff_matrix = DMatrix::from(&laplace.assemble(&quad));
 
     assert_is_symmetric(&stiff_matrix, 1e-13);
     assert_has_rank(&stiff_matrix, space.dim() - 1, 1e-13);

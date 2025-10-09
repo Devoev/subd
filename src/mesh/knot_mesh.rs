@@ -111,17 +111,17 @@ impl <T: RealField + Copy, const D: usize> KnotMesh<T, D> {
         // Compute breaks with multiplicities
         let breaks = knots
             .clone()
-            .map(|xi| BreaksWithMultiplicity::from_knots(xi));
+            .map(BreaksWithMultiplicity::from_knots);
 
         // Compute shape of breaks
         let shape = DimShape::from_breaks(breaks
             .clone()
-            .map(|zeta| Breaks::from(zeta))
+            .map(Breaks::from)
         );
 
         // Compute increments
         let increments = breaks
-            .map(|zeta| Increments::from_multiplicities(zeta));
+            .map(Increments::from_multiplicities);
 
         KnotMesh::from_coords_and_cells(MultiKnotVec(knots), CartesianWithIncrements::with_shape_and_increments(shape, increments))
     }

@@ -2,9 +2,8 @@
 
 use approx::assert_abs_diff_eq;
 use crate::common::mesh_examples::make_pentagon_mesh;
-use subd::mesh::cell_topology::Mesh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::{GaussLegendreBi};
 use subd::quadrature::traits::Quadrature;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
@@ -24,21 +23,15 @@ fn test() {
     let catmark_msh = CatmarkMesh::from(quad_msh.clone());
 
     // Perform integration on linear surface
-    let area_exact = quad_msh.elems.iter()
-        .map(|elem| {
-            let patch = quad_msh.geo_elem(&elem);
-            lin_quad.integrate_fn_elem(&patch, |_| 1.0)
-        })
+    let area_exact = quad_msh.elem_iter()
+        .map(|elem| lin_quad.integrate_fn_elem(&elem, |_| 1.0))
         .sum::<f64>();
 
     // println!("Linear mesh has area {} (exact value)", area_exact);
 
     // Perform integration on Catmull-Clark surface
-    let area = catmark_msh.elems.iter()
-        .map(|elem| {
-            let patch = catmark_msh.geo_elem(&elem);
-            catmark_quad.integrate_fn_elem(&patch, |_| 1.0)
-        })
+    let area = catmark_msh.elem_iter()
+        .map(|elem| catmark_quad.integrate_fn_elem(&elem, |_| 1.0))
         .sum::<f64>();
 
     // println!("Catmull-Clark mesh has area {}", area);
