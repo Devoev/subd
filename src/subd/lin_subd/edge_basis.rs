@@ -35,7 +35,7 @@ impl<'a, T: RealField, const M: usize> BasisFunctions for WhitneyEdgeQuad<'a, T,
 }
 
 impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for WhitneyEdgeQuad<'a, T, M> {
-    type Cell = &'a QuadNodes;
+    type Cell = QuadNodes;
     type LocalBasis = WhitneyEdgeQuadLocal;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
