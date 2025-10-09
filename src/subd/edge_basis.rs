@@ -1,23 +1,24 @@
 // todo: this is work in progress
 
-use crate::basis::eval::EvalBasis;
-use crate::basis::local::LocalBasis;
-use crate::basis::traits::Basis;
+use crate::space::eval_basis::EvalBasis;
+use crate::space::local::MeshBasis;
+use crate::space::basis::BasisFunctions;
 use crate::bspline::cubic::CubicBspline;
-use crate::mesh::traits::MeshTopology;
-use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
-use std::vec;
-use itertools::Itertools;
-use crate::cells::topo::Cell;
+use crate::mesh::cell_topology::CellTopology;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use itertools::Itertools;
+use nalgebra::{stack, Dyn, OMatrix, RealField, RowDVector, U2};
+use std::vec;
+use crate::cells::traits::Cell;
 
 /// Edge basis functions for Catmull-Clark subdivision.
 pub struct CatmarkEdgeBasis<'a, T: RealField, const M: usize>(pub(crate) &'a CatmarkMesh<T, M>);
 
-impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
+impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkEdgeBasis<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -25,32 +26,31 @@ impl <'a, T: RealField, const M: usize> Basis for CatmarkEdgeBasis<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for CatmarkEdgeBasis<'a, T, M> {
-    type Elem = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
-    type ElemBasis = CatmarkPatchEdgeBasis;
+impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for CatmarkEdgeBasis<'a, T, M> {
+    type Cell = CatmarkPatchNodes; // todo: separate EdgePatch struct is required
+    type LocalBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
-        let patch = CatmarkPatch::from_msh(self.0, elem);
-        match patch {
-            CatmarkPatch::Regular(_) => CatmarkPatchEdgeBasis::Regular,
-            CatmarkPatch::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
-            CatmarkPatch::Corner(_) => CatmarkPatchEdgeBasis::Corner,
+    fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
+        match cell {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatchEdgeBasis::Regular,
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
+            CatmarkPatchNodes::Corner(_) => CatmarkPatchEdgeBasis::Corner,
             _ => todo!("implement irregular")
         }
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, cell: &Self::Cell) -> Self::GlobalIndices {
         // todo: In order to give global indices for edge basis functions,
         //  the edges need a global ordering. This isn't implemented yet.
         //  The code below works, but should probably be updated, 
         //  because there aren't num_nodes * 2 edges
         
         let num_nodes = self.0.num_nodes();
-        let idx_x = elem.nodes().iter().map(|node| node.0);
-        let idx_y = elem.nodes().iter().map(|node| node.0 + num_nodes);
-        let indices = idx_x.chain(idx_y).collect_vec();
-        indices.into_iter()
+        let mut idx_x = cell.nodes().to_vec();
+        let idx_y = cell.nodes().iter().map(|node| node + num_nodes);
+        idx_x.extend(idx_y);
+        idx_x.into_iter()
     }
 }
 
@@ -61,9 +61,10 @@ pub enum CatmarkPatchEdgeBasis {
     Corner
 }
 
-impl Basis for CatmarkPatchEdgeBasis {
+impl BasisFunctions for CatmarkPatchEdgeBasis {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {

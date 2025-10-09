@@ -1,7 +1,7 @@
-use crate::basis::eval::{EvalBasis, EvalScalarCurl};
-use crate::basis::local::LocalBasis;
-use crate::basis::traits::Basis;
-use crate::cells::line_segment::UndirectedEdge;
+use crate::space::eval_basis::{EvalBasis, EvalScalarCurl};
+use crate::space::local::MeshBasis;
+use crate::space::basis::BasisFunctions;
+use crate::cells::edge::UndirectedEdge;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use nalgebra::{matrix, one, zero, Dyn, OMatrix, RealField, RowOVector, RowVector4, U2, U4};
@@ -23,9 +23,10 @@ impl <'a, T: RealField, const M: usize> WhitneyEdgeQuad<'a, T, M>  {
     }
 }
 
-impl<'a, T: RealField, const M: usize> Basis for WhitneyEdgeQuad<'a, T, M> {
+impl<'a, T: RealField, const M: usize> BasisFunctions for WhitneyEdgeQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -33,16 +34,16 @@ impl<'a, T: RealField, const M: usize> Basis for WhitneyEdgeQuad<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for WhitneyEdgeQuad<'a, T, M> {
-    type Elem = &'a QuadNodes;
-    type ElemBasis = WhitneyEdgeQuadLocal;
+impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for WhitneyEdgeQuad<'a, T, M> {
+    type Cell = QuadNodes;
+    type LocalBasis = WhitneyEdgeQuadLocal;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
-    fn elem_basis(&self, _elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, _elem: &Self::Cell) -> Self::LocalBasis {
         WhitneyEdgeQuadLocal
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         let local_edges = elem.undirected_edges();
 
         let mut edge_idx = [0usize; 4];
@@ -60,9 +61,10 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for WhitneyEdgeQuad
 #[derive(Copy, Clone, Debug)]
 pub struct WhitneyEdgeQuadLocal;
 
-impl Basis for WhitneyEdgeQuadLocal {
+impl BasisFunctions for WhitneyEdgeQuadLocal {
     type NumBasis = U4;
     type NumComponents = U2;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {

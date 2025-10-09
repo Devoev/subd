@@ -1,14 +1,12 @@
-use crate::cells::cartesian::CartCell;
-use crate::cells::geo::Cell;
-use crate::cells::lerp::Lerp;
-use crate::cells::unit_cube::{SymmetricUnitCube, UnitCube};
 use crate::quadrature::traits::Quadrature;
 use gauss_quad::GaussLegendre;
 use nalgebra::{vector, RealField};
 use std::iter::Sum;
+use crate::element::cartesian::CartCell;
+use crate::element::traits::Element;
+use crate::element::unit_cube::{SymmetricUnitCube, UnitCube};
 
 // todo: are the two implementations really needed? or is the 2nd one sufficient
-
 impl <T: RealField + Sum> Quadrature<T, SymmetricUnitCube<1>> for GaussLegendre {
     type Node = T;
     type Weight = T;

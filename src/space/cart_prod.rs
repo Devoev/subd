@@ -1,6 +1,6 @@
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::local::{FindElem, LocalBasis};
-use crate::basis::traits::Basis;
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
+use crate::space::local::{FindElem, MeshBasis};
+use crate::space::basis::BasisFunctions;
 use nalgebra::{stack, DefaultAllocator, DimAdd, DimSum, OMatrix, RealField, U1, U2};
 use std::iter::once;
 use std::marker::PhantomData;
@@ -26,17 +26,18 @@ impl <T, B1, B2> Prod<T, B1, B2> {
 
 /// Constrains that [`Self::NumBasis`] and [`Other::NumBasis`] can be added, i.e.
 /// `Self::NumBasis: DimAdd<Other::NumBasis>`.
-pub trait NumBasisAdd<Other: Basis>: Basis<NumBasis: DimAdd<Other::NumBasis>> {}
+pub trait NumBasisAdd<Other: BasisFunctions>: BasisFunctions<NumBasis: DimAdd<Other::NumBasis>> {}
 
-impl<B1: Basis, B2: Basis> NumBasisAdd<B2> for B1
+impl<B1: BasisFunctions, B2: BasisFunctions> NumBasisAdd<B2> for B1
     where B1::NumBasis: DimAdd<B2::NumBasis> {}
 
-impl<T, B1, B2> Basis for Prod<T, B1, B2>
-where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
-      B2: Basis<NumComponents = U1, Coord<T> = B1::Coord<T>>,
+impl<T, B1, B2> BasisFunctions for Prod<T, B1, B2>
+where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
+      B2: BasisFunctions<NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
+    type ParametricDim = B1::ParametricDim;
     type Coord<_T> = B1::Coord<_T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -48,7 +49,7 @@ where B1: Basis<NumComponents = U1> + NumBasisAdd<B2>,
 impl <T, B1, B2> EvalBasis<T> for Prod<T, B1, B2>
 where T: RealField,
       B1: EvalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: EvalBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>, 
+      B2: EvalBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::Coord<T>: Copy,
       DefaultAllocator: EvalBasisAllocator<B1> + EvalBasisAllocator<B2> + EvalBasisAllocator<Self>,
 {
@@ -62,24 +63,24 @@ where T: RealField,
     }
 }
 
-impl <T, B1, B2> LocalBasis<T> for Prod<T, B1, B2>
+impl <T, B1, B2> MeshBasis<T> for Prod<T, B1, B2>
 where T: RealField,
-      B1: LocalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: LocalBasis<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
-      B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
+      B1: MeshBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
+      B2: MeshBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
+      B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       B1::Coord<T>: Copy,
-      DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
+      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,
 {
-    type Elem = (B1::Elem, B2::Elem); // todo: possibly change to Prod<..,..>
-    type ElemBasis = Prod<T, B1::ElemBasis, B2::ElemBasis>;
+    type Cell = (B1::Cell, B2::Cell); // todo: possibly change to Prod<..,..>
+    type LocalBasis = Prod<T, B1::LocalBasis, B2::LocalBasis>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
-    fn elem_basis(&self, elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
         let (b1, b2) = &self.bases;
-        Prod::new((b1.elem_basis(&elem.0), b2.elem_basis(&elem.1)))
+        Prod::new((b1.local_basis(&elem.0), b2.local_basis(&elem.1)))
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
         // todo: implement this!
         once(0)
     }
@@ -88,13 +89,13 @@ where T: RealField,
 impl <T, B1, B2> FindElem<T> for Prod<T, B1, B2>
 where T: RealField,
       B1: FindElem<T, NumComponents = U1> + NumBasisAdd<B2>,
-      B2: FindElem<T, NumComponents = U1, Coord<T> = B1::Coord<T>>,
-      B1::ElemBasis: NumBasisAdd<B2::ElemBasis>,
+      B2: FindElem<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
+      B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       Self::Coord<T>: Copy,
-      DefaultAllocator: EvalBasisAllocator<B1::ElemBasis> + EvalBasisAllocator<B2::ElemBasis> + EvalBasisAllocator<Prod<T, B1::ElemBasis, B2::ElemBasis>>,
+      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,
 
 {
-    fn find_elem(&self, x: Self::Coord<T>) -> Self::Elem {
+    fn find_elem(&self, x: Self::Coord<T>) -> Self::Cell {
         let (b1, b2) = &self.bases;
         (b1.find_elem(x), b2.find_elem(x))
     }

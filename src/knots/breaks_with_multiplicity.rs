@@ -5,6 +5,8 @@ use std::fmt::{Debug};
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
+use itertools::Itertools;
+use crate::knots::breaks::Breaks;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`],
 /// paired with a *multiplicity* value.

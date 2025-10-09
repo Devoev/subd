@@ -16,8 +16,8 @@ fn main() {
             0.0, 1.0, 1.0, 0.0
         ].transpose();
 
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
+    let mut quad_msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Refine and construct Catmark mesh
     quad_msh = quad_msh.catmark_subd().catmark_subd().catmark_subd().catmark_subd().unpack();
@@ -28,7 +28,7 @@ fn main() {
     let space = CatmarkSpace::new(basis);
 
     // Plot boundary basis functions
-    let bnd_basis = |elem: &&CatmarkPatchNodes, x: (f64, f64)| -> f64 {
+    let bnd_basis = |elem: &CatmarkPatchNodes, x: (f64, f64)| -> f64 {
         // space.eval_on_elem(elem, x)[1]
         let mut global = RowDVector::zeros(space.dim());
         space.populate_global_on_elem(&mut global, elem, x);

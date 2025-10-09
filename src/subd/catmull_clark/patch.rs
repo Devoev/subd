@@ -1,17 +1,18 @@
 use crate::cells;
-use crate::cells::geo;
-use crate::cells::line_segment::DirectedEdge;
-use crate::cells::node::NodeIdx;
+use crate::cells::edge::DirectedEdge;
+use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
-use crate::cells::unit_cube::UnitCube;
+use crate::cells::traits::{Cell, ToElement};
+use crate::element::traits::Element;
+use crate::mesh::cell_topology::CellTopology;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
+use crate::mesh::vertex_storage::VertexStorage;
 use crate::subd::catmull_clark::map::CatmarkMap;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
+use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
-use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]
@@ -30,20 +31,6 @@ pub enum CatmarkPatch<T: RealField, const M: usize> {
 }
 
 impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
-    /// Constructs a new [`CatmarkPatch`] from the given `msh` and `patch_topo`.
-    pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: &CatmarkPatchNodes) -> Self {
-        let coords = patch_topo
-            .as_slice()
-            .iter()
-            .map(|node| *msh.coords(*node));
-        match patch_topo {
-            CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), *n)
-        }
-    }
-
     /// Returns a slice containing the control points.
     pub fn as_slice(&self) -> &[Point<T, M>] {
         match self {
@@ -51,16 +38,6 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
             CatmarkPatch::Boundary(val) => val.as_slice(),
             CatmarkPatch::Corner(val) => val.as_slice(),
             CatmarkPatch::Irregular(val, _) => val.as_slice(),
-        }
-    }
-
-    /// Returns the bicubic Catmull-Clark basis functions corresponding to the patch.
-    pub fn basis(&self) -> CatmarkPatchBasis {
-        match self {
-            CatmarkPatch::Regular(_) => CatmarkPatchBasis::Regular,
-            CatmarkPatch::Boundary(_) => CatmarkPatchBasis::Boundary,
-            CatmarkPatch::Corner(_) => CatmarkPatchBasis::Corner,
-            CatmarkPatch::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
         }
     }
 
@@ -92,11 +69,11 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
     }
 }
 
-impl <T: RealField + Copy + ToPrimitive, const M: usize> geo::Cell<T> for CatmarkPatch<T, M> {
-    type ParametricCell = SubdUnitSquare;
+impl <T: RealField + Copy + ToPrimitive, const M: usize> Element<T> for CatmarkPatch<T, M> {
+    type ParametricElement = SubdUnitSquare;
     type GeoMap = CatmarkMap<T, M>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         match self {
             CatmarkPatch::Irregular(_, _) => SubdUnitSquare::Irregular,
             _ => SubdUnitSquare::Regular
@@ -125,7 +102,7 @@ pub enum CatmarkPatchNodes {
     ///   0 --- 1 --- 2 --- 3
     /// ```
     /// where `p` is the center face of the patch.
-    Regular([NodeIdx; 16]),
+    Regular([Node; 16]),
 
     /// The regular boundary case of valence `n=3`.
     /// The nodes are ordered in lexicographical order
@@ -138,7 +115,7 @@ pub enum CatmarkPatchNodes {
     ///  0 --- 1 --- 2 --- 3
     /// ```
     /// where `p` is the center face of the patch.
-    Boundary([NodeIdx; 12]),
+    Boundary([Node; 12]),
 
     /// The regular corner case of valence `n=2`.
     /// The nodes are ordered in lexicographical order
@@ -151,7 +128,7 @@ pub enum CatmarkPatchNodes {
     ///  0 --- 1 --- 2 ---
     /// ```
     /// where `p` is the center face of the patch.
-    Corner([NodeIdx; 9]),
+    Corner([Node; 9]),
 
     /// The irregular interior case of valence `n≠4`.
     /// The nodes are ordered in the following order
@@ -167,7 +144,7 @@ pub enum CatmarkPatchNodes {
     ///   ○ - 8
     /// ```
     /// where `p` is the center face of the patch and node `0` is the irregular node.
-    Irregular(Vec<NodeIdx>, usize)
+    Irregular(Vec<Node>, usize)
 
     // todo: add IrregularBoundary/Corner case of valence = 4
 }
@@ -234,7 +211,7 @@ impl CatmarkPatchNodes {
     }
 
     /// Returns a slice containing the nodes.
-    pub fn as_slice(&self) -> &[NodeIdx] {
+    pub fn as_slice(&self) -> &[Node] {
         match self {
             CatmarkPatchNodes::Regular(val) => val.as_slice(),
             CatmarkPatchNodes::Boundary(val) => val.as_slice(),
@@ -262,11 +239,36 @@ impl CatmarkPatchNodes {
     }
 }
 
-impl cells::topo::Cell<U2> for CatmarkPatchNodes {
-    fn nodes(&self) -> &[NodeIdx] {
+impl Cell for CatmarkPatchNodes {
+    type Dim = U2;
+    type Node = usize;
+
+    fn nodes(&self) -> &[Self::Node] {
         self.as_slice()
     }
+}
 
+impl <T: RealField + Copy + ToPrimitive, const M: usize> ToElement<T, Const<M>> for CatmarkPatchNodes {
+    type Elem = CatmarkPatch<T, M>;
+
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
+        let coords = self
+            .as_slice()
+            .iter()
+            .map(|node| coords.vertex(*node));
+        match self {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), *n)
+        }
+    }
+}
+
+impl cells::traits::CellConnectivity for CatmarkPatchNodes {
     // todo: possibly change this
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
@@ -278,12 +280,12 @@ impl cells::topo::Cell<U2> for CatmarkPatchNodes {
     // todo: does it make sense to override the method here? or change signature of trait
 
     /// Returns `true` if the center face of this patch contains the given node.
-    fn contains_node(&self, node: NodeIdx) -> bool {
+    fn contains_node(&self, node: Node) -> bool {
         self.center_quad().contains_node(node)
     }
 }
 
-impl cells::topo::CellBoundary<U2> for CatmarkPatchNodes  {
+impl cells::traits::CellBoundary for CatmarkPatchNodes  {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;
@@ -365,7 +367,7 @@ impl CatmarkPatchFaces {
     /// Finds the faces of the `msh` making up the patch of the `center` quadrilateral.
     pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: QuadNodes) -> CatmarkPatchFaces {
         // Find all faces in the 1-ring neighborhood
-        let faces = msh.elems.iter()
+        let faces = (&msh.cells).cell_iter()
             .filter(|other| other.is_touching(center))
             .collect_vec();
 
@@ -472,7 +474,7 @@ impl CatmarkPatchFaces {
         faces_irregular.rotate_right(1);
 
         // Find regular faces n..n+4
-        let mut faces_regular = vec![QuadNodes([NodeIdx(0); 4]); 5]; // todo: replace with better default value
+        let mut faces_regular = vec![QuadNodes([0; 4]); 5]; // todo: replace with better default value
 
         // Find faces connected to edges 1 and 2
         for (edge_dix, &edge) in center.edges()[1..=2].iter().enumerate() {

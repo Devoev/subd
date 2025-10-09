@@ -1,10 +1,6 @@
-pub mod topo;
+pub mod traits;
 pub mod chain;
-pub mod line_segment;
+pub mod edge;
 pub mod quad;
 pub mod node;
 pub mod cartesian;
-pub mod bezier_elem;
-pub mod geo;
-pub mod lerp;
-pub mod unit_cube;

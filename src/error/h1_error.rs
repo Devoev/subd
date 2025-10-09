@@ -1,36 +1,37 @@
-use crate::basis::eval::EvalGradAllocator;
-use crate::basis::grad::{GradBasis, GradBasisPullback};
-use crate::basis::lin_combination::{LinCombination, SelectCoeffsAllocator};
-use crate::basis::local::LocalGradBasis;
-use crate::cells::geo::{Cell, HasDim};
-use crate::diffgeo::chart::Chart;
 use crate::error::l2_error::L2Norm;
-use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::QuadratureOnParametricCell;
-use nalgebra::{Const, DefaultAllocator, OVector, Point, RealField, SVector, U1};
+use crate::mesh::cell_topology::VolumetricElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{Mesh, MeshAllocator};
+use crate::quadrature::pullback::PullbackQuad;
+use crate::quadrature::traits::QuadratureOnMesh;
+use crate::space::eval_basis::{EvalBasisAllocator, EvalGradAllocator};
+use crate::space::grad::{GradBasis, GradBasisPullback};
+use crate::space::lin_combination::{EvalFunctionAllocator, LinCombination, SelectCoeffsAllocator};
+use crate::space::local::{MeshElemBasis, MeshGradBasis};
+use crate::space::Space;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, OPoint, OVector, RealField, U1};
 use std::iter::{Product, Sum};
-use crate::basis::space::Space;
 
 /// H1-norm on a mesh.
-pub struct H1Norm<'a, M>(L2Norm<'a, M>);
+pub struct H1Norm<'a, T, Verts, Cells>(L2Norm<'a, T, Verts, Cells>);
 
-impl<'a, M> H1Norm<'a, M> {
+impl<'a, T, Verts, Cells> H1Norm<'a, T, Verts, Cells> {
     /// Constructs a new [`H1Norm`] for the given `msh`.
-    pub fn new(msh: &'a M) -> Self {
+    pub fn new(msh: &'a Mesh<T, Verts, Cells>) -> Self {
         H1Norm(L2Norm::new(msh))
     }
 
     /// Calculates the squared H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm_squared<T, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm_squared<Quadrature, U, UGrad>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D>,
-          M::GeoElem: HasDim<T, D>,
-          U: Fn(Point<T, D>) -> OVector<T, U1>,
-          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          Const<D>: DimMinSelf
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, U1>,
+          UGrad: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Verts::GeoDim>,
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + Allocator<Verts::GeoDim> + Allocator<U1>
     {
         // Calculate ||u||^2 + ||grad u||^2
         self.0.norm_squared(u, quad) + self.0.norm_squared(u_grad, quad)
@@ -38,33 +39,35 @@ impl<'a, M> H1Norm<'a, M> {
 
     /// Calculates the H1 norm of the given exact solution `u`
     /// using the quadrature rule `quad`.
-    pub fn norm<T, const D: usize, U, UGrad, Q>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Q, D>) -> T
+    pub fn norm<Quadrature, U, UGrad>(&self, u: U, u_grad: UGrad, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D>,
-          M::GeoElem: HasDim<T, D>,
-          U: Fn(Point<T, D>) -> OVector<T, U1>,
-          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          Const<D>: DimMinSelf
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, U1>,
+          UGrad: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Verts::GeoDim>,
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + Allocator<Verts::GeoDim>
     {
        self.norm_squared(u, u_grad, quad).sqrt()
     }
 
     /// Calculates the squared H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`, using the quadrature rule `quad`.
-    pub fn error_squared<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
+    pub fn error_squared<Basis, Quadrature, U, UGrad>(&self, uh: &LinCombination<T, Basis>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T> + HasDim<T, D>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
-          B: LocalGradBasis<T, D> + Clone,
-          B::Coord<T>: Copy,
-          U: Fn(Point<T, D>) -> OVector<T, U1>,
-          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          Const<D>: DimMinSelf,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
-          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells> + MeshGradBasis<T> + Clone, // todo: remove clone
+          Basis::Coord<T>: Copy,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>,
+          UGrad: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Verts::GeoDim>,
+        // todo: there are way to many allocator bounds. Fix when refactoring GradBasis
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalGradAllocator<Basis::LocalBasis>
+          + EvalGradAllocator<GradBasis<Basis::LocalBasis>> + SelectCoeffsAllocator<GradBasis<Basis::LocalBasis>>
+          + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis>
+          + EvalFunctionAllocator<GradBasis<Basis>>
+          + MeshAllocator<T, Verts, Cells> + Allocator<Verts::GeoDim>
     {
         // Compute gradient of uh (todo: possibly add as input argument?)
         // todo: very ugly. When GradBasisPullback gets refactored, update this code!
@@ -81,19 +84,21 @@ impl<'a, M> H1Norm<'a, M> {
     /// Calculates the H1 error between the given discrete solution `uh` and the exact one `u`,
     /// with gradient `u_grad`,
     /// using the quadrature rule `quad`.
-    pub fn error<T, B, const D: usize, U, UGrad, Q>(&self, uh: &LinCombination<T, B, D>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Q, D>) -> T
+    pub fn error<Basis, Quadrature, U, UGrad>(&self, uh: &LinCombination<T, Basis>, u: &U, u_grad: &UGrad, quad: &PullbackQuad<Quadrature>) -> T
     where T: RealField + Copy + Product<T> + Sum<T>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem>,
-          M::GeoElem: Cell<T> + HasDim<T, D>,
-          <M::GeoElem as Cell<T>>::GeoMap: Chart<T, Coord = B::Coord<T>>, // todo: replace with HasBasisCoord<T, B>, but this does not infer HasBasisCoord<T, GradBasis<B, D>> for some reason?
-          B: LocalGradBasis<T, D> + Clone,
-          B::Coord<T>: Copy,
-          U: Fn(Point<T, D>) -> OVector<T, U1>,
-          UGrad: Fn(Point<T, D>) -> SVector<T, D>,
-          Q: QuadratureOnParametricCell<T, M::GeoElem>,
-          Const<D>: DimMinSelf,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D> + SelectCoeffsAllocator<B::ElemBasis>,
-          DefaultAllocator: EvalGradAllocator<GradBasis<B::ElemBasis, D>, D> + SelectCoeffsAllocator<GradBasis<B::ElemBasis, D>> // fixme: this bound should be automatically fulfilled. Why isn't it?
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells> + MeshGradBasis<T> + Clone, // todo: remove clone
+          Basis::Coord<T>: Copy,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          U: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Basis::NumComponents>,
+          UGrad: Fn(OPoint<T, Verts::GeoDim>) -> OVector<T, Verts::GeoDim>,
+    // todo: there are way to many allocator bounds. Fix when refactoring GradBasis
+          DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + EvalGradAllocator<Basis::LocalBasis>
+          + EvalGradAllocator<GradBasis<Basis::LocalBasis>> + SelectCoeffsAllocator<GradBasis<Basis::LocalBasis>>
+          + EvalFunctionAllocator<Basis> + SelectCoeffsAllocator<Basis::LocalBasis>
+          + EvalFunctionAllocator<GradBasis<Basis>>
+          + MeshAllocator<T, Verts, Cells> + Allocator<Verts::GeoDim>
     {
         self.error_squared(uh, u, u_grad, quad).sqrt()
     }

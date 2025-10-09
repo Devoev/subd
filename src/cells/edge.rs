@@ -1,45 +1,12 @@
 use crate::cells::chain::Chain;
-use crate::cells::geo;
-use crate::cells::lerp::{Lerp, MultiLerp};
-use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, OrderedCell, OrientedCell};
-use crate::cells::unit_cube::UnitCube;
-use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U0, U1};
+
+use crate::cells::node::Node;
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell, ToElement};
+use crate::element::line_segment::LineSegment;
+use crate::mesh::vertex_storage::VertexStorage;
+use nalgebra::{clamp, Const, DimName, DimNameSub, Point, RealField, U1};
 use std::cmp::minmax;
 use std::hash::Hash;
-
-/// A line segment, i.e. a straight line bounded by 2 points
-/// in [`M`]-dimensional space.
-pub struct LineSegment<T: RealField, const M: usize> {
-    pub vertices: [Point<T, M>; 2]
-}
-
-impl<T: RealField, const M: usize> LineSegment<T, M> {
-
-    /// Constructs a new [`LineSegment`] from the given `vertices`.
-    pub fn new(vertices: [Point<T, M>; 2]) -> Self {
-        LineSegment { vertices }
-    }
-
-    /// Constructs a new [`LineSegment`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: DirectedEdge, msh: &QuadVertexMesh<T, M>) -> Self {
-        LineSegment::new(topology.0.map(|n| msh.coords(n).clone()))
-    }
-}
-
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
-    type ParametricCell = UnitCube<1>;
-    type GeoMap = Lerp<T, M>;
-
-    fn ref_cell(&self) -> Self::ParametricCell {
-        UnitCube
-    }
-
-    fn geo_map(&self) -> Self::GeoMap {
-        Lerp::new(self.vertices[0], self.vertices[1])
-    }
-}
 
 /// A *directed* edge between two nodes.
 /// The topological structure is
@@ -50,16 +17,16 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T> for LineSegment<T, M> {
 /// where `0` is the start and `1` the end node.
 /// Geometrically the pair defines the topology of a [`LineSegment`].
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct DirectedEdge(pub [NodeIdx; 2]);
+pub struct DirectedEdge(pub [Node; 2]);
 
 impl DirectedEdge {
     /// Returns the start node of this edge.
-    pub fn start(&self) -> NodeIdx {
+    pub fn start(&self) -> Node {
         self.0[0]
     }
 
     /// Returns the end node of this edge.
-    pub fn end(&self) -> NodeIdx {
+    pub fn end(&self) -> Node {
         self.0[1]
     }
 
@@ -84,11 +51,27 @@ impl DirectedEdge {
     }
 }
 
-impl Cell<U1> for DirectedEdge {
-    fn nodes(&self) -> &[NodeIdx] {
+impl Cell for DirectedEdge {
+    type Dim = U1;
+    type Node = Node;
+
+    fn nodes(&self) -> &[Self::Node] {
         &self.0
     }
+}
 
+impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for DirectedEdge {
+    type Elem = LineSegment<T, M>;
+
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
+        LineSegment::new(self.0.map(|node| coords.vertex(node)))
+    }
+}
+
+impl CellConnectivity for DirectedEdge {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U1: DimNameSub<M>
@@ -109,9 +92,9 @@ impl Cell<U1> for DirectedEdge {
     }
 }
 
-impl CellBoundary<U1> for DirectedEdge {
+impl CellBoundary for DirectedEdge {
     const NUM_SUB_CELLS: usize = 2;
-    type SubCell = NodeIdx;
+    type SubCell = Node;
     type Boundary = NodePair;
 
     fn boundary(&self) -> Self::Boundary {
@@ -119,15 +102,15 @@ impl CellBoundary<U1> for DirectedEdge {
     }
 }
 
-impl OrderedCell<U1> for DirectedEdge {
+impl OrderedCell for DirectedEdge {
     fn sorted(&self) -> Self {
         DirectedEdge(minmax(self.start(), self.end()))
     }
 }
 
-impl OrientedCell<U1> for DirectedEdge {
+impl OrientedCell for DirectedEdge {
     fn orientation(&self) -> i8 {
-        clamp(self.end().0 as i8 - self.start().0 as i8, -1, 1)
+        clamp(self.end() as i8 - self.start() as i8, -1, 1)
     }
 
     fn orientation_eq(&self, other: &Self) -> bool {
@@ -140,10 +123,10 @@ impl OrientedCell<U1> for DirectedEdge {
 }
 
 /// Pair of two disjoint nodes.
-pub struct NodePair(pub [NodeIdx; 2]);
+pub struct NodePair(pub [Node; 2]);
 
-impl Chain<U0, NodeIdx> for NodePair {
-    fn cells(&self) -> &[NodeIdx] {
+impl Chain<Node> for NodePair {
+    fn cells(&self) -> &[Node] {
         &self.0
     }
 }
@@ -155,56 +138,64 @@ impl Chain<U0, NodeIdx> for NodePair {
 pub struct UndirectedEdge {
     /// The sorted nodes defining the start and end of the edge.
     /// The sorting is such that `start < end`.
-    sorted_nodes: [NodeIdx; 2]
+    sorted_nodes: [Node; 2]
 }
 
 impl UndirectedEdge {
     /// Constructs a new [`UndirectedEdge`] from the given nodes `a` and `b`
     /// by sorting the nodes such that `start < end`.
-    pub fn new(a: NodeIdx, b: NodeIdx) -> Self {
+    pub fn new(a: Node, b: Node) -> Self {
         // todo: test for a == b
         UndirectedEdge { sorted_nodes: minmax(a, b) }
     }
 
     /// Attempts to construct a new [`UndirectedEdge`] from the given `start` and `end` nodes.
     /// If `start >= end` `None` is returned.
-    pub fn try_new(start: NodeIdx, end: NodeIdx) -> Option<Self> {
+    pub fn try_new(start: Node, end: Node) -> Option<Self> {
         (start < end).then_some(UndirectedEdge { sorted_nodes: [start, end] })
     }
 
     /// Returns the array of sorted nodes.
-    pub fn sorted_nodes(&self) -> &[NodeIdx; 2] {
+    pub fn sorted_nodes(&self) -> &[Node; 2] {
         &self.sorted_nodes
     }
 
     /// Returns the node with the lower index.
-    pub fn first(&self) -> NodeIdx {
+    pub fn first(&self) -> Node {
         self.sorted_nodes[0]
     }
 
     /// Returns the node with the greater index.
-    pub fn second(&self) -> NodeIdx {
+    pub fn second(&self) -> Node {
         self.sorted_nodes[1]
     }
 }
 
 impl From<DirectedEdge> for UndirectedEdge {
+    /// Turns a directed edge into an undirected one, by removing the orientation.
     fn from(value: DirectedEdge) -> Self {
         UndirectedEdge::new(value.start(), value.end())
     }
 }
 
 impl From<UndirectedEdge> for DirectedEdge {
+    /// Turns an undirected edge into a directed one,
+    /// by choosing the orientation such that `start < end`.
     fn from(value: UndirectedEdge) -> Self {
         DirectedEdge(value.sorted_nodes)
     }
 }
 
-impl Cell<U1> for UndirectedEdge {
-    fn nodes(&self) -> &[NodeIdx] {
+impl Cell for UndirectedEdge {
+    type Dim = U1;
+    type Node = Node;
+
+    fn nodes(&self) -> &[Self::Node] {
         &self.sorted_nodes
     }
+}
 
+impl CellConnectivity for UndirectedEdge {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U1: DimNameSub<M>

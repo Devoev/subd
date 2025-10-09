@@ -39,7 +39,7 @@ fn catmark_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
+    let mass_matrix = DMatrix::from(&hodge.assemble(&quad));
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);
@@ -74,7 +74,8 @@ fn bspline_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Build mass matrix
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
+    // let mass_matrix = DMatrix::from(&hodge.assemble(&quad));
+    let mass_matrix: DMatrix<f64> = todo!("Fix bspline basis cell type");
 
     // Do tests
     assert_is_symmetric(&mass_matrix, 1e-13);
@@ -94,7 +95,7 @@ fn pl_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = DMatrix::from(&hodge.assemble(quad.clone()));
+    let mass_matrix = DMatrix::from(&hodge.assemble(&quad));
 
     assert_is_symmetric(&mass_matrix, 1e-13);
     assert_is_positive_definite(&mass_matrix, 1e-13)?;
@@ -105,7 +106,7 @@ fn pl_mass_matrix_properties() -> Result<(), Box<dyn Error>> {
 
     // Do tests
     let hodge = Hodge::new(&msh, &space);
-    let mass_matrix = DMatrix::from(&hodge.assemble(quad));
+    let mass_matrix = DMatrix::from(&hodge.assemble(&quad));
 
     assert_is_symmetric(&mass_matrix, 1e-13);
     assert_is_positive_definite(&mass_matrix, 1e-13)?;

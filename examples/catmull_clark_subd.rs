@@ -35,11 +35,11 @@ fn make_mesh() -> QuadVertexMesh<f64, 2> {
 
     // Faces
     let faces = vec![
-        QuadNodes::from_indices(0, 10, 1, 2),
-        QuadNodes::from_indices(0, 2, 3, 4),
-        QuadNodes::from_indices(0, 4, 5, 6),
-        QuadNodes::from_indices(0, 6, 7, 8),
-        QuadNodes::from_indices(0, 8, 9, 10),
+        QuadNodes::new(0, 10, 1, 2),
+        QuadNodes::new(0, 2, 3, 4),
+        QuadNodes::new(0, 4, 5, 6),
+        QuadNodes::new(0, 6, 7, 8),
+        QuadNodes::new(0, 8, 9, 10),
     ];
     QuadVertexMesh::new(coords, faces)
 }

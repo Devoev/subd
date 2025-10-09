@@ -14,16 +14,16 @@ use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
 use std::process::Command;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
+use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
+use subd::element::traits::Element;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
+use subd::operator::linear_form::LinearForm;
 use subd::operator::laplace::Laplace;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
@@ -45,8 +45,8 @@ pub fn main() -> io::Result<()> {
             0.0, 0.0, 1.0, 1.0
         ].transpose();
 
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut msh = QuadVertexMesh::from_matrix(coords_square, quads);
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
+    let mut msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Convergence study
     let mut n_dofs = vec![];
@@ -107,8 +107,9 @@ fn solve(
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
-    let k_coo = laplace.assemble(quad.clone());
+    let f = LinearForm::new(msh, &space, f);
+    let f = f.assemble(&quad);
+    let k_coo = laplace.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
@@ -133,13 +134,13 @@ fn solve(
     let norm_h1 = h1.norm(&u, &u_grad, &quad);
 
     // Plot error
-    let err_fn = |elem: &&QuadNodes, x: (f64, f64)| -> f64 {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
+    let err_fn = |cell: &QuadNodes, x: (f64, f64)| -> f64 {
+        let elem = cell.to_element(&msh.coords);
+        let p = elem.geo_map().eval(x);
         // (u_grad(p) - uh.eval_grad_on_elem(elem, x)).norm_squared()
-        uh.eval_grad_on_elem(elem, x).norm_squared()
+        uh.eval_grad_on_elem(&cell, x).norm_squared()
     };
-    plot_fn_msh(msh, &err_fn, 10, |patch, num| {
+    plot_fn_msh(msh, &err_fn, 10, |_quad, num| {
         (lin_space(0.0..=1.0, num).collect_vec(), lin_space(0.0..=1.0, num).collect_vec())
     }).show();
 

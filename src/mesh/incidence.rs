@@ -1,12 +1,12 @@
 use crate::cells::chain::Chain;
-use crate::cells::topo::{Cell, CellBoundary, OrientedCell, SubCell};
+use crate::cells::edge::DirectedEdge;
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, SubCell};
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
+use crate::mesh::cell_topology::CellTopology;
 use itertools::Itertools;
-use nalgebra::{DimName, DimNameDiff, DimNameSub, RealField, U1};
+use nalgebra::{DimName, DimNameSub, RealField, U1};
 use nalgebra_sparse::CooMatrix;
-use crate::cells::line_segment::DirectedEdge;
-use crate::cells::node::NodeIdx;
+
 // todo: replace this with a generic implementation over the mesh type. For that add
 //  - generic edges, that provide all methods of NodePair (sorted, start, end...)
 //  -
@@ -15,10 +15,10 @@ use crate::cells::node::NodeIdx;
 pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_nodes = msh.num_nodes();
+    let num_nodes = msh.coords.len();
 
     assemble_incidence_mat(num_edges, num_nodes, edges.into_iter(), |mat, cell, cell_idx| {
-        let  DirectedEdge([NodeIdx(start_idx), NodeIdx(end_idx)]) = cell;
+        let  DirectedEdge([start_idx, end_idx]) = cell;
         mat.push(start_idx, cell_idx, -1);
         mat.push(end_idx, cell_idx, 1);
     })
@@ -28,9 +28,9 @@ pub fn edge_to_node_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>) -> CooMatrix<i8> {
     let edges = msh.edges().collect_vec();
     let num_edges = edges.len();
-    let num_faces = msh.num_elems();
+    let num_faces = msh.cells.len();
 
-    assemble_incidence_mat(num_faces, num_edges, msh.elems.clone().into_iter(), |mat, cell, cell_idx| {
+    assemble_incidence_mat(num_faces, num_edges, msh.cell_iter().copied(), |mat, cell, cell_idx| {
         populate_by_orientation(mat, cell, cell_idx, &edges)
     })
 }
@@ -38,9 +38,9 @@ pub fn face_to_edge_incidence<T: RealField, const M: usize>(msh: &QuadVertexMesh
 /// Assembles the `K` to `K-1` incidence matrix of size `num_sub_cells ✕ num_cells`.
 ///
 /// For each `K`-cell, the incidences in the `i`-th row get populated using `populate_incidence`.
-fn assemble_incidence_mat<C, K, F>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, populate_incidence: F) -> CooMatrix<i8>
-    where C: CellBoundary<K>,
-          K: DimName + DimNameSub<U1>,
+fn assemble_incidence_mat<C, F>(num_cells: usize, num_sub_cells: usize, cell_iter: impl Iterator<Item = C>, populate_incidence: F) -> CooMatrix<i8>
+    where C: CellBoundary,
+          C::Dim: DimName + DimNameSub<U1>,
           F: Fn(&mut CooMatrix<i8>, C, usize),
 {
     // Build empty incidence matrix
@@ -57,10 +57,11 @@ fn assemble_incidence_mat<C, K, F>(num_cells: usize, num_sub_cells: usize, cell_
 
 /// Populates the `cell_idx`-th column with incidences of `cell`,
 /// by comparing the orientation of the boundary cells with the global orientation in `sub_cells` .
-fn populate_by_orientation<C, K>(mat: &mut CooMatrix<i8>, cell: C, cell_idx: usize, sub_cells: &[SubCell<K, C>])
-    where C: CellBoundary<K>,
-          K: DimName + DimNameSub<U1> + DimNameSub<K>,
-          SubCell<K, C>: OrientedCell<DimNameDiff<K, U1>> + Eq, <K as DimNameSub<U1>>::Output: DimNameSub<<K as DimNameSub<U1>>::Output>
+fn populate_by_orientation<C>(mat: &mut CooMatrix<i8>, cell: C, cell_idx: usize, sub_cells: &[SubCell<C>])
+    where C: CellBoundary,
+          SubCell<C>: OrientedCell + Eq + CellConnectivity,
+          C::Dim: DimName + DimNameSub<U1> + DimNameSub<C::Dim>,
+          <C::SubCell as Cell>::Dim: DimNameSub<U1> + DimNameSub<<C::SubCell as Cell>::Dim>,
 {
     // Get sub-cells in boundary of current `cell`
     let boundary = cell.boundary();

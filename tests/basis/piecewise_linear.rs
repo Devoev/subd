@@ -17,13 +17,14 @@ fn pl_basis() {
 
     // Lowest order B-Spline basis
     let xi = KnotVec::<f64>::new_open_uniform(3, 1);
-    let msh_spline = KnotMesh::from_knots([xi.clone(), xi.clone()]);
-    let basis = MultiDeBoor::from_knots(msh_spline.knots.clone(), [3, 3], [1, 1]);
+    let xi = [xi.clone(), xi];
+    let msh_spline = KnotMesh::from_knots(xi.clone());
+    let basis = MultiDeBoor::from_knots(xi.clone(), [3, 3], [1, 1]);
     let space_spline = BsplineSpace::new(basis);
 
     // Get first element
-    let elem_pl = &msh_pl.elems[0];
-    let elem_spline = msh_spline.elems().next().unwrap();
+    let elem_pl = &msh_pl.cells[0];
+    let elem_spline = msh_spline.cell_iter().next().unwrap().0; // todo: remove .0, when MultiKnotSpan is used in basis
 
     // Get random parametric values
     let u = random_range(0.0..=1.0);

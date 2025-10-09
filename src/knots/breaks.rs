@@ -6,6 +6,8 @@ use std::fmt::{Display, Formatter};
 use std::ops::Index;
 use std::slice::Iter;
 use std::vec;
+use itertools::Itertools;
+use crate::knots::breaks_with_multiplicity::BreaksWithMultiplicity;
 
 /// A vector of unique and increasing *breakpoints* of type [`T`]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -99,5 +101,12 @@ impl <'a, T> IntoIterator for &'a Breaks<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
+    }
+}
+
+impl <T> From<BreaksWithMultiplicity<T>> for Breaks<T> {
+    /// Turns `BreaksWithMultiplicity` into `Breaks` by removing multiplicity information.
+    fn from(value: BreaksWithMultiplicity<T>) -> Self {
+        Breaks(value.into_iter().map(|(_, z)| z).collect())
     }
 }

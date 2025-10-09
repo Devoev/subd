@@ -1,10 +1,11 @@
-use crate::cells::line_segment::UndirectedEdge;
-use crate::cells::node::NodeIdx;
-use crate::cells::quad::{Quad, QuadNodes};
+use crate::cells::edge::UndirectedEdge;
+use crate::cells::node::Node;
+use crate::cells::quad::QuadNodes;
+use crate::cells::traits::ToElement;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
 use nalgebra::{center, RealField};
 use std::collections::HashMap;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// Stencil for a linearly-subdivided edge
 /// ```text
@@ -13,7 +14,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Default)]
 pub struct EdgeMidpointStencil {
     /// Edge-to-midpoint map.
-    edge_midpoints: HashMap<UndirectedEdge, NodeIdx>
+    edge_midpoints: HashMap<UndirectedEdge, Node>
 }
 
 impl EdgeMidpointStencil {
@@ -24,7 +25,7 @@ impl EdgeMidpointStencil {
 
     /// Returns the midpoint node corresponding to the given `edge` or `None`,
     /// if the edge is not refined yet.
-    pub fn get(&self, edge: &UndirectedEdge) -> Option<&NodeIdx> {
+    pub fn get(&self, edge: &UndirectedEdge) -> Option<&Node> {
         self.edge_midpoints.get(edge)
     }
 
@@ -34,11 +35,11 @@ impl EdgeMidpointStencil {
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         edge: UndirectedEdge,
-    ) -> NodeIdx {
-        let a = quad_msh.coords(edge.first());
-        let b = quad_msh.coords(edge.second());
-        let node = NodeIdx(quad_msh.num_nodes());
-        quad_msh.coords.push(center(a, b));
+    ) -> Node {
+        let a = quad_msh.coords.vertex(edge.first());
+        let b = quad_msh.coords.vertex(edge.second());
+        let node = quad_msh.num_nodes();
+        quad_msh.coords.push(center(&a, &b));
         self.edge_midpoints.insert(edge, node);
         node
     }
@@ -49,7 +50,7 @@ impl EdgeMidpointStencil {
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         edge: UndirectedEdge,
-    ) -> NodeIdx {
+    ) -> Node {
         match self.get(&edge) {
             Some(node) => *node,
             None => {
@@ -78,14 +79,14 @@ impl FaceMidpointStencil {
 
     /// Refines the given `face` and adds the coordinates of the new midpoint to the `quad_msh`.
     /// The index of the midpoint node is returned.
-    pub fn refine<T: RealField, const M: usize>(
+    pub fn refine<T: RealField + Copy, const M: usize>(
         &mut self,
         quad_msh: &mut QuadVertexMesh<T, M>,
         face: QuadNodes,
-    ) -> NodeIdx {
-        let quad = Quad::from_msh(face, quad_msh);
+    ) -> Node {
+        let quad = face.to_element(&quad_msh.coords);
         let center = quad.centroid();
         quad_msh.coords.push(center);
-        NodeIdx(quad_msh.num_nodes() - 1)
+        quad_msh.num_nodes() - 1
     }
 }

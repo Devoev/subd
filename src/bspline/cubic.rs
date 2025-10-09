@@ -1,5 +1,5 @@
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::traits::Basis;
+use crate::space::eval_basis::{EvalBasis, EvalGrad};
+use crate::space::basis::BasisFunctions;
 use nalgebra::{matrix, Const, Dyn, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1};
 use std::sync::LazyLock;
 
@@ -79,9 +79,10 @@ impl CubicBspline {
     }
 }
 
-impl Basis for CubicBspline {
+impl BasisFunctions for CubicBspline {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U1;
     type Coord<T> = T;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -105,7 +106,7 @@ impl <T: RealField + Copy> EvalBasis<T> for CubicBspline {
     }
 }
 
-impl<T: RealField + Copy> EvalGrad<T, 1> for CubicBspline {
+impl<T: RealField + Copy> EvalGrad<T> for CubicBspline {
     fn eval_grad(&self, x: T) -> OMatrix<T, Const<1>, Self::NumBasis> {
         match self {
             CubicBspline::Smooth => {

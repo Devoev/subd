@@ -1,4 +1,4 @@
-use crate::cells::node::NodeIdx;
+use crate::cells::node::Node;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use itertools::Itertools;
@@ -17,7 +17,7 @@ pub enum QuadNodesOneRing {
     ///   0 --- 1 --- 2
     /// ```
     /// where node `4` is the center node.
-    Regular([NodeIdx; 9]),
+    Regular([Node; 9]),
 
     /// The regular boundary case of valence `n=3`.
     /// The nodes are ordered in lexicographical order
@@ -28,7 +28,7 @@ pub enum QuadNodesOneRing {
     ///   0 --- 1 --- 2
     /// ```
     /// where node `1` is the center node.
-    Boundary([NodeIdx; 6]),
+    Boundary([Node; 6]),
 
     /// The regular corner case of valence `n=2` (equivalent to a single quad).
     /// The nodes are ordered in lexicographical order
@@ -39,7 +39,7 @@ pub enum QuadNodesOneRing {
     ///   0 --- 1 ---
     /// ```
     /// where node `0` is the center node.
-    Corner([NodeIdx; 4]),
+    Corner([Node; 4]),
 
     /// The irregular interior case of valence `n≠4`.
     /// The nodes are ordered as
@@ -53,12 +53,12 @@ pub enum QuadNodesOneRing {
     ///   ○ - 8
     /// ```
     /// where node `0` is the irregular center node.
-    Irregular(Vec<NodeIdx>, usize)
+    Irregular(Vec<Node>, usize)
 }
 
 impl QuadNodesOneRing {
     /// Finds all face nodes belonging to the one-ring around given `center` node.
-    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: NodeIdx) -> Self {
+    pub fn find<T: RealField, const M: usize>(msh: &QuadVertexMesh<T, M>, center: Node) -> Self {
         // Find all faces with `center` as a node
         let faces = msh.elems_of_node(center).collect_vec();
 
@@ -84,7 +84,7 @@ impl QuadNodesOneRing {
     /// Traverses the given faces `q1`, `q2`, `q3` and `q4` of a **regular** patch around the `center` node.
     ///
     /// The traversal order is described in [`QuadNodesOneRing::Regular`].
-    fn traverse_faces_regular(center: NodeIdx, q1: &QuadNodes, q2: &QuadNodes, q3: &QuadNodes, q4: &QuadNodes) -> QuadNodesOneRing {
+    fn traverse_faces_regular(center: Node, q1: &QuadNodes, q2: &QuadNodes, q3: &QuadNodes, q4: &QuadNodes) -> QuadNodesOneRing {
         // In the interior case, there is no preferred orientation (the patch is rotationally symmetric)
         // Hence randomly choose q1 as the lower left face (and sort it)
         let q1 = q1.sorted_by_node(center, 2);
@@ -114,7 +114,7 @@ impl QuadNodesOneRing {
     /// Traverses the given faces `q1`, and `q2` of a **boundary** patch around the `center` node.
     ///
     /// The traversal order is described in [`QuadNodesOneRing::Boundary`].
-    fn traverse_faces_boundary(center: NodeIdx, mut q1: QuadNodes, mut q2: QuadNodes) -> QuadNodesOneRing {
+    fn traverse_faces_boundary(center: Node, mut q1: QuadNodes, mut q2: QuadNodes) -> QuadNodesOneRing {
         // Get edge 0 -> 4
         let shared_edge = q1.shared_edge(q2).unwrap();
 
@@ -133,7 +133,7 @@ impl QuadNodesOneRing {
     /// In this case, essentially no traversal but only sorting of the nodes is required.
     ///
     /// The traversal order is described in [`QuadNodesOneRing::Corner`].
-    fn traverse_faces_corner(center: NodeIdx, q1: &QuadNodes) -> QuadNodesOneRing {
+    fn traverse_faces_corner(center: Node, q1: &QuadNodes) -> QuadNodesOneRing {
         let [a, b, c, d] = q1.sorted_by_origin(center).nodes();
         QuadNodesOneRing::Corner([a, b, d, c])
     }
@@ -141,7 +141,7 @@ impl QuadNodesOneRing {
     /// Traverses the given `faces` of an **irregular** patch of valence `n` around the `center` node.
     ///
     /// The traversal order is described in [`QuadNodesOneRing::Irregular`].
-    fn traverse_faces_irregular(center: NodeIdx, n: usize, mut faces: Vec<&QuadNodes>) -> Self {
+    fn traverse_faces_irregular(center: Node, n: usize, mut faces: Vec<&QuadNodes>) -> Self {
         // Initialize nodes vector
         let mut nodes = Vec::with_capacity(2*n);
         nodes.push(center);
@@ -186,13 +186,13 @@ mod tests {
     /// with all-zero control points.
     fn setup_regular() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
-            QuadNodes::from_indices(2, 5, 4, 1),
-            QuadNodes::from_indices(6, 3, 4, 7),
-            QuadNodes::from_indices(0, 1, 4, 3),
-            QuadNodes::from_indices(7, 4, 5, 8),
+            QuadNodes::new(2, 5, 4, 1),
+            QuadNodes::new(6, 3, 4, 7),
+            QuadNodes::new(0, 1, 4, 3),
+            QuadNodes::new(7, 4, 5, 8),
         ];
 
-        QuadVertexMesh::from_matrix(SMatrix::<f64, 9, 2>::zeros(), faces)
+        QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 9, 2>::zeros(), faces)
     }
 
     /// Constructs the irregular quad mesh
@@ -208,14 +208,14 @@ mod tests {
     /// of valence `n=5` with all-zero control points.
     fn setup_irregular() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
-            QuadNodes::from_indices(1, 0, 3, 2),
-            QuadNodes::from_indices(0, 5, 4, 3),
-            QuadNodes::from_indices(7, 6, 5, 0),
-            QuadNodes::from_indices(9, 8, 7, 0),
-            QuadNodes::from_indices(9, 0, 1, 10),
+            QuadNodes::new(1, 0, 3, 2),
+            QuadNodes::new(0, 5, 4, 3),
+            QuadNodes::new(7, 6, 5, 0),
+            QuadNodes::new(9, 8, 7, 0),
+            QuadNodes::new(9, 0, 1, 10),
         ];
 
-        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+        QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
     }
 
     #[test]
@@ -223,11 +223,11 @@ mod tests {
         let msh = setup_regular();
 
         // Regular case (test against 4 alignments, because this case is rotationally symmetric)
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(4));
-        let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(NodeIdx);
-        let nodes_exp_right_align = [2, 5, 8, 1, 4, 7, 0, 3, 6].map(NodeIdx);
-        let nodes_exp_top_align = [8, 7, 6, 5, 4, 3, 2, 1, 0].map(NodeIdx);
-        let nodes_exp_left_align = [6, 3, 0, 7, 4, 1, 8, 5, 2].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 4);
+        let nodes_exp_bottom_align = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let nodes_exp_right_align = [2, 5, 8, 1, 4, 7, 0, 3, 6];
+        let nodes_exp_top_align = [8, 7, 6, 5, 4, 3, 2, 1, 0];
+        let nodes_exp_left_align = [6, 3, 0, 7, 4, 1, 8, 5, 2];
         assert!(
             patch == QuadNodesOneRing::Regular(nodes_exp_bottom_align)
             || patch == QuadNodesOneRing::Regular(nodes_exp_right_align)
@@ -236,37 +236,37 @@ mod tests {
         );
 
         // Boundary case
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(1));
-        let nodes_exp_bottom_bnd = [0, 1, 2, 3, 4, 5].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 1);
+        let nodes_exp_bottom_bnd = [0, 1, 2, 3, 4, 5];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_bottom_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(3));
-        let nodes_exp_left_bnd = [6, 3, 0, 7, 4, 1].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 3);
+        let nodes_exp_left_bnd = [6, 3, 0, 7, 4, 1];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_left_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(5));
-        let nodes_exp_right_bnd = [2, 5, 8, 1, 4, 7].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 5);
+        let nodes_exp_right_bnd = [2, 5, 8, 1, 4, 7];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_right_bnd));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(7));
-        let nodes_exp_top_bnd = [8, 7, 6, 5, 4, 3].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 7);
+        let nodes_exp_top_bnd = [8, 7, 6, 5, 4, 3];
         assert_eq!(patch, QuadNodesOneRing::Boundary(nodes_exp_top_bnd));
 
         // Corner case
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(0));
-        let nodes_exp_bottom_left_corner = [0, 1, 3, 4].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 0);
+        let nodes_exp_bottom_left_corner = [0, 1, 3, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_bottom_left_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(2));
-        let nodes_exp_bottom_right_corner = [2, 5, 1, 4].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 2);
+        let nodes_exp_bottom_right_corner = [2, 5, 1, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_bottom_right_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(6));
-        let nodes_exp_top_left_corner = [6, 3, 7, 4].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 6);
+        let nodes_exp_top_left_corner = [6, 3, 7, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_top_left_corner));
 
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(8));
-        let nodes_exp_top_right_corner = [8, 7, 5, 4].map(NodeIdx);
+        let patch = QuadNodesOneRing::find(&msh, 8);
+        let nodes_exp_top_right_corner = [8, 7, 5, 4];
         assert_eq!(patch, QuadNodesOneRing::Corner(nodes_exp_top_right_corner));
     }
 
@@ -275,9 +275,9 @@ mod tests {
         let msh = setup_irregular();
 
         // Irregular case (test against 5 alignments, because of rotational symmetry)
-        let patch = QuadNodesOneRing::find(&msh, NodeIdx(0));
-        let nodes_exp_1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].into_iter().map(NodeIdx).collect();
-        let nodes_exp_2 = [0, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8].into_iter().map(NodeIdx).collect();
+        let patch = QuadNodesOneRing::find(&msh, 0);
+        let nodes_exp_1 = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let nodes_exp_2 = vec![0, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8];
         assert!(
             patch == QuadNodesOneRing::Irregular(nodes_exp_1, 5)
             || patch == QuadNodesOneRing::Irregular(nodes_exp_2, 5)

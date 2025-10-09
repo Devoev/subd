@@ -1,12 +1,15 @@
-use crate::basis::eval::{EvalBasis, EvalBasisAllocator};
-use crate::basis::local::LocalBasis;
-use crate::basis::space::Space;
-use crate::cells::geo::{HasBasisCoord, HasDim};
-use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use std::borrow::Borrow;
+use crate::element::traits::{ElemAllocator, VolumeElement};
+use crate::mesh::cell_topology::VolumetricElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{Mesh, MeshAllocator};
+use crate::quadrature::pullback::PullbackQuad;
+use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
+use crate::space::eval_basis::{EvalBasis, EvalBasisAllocator};
+use crate::space::local::{ElemBasis, MeshElemBasis};
+use crate::space::Space;
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, ToTypenum};
+use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{Product, Sum};
 
@@ -15,40 +18,38 @@ use std::iter::{Product, Sum};
 /// M[i,j] = ∫ b[i] · b[j] dx ,
 /// ```
 /// where the `b[i]` are the basis functions.
-pub struct Hodge<'a, T, M, B, const D: usize> {
+pub struct Hodge<'a, T, Basis, Verts, Cells> {
     /// Mesh defining the geometry discretization.
-    msh: &'a M,
+    msh: &'a Mesh<T, Verts, Cells>,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, B, D>
+    space: &'a Space<T, Basis>
 }
 
-impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
-    /// Constructs a new `Hodge` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
+impl <'a, T, Basis, Verts, Cells> Hodge<'a, T, Basis, Verts, Cells> {
+    /// Constructs a new `Hodge` operator from the given `msh` and `space`.
+    pub fn new(msh: &'a Mesh<T, Verts, Cells>, space: &'a Space<T, Basis>) -> Self {
         Hodge { msh, space }
     }
 
     /// Assembles the discrete Hodge operator (*mass matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
+    pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> CooMatrix<T>
         where T: RealField + Copy + Product<T> + Sum<T>,
-              E: HasBasisCoord<T, B> + HasDim<T, D>,
-              M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-              B: LocalBasis<T>,
-              Q: QuadratureOnParametricCell<T, E>,
-              DefaultAllocator: EvalBasisAllocator<B::ElemBasis>,
-              Const<D>: DimMinSelf + ToTypenum
+              Verts: VertexStorage<T>,
+              Cells: VolumetricElementTopology<T, Verts>,
+              Basis: MeshElemBasis<T, Verts, Cells>,
+              Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+              DefaultAllocator: EvalBasisAllocator<Basis::LocalBasis> + MeshAllocator<T, Verts, Cells>,
     {
         // Create empty matrix
         let mut mij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
 
         // Iteration over all mesh elements
-        for elem in self.msh.elem_iter() {
+        for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local mass matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&elem);
-            let geo_elem = self.msh.geo_elem(&elem);
-            let mij_local = assemble_hodge_local(&geo_elem, &sp_local, &quad);
+            let (sp_local, idx) = self.space.local_space_with_idx(cell.borrow());
+            let mij_local = assemble_hodge_local(&elem, &sp_local, quad);
 
             // Fill global mass matrix with local entries
             let idx_local_global = idx.enumerate();
@@ -62,25 +63,24 @@ impl <'a, T, M, B, const D: usize> Hodge<'a, T, M, B, D> {
 }
 
 /// Assembles the local discrete Hodge operator.
-pub fn assemble_hodge_local<T, E, B, Q, const D: usize>(
-    elem: &E,
-    sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<Q, D>,
+pub fn assemble_hodge_local<T, Elem, Basis, Quadrature>(
+    elem: &Elem,
+    sp_local: &Space<T, Basis>,
+    quad: &PullbackQuad<Quadrature>,
 ) -> DMatrix<T> 
     where T: RealField + Copy + Product<T> + Sum<T>,
-          E: HasBasisCoord<T, B> + HasDim<T, D>,
-          B: EvalBasis<T>,
-          Q: QuadratureOnParametricCell<T, E>,
-          DefaultAllocator: EvalBasisAllocator<B>,
-          Const<D>: DimMinSelf
+          Elem: VolumeElement<T>,
+          Basis: EvalBasis<T> + ElemBasis<T, Elem>,
+          Quadrature: QuadratureOnParametricElem<T, Elem>,
+          DefaultAllocator: EvalBasisAllocator<Basis> + ElemAllocator<T, Elem>,
 {
     // Evaluate all basis functions and store in 'buf'
-    let ref_elem = elem.ref_cell();
-    let buf: Vec<OMatrix<T, B::NumComponents, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
+    let ref_elem = elem.parametric_element();
+    let buf: Vec<OMatrix<T, Basis::NumComponents, Basis::NumBasis>> = quad.nodes_ref::<T, Elem>(&ref_elem)
         .map(|p| sp_local.basis.eval(p)).collect();
 
     // Calculate pullback of product uv
-    let uv_pullback = |b: &OMatrix<T, B::NumComponents, B::NumBasis>, i: usize, j: usize| {
+    let uv_pullback = |b: &OMatrix<T, Basis::NumComponents, Basis::NumBasis>, i: usize, j: usize| {
         // Eval basis
         let bi = b.column(i);
         let bj = b.column(j);

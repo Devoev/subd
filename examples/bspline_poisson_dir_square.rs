@@ -7,30 +7,24 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
-use iter_num_tools::lin_space;
-use itertools::{izip, Itertools};
-use nalgebra::{matrix, Point2, Vector1, Vector2};
-use nalgebra_sparse::CsrMatrix;
+use itertools::izip;
+use nalgebra::{matrix, DVector, Point2, Vector1, Vector2};
+use nalgebra_sparse::{CooMatrix, CsrMatrix};
 use std::f64::consts::PI;
 use std::io;
 use std::process::Command;
 use subd::bspline::de_boor::MultiDeBoor;
 use subd::bspline::space::BsplineSpace;
 use subd::bspline::spline_geo::SplineGeo;
-use subd::cells::geo::Cell;
 use subd::cg::cg;
-use subd::diffgeo::chart::Chart;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
-use subd::knots::knot_span::KnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::plot_fn_msh;
+use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreMulti;
 
@@ -116,8 +110,11 @@ fn solve(
 
     // Assemble system
     let laplace = Laplace::new(&msh, &space);
-    let f = assemble_function(&msh, &space, quad.clone(), f);
-    let k_coo = laplace.assemble(quad.clone());
+    let form = LinearForm::new(&msh, &space, f);
+    // let k_coo = laplace.assemble(&quad);
+    // let f = form.assemble(&quad);
+    let k_coo: CooMatrix<f64> = todo!("Fix bspline basis cell type");
+    let f: DVector<f64> = todo!("Fix bspline basis cell type");
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
@@ -134,11 +131,13 @@ fn solve(
 
     // Calculate error
     let l2 = L2Norm::new(&msh);
-    let err_l2 = l2.error(&uh, &u, &quad);
+    // let err_l2 = l2.error(&uh, &u, &quad);
+    let err_l2: f64 = todo!();
     let norm_l2 = l2.norm(&u, &quad);
 
     let h1 = H1Norm::new(&msh);
-    let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
+    // let err_h1 = h1.error(&uh, &u, &u_grad, &quad);
+    let err_h1: f64 = todo!();
     let norm_h1 = h1.norm(&u, &u_grad, &quad);
 
     // Plot error

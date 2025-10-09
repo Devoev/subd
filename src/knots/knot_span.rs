@@ -1,7 +1,10 @@
 use crate::knots::knot_vec::KnotVec;
-use nalgebra::RealField;
+use nalgebra::{Const, RealField};
 use std::ops::RangeInclusive;
+use crate::cells::traits::{Cell, ToElement};
+use crate::element::cartesian::CartCell;
 use crate::knots::error::OutsideKnotRangeError;
+use crate::mesh::vertex_storage::VertexStorage;
 
 /// The half-open (possibly empty) interval `[xi[i], xi[i+1])`, where
 /// `xi` is the knot vector.
@@ -46,6 +49,33 @@ impl KnotSpan {
     /// which are nonzero in this span.
     pub fn nonzero_indices(&self, p: usize) -> RangeInclusive<usize> {
         self.0 - p..=self.0
+    }
+}
+
+/// `D`-variate knot span.
+pub struct MultiKnotSpan<const D: usize>(pub [KnotSpan; D]);
+
+impl<const D: usize> Cell for MultiKnotSpan<D> {
+    type Dim = Const<D>;
+    type Node = [usize; D];
+
+    fn nodes(&self) -> &[Self::Node] {
+        todo!("Implement by iterating over all 2^D vertices")
+    }
+}
+
+impl <T: RealField + Copy, const D: usize> ToElement<T, Const<D>> for MultiKnotSpan<D> {
+    type Elem = CartCell<T, D>; // todo: is this type correct? Is the implementation below correct?
+
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<D>, NodeIdx=Self::Node>
+    {
+        let idx_a = self.0.map(|i| i.0);
+        let idx_b = idx_a.map(|i| i + 1); // todo: implement this in the multi-index trait
+        let a = coords.vertex(idx_a);
+        let b = coords.vertex(idx_b);
+        CartCell::new(a, b)
     }
 }
 

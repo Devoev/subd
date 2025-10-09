@@ -1,26 +1,26 @@
 //! Piecewise-linear basis functions.
 //! todo: move this elsewhere. For example a separate FE module?
 
-use crate::basis::eval::{EvalBasis, EvalGrad};
-use crate::basis::local::LocalBasis;
-use crate::basis::traits::Basis;
+use crate::space::eval_basis::{EvalBasis, EvalGrad};
+use crate::space::local::MeshBasis;
+use crate::space::basis::BasisFunctions;
 use crate::cells::quad::QuadNodes;
 use crate::mesh::face_vertex::QuadVertexMesh;
-use crate::mesh::traits::MeshTopology;
 use nalgebra::{matrix, Dyn, OMatrix, RealField, U1, U2, U4};
 use numeric_literals::replace_float_literals;
-use crate::basis::space::Space;
+use crate::space::Space;
 
 /// Space spanned by piecewise-linear basis functions on a quad mesh.
-pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>, 2>;
+pub type PlSpaceQuad<'a, T, const M: usize> = Space<T, PlBasisQuad<'a, T, M>>;
 
 /// Piecewise-linear basis functions on a quadrilateral mesh.
 #[derive(Debug, Clone)]
 pub struct PlBasisQuad<'a, T: RealField, const M: usize>(pub &'a QuadVertexMesh<T, M>);
 
-impl <'a, T: RealField, const M: usize> Basis for PlBasisQuad<'a, T, M> {
+impl <'a, T: RealField, const M: usize> BasisFunctions for PlBasisQuad<'a, T, M> {
     type NumBasis = Dyn;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<_T> = (_T, _T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -28,17 +28,17 @@ impl <'a, T: RealField, const M: usize> Basis for PlBasisQuad<'a, T, M> {
     }
 }
 
-impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for PlBasisQuad<'a, T, M> {
-    type Elem = &'a QuadNodes;
-    type ElemBasis = LinBasisQuad;
+impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for PlBasisQuad<'a, T, M> {
+    type Cell = QuadNodes;
+    type LocalBasis = LinBasisQuad;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
-    fn elem_basis(&self, _elem: &Self::Elem) -> Self::ElemBasis {
+    fn local_basis(&self, _elem: &Self::Cell) -> Self::LocalBasis {
         LinBasisQuad
     }
 
-    fn global_indices(&self, elem: &Self::Elem) -> Self::GlobalIndices {
-        elem.0.into_iter().map(|n| n.0)
+    fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
+        elem.0.into_iter()
     }
 }
 
@@ -46,9 +46,10 @@ impl <'a, T: RealField + Copy, const M: usize> LocalBasis<T> for PlBasisQuad<'a,
 #[derive(Debug, Clone)]
 pub struct LinBasisQuad;
 
-impl Basis for LinBasisQuad {
+impl BasisFunctions for LinBasisQuad {
     type NumBasis = U4;
     type NumComponents = U1;
+    type ParametricDim = U2;
     type Coord<T> = (T, T);
 
     fn num_basis_generic(&self) -> Self::NumBasis {
@@ -68,7 +69,7 @@ impl <T: RealField + Copy> EvalBasis<T> for LinBasisQuad {
     }
 }
 
-impl <T: RealField + Copy> EvalGrad<T, 2> for LinBasisQuad {
+impl <T: RealField + Copy> EvalGrad<T> for LinBasisQuad {
     fn eval_grad(&self, (u, v): (T, T)) -> OMatrix<T, U2, Self::NumBasis> {
         matrix![
             -(T::one() - v), (T::one() - v), v, -v; // u-derivatives

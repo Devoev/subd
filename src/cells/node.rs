@@ -1,16 +1,29 @@
-use nalgebra::{Const, DimName, DimNameSub, U0};
-use crate::cells::topo::Cell;
+use crate::cells::traits::{Cell, CellConnectivity};
+use nalgebra::{DimName, DimNameSub, U0};
 
-/// Index of a node aka. vertex in a mesh. Represented by a global index.
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct NodeIdx(pub usize);
+/// Node in a mesh represented by a global *linear* index.
+pub type Node = usize;
 
-impl Cell<U0> for NodeIdx {
-    fn nodes(&self) -> &[NodeIdx] {
-        &[] // todo: return self?
+impl Cell for Node {
+    type Dim = U0;
+    type Node = usize;
+
+    fn nodes(&self) -> &[Self::Node] {
+        std::slice::from_ref(self)
     }
+}
 
-    fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
+// impl <T: Scalar, const M: usize> ToGeoCell<T, Const<M>> for NodeIdx {
+//     type GeoCell = Point<T, M>;
+//     type Coords = Vec<Point<T, M>>;
+//
+//     fn to_geo_cell(&self, coords: &Self::Coords) -> Self::GeoCell {
+//         coords.vertex(self.0)
+//     }
+// }
+
+impl CellConnectivity for Node {
+    fn is_connected<M: DimName>(&self, other: &Self, _dim: M) -> bool
     where
         U0: DimNameSub<M>
     {

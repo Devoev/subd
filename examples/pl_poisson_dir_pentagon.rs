@@ -12,23 +12,20 @@ use nalgebra::{center, point, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
-use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
+use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
+use subd::element::traits::Element;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::plot_fn_msh;
+use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::lin_subd::basis::{PlBasisQuad, PlSpaceQuad};
 
 /// Number of refinements for the convergence study.
@@ -50,11 +47,11 @@ fn main() -> io::Result<()> {
 
     // Define initial mesh
     let faces = vec![
-        QuadNodes::from_indices(0, 10, 1, 2),
-        QuadNodes::from_indices(0, 2, 3, 4),
-        QuadNodes::from_indices(0, 4, 5, 6),
-        QuadNodes::from_indices(0, 6, 7, 8),
-        QuadNodes::from_indices(0, 8, 9, 10),
+        QuadNodes::new(0, 10, 1, 2),
+        QuadNodes::new(0, 2, 3, 4),
+        QuadNodes::new(0, 4, 5, 6),
+        QuadNodes::new(0, 6, 7, 8),
+        QuadNodes::new(0, 8, 9, 10),
     ];
     let mut msh = QuadVertexMesh::new(coords, faces);
 
@@ -114,9 +111,10 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
-    let k_coo = laplace.assemble(quad.clone());
+    let f = LinearForm::new(msh, &space, f);
+    let k_coo = laplace.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
+    let f = f.assemble(&quad);
 
     // Deflate system (homogeneous BC)
     let dirichlet = DirichletBcHom::from_mesh(msh);
@@ -131,12 +129,12 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
         .expect("Number of coefficients doesn't match dimension of discrete space");
 
     // Plot error
-    let err_fn = |elem: &&QuadNodes, x: (f64, f64)| {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        let d_phi = patch.geo_map().eval_diff(x);
-        let l2_err_sq = (u(p) - uh.eval_on_elem(elem, x)).norm_squared();
-        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(elem, x)).norm_squared();
+    let err_fn = |cell: &QuadNodes, x: (f64, f64)| {
+        let elem = cell.to_element(&msh.coords);
+        let p = elem.geo_map().eval(x);
+        let d_phi = elem.geo_map().eval_diff(x);
+        let l2_err_sq = (u(p) - uh.eval_on_elem(&cell, x)).norm_squared();
+        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(&cell, x)).norm_squared();
         (l2_err_sq + h1_err_sq).sqrt()
     };
     // plot_fn_msh(msh, &err_fn, 2, |_, num| {

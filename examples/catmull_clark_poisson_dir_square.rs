@@ -13,25 +13,17 @@ use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
-use itertools::Itertools;
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
-use subd::diffgeo::chart::Chart;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
-use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
-use subd::plot::plot_fn_msh;
+use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
-use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
 use subd::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
 use subd::subd::catmull_clark::space::CatmarkSpace;
 
@@ -49,8 +41,8 @@ pub fn main() -> io::Result<()> {
         ].transpose();
 
     // Define mesh
-    let quads = vec![QuadNodes::from_indices(0, 1, 2, 3)];
-    let mut quad_msh = QuadVertexMesh::from_matrix(coords_square, quads);
+    let quads = vec![QuadNodes::new(0, 1, 2, 3)];
+    let mut quad_msh = QuadVertexMesh::from_coords_matrix(coords_square, quads);
 
     // Convergence study
     let mut n_dofs = vec![];
@@ -104,8 +96,9 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
-    let k_coo = laplace.assemble(quad.clone());
+    let form = LinearForm::new(msh, &space, f);
+    let k_coo = laplace.assemble(&quad);
+    let f = form.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)

@@ -1,15 +1,18 @@
 use nalgebra::{Dim, DimName};
 
 /// Set of [`Self::NumBasis`] basis functions with [`Self::NumComponents`].
-pub trait Basis {
+pub trait BasisFunctions {
     /// Number of basis functions.
     type NumBasis: Dim;
 
     /// Number of components for each basis function.
     /// This is usually either
     /// - `1` for scalar fields.
-    /// - `D` (dimension of the domain) for vector fields.
+    /// - [`Self::ParametricDim`] for vector fields.
     type NumComponents: DimName;
+
+    /// Dimension of the parametric domain.
+    type ParametricDim: DimName;
 
     /// Coordinate of a parametric point over type [`T`].
     type Coord<T>;
@@ -30,5 +33,15 @@ pub trait Basis {
     /// Returns the number of components for each basis function.
     fn num_components(&self) -> usize {
         Self::NumComponents::dim()
+    }
+
+    /// Returns the dimension of the parametric domain wrapped into [`Self::ParametricDim`] (`Const`).
+    fn parametric_dim_generic(&self) -> Self::ParametricDim {
+        Self::ParametricDim::name()
+    }
+
+    /// Returns the dimension of the parametric domain.
+    fn parametric_dim(&self) -> usize {
+        Self::ParametricDim::dim()
     }
 }

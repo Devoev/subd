@@ -1,13 +1,17 @@
-use crate::basis::eval::{EvalGrad, EvalGradAllocator};
-use crate::basis::local::LocalGradBasis;
-use crate::basis::space::Space;
-use crate::cells::geo::{HasBasisCoord, HasDim};
+use std::borrow::Borrow;
 use crate::diffgeo::chart::Chart;
-use crate::mesh::traits::Mesh;
-use crate::quadrature::pullback::{DimMinSelf, PullbackQuad};
-use crate::quadrature::traits::{Quadrature, QuadratureOnParametricCell};
+use crate::element::traits::{ElemAllocator, VolumeElement};
+use crate::mesh::cell_topology::VolumetricElementTopology;
+use crate::mesh::vertex_storage::VertexStorage;
+use crate::mesh::{Mesh, MeshAllocator};
+use crate::quadrature::pullback::PullbackQuad;
+use crate::quadrature::traits::{Quadrature, QuadratureOnMesh, QuadratureOnParametricElem};
+use crate::space::eval_basis::{EvalGrad, EvalGradAllocator};
+use crate::space::local::{ElemBasis, MeshElemBasis, MeshGradBasis};
+use crate::space::Space;
 use itertools::Itertools;
-use nalgebra::{Const, DMatrix, DefaultAllocator, OMatrix, RealField, SMatrix, ToTypenum};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DMatrix, DefaultAllocator, OMatrix, RealField, U1};
 use nalgebra_sparse::CooMatrix;
 use std::iter::{zip, Product, Sum};
 
@@ -16,41 +20,39 @@ use std::iter::{zip, Product, Sum};
 /// K[i,j] = ∫ grad b[i] · grad b[j] dx ,
 /// ```
 /// where the `b[i]` are nodal basis functions.
-pub struct Laplace<'a, T, M, B, const D: usize> {
+pub struct Laplace<'a, T, Basis, Verts, Cells> {
     /// Mesh defining the geometry discretization.
-    msh: &'a M,
+    msh: &'a Mesh<T, Verts, Cells>,
 
     /// Space of discrete basis functions.
-    space: &'a Space<T, B, D>
+    space: &'a Space<T, Basis>
 }
 
 
-impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
-    /// Constructs a new `Laplace` operator from the given `msh` and `space`,
-    pub fn new(msh: &'a M, space: &'a Space<T, B, D>) -> Self {
+impl <'a, T, Basis, Verts, Cells> Laplace<'a, T, Basis, Verts, Cells> {
+    /// Constructs a new `Laplace` operator from the given `msh` and `space`.
+    pub fn new(msh: &'a Mesh<T, Verts, Cells>, space: &'a Space<T, Basis>) -> Self {
         Laplace { msh, space }
     }
 
     /// Assembles the discrete Laplace operator (*stiffness matrix*)
     /// using the given quadrature rule `quad`.
-    pub fn assemble<E, Q>(&self, quad: PullbackQuad<Q, D>) -> CooMatrix<T>
+    pub fn assemble<Quadrature>(&self, quad: &PullbackQuad<Quadrature>) -> CooMatrix<T>
     where T: RealField + Copy + Product<T> + Sum<T>,
-          E: HasBasisCoord<T, B> + HasDim<T, D>,
-          M: Mesh<'a, T, D, D, Elem = B::Elem, GeoElem = E>,
-          B: LocalGradBasis<T, D>,
-          Q: QuadratureOnParametricCell<T, E>,
-          DefaultAllocator: EvalGradAllocator<B::ElemBasis, D>,
-          Const<D>: DimMinSelf + ToTypenum
+          Verts: VertexStorage<T>,
+          Cells: VolumetricElementTopology<T, Verts>,
+          Basis: MeshElemBasis<T, Verts, Cells> + MeshGradBasis<T>,
+          Quadrature: QuadratureOnMesh<T, Verts, Cells>,
+          DefaultAllocator: MeshAllocator<T, Verts, Cells> + EvalGradAllocator<Basis::LocalBasis> + Allocator<U1, Basis::ParametricDim> // todo: last allocator is the same as below
     {
         // Create empty matrix
         let mut kij = CooMatrix::<T>::zeros(self.space.dim(), self.space.dim());
 
         // Iteration over all mesh elements
-        for elem in self.msh.elem_iter() {
+        for (elem, cell) in self.msh.elem_cell_iter() {
             // Build local space and local stiffness matrix
-            let (sp_local, idx) = self.space.local_space_with_idx(&elem);
-            let geo_elem = self.msh.geo_elem(&elem);
-            let kij_local = assemble_laplace_local(&geo_elem, &sp_local, &quad);
+            let (sp_local, idx) = self.space.local_space_with_idx(cell.borrow());
+            let kij_local = assemble_laplace_local(&elem, &sp_local, quad);
 
             // Fill global stiffness matrix with local entries
             let idx_local_global = idx.enumerate();
@@ -64,32 +66,31 @@ impl <'a, T, M, B, const D: usize> Laplace<'a, T, M, B, D> {
 }
 
 /// Assembles the local discrete Laplace operator.
-pub fn assemble_laplace_local<T, E, B, Q, const D: usize>(
-    elem: &E,
-    sp_local: &Space<T, B, D>,
-    quad: &PullbackQuad<Q, D>,
+pub fn assemble_laplace_local<T, Elem, Basis, Quadrature>(
+    elem: &Elem,
+    sp_local: &Space<T, Basis>,
+    quad: &PullbackQuad<Quadrature>,
 ) -> DMatrix<T>
 where T: RealField + Copy + Product<T> + Sum<T>,
-      E: HasBasisCoord<T, B> + HasDim<T, D>,
-      B: EvalGrad<T, D>,
-      Q: QuadratureOnParametricCell<T, E>,
-      DefaultAllocator: EvalGradAllocator<B, D>,
-      Const<D>: DimMinSelf
+      Elem: VolumeElement<T>,
+      Basis: EvalGrad<T> + ElemBasis<T, Elem>,
+      Quadrature: QuadratureOnParametricElem<T, Elem>,
+      DefaultAllocator: EvalGradAllocator<Basis> + ElemAllocator<T, Elem> + Allocator<U1, Basis::ParametricDim> // todo: the last allocator bound is for the single gradient evaluations. Possibly hide that behind trait?
 {
     // Evaluate all basis functions and inverse gram matrices at every quadrature point
     // and store them into buffers
-    let ref_elem = elem.ref_cell();
+    let ref_elem = elem.parametric_element();
     let geo_map = elem.geo_map();
-    let buf_grads: Vec<OMatrix<T, Const<D>, B::NumBasis>> = quad.nodes_ref::<T, E>(&ref_elem)
+    let buf_grads: Vec<_> = quad.nodes_ref::<T, Elem>(&ref_elem)
         .map(|p| sp_local.basis.eval_grad(p)).collect();
-    let buf_g_inv: Vec<SMatrix<T, D, D>> = quad.nodes_ref::<T, E>(&ref_elem)
+    let buf_g_inv: Vec<_> = quad.nodes_ref::<T, Elem>(&ref_elem)
         .map(|p| {
             let j = geo_map.eval_diff(p);
             (j.transpose() * j).try_inverse().unwrap()
         }).collect();
 
     // Calculate pullback of product grad_u * grad_v
-    let gradu_gradv_pullback = |grad_b: &OMatrix<T, Const<D>, B::NumBasis>, g_inv: &SMatrix<T, D, D>, i: usize, j: usize| {
+    let gradu_gradv_pullback = |grad_b: &OMatrix<T, Basis::ParametricDim, Basis::NumBasis>, g_inv: &OMatrix<T, Basis::ParametricDim, Basis::ParametricDim>, i: usize, j: usize| {
         // Get gradients
         let grad_bi = grad_b.column(i);
         let grad_bj = grad_b.column(j);

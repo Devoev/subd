@@ -1,8 +1,7 @@
 use crate::bspline::spline_geo::SplineGeo;
-use crate::cells::geo;
-use crate::cells::cartesian::CartCell;
+use crate::element::cartesian::CartCell;
+use crate::element::traits::Element;
 use nalgebra::RealField;
-
 // todo: is BezierElem even needed somewhere?
 //  bezier elem should provide access to a local basis. 
 //  It needs information about knot spans, such that local evaluations are possible
@@ -26,11 +25,11 @@ impl <'a, T: RealField + Copy, const D: usize, const M: usize> BezierElem<'a, T,
     }
 }
 
-impl <'a, T: RealField + Copy, const D: usize, const M: usize> geo::Cell<T> for BezierElem<'a, T, D, M> {
-    type ParametricCell = CartCell<T, D>;
+impl <'a, T: RealField + Copy, const D: usize, const M: usize> Element<T> for BezierElem<'a, T, D, M> {
+    type ParametricElement = CartCell<T, D>;
     type GeoMap = &'a SplineGeo<'a, T, D, M>;
 
-    fn ref_cell(&self) -> Self::ParametricCell {
+    fn parametric_element(&self) -> Self::ParametricElement {
         self.ref_elem
     }
 

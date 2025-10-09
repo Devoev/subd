@@ -1,13 +1,12 @@
-use crate::cells::cartesian::CartCell;
-use crate::cells::geo::Cell;
-use crate::cells::unit_cube::{SymmetricUnitCube, UnitCube};
 use crate::index::dimensioned::Dimensioned;
 use crate::quadrature::traits::Quadrature;
 use gauss_quad::GaussLegendre;
 use itertools::Itertools;
 use nalgebra::{RealField, Vector};
 use std::iter::{zip, Product, Sum};
-use std::marker::PhantomData;
+use crate::element::cartesian::CartCell;
+use crate::element::traits::Element;
+use crate::element::unit_cube::{SymmetricUnitCube, UnitCube};
 
 /// Quadrature rule on bivariate tensor-product domain.
 #[derive(Clone, Copy, Debug)]
@@ -170,9 +169,9 @@ where T: RealField + Sum + Product + Copy,
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use approx::assert_abs_diff_eq;
     use nalgebra::point;
-    use super::*;
 
     /// Returns a 2D Gauss-Legendre quadrature with degree `2` in `x`-direction 
     /// and degree `4` in `y`-direction.

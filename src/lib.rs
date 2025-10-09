@@ -2,7 +2,7 @@
 #![feature(cmp_minmax)]
 extern crate core;
 
-pub mod basis;
+pub mod space;
 pub mod bspline;
 pub mod cells;
 pub mod index;
@@ -15,19 +15,17 @@ pub mod diffgeo;
 pub mod cg;
 pub mod plot;
 pub mod error;
+pub mod element;
 
 #[cfg(test)]
 mod tests {
-    use crate::basis::cart_prod;
-    use crate::basis::eval::EvalDerivs;
-    use crate::basis::local::{FindElem, LocalBasis};
-    use crate::basis::space::Space;
+    use crate::space::{cart_prod, Space};
+    use crate::space::eval_basis::EvalDerivs;
+    use crate::space::local::{FindElem, MeshBasis};
     use crate::bspline::de_boor;
     use crate::bspline::de_boor::MultiDeBoor;
     use crate::bspline::space::{BsplineSpace, BsplineSpaceVec2d};
     use crate::bspline::spline_geo::{SplineCurve, SplineGeo};
-    use crate::cells::cartesian::CartCell;
-    use crate::cells::geo::Cell as GeoCell;
     use crate::cells::quad::QuadNodes;
     use crate::diffgeo::chart::Chart;
     use crate::knots::breaks::Breaks;
@@ -39,29 +37,30 @@ mod tests {
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::mesh::knot_mesh::KnotMesh;
-    use crate::mesh::traits::{Mesh, MeshTopology};
-    use crate::operator::function::assemble_function;
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
     use crate::quadrature::pullback::{GaussLegendrePullback, PullbackQuad};
     use crate::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
-    use crate::quadrature::traits::Quadrature;
     use crate::subd::catmull_clark::basis::{CatmarkBasis, CatmarkPatchBasis};
     use crate::subd::catmull_clark::mesh::CatmarkMesh;
     use crate::subd::catmull_clark::patch::CatmarkPatch;
+    use crate::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
     use crate::subd::edge_basis::CatmarkEdgeBasis;
     use gauss_quad::GaussLegendre;
     use iter_num_tools::lin_space;
     use itertools::Itertools;
-    use nalgebra::{matrix, point, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowDVector, RowSVector, SMatrix, SVector, U2};
+    use nalgebra::{matrix, DMatrix, DVector, Dyn, Matrix1, OMatrix, Point, RealField, RowDVector, RowSVector, SMatrix, SVector, U2};
     use plotters::backend::BitMapBackend;
     use plotters::chart::ChartBuilder;
     use plotters::prelude::{IntoDrawingArea, LineSeries, RED, WHITE};
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
-    use crate::subd::catmull_clark::quadrature::SubdUnitSquareQuad;
+    use nalgebra_sparse::CooMatrix;
+    use crate::cells::traits::ToElement;
+    use crate::element::traits::Element;
+    use crate::operator::linear_form::LinearForm;
 
     // #[test]
     fn splines() {
@@ -194,7 +193,7 @@ mod tests {
         let elem = basis.find_elem(x);
         println!(
             "Derivatives of basis: {}",
-            basis.elem_basis(&elem).eval_derivs::<3>(0.8)
+            basis.local_basis(&elem).eval_derivs::<3>(0.8)
         );
 
         // Jacobian
@@ -224,13 +223,13 @@ mod tests {
         // let quad = GaussLegendre::new(5).unwrap();
 
         let breaks = Breaks::from_knots(knots.clone());
-        let msh = CartMesh::from_breaks([breaks.clone()]);
+        let msh = CartMesh::with_breaks([breaks.clone()]);
 
         // find_span
         println!("--- Finding span indices with `breaks` and `find_span` ---");
-        for idx in msh.elems() {
+        for idx in msh.cell_iter() {
+            let elem = idx.to_element(&msh.coords);
             let elem_idx = idx.0[0];
-            let elem = msh.geo_elem(&idx);
             let span = basis.find_span(elem.a.x).unwrap();
             let span_idx = span.0;
 
@@ -271,27 +270,27 @@ mod tests {
     fn mesh() {
         // Define quads
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 5, 4),
-            QuadNodes::from_indices(1, 2, 6, 5),
-            QuadNodes::from_indices(2, 3, 7, 6),
-            QuadNodes::from_indices(4, 5, 9, 8),
-            QuadNodes::from_indices(5, 6, 10, 9),
-            QuadNodes::from_indices(6, 7, 11, 10),
-            QuadNodes::from_indices(8, 9, 13, 12),
-            QuadNodes::from_indices(9, 10, 14, 13),
-            QuadNodes::from_indices(10, 11, 15, 14),
+            QuadNodes::new(0, 1, 5, 4),
+            QuadNodes::new(1, 2, 6, 5),
+            QuadNodes::new(2, 3, 7, 6),
+            QuadNodes::new(4, 5, 9, 8),
+            QuadNodes::new(5, 6, 10, 9),
+            QuadNodes::new(6, 7, 11, 10),
+            QuadNodes::new(8, 9, 13, 12),
+            QuadNodes::new(9, 10, 14, 13),
+            QuadNodes::new(10, 11, 15, 14),
         ];
         let quads_irregular = vec![
-            QuadNodes::from_indices(0, 5, 4, 3),
-            QuadNodes::from_indices(1, 0, 3, 2),
-            QuadNodes::from_indices(2, 3, 16, 17),
-            QuadNodes::from_indices(3, 4, 15, 16),
-            QuadNodes::from_indices(4, 12, 11, 15),
-            QuadNodes::from_indices(5, 13, 12, 4),
-            QuadNodes::from_indices(6, 14, 13, 5),
-            QuadNodes::from_indices(7, 6, 5, 0),
-            QuadNodes::from_indices(8, 7, 0, 9),
-            QuadNodes::from_indices(9, 0, 1, 10),
+            QuadNodes::new(0, 5, 4, 3),
+            QuadNodes::new(1, 0, 3, 2),
+            QuadNodes::new(2, 3, 16, 17),
+            QuadNodes::new(3, 4, 15, 16),
+            QuadNodes::new(4, 12, 11, 15),
+            QuadNodes::new(5, 13, 12, 4),
+            QuadNodes::new(6, 14, 13, 5),
+            QuadNodes::new(7, 6, 5, 0),
+            QuadNodes::new(8, 7, 0, 9),
+            QuadNodes::new(9, 0, 1, 10),
         ];
 
         // Define coords
@@ -301,14 +300,14 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = CatmarkMesh::from(quad_msh);
 
         // Print patches
-        for elem in msh.elem_iter() {
-            let patch = CatmarkPatch::from_msh(&msh, elem);
+        for cell in msh.cell_iter() {
+            let patch = cell.to_element(&msh.coords);
             let map = patch.geo_map();
-            println!("{:?}", elem.as_slice().iter().map(|v| v.0).collect_vec());
+            println!("{:?}", cell.as_slice());
             println!("{}", map.eval((0.5, 0.1)));
             println!("{}", map.eval_diff((0.5, 0.1)));
         }
@@ -317,10 +316,10 @@ mod tests {
     // #[test]
     fn cart_mesh() {
         let breaks = Breaks(vec![0.0, 1.0, 2.0, 3.0]);
-        let msh = CartMesh::from_breaks([breaks.clone(), breaks]);
+        let msh = CartMesh::with_breaks([breaks.clone(), breaks]);
 
-        for idx in msh.elems() {
-            let elem = msh.geo_elem(&idx);
+        for idx in msh.cell_iter() {
+            let elem = idx.to_element(&msh.coords);
             println!("Nodes of rectangle {:?}", elem.points().collect_vec());
             println!("Ranges of rectangle {:?}", elem.ranges());
         }
@@ -330,7 +329,7 @@ mod tests {
     fn incidence_mats() {
         // Define geo
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 2, 3),
+            QuadNodes::new(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![
@@ -339,7 +338,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().unpack();
 
         let g = edge_to_node_incidence(&msh);
@@ -367,7 +366,7 @@ mod tests {
     fn catmull_clark() {
         // Define geo
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 2, 3),
+            QuadNodes::new(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![
@@ -376,19 +375,19 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let mut msh = CatmarkMesh::from(msh);
         // msh.refine();
         
         // Convert back to quad mesh
-        let quads = msh.elems.iter()
+        let quads = msh.cell_iter()
             .map(|patch| patch.center_quad())
             .collect_vec();
         let msh = QuadVertexMesh::new(msh.coords, quads);
 
         // Plot
-        let plot = plot_faces(&msh, msh.elems.clone().into_iter());
+        let plot = plot_faces(&msh, msh.cells.clone().into_iter());
         plot.show();
     }
 
@@ -428,7 +427,8 @@ mod tests {
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = GaussLegendrePullback::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
-        let mat = hodge.assemble(quad);
+        let mat: CooMatrix<f64> = todo!("Fix bspline space/mesh");
+        // let mat = hodge.assemble(&quad);
 
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -451,19 +451,19 @@ mod tests {
     fn subd_assembly() {
         // Define quads
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 5, 4),
-            QuadNodes::from_indices(1, 2, 6, 5),
-            QuadNodes::from_indices(2, 3, 7, 6),
-            QuadNodes::from_indices(4, 5, 9, 8),
-            QuadNodes::from_indices(5, 6, 10, 9),
-            QuadNodes::from_indices(6, 7, 11, 10),
-            QuadNodes::from_indices(8, 9, 13, 12),
-            QuadNodes::from_indices(9, 10, 14, 13),
-            QuadNodes::from_indices(10, 11, 15, 14),
+            QuadNodes::new(0, 1, 5, 4),
+            QuadNodes::new(1, 2, 6, 5),
+            QuadNodes::new(2, 3, 7, 6),
+            QuadNodes::new(4, 5, 9, 8),
+            QuadNodes::new(5, 6, 10, 9),
+            QuadNodes::new(6, 7, 11, 10),
+            QuadNodes::new(8, 9, 13, 12),
+            QuadNodes::new(9, 10, 14, 13),
+            QuadNodes::new(10, 11, 15, 14),
         ];
 
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 2, 3),
+            QuadNodes::new(0, 1, 2, 3),
         ];
 
         // Define coords
@@ -478,7 +478,7 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let msh = CatmarkMesh::from(msh);
 
@@ -495,9 +495,10 @@ mod tests {
         // Assembly
         let hodge = Hodge::new(&msh, &space);
         let laplace = Laplace::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone());
-        let stiffness = laplace.assemble(quad.clone());
-        let load = assemble_function(&msh, &space, quad, f);
+        let form = LinearForm::new(&msh, &space, f);
+        let mass = hodge.assemble(&quad);
+        let stiffness = laplace.assemble(&quad);
+        let load = form.assemble(&quad);
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -542,7 +543,7 @@ mod tests {
     fn subd_edge_assembly() {
         // Define geo
         let quads_regular = vec![
-            QuadNodes::from_indices(0, 1, 2, 3),
+            QuadNodes::new(0, 1, 2, 3),
         ];
 
         let coords_regular = matrix![
@@ -551,20 +552,20 @@ mod tests {
         ].transpose();
 
         // Constructs quad mesh and catmark patch mesh (topological)
-        let quad_msh = QuadVertexMesh::from_matrix(coords_regular, quads_regular);
+        let quad_msh = QuadVertexMesh::from_coords_matrix(coords_regular, quads_regular);
         let msh = quad_msh.lin_subd().lin_subd().unpack();
         let msh = CatmarkMesh::from(msh);
 
         // Construct basis and space
         let basis = CatmarkEdgeBasis(&msh);
-        let space = Space::<f64, _, 2>::new(basis);
+        let space = Space::<f64, _>::new(basis);
 
         let ref_quad = GaussLegendreBi::with_degrees(3, 3);
         let quad = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 3));
 
         // Assembly
         let hodge = Hodge::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone());
+        let mass = hodge.assemble(&quad);
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -633,7 +634,7 @@ mod tests {
         let start = Instant::now();
         let knots = KnotVec::new_open_uniform(n, p);
         let basis = de_boor::DeBoor::new(knots, n, p);
-        let space = Space::<_,_,1>::new(basis);
+        let space = Space::<_,_>::new(basis);
         for t in grid.clone() {
             let _ = black_box(space.eval_local(t));
         }
@@ -846,10 +847,9 @@ mod tests {
         // find_span
         let start = Instant::now();
         let breaks = Breaks::from_knots(knots.clone());
-        let msh = CartMesh::from_breaks([breaks.clone()]);
+        let msh = CartMesh::with_breaks([breaks.clone()]);
         let mut spans_1 = vec![0; breaks.len() - 1];
-        for idx in msh.elems() {
-            let elem = msh.geo_elem(&idx);
+        for (elem, idx) in msh.elem_cell_iter() {
             let span = black_box(basis.find_span(elem.a.x).unwrap());
             let span_idx = span.0;
 

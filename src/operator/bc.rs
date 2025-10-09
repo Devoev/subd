@@ -1,12 +1,13 @@
 use crate::bspline::space::BsplineSpace;
-use crate::cells::topo::CellBoundary;
+use crate::cells::node::Node;
+use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
-use crate::mesh::traits::MeshTopology;
 use itertools::iproduct;
-use nalgebra::{Const, DMatrix, DVector, DimNameDiff, DimNameSub, RealField, Scalar, U1};
+use nalgebra::{DMatrix, DVector, RealField, Scalar, U2};
 use nalgebra_sparse::CsrMatrix;
 use num_traits::Zero;
 use std::collections::{BTreeSet, HashSet};
+use std::hash::Hash;
 
 /// Homogeneous Dirichlet boundary conditions on nodes.
 pub struct DirichletBcHom {
@@ -20,12 +21,13 @@ pub struct DirichletBcHom {
 impl DirichletBcHom {
     /// Constructs a new [`DirichletBcHom`] from the given elem-to-vertex `msh`,
     /// where `idx_dof` are all interior nodes.
-    pub fn from_mesh<T: RealField, C: CellBoundary<Const<K>>, const K: usize, const M: usize>(msh: &ElemVertexMesh<T, C, K, M>) -> Self
-        where Const<K>: DimNameSub<U1> + DimNameSub<DimNameDiff<Const<K>, U1>>
+    pub fn from_mesh<T: RealField, F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>) -> Self
+    where F::Node: Eq + Hash,
+          F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
         let num_nodes = msh.num_nodes();
-        let idx = (0..num_nodes).collect::<BTreeSet<_>>();
-        let idx_bc = msh.boundary_nodes().map(|n| n.0).collect::<BTreeSet<_>>();
+        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
+        let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
         let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
         DirichletBcHom { num_nodes, idx_dof }
     }

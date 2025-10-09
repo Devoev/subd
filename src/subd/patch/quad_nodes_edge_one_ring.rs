@@ -1,5 +1,5 @@
-use crate::cells::line_segment::DirectedEdge;
-use crate::cells::node::NodeIdx;
+use crate::cells::edge::DirectedEdge;
+use crate::cells::node::Node;
 use crate::mesh::face_vertex::QuadVertexMesh;
 use itertools::Itertools;
 use nalgebra::RealField;
@@ -17,7 +17,7 @@ pub enum QuadNodesEdgeOneRing {
     ///   0 --- 1
     /// ```
     /// where the direction of the center edge is indicated by the arrow.
-    Regular([NodeIdx; 6]),
+    Regular([Node; 6]),
 
     // todo: change this case to contain an entire quad, not just the edge
     /// The regular boundary case, which is equal to a single edge.
@@ -26,7 +26,7 @@ pub enum QuadNodesEdgeOneRing {
     ///   0 --> 1
     /// ```
     /// where the arrow indicates the direction of the edge.
-    Boundary([NodeIdx; 2])
+    Boundary([Node; 2])
 }
 
 impl QuadNodesEdgeOneRing {
@@ -82,14 +82,14 @@ mod tests {
     /// of valence `n=5` with all-zero control points.
     fn setup() -> QuadVertexMesh<f64, 2> {
         let faces = vec![
-            QuadNodes::from_indices(1, 0, 3, 2),
-            QuadNodes::from_indices(0, 5, 4, 3),
-            QuadNodes::from_indices(7, 6, 5, 0),
-            QuadNodes::from_indices(9, 8, 7, 0),
-            QuadNodes::from_indices(9, 0, 1, 10),
+            QuadNodes::new(1, 0, 3, 2),
+            QuadNodes::new(0, 5, 4, 3),
+            QuadNodes::new(7, 6, 5, 0),
+            QuadNodes::new(9, 8, 7, 0),
+            QuadNodes::new(9, 0, 1, 10),
         ];
 
-        QuadVertexMesh::from_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
+        QuadVertexMesh::from_coords_matrix(SMatrix::<f64, 11, 2>::zeros(), faces)
     }
 
     #[test]
@@ -97,27 +97,27 @@ mod tests {
         let msh = setup();
 
         // Edge 0 -> 5
-        let edge = DirectedEdge([NodeIdx(0), NodeIdx(5)]);
+        let edge = DirectedEdge([0, 5]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [7, 6, 0, 5, 3, 4].map(NodeIdx);
+        let nodes_exp = [7, 6, 0, 5, 3, 4];
         assert_eq!(ring, QuadNodesEdgeOneRing::Regular(nodes_exp));
         
         // Edge 9 -> 0
-        let edge = DirectedEdge([NodeIdx(9), NodeIdx(0)]);
+        let edge = DirectedEdge([9, 0]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [8, 7, 9, 0, 10, 1].map(NodeIdx);
+        let nodes_exp = [8, 7, 9, 0, 10, 1];
         assert_eq!(ring, QuadNodesEdgeOneRing::Regular(nodes_exp));
         
         // Edge 3 -> 4
-        let edge = DirectedEdge([NodeIdx(3), NodeIdx(4)]);
+        let edge = DirectedEdge([3, 4]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [3, 4].map(NodeIdx);
+        let nodes_exp = [3, 4];
         assert_eq!(ring, QuadNodesEdgeOneRing::Boundary(nodes_exp));
         
         // Edge 1 -> 10
-        let edge = DirectedEdge([NodeIdx(1), NodeIdx(10)]);
+        let edge = DirectedEdge([1, 10]);
         let ring = QuadNodesEdgeOneRing::find(&msh, edge);
-        let nodes_exp = [1, 10].map(NodeIdx);
+        let nodes_exp = [1, 10];
         assert_eq!(ring, QuadNodesEdgeOneRing::Boundary(nodes_exp));
     }
 }

@@ -1,57 +1,12 @@
-use std::iter::zip;
+use crate::cells::chain::Chain;
+use crate::cells::edge::{DirectedEdge, UndirectedEdge};
+use crate::cells::node::Node;
+use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrientedCell, ToElement};
+pub(crate) use crate::element::quad::Quad;
+use crate::mesh::vertex_storage::VertexStorage;
 use itertools::Itertools;
-use crate::cells::chain::{Chain, ChainBoundary};
-use crate::cells::geo;
-use crate::cells::lerp::BiLerp;
-use crate::cells::line_segment::{DirectedEdge, UndirectedEdge};
-use crate::cells::node::NodeIdx;
-use crate::cells::topo::{Cell, CellBoundary, OrientedCell};
-use crate::cells::unit_cube::UnitCube;
-use crate::mesh::face_vertex::QuadVertexMesh;
-use nalgebra::{Const, DimName, DimNameSub, Point, RealField, SVector, U1, U2};
-
-/// A 2d quadrilateral element of topology [`QuadNodes`],
-/// embedded in [`M`]-dimensional space.
-#[derive(Debug, Clone, Copy)]
-pub struct Quad<T: RealField, const M: usize> {
-    pub vertices: [Point<T, M>; 4]
-}
-
-impl<T: RealField, const M: usize> Quad<T, M> {
-
-    /// Constructs a new [`Quad`] from the given `vertices`.
-    pub fn new(vertices: [Point<T, M>; 4]) -> Self {
-        Quad { vertices }
-    }
-
-    /// Constructs a new [`Quad`] from the given `topology` and `msh`.
-    pub fn from_msh(topology: QuadNodes, msh: &QuadVertexMesh<T, M>) -> Self {
-        Quad::new(topology.0.map(|n| msh.coords(n).clone()))
-    }
-
-    /// Computes the centroid of this face.
-    pub fn centroid(&self) -> Point<T, M> {
-        let centroid = self.vertices
-            .iter()
-            .map(|p| &p.coords)
-            .sum::<SVector<T, M>>() / T::from_f64(4.0).unwrap();
-        Point::from(centroid)
-    }
-}
-
-impl <T: RealField + Copy, const M: usize> geo::Cell<T> for Quad<T, M> {
-    type ParametricCell = UnitCube<2>;
-    type GeoMap = BiLerp<T, M>;
-
-    fn ref_cell(&self) -> Self::ParametricCell {
-        UnitCube
-    }
-
-    fn geo_map(&self) -> Self::GeoMap {
-        BiLerp::new(self.vertices)
-    }
-}
-
+use nalgebra::{Const, DimName, DimNameSub, RealField, U2};
+use std::iter::zip;
 
 /// Face-to-nodes topology of a 2D quadrilateral given by
 /// ```text
@@ -62,15 +17,15 @@ impl <T: RealField + Copy, const M: usize> geo::Cell<T> for Quad<T, M> {
 /// ```
 /// where `0,1,2,3` are the four corner nodes of the quadrilateral.
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct QuadNodes(pub [NodeIdx; 4]);
+pub struct QuadNodes(pub [Node; 4]);
 
 impl QuadNodes {
     /// Constructs a new [`QuadNodes`] from the given indices `i,j,k,l` of the corner nodes.
-    pub fn from_indices(i: usize, j: usize, k: usize, l: usize) -> Self {
-        QuadNodes([NodeIdx(i), NodeIdx(j), NodeIdx(k), NodeIdx(l)])
+    pub fn new(i: Node, j: Node, k: Node, l: Node) -> Self {
+        QuadNodes([i, j, k, l])
     }
     /// Returns the corner nodes.
-    pub fn nodes(&self) -> [NodeIdx; 4] {
+    pub fn nodes(&self) -> [Node; 4] {
         self.0
     }
 
@@ -115,7 +70,7 @@ impl QuadNodes {
     /// ```
     /// i.e. the given node `n` moves from the original position `1`
     /// to position `local_idx=3`.
-    pub fn sorted_by_node(&self, node: NodeIdx, local_idx: usize) -> QuadNodes {
+    pub fn sorted_by_node(&self, node: Node, local_idx: usize) -> QuadNodes {
         let original_idx = self.nodes().iter().position(|&n| n == node).unwrap();
         let mut nodes = self.nodes();
         if local_idx > original_idx {
@@ -139,7 +94,7 @@ impl QuadNodes {
     /// +---> u
     /// ```
     /// where `0` is the `uv_origin`.
-    pub fn sorted_by_origin(&self, uv_origin: NodeIdx) -> QuadNodes {
+    pub fn sorted_by_origin(&self, uv_origin: Node) -> QuadNodes {
         self.sorted_by_node(uv_origin, 0)
     }
 }
@@ -150,13 +105,13 @@ pub enum QuadNodesIntersection {
     Empty,
 
     /// The single common node.
-    Node(NodeIdx),
+    Node(Node),
 
     /// The two common, connected nodes of an edge.
-    Edge(NodeIdx, NodeIdx),
+    Edge(Node, Node),
 
     /// The four common nodes, i.e. the same face.
-    Face(NodeIdx, NodeIdx, NodeIdx, NodeIdx),
+    Face(Node, Node, Node, Node),
 }
 
 impl QuadNodesIntersection {
@@ -178,7 +133,7 @@ impl QuadNodesIntersection {
 
     /// Returns the (first) shared node of the two quads `q1` and `q2`.
     /// If they don't share a node, `None` is returned.
-    pub fn new_shared_node(q1: &QuadNodes, q2: &QuadNodes) -> Option<NodeIdx> {
+    pub fn new_shared_node(q1: &QuadNodes, q2: &QuadNodes) -> Option<Node> {
         let nodes1 = q1.nodes();
         let nodes2 = q2.nodes();
         nodes1.into_iter().find(|n| nodes2.contains(n))
@@ -219,16 +174,32 @@ impl QuadNodes {
 
     /// Returns the (first) node shared by both `self` and `other`.
     /// If they don't share a node, `None` is returned.
-    pub fn shared_node(&self, other: QuadNodes) -> Option<NodeIdx> {
+    pub fn shared_node(&self, other: QuadNodes) -> Option<Node> {
         QuadNodesIntersection::new_shared_node(self, &other)
     }
 }
 
-impl Cell<U2> for QuadNodes {
-    fn nodes(&self) -> &[NodeIdx] {
+impl Cell for QuadNodes {
+    type Dim = U2;
+    type Node = usize;
+
+    fn nodes(&self) -> &[Self::Node] {
         &self.0
     }
+}
 
+impl <T: RealField + Copy, const M: usize> ToElement<T, Const<M>> for QuadNodes {
+    type Elem = Quad<T, M>;
+
+    fn to_element<Coords>(&self, coords: &Coords) -> Self::Elem
+    where
+        Coords: VertexStorage<T, GeoDim=Const<M>, NodeIdx=Self::Node>
+    {
+        Quad::new(self.0.map(|node| coords.vertex(node)))
+    }
+}
+
+impl CellConnectivity for QuadNodes {
     fn is_connected<M: DimName>(&self, other: &Self, dim: M) -> bool
     where
         U2: DimNameSub<M>
@@ -247,7 +218,7 @@ impl Cell<U2> for QuadNodes {
     }
 }
 
-impl OrientedCell<U2> for QuadNodes {
+impl OrientedCell for QuadNodes {
     fn orientation(&self) -> i8 {
         todo!("possible orientation:\
         + smallest node -> 2nd smallest node \
@@ -269,7 +240,7 @@ impl OrientedCell<U2> for QuadNodes {
     }
 }
 
-impl CellBoundary<U2> for QuadNodes {
+impl CellBoundary for QuadNodes {
     const NUM_SUB_CELLS: usize = 4;
     type SubCell = DirectedEdge;
     type Boundary = QuadBndTopo;
@@ -281,14 +252,8 @@ impl CellBoundary<U2> for QuadNodes {
 
 pub struct QuadBndTopo(pub [DirectedEdge; 4]);
 
-impl Chain<U1, DirectedEdge> for QuadBndTopo {
+impl Chain<DirectedEdge> for QuadBndTopo {
     fn cells(&self) -> &[DirectedEdge] {
         &self.0
     }
-}
-
-impl ChainBoundary<U1, DirectedEdge> for QuadBndTopo {
-    type Boundary = ();
-
-    fn boundary(&self) -> Self::Boundary { }
 }

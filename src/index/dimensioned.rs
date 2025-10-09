@@ -4,6 +4,7 @@ use itertools::{Itertools, MultiProduct};
 use nalgebra::{Point, SVector, Scalar};
 use std::iter::Map;
 use std::ops::Range;
+use crate::knots::breaks::Breaks;
 
 /// Types composed of [`D`] elements of type [`T`],
 /// i.e. a type isomorphic to the fixed-sized array `[T; D]`.
@@ -53,6 +54,28 @@ impl<const D: usize, T: Scalar> Dimensioned<T, D> for Point<T, D> {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct DimShape<const D: usize>(pub [usize; D]);
 
+impl<const D: usize> DimShape<D> {
+    // todo: are both impls required? Is the top one really cheaper in some cases?
+
+    /// Constructs a new `DimShape` matching the shape of the given `breaks`
+    /// for each parametric direction.
+    pub fn new_of_breaks<T>(breaks: &[Breaks<T>; D]) -> Self {
+        let shapes = breaks.iter()
+            .map(|zeta| zeta.len())
+            .collect_array()
+            .unwrap();
+
+        DimShape(shapes)
+    }
+
+    /// Converts given `breaks` for each parametric direction
+    /// into a `DimShape` matching its shape.
+    pub fn from_breaks<T>(breaks: [Breaks<T>; D]) -> Self {
+        let shapes = breaks.map(|zeta| zeta.len());
+        DimShape(shapes)
+    }
+}
+
 /// An iterator over the multivariate cartesian product of ranges.
 /// Yields all multi-indices inside a [`DimShape`].
 pub type MultiRange<I> = Map<MultiProduct<Range<usize>>, fn(Vec<usize>) -> I>;
@@ -61,6 +84,11 @@ impl<const D: usize> DimShape<D> {
     /// Returns the total length of this shape, i.e. the product of all dimensions.
     pub fn len(&self) -> usize {
         self.0.iter().product()
+    }
+
+    /// Returns `true` if the shape is empty, i.e. it has zero length in at least one direction.
+    pub fn is_empty(&self) -> bool {
+        self.0.contains(&0)
     }
 
     /// Returns an iterator over multi indices of type `I` in range of this shape.
@@ -132,14 +160,23 @@ impl<const D: usize> Dimensioned<usize, D> for Strides<D> {
 }
 
 impl <const D: usize> From<DimShape<D>> for Strides<D> {
-    fn from(mut value: DimShape<D>) -> Self {
-        value.0.iter_mut().fold(1, |acc, x| {
+    /// Turns a [`DimShape<D>`] into [`Strides<D>`].
+    ///
+    /// The `strides` for a given `shape` are defined by the formulas
+    /// ```text
+    /// strides[1] = 1
+    /// strides[2] = shape[1]
+    /// strides[3] = shape[1] × shape[2]
+    /// strides[4] = ...
+    /// ```
+    fn from(mut shape: DimShape<D>) -> Self {
+        shape.0.iter_mut().fold(1, |acc, x| {
             let tmp = *x * acc;
             *x = acc;
             tmp
         });
 
-        Strides(value.0)
+        Strides(shape.0)
     }
 }
 
@@ -160,9 +197,13 @@ mod tests {
     fn len() {
         let (a, b, c, d) = setup();
         assert_eq!(a.len(), 8);
+        assert!(!a.is_empty());
         assert_eq!(b.len(), 120);
+        assert!(!b.is_empty());
         assert_eq!(c.len(), 0);
+        assert!(c.is_empty());
         assert_eq!(d.len(), 16);
+        assert!(!d.is_empty());
     }
 
     #[test]

@@ -1,4 +1,3 @@
-use crate::basis::space::Space;
 use crate::bspline::de_boor::{DeBoor, DeBoorVec2d, MultiDeBoor};
 use crate::index::dimensioned::{DimShape, MultiRange, Strides};
 use crate::index::multi_index::MultiIndex;
@@ -7,7 +6,7 @@ use itertools::Itertools;
 use nalgebra::RealField;
 use std::collections::HashSet;
 use std::iter::zip;
-
+use crate::space::Space;
 // todo: the vector valued spaces are not special cases. Change this somehow?
 
 /// Function space of [`D`]-variate B-Splines.
@@ -22,7 +21,7 @@ use std::iter::zip;
 /// - [`T`]: Scalar type for coefficients.
 /// - [`X`]: Type of parametric values in the reference domain.
 /// - [`D`]: Dimension of the parametric domain.
-pub type BsplineSpace<T, const D: usize> = Space<T, MultiDeBoor<T, D>, D>;
+pub type BsplineSpace<T, const D: usize> = Space<T, MultiDeBoor<T, D>>;
 
 /// Functions space of univariate scalar B-Splines.
 pub type BsplineSpace1d<T> = BsplineSpace<T, 1>;
@@ -34,7 +33,7 @@ pub type BsplineSpace2d<T> = BsplineSpace<T, 2>;
 pub type BsplineSpace3d<T> = BsplineSpace<T, 3>;
 
 /// Function space of 2D vector B-Splines.
-pub type BsplineSpaceVec2d<T> = Space<T, DeBoorVec2d<T>, 2>;
+pub type BsplineSpaceVec2d<T> = Space<T, DeBoorVec2d<T>>;
 
 impl<T, const D: usize> BsplineSpace<T, D> {
     /// Returns an array of the knot vectors for each parametric direction.

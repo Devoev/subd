@@ -7,28 +7,27 @@
 //! ```
 //! with `Ω` being the pentagon of circumradius `1`.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
-use iter_num_tools::lin_space;
+use approx::relative_eq;
 use itertools::{izip, Itertools};
 use nalgebra::{center, point, Point2, Vector1, Vector2};
 use nalgebra_sparse::CsrMatrix;
+use std::collections::BTreeMap;
 use std::f64::consts::PI;
 use std::fs::File;
 use std::io;
 use std::process::Command;
-use approx::{abs_diff_eq, relative_eq};
-use subd::cells::geo::Cell;
 use subd::cells::quad::QuadNodes;
+use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
+use subd::element::traits::Element;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::traits::Mesh;
 use subd::operator::bc::DirichletBcHom;
-use subd::operator::function::assemble_function;
 use subd::operator::laplace::Laplace;
-use subd::plot::{plot_fn_msh, write_connectivity, write_coords, write_coords_with_fn};
+use subd::operator::linear_form::LinearForm;
+use subd::plot::{write_connectivity, write_coords, write_coords_with_fn};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
@@ -56,11 +55,11 @@ fn main() -> io::Result<()> {
 
     // Define initial mesh
     let faces = vec![
-        QuadNodes::from_indices(0, 10, 1, 2),
-        QuadNodes::from_indices(0, 2, 3, 4),
-        QuadNodes::from_indices(0, 4, 5, 6),
-        QuadNodes::from_indices(0, 6, 7, 8),
-        QuadNodes::from_indices(0, 8, 9, 10),
+        QuadNodes::new(0, 10, 1, 2),
+        QuadNodes::new(0, 2, 3, 4),
+        QuadNodes::new(0, 4, 5, 6),
+        QuadNodes::new(0, 6, 7, 8),
+        QuadNodes::new(0, 8, 9, 10),
     ];
     let mut quad_msh = QuadVertexMesh::new(coords, faces);
 
@@ -123,8 +122,9 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
 
     // Assemble system
     let laplace = Laplace::new(msh, &space);
-    let f = assemble_function(msh, &space, quad.clone(), f);
-    let k_coo = laplace.assemble(quad.clone());
+    let form = LinearForm::new(msh, &space, f);
+    let k_coo = laplace.assemble(&quad);
+    let f = form.assemble(&quad);
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
@@ -141,16 +141,16 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
 
     // Write to file
     write_coords(msh.coords.iter().copied(), &mut File::create("examples/verts.dat").unwrap()).unwrap();
-    write_connectivity(msh.elems.iter().map(|c| c.center_quad()), &mut File::create("examples/conn.dat").unwrap()).unwrap();
+    write_connectivity(msh.cell_iter().map(|c| c.center_quad()), &mut File::create("examples/conn.dat").unwrap()).unwrap();
     write_coords_with_fn(msh.coords.iter().copied(), uh.coeffs.iter().copied(), &mut File::create("examples/solution.dat").unwrap()).unwrap();
 
     // Plot error
-    let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        let d_phi = patch.geo_map().eval_diff(x);
-        let l2_err_sq = (u(p) - uh.eval_on_elem(elem, x)).norm_squared();
-        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(elem, x)).norm_squared();
+    let err_fn = |cell: &CatmarkPatchNodes, x: (f64, f64)| {
+        let elem = cell.to_element(&msh.coords);
+        let p = elem.geo_map().eval(x);
+        let d_phi = elem.geo_map().eval_diff(x);
+        let l2_err_sq = (u(p) - uh.eval_on_elem(cell, x)).norm_squared();
+        let h1_err_sq = (u_grad(p) - d_phi.transpose().try_inverse().unwrap()*uh.eval_grad_on_elem(cell, x)).norm_squared();
         (l2_err_sq + h1_err_sq).sqrt()
     };
     // plot_fn_msh(msh, &err_fn, 2, |_, num| {
@@ -160,15 +160,14 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
 
     // todo: move this to function plot::eval_at_vertices
     // Compute the error on each vertex position (possibly multiple times)
-    let vertices_to_err = msh.elems.iter()
-        .flat_map(|elem| {
-            let patch = msh.geo_elem(&elem);
-            let phi = patch.geo_map();
+    let vertices_to_err = msh.elem_cell_iter()
+        .flat_map(|(elem, cell)| {
+            let phi = elem.geo_map();
             [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)].map(|uv| {
                 let p = phi.eval(uv);
                 let d_phi = phi.eval_diff(uv);
                 let pullback = d_phi.transpose().try_inverse().unwrap();
-                let err = (u(p) - uh.eval_on_elem(&elem, uv)).norm();
+                let err = (u(p) - uh.eval_on_elem(cell, uv)).norm();
                 // let err = (u_grad(p) - pullback*uh.eval_grad_on_elem(&elem, uv)).norm();
                 (p, err)
             })
