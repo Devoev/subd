@@ -27,16 +27,15 @@ impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkEdgeBasis<'a, 
 }
 
 impl <'a, T: RealField + Copy, const M: usize> MeshBasis<T> for CatmarkEdgeBasis<'a, T, M> {
-    type Cell = &'a CatmarkPatchNodes; // todo: separate EdgePatch struct is required
+    type Cell = CatmarkPatchNodes; // todo: separate EdgePatch struct is required
     type LocalBasis = CatmarkPatchEdgeBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
     fn local_basis(&self, cell: &Self::Cell) -> Self::LocalBasis {
-        let patch = CatmarkPatch::from_msh(self.0, cell);
-        match patch {
-            CatmarkPatch::Regular(_) => CatmarkPatchEdgeBasis::Regular,
-            CatmarkPatch::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
-            CatmarkPatch::Corner(_) => CatmarkPatchEdgeBasis::Corner,
+        match cell {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatchEdgeBasis::Regular,
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatchEdgeBasis::Boundary,
+            CatmarkPatchNodes::Corner(_) => CatmarkPatchEdgeBasis::Corner,
             _ => todo!("implement irregular")
         }
     }

@@ -304,7 +304,7 @@ mod tests {
 
         // Print patches
         for cell in msh.cell_iter() {
-            let patch = CatmarkPatch::from_msh(&msh, cell);
+            let patch = cell.to_element(&msh.coords);
             let map = patch.geo_map();
             println!("{:?}", cell.as_slice());
             println!("{}", map.eval((0.5, 0.1)));

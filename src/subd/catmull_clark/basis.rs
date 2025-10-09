@@ -1,11 +1,11 @@
+use crate::bspline::cubic::CubicBspline;
+use crate::cells::traits::Cell;
+use crate::space::basis::BasisFunctions;
 use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::MeshBasis;
-use crate::space::basis::BasisFunctions;
-use crate::bspline::cubic::CubicBspline;
-use crate::cells::traits::{Cell};
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
-use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
+use crate::subd::catmull_clark::patch::CatmarkPatchNodes;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 use nalgebra::{dvector, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
@@ -27,14 +27,17 @@ impl <'a, T: RealField, const M: usize> BasisFunctions for CatmarkBasis<'a, T, M
 }
 
 impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> MeshBasis<T> for CatmarkBasis<'a, T, M> {
-    type Cell = &'a CatmarkPatchNodes;
+    type Cell = CatmarkPatchNodes;
     type LocalBasis = CatmarkPatchBasis;
     type GlobalIndices = vec::IntoIter<usize>;
 
     fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
-        // todo: move this to `elem` function on CellTopo or else
-        let patch = CatmarkPatch::from_msh(self.0, elem);
-        patch.basis()
+        match elem {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatchBasis::Regular,
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatchBasis::Boundary,
+            CatmarkPatchNodes::Corner(_) => CatmarkPatchBasis::Corner,
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
+        }
     }
 
     fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {

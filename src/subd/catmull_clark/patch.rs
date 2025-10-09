@@ -3,17 +3,16 @@ use crate::cells::edge::DirectedEdge;
 use crate::cells::node::Node;
 use crate::cells::quad::{Quad, QuadBndTopo, QuadNodes};
 use crate::cells::traits::{Cell, ToElement};
-use crate::mesh::face_vertex::QuadVertexMesh;
+use crate::element::traits::Element;
 use crate::mesh::cell_topology::CellTopology;
+use crate::mesh::face_vertex::QuadVertexMesh;
 use crate::mesh::vertex_storage::VertexStorage;
-use crate::subd::catmull_clark::basis::CatmarkPatchBasis;
 use crate::subd::catmull_clark::map::CatmarkMap;
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 use itertools::Itertools;
 use nalgebra::{Const, DimName, DimNameSub, Dyn, OMatrix, Point, RealField, U2};
 use num_traits::ToPrimitive;
-use crate::element::traits::Element;
 
 /// A Catmull-Clark surface patch.
 #[derive(Debug, Clone)]
@@ -32,20 +31,6 @@ pub enum CatmarkPatch<T: RealField, const M: usize> {
 }
 
 impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
-    /// Constructs a new [`CatmarkPatch`] from the given `msh` and `patch_topo`.
-    pub fn from_msh(msh: &CatmarkMesh<T, M>, patch_topo: &CatmarkPatchNodes) -> Self {
-        let coords = patch_topo
-            .as_slice()
-            .iter()
-            .map(|node| msh.coords.vertex(*node));
-        match patch_topo {
-            CatmarkPatchNodes::Regular(_) => CatmarkPatch::Regular(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Boundary(_) => CatmarkPatch::Boundary(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Corner(_) => CatmarkPatch::Corner(coords.collect_array().unwrap()),
-            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatch::Irregular(coords.collect_vec(), *n)
-        }
-    }
-
     /// Returns a slice containing the control points.
     pub fn as_slice(&self) -> &[Point<T, M>] {
         match self {
@@ -53,16 +38,6 @@ impl<T: RealField + Copy, const M: usize> CatmarkPatch<T, M> {
             CatmarkPatch::Boundary(val) => val.as_slice(),
             CatmarkPatch::Corner(val) => val.as_slice(),
             CatmarkPatch::Irregular(val, _) => val.as_slice(),
-        }
-    }
-
-    /// Returns the bicubic Catmull-Clark basis functions corresponding to the patch.
-    pub fn basis(&self) -> CatmarkPatchBasis {
-        match self {
-            CatmarkPatch::Regular(_) => CatmarkPatchBasis::Regular,
-            CatmarkPatch::Boundary(_) => CatmarkPatchBasis::Boundary,
-            CatmarkPatch::Corner(_) => CatmarkPatchBasis::Corner,
-            CatmarkPatch::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
         }
     }
 
