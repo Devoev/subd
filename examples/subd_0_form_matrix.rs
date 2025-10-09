@@ -1,14 +1,13 @@
 use nalgebra::{center, matrix, point, DMatrix, Point2, RowDVector};
 use nalgebra_sparse::CsrMatrix;
-use std::f64::consts::PI;
 use rand::random_range;
-use subd::space::space::Space;
+use std::f64::consts::PI;
 use subd::cells::quad::QuadNodes;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::cell_topology::CellTopology;
 use subd::operator::hodge::Hodge;
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
+use subd::space::Space;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::matrices::assemble_global_mat;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
@@ -56,7 +55,7 @@ fn main() {
     }
 
     // Define space
-    let space_pl = Space::<f64, _, 2>::new(PlBasisQuad(&msh));
+    let space_pl = Space::<f64, _>::new(PlBasisQuad(&msh));
 
     // Define quadrature
     let ref_quad = GaussLegendreBi::with_degrees(4, 4);
@@ -64,7 +63,7 @@ fn main() {
     let quad_catmark = PullbackQuad::new(SubdUnitSquareQuad::new(ref_quad, 10));
 
     // Build DEC mass matrix on refined mesh
-    let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(quad);
+    let mass_matrix_dec = Hodge::new(&msh, &space_pl).assemble(&quad);
     let m_dec_fine = CsrMatrix::from(&mass_matrix_dec);
 
     // todo: using the exact catmull-clark matrix on finer level.
@@ -79,12 +78,12 @@ fn main() {
     let uv_fine = (random_range(0.0..1.0), random_range(0.0..1.0));
     let uv_coarse = (uv_fine.0 / 2_i32.pow(num_refine) as f64, uv_fine.1 / 2_i32.pow(num_refine) as f64);
     // let elem_fine = &msh_catmark_fine.elems[0];
-    let elem_pl = &msh.elems[0];
-    let elem_coarse = &msh_catmark_coarse.elems[0];
+    let elem_pl = &msh.cells[0];
+    let elem_coarse = &msh_catmark_coarse.cells[0];
 
     // Calculate SEC on initial mesh by using the subdivision of basis functions
     let mut b_pl = RowDVector::zeros(msh.num_nodes());
-    space_pl.populate_global_on_elem(&mut b_pl, &elem_pl, uv_fine);
+    space_pl.populate_global_on_elem(&mut b_pl, elem_pl, uv_fine);
     // let mut b_fine = RowDVector::zeros(msh_catmark_fine.num_nodes());
     // space_catmark_fine.populate_global_on_elem(&mut b_fine, &elem_fine, uv_fine);
 
@@ -95,9 +94,9 @@ fn main() {
 
     // Calculate catmull-clark mass matrix directly on initial mesh
     let mut b_coarse = RowDVector::zeros(msh_catmark_coarse.num_nodes());
-    space_catmark_coarse.populate_global_on_elem(&mut b_coarse, &elem_coarse, uv_coarse);
+    space_catmark_coarse.populate_global_on_elem(&mut b_coarse, elem_coarse, uv_coarse);
 
-    let m_cc_coarse = Hodge::new(&msh_catmark_coarse, &space_catmark_coarse).assemble(quad_catmark);
+    let m_cc_coarse = Hodge::new(&msh_catmark_coarse, &space_catmark_coarse).assemble(&quad_catmark);
     let mass_matrix_cc = DMatrix::from(&m_cc_coarse);
 
     // println!("{:?}", mass_matrix_catmark.shape());

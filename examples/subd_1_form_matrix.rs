@@ -1,19 +1,18 @@
-use std::f64::consts::PI;
-use std::iter::zip;
 use itertools::Itertools;
 use nalgebra::{center, point, DMatrix, OMatrix, Point2, SMatrix, U2, U4};
-use nalgebra_sparse::{CooMatrix, CsrMatrix};
-use subd::space::eval_basis::EvalBasis;
-use subd::space::space::Space;
-use subd::cells::geo::Cell;
-use subd::cells::quad::{Quad, QuadNodes};
+use nalgebra_sparse::CooMatrix;
+use std::f64::consts::PI;
+use std::iter::zip;
+use subd::cells::quad::QuadNodes;
 use subd::diffgeo::chart::Chart;
+use subd::element::quad::Quad;
+use subd::element::traits::Element;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::mesh::cell_topology::{Mesh, CellTopology};
-use subd::operator::hodge::{assemble_hodge_local, Hodge};
 use subd::quadrature::pullback::PullbackQuad;
 use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::quadrature::traits::Quadrature;
+use subd::space::eval_basis::EvalBasis;
+use subd::space::Space;
 use subd::subd::lin_subd::edge_basis::WhitneyEdgeQuad;
 
 fn main() {
@@ -32,7 +31,7 @@ fn main() {
     msh = msh.lin_subd().unpack();
 
     // Define edge space
-    let space = Space::<f64, _, 2>::new(WhitneyEdgeQuad::new(&msh));
+    let space = Space::<f64, _>::new(WhitneyEdgeQuad::new(&msh));
 
     // Define quadrature
     let ref_quad = GaussLegendreBi::with_degrees(2, 2);
@@ -46,19 +45,18 @@ fn main() {
     let mut mij = CooMatrix::<f64>::zeros(space.dim(), space.dim());
 
     // Iteration over all mesh elements
-    for elem in msh.elem_iter() {
+    for (elem, cell) in msh.elem_cell_iter() {
         // Build local space and local mass matrix
-        let (sp_local, idx) = space.local_space_with_idx(&elem);
-        let geo_elem = msh.geo_elem(&elem);
+        let (sp_local, idx) = space.local_space_with_idx(cell);
 
         // Local assembly
         // Evaluate all basis functions and store in 'buf'
-        let ref_elem = geo_elem.ref_cell();
+        let ref_elem = elem.parametric_element();
         let buf: Vec<OMatrix<f64, U2, U4>> = quad.nodes_ref::<f64, Quad<f64, 2>>(&ref_elem)
             .map(|p| sp_local.basis.eval(p)).collect();
         let buf_g_inv: Vec<SMatrix<f64, 2, 2>> = quad.nodes_ref::<f64, Quad<f64, 2>>(&ref_elem)
             .map(|p| {
-                let j = geo_elem.geo_map().eval_diff(p);
+                let j = elem.geo_map().eval_diff(p);
                 (j.transpose() * j).try_inverse().unwrap()
             }).collect();
 
@@ -79,7 +77,7 @@ fn main() {
             .map(|(i, j)| {
                 let integrand = zip(&buf, &buf_g_inv)
                     .map(|(b, g_inv)| uv_pullback(b, g_inv, i, j));
-                quad.integrate_elem(&geo_elem, integrand)
+                quad.integrate_elem(&elem, integrand)
             });
 
         // Assemble matrix
