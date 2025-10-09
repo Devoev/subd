@@ -9,18 +9,16 @@ use std::marker::PhantomData;
 
 /// Cartesian product of two scalar bases [`B1`] and [`B2`].
 #[derive(Debug, Clone, Copy)]
-pub struct Prod<T, B1, B2> {
+pub struct Prod<B1, B2> {
     /// Pair of first and second basis.
-    bases: (B1, B2),
-
-    _phantom_data: PhantomData<T>,
+    bases: (B1, B2)
 }
 
 
-impl <T, B1, B2> Prod<T, B1, B2> {
+impl <B1, B2> Prod<B1, B2> {
     /// Constructs a new [`Prod`] from the bases `b1` and `b2`.
     pub fn new(bases: (B1, B2)) -> Self {
-        Prod { bases, _phantom_data: Default::default() }
+        Prod { bases }
     }
 }
 
@@ -31,14 +29,14 @@ pub trait NumBasisAdd<Other: BasisFunctions>: BasisFunctions<NumBasis: DimAdd<Ot
 impl<B1: BasisFunctions, B2: BasisFunctions> NumBasisAdd<B2> for B1
     where B1::NumBasis: DimAdd<B2::NumBasis> {}
 
-impl<T, B1, B2> BasisFunctions for Prod<T, B1, B2>
+impl<B1, B2> BasisFunctions for Prod<B1, B2>
 where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
-      B2: BasisFunctions<NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
+      B2: BasisFunctions<NumComponents = U1, ParametricDim = B1::ParametricDim> // todo: can't enforce here that B1::Coord<T> = B2::Coord<T>, because there is no T in scope. Is this important? Probably refactor Basis traits somehow
 {
     type NumBasis = DimSum<B1::NumBasis, B2::NumBasis>;
     type NumComponents = U2;
     type ParametricDim = B1::ParametricDim;
-    type Coord<_T> = B1::Coord<_T>;
+    type Coord<T> = B1::Coord<T>;
 
     fn num_basis_generic(&self) -> Self::NumBasis {
         self.bases.0.num_basis_generic().add(self.bases.1.num_basis_generic())
@@ -46,7 +44,7 @@ where B1: BasisFunctions<NumComponents = U1> + NumBasisAdd<B2>,
 }
 
 #[allow(clippy::toplevel_ref_arg)]
-impl <T, B1, B2> EvalBasis<T> for Prod<T, B1, B2>
+impl <T, B1, B2> EvalBasis<T> for Prod<B1, B2>
 where T: RealField,
       B1: EvalBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
       B2: EvalBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
@@ -63,16 +61,16 @@ where T: RealField,
     }
 }
 
-impl <T, B1, B2> MeshBasis<T> for Prod<T, B1, B2>
+impl <T, B1, B2> MeshBasis<T> for Prod<B1, B2>
 where T: RealField,
       B1: MeshBasis<T, NumComponents = U1> + NumBasisAdd<B2>,
       B2: MeshBasis<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       B1::Coord<T>: Copy,
-      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,
+      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<B1::LocalBasis, B2::LocalBasis>>,
 {
     type Cell = (B1::Cell, B2::Cell); // todo: possibly change to Prod<..,..>
-    type LocalBasis = Prod<T, B1::LocalBasis, B2::LocalBasis>;
+    type LocalBasis = Prod<B1::LocalBasis, B2::LocalBasis>;
     type GlobalIndices = impl Iterator<Item = usize> + Clone;
 
     fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
@@ -86,13 +84,13 @@ where T: RealField,
     }
 }
 
-impl <T, B1, B2> FindElem<T> for Prod<T, B1, B2>
+impl <T, B1, B2> FindElem<T> for Prod<B1, B2>
 where T: RealField,
       B1: FindElem<T, NumComponents = U1> + NumBasisAdd<B2>,
       B2: FindElem<T, NumComponents = U1, ParametricDim = B1::ParametricDim, Coord<T> = B1::Coord<T>>,
       B1::LocalBasis: NumBasisAdd<B2::LocalBasis>,
       Self::Coord<T>: Copy,
-      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<T, B1::LocalBasis, B2::LocalBasis>>,
+      DefaultAllocator: EvalBasisAllocator<B1::LocalBasis> + EvalBasisAllocator<B2::LocalBasis> + EvalBasisAllocator<Prod<B1::LocalBasis, B2::LocalBasis>>,
 
 {
     fn find_elem(&self, x: Self::Coord<T>) -> Self::Cell {

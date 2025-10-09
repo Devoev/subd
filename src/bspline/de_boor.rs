@@ -30,7 +30,7 @@ pub struct DeBoor<T> {
 pub type MultiDeBoor<T, const D: usize> = MultiProd<DeBoor<T>, D>;
 
 /// Basis of 2D vector valued B-Splines.
-pub type DeBoorVec2d<T> = cart_prod::Prod<T, MultiDeBoor<T, 2>, MultiDeBoor<T, 2>>;
+pub type DeBoorVec2d<T> = cart_prod::Prod<MultiDeBoor<T, 2>, MultiDeBoor<T, 2>>;
 
 impl <T: RealField> DeBoor<T> {
     /// Constructs a new [`DeBoor`] from the given `knots`, `num_basis` and `degree`.
