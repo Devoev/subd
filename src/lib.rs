@@ -57,6 +57,7 @@ mod tests {
     use std::hint::black_box;
     use std::iter::zip;
     use std::time::Instant;
+    use nalgebra_sparse::CooMatrix;
     use crate::cells::traits::ToElement;
     use crate::element::traits::Element;
     use crate::operator::linear_form::LinearForm;
@@ -426,7 +427,8 @@ mod tests {
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = GaussLegendrePullback::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
-        let mat = hodge.assemble(&quad);
+        let mat: CooMatrix<f64> = todo!("Fix bspline space/mesh");
+        // let mat = hodge.assemble(&quad);
 
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
