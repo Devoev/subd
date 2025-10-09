@@ -5,7 +5,7 @@ use crate::space::eval_basis::{EvalBasis, EvalGrad};
 use crate::space::local::MeshBasis;
 use crate::subd::catmull_clark::matrices::{build_extended_mats, EV5};
 use crate::subd::catmull_clark::mesh::CatmarkMesh;
-use crate::subd::catmull_clark::patch::CatmarkPatchNodes;
+use crate::subd::catmull_clark::patch::{CatmarkPatch, CatmarkPatchNodes};
 use crate::subd::patch::subd_unit_square::SubdUnitSquare;
 use nalgebra::{dvector, stack, DMatrix, Dyn, Matrix, OMatrix, RealField, RowDVector, RowSVector, SMatrix, U1, U2};
 use num_traits::ToPrimitive;
@@ -32,12 +32,7 @@ impl <'a, T: RealField + Copy + ToPrimitive, const M: usize> MeshBasis<T> for Ca
     type GlobalIndices = vec::IntoIter<usize>;
 
     fn local_basis(&self, elem: &Self::Cell) -> Self::LocalBasis {
-        match elem {
-            CatmarkPatchNodes::Regular(_) => CatmarkPatchBasis::Regular,
-            CatmarkPatchNodes::Boundary(_) => CatmarkPatchBasis::Boundary,
-            CatmarkPatchNodes::Corner(_) => CatmarkPatchBasis::Corner,
-            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
-        }
+        CatmarkPatchBasis::from(elem)
     }
 
     fn global_indices(&self, elem: &Self::Cell) -> Self::GlobalIndices {
@@ -229,6 +224,36 @@ impl <T: RealField + Copy + ToPrimitive> EvalGrad<T> for CatmarkPatchBasis {
             CatmarkPatchBasis::Irregular(n) => {
                 CatmarkPatchBasis::eval_irregular_grad(u, v, *n)
             }
+        }
+    }
+}
+
+impl From<&CatmarkPatchNodes> for CatmarkPatchBasis {
+    /// Turns [`CatmarkPatchNodes`] to a [`CatmarkPatchBasis`].
+    ///
+    /// For the three regular patches, appropriate regular basis functions
+    /// (smooth or interpolating bicubic B-Splines) are chosen.
+    /// For the irregular patch the irregular Catmull-Clark basis functions are chosen.
+    fn from(value: &CatmarkPatchNodes) -> Self {
+        match value {
+            CatmarkPatchNodes::Regular(_) => CatmarkPatchBasis::Regular,
+            CatmarkPatchNodes::Boundary(_) => CatmarkPatchBasis::Boundary,
+            CatmarkPatchNodes::Corner(_) => CatmarkPatchBasis::Corner,
+            CatmarkPatchNodes::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
+        }
+    }
+}
+
+impl <T: RealField, const M: usize> From<&CatmarkPatch<T, M>> for CatmarkPatchBasis {
+    /// Turns a [`CatmarkPatch`] to a [`CatmarkPatchBasis`].
+    ///
+    /// Same as the conversion from [`CatmarkPatchNodes`], but for the geometrical patch.
+    fn from(value: &CatmarkPatch<T, M>) -> Self {
+        match value {
+            CatmarkPatch::Regular(_) => CatmarkPatchBasis::Regular,
+            CatmarkPatch::Boundary(_) => CatmarkPatchBasis::Boundary,
+            CatmarkPatch::Corner(_) => CatmarkPatchBasis::Corner,
+            CatmarkPatch::Irregular(_, n) => CatmarkPatchBasis::Irregular(*n)
         }
     }
 }
