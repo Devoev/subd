@@ -7,17 +7,19 @@
 //! ```
 //! with `Ω=(0,1)²` being the unit square.
 
+use iter_num_tools::lin_space;
+use itertools::Itertools;
 use nalgebra::{matrix, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use std::f64::consts::PI;
 use std::io;
 use std::iter::zip;
 use std::process::Command;
-use iter_num_tools::lin_space;
-use itertools::Itertools;
 use subd::cells::quad::QuadNodes;
+use subd::cells::traits::ToElement;
 use subd::cg::cg;
 use subd::diffgeo::chart::Chart;
+use subd::element::traits::Element;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
 use subd::operator::hodge::Hodge;
@@ -25,7 +27,7 @@ use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;
 use subd::plot::plot_fn_msh;
 use subd::quadrature::pullback::PullbackQuad;
-use subd::quadrature::tensor_prod::{GaussLegendreBi, GaussLegendreMulti};
+use subd::quadrature::tensor_prod::GaussLegendreBi;
 use subd::subd::catmull_clark::basis::CatmarkBasis;
 use subd::subd::catmull_clark::mesh::CatmarkMesh;
 use subd::subd::catmull_clark::patch::CatmarkPatchNodes;
@@ -115,10 +117,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     // Assemble system
     let hodge = Hodge::new(msh, &space);
     let laplace = Laplace::new(msh, &space);
-    let f = LinearForm::new(&msh, &space, f);
+    let form = LinearForm::new(msh, &space, f);
     let m_coo = hodge.assemble(&quad);
     let k_coo = laplace.assemble(&quad);
-    let f = f.assemble(&quad);
+    let f = form.assemble(&quad);
     let m = CsrMatrix::from(&m_coo);
     let k = CsrMatrix::from(&k_coo);
 
@@ -133,10 +135,10 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let norm_l2 = l2.norm(&u, &quad);
 
     // Plot error
-    let err_fn = |elem: &&CatmarkPatchNodes, x: (f64, f64)| {
-        let patch = msh.geo_elem(elem);
-        let p = patch.geo_map().eval(x);
-        u(p).x - uh.eval_on_elem(elem, x).x
+    let err_fn = |cell: &CatmarkPatchNodes, x: (f64, f64)| {
+        let elem = cell.to_element(&msh.coords);
+        let p = elem.geo_map().eval(x);
+        u(p).x - uh.eval_on_elem(cell, x).x
     };
     plot_fn_msh(msh, &err_fn, 10, |_, num| {
         let grid = lin_space(0.0..=1.0, num).collect_vec();

@@ -37,7 +37,6 @@ mod tests {
     use crate::mesh::face_vertex::QuadVertexMesh;
     use crate::mesh::incidence::{edge_to_node_incidence, face_to_edge_incidence};
     use crate::mesh::knot_mesh::KnotMesh;
-    use crate::operator::linear_form::assemble_function;
     use crate::operator::hodge::Hodge;
     use crate::operator::laplace::Laplace;
     use crate::plot::plot_faces;
@@ -60,6 +59,7 @@ mod tests {
     use std::time::Instant;
     use crate::cells::traits::ToElement;
     use crate::element::traits::Element;
+    use crate::operator::linear_form::LinearForm;
 
     // #[test]
     fn splines() {
@@ -426,7 +426,7 @@ mod tests {
         let ref_quad = GaussLegendreMulti::with_degrees([6, 6]);
         let quad = GaussLegendrePullback::new(ref_quad);
         let hodge = Hodge::new(&msh, &space);
-        let mat = hodge.assemble(quad);
+        let mat = hodge.assemble(&quad);
 
         // Print
         let mut dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -493,9 +493,10 @@ mod tests {
         // Assembly
         let hodge = Hodge::new(&msh, &space);
         let laplace = Laplace::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone());
-        let stiffness = laplace.assemble(quad.clone());
-        let load = assemble_function(&msh, &space, quad, f);
+        let form = LinearForm::new(&msh, &space, f);
+        let mass = hodge.assemble(&quad);
+        let stiffness = laplace.assemble(&quad);
+        let load = form.assemble(&quad);
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());
@@ -562,7 +563,7 @@ mod tests {
 
         // Assembly
         let hodge = Hodge::new(&msh, &space);
-        let mass = hodge.assemble(quad.clone());
+        let mass = hodge.assemble(&quad);
 
         // Mass matrix checks
         let mut mass_dense = DMatrix::<f64>::zeros(space.dim(), space.dim());

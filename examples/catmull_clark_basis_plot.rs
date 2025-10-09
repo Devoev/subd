@@ -28,7 +28,7 @@ fn main() {
     let space = CatmarkSpace::new(basis);
 
     // Plot boundary basis functions
-    let bnd_basis = |elem: &&CatmarkPatchNodes, x: (f64, f64)| -> f64 {
+    let bnd_basis = |elem: &CatmarkPatchNodes, x: (f64, f64)| -> f64 {
         // space.eval_on_elem(elem, x)[1]
         let mut global = RowDVector::zeros(space.dim());
         space.populate_global_on_elem(&mut global, elem, x);
