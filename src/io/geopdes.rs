@@ -10,11 +10,14 @@ type Patch = (String, Vec<usize>, Vec<usize>, Vec<KnotVec<f64>>, DMatrix<f64>, V
 /// Interface between two patches.
 type Interface = (String, (usize, usize), (usize, usize), Vec<i32>);
 
+/// Boundary of the multiple patches
+type Boundary = (String, Vec<(usize, usize)>);
+
 /// Parses a NURBS multipatch geometry from a file `path`
 /// in the [GeoPDEs](https://rafavzqz.github.io/geopdes/) format `v.2.1`.
 ///
 /// The format is detailed [here](https://github.com/rafavzqz/geopdes/blob/master/geopdes/doc/geo_specs_mp_v21.txt).
-pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Vec<Interface>)> {
+pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Vec<Interface>, Vec<Boundary>)> {
     let str = fs::read_to_string(path)?;
     let mut lines = str.lines()
         .filter(|line| !line.starts_with("#")); // filter out comments starting with '#'
@@ -93,13 +96,13 @@ pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Ve
             .to_string();
 
         // Parse patch-side relations
-        let [[patch1, side1], [patch2, side2]] = chunk_lines.next_array::<2>()
+        let [side1, side2] = chunk_lines.next_array::<2>()
             .expect("Interface must have a side it is connected to")
             .map(|line| {
                 line.split_whitespace()
                     .map(|idx| idx.parse::<usize>().expect("Patch and side indices must be integers"))
-                    .collect_array()
-                    .expect("Interface must include exactly two indices")
+                    .collect_tuple::<(usize, usize)>()
+                    .expect("Each side must include exactly two indices")
             });
 
         // Parse orientation
@@ -110,10 +113,28 @@ pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Ve
             .collect_vec();
 
         // Collect interface
-        interfaces.push((name, (patch1, side1), (patch2, side2), orientation));
+        interfaces.push((name, side1, side2, orientation));
     }
 
-    // todo: parse interfaces and boundary as well
+    // Parse boundaries
+    let mut boundaries = Vec::<Boundary>::new();
+    while let Some([name, line_num]) = lines.next_array::<2>() {
+        // Parse number of sides
+        let num_sides = line_num.parse::<usize>().expect("Boundary must define the number of its sides");
+        
+        // Parse each side
+        let boundary_sides = lines.by_ref().take(num_sides)
+            .map(|line| {
+                line.split_whitespace()
+                    .map(|idx| idx.parse::<usize>().expect("Patch and side indices must be integers"))
+                    .collect_tuple::<(usize, usize)>()
+                    .expect("Each side must include exactly two indices")
+            })
+            .collect_vec();
+        
+        // Collect boundary
+        boundaries.push((name.to_string(), boundary_sides));
+    }
 
-    Ok((patches, interfaces))
+    Ok((patches, interfaces, boundaries))
 }
