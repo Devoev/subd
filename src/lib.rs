@@ -16,6 +16,7 @@ pub mod cg;
 pub mod plot;
 pub mod error;
 pub mod element;
+pub mod io;
 
 #[cfg(test)]
 mod tests {
