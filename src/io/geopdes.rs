@@ -7,11 +7,14 @@ use std::{fs, io};
 /// Single NURBS Patch.
 type Patch = (String, Vec<usize>, Vec<usize>, Vec<KnotVec<f64>>, DMatrix<f64>, Vec<f64>);
 
+/// Interface between two patches.
+type Interface = (String, (usize, usize), (usize, usize), Vec<i32>);
+
 /// Parses a NURBS multipatch geometry from a file `path`
 /// in the [GeoPDEs](https://rafavzqz.github.io/geopdes/) format `v.2.1`.
 ///
 /// The format is detailed [here](https://github.com/rafavzqz/geopdes/blob/master/geopdes/doc/geo_specs_mp_v21.txt).
-pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<Vec<Patch>> {
+pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Vec<Interface>)> {
     let str = fs::read_to_string(path)?;
     let mut lines = str.lines()
         .filter(|line| !line.starts_with("#")); // filter out comments starting with '#'
@@ -26,8 +29,8 @@ pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<Vec<Patch>> {
 
     // Parse patches
     let mut patches = Vec::<Patch>::with_capacity(num_patches);
-    let len_patch = 4 + parametric_dim + geo_dim;
-    for mut chunk_lines in &lines.by_ref().take(num_patches * len_patch).chunks(len_patch) {
+    let len_patch_lines = 4 + parametric_dim + geo_dim;
+    for mut chunk_lines in &lines.by_ref().take(num_patches * len_patch_lines).chunks(len_patch_lines) {
         // Parse name of the patch
         let name = chunk_lines.next()
             .expect("Patch must have a name")
@@ -80,7 +83,37 @@ pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<Vec<Patch>> {
         patches.push((name, degrees, num_control_points, knots, control_points, weights))
     }
 
+    // Parse interfaces
+    let mut interfaces = Vec::<Interface>::with_capacity(num_interfaces);
+    let len_interface_lines = 4;
+    for mut chunk_lines in &lines.by_ref().take(num_interfaces * len_interface_lines).chunks(len_interface_lines) {
+        // Parse name of the patch
+        let name = chunk_lines.next()
+            .expect("Interface must have a name")
+            .to_string();
+
+        // Parse patch-side relations
+        let [[patch1, side1], [patch2, side2]] = chunk_lines.next_array::<2>()
+            .expect("Interface must have a side it is connected to")
+            .map(|line| {
+                line.split_whitespace()
+                    .map(|idx| idx.parse::<usize>().expect("Patch and side indices must be integers"))
+                    .collect_array()
+                    .expect("Interface must include exactly two indices")
+            });
+
+        // Parse orientation
+        let orientation = chunk_lines.next()
+            .expect("Interface must define an orientation")
+            .split_whitespace()
+            .map(|num| num.parse::<i32>().expect("Orientation values must be integers"))
+            .collect_vec();
+
+        // Collect interface
+        interfaces.push((name, (patch1, side1), (patch2, side2), orientation));
+    }
+
     // todo: parse interfaces and boundary as well
 
-    Ok(patches)
+    Ok((patches, interfaces))
 }
