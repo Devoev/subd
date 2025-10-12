@@ -1,4 +1,7 @@
-//! Mesh data structures.
+//! Various mesh data structures of type [`Mesh<T,Verts,Cells>`].
+//!
+//! A mesh is defined by topological and geometrical information of its cells.
+//! THe topological information is represented by the trait [`CellTopology`].
 
 use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
@@ -21,8 +24,13 @@ pub mod vertex_storage;
 
 /// The most generic mesh type.
 ///
-/// A mesh consists of connected topological cells [`Cells`], defining the partition of the domain
-/// and vertex coordinates [`Verts`] defining the embedding into Euclidean space.
+/// A mesh is a collection of *cells* that stores
+/// both topological and geometric information of the cells.
+/// This data is stored in the fields
+/// - [`Mesh::coords`] Coordinates of the finite sets of vertices,
+///   defining the geometrical embedding. Parametrized by [`Verts`].
+/// - [`Mesh::cells`] Topological information about the cells, defining
+///   the partitioning of the mesh's domain. Parametrized by [`Cells`].
 #[derive(Copy, Clone, Debug)]
 pub struct Mesh<T, Verts, Cells> {
     /// Coordinate storage.
