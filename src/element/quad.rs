@@ -1,4 +1,5 @@
 use crate::element::lerp::BiLerp;
+use crate::element::line_segment::LineSegment;
 use crate::element::traits::Element;
 use crate::element::unit_cube::UnitCube;
 use nalgebra::{Point, RealField, SVector};
@@ -23,6 +24,15 @@ impl<T: RealField, const M: usize> Quad<T, M> {
             .map(|p| &p.coords)
             .sum::<SVector<T, M>>() / T::from_f64(4.0).unwrap();
         Point::from(centroid)
+    }
+}
+
+impl<T: RealField + Copy, const M: usize> Quad<T, M> {
+    // todo: update docs and link with QuadNodes::edges?
+    /// Returns all 4 line segment representing the edges of the quad.
+    pub fn edges(&self) -> [LineSegment<T, M>; 4] {
+        let [a, b, c, d] = self.vertices;
+        [LineSegment::new([a, b]), LineSegment::new([b, c]), LineSegment::new([c, d]), LineSegment::new([d, a])]
     }
 }
 
