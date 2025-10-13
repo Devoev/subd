@@ -1,7 +1,32 @@
 //! Various mesh data structures of type [`Mesh<T,Verts,Cells>`].
 //!
-//! A mesh is defined by topological and geometrical information of its cells.
-//! THe topological information is represented by the trait [`CellTopology`].
+//! A mesh is defined by topological and geometrical information of its cells:
+//! - [`CellTopology`] defines the *topological* data, acting as a collection of topological cells.
+//! - [`VertexStorage`] defines the *geometrical* data, storing the coordinates of mesh vertices.
+//!
+//! # Examples
+//! Each mesh can be created from a suitable vertex storage and collection of cells
+//! using the [`Mesh::from_coords_and_cells`] constructor method.
+//! The following example builds a simple mesh of the unit square and one single cell,
+//! and then iterates over the cells.
+//! ```
+//! # use nalgebra::point;
+//! # use subd::cells::quad::QuadNodes;
+//! # use subd::mesh::elem_vertex::ElemVec;
+//! # use subd::mesh::Mesh;
+//!
+//! // Data for vertices and cells
+//! let verts = vec![point![0,0], point![1,0], point![1,1], point![0,1]];
+//! let cells = ElemVec(vec![QuadNodes::new(0, 1, 2, 3)]);
+//!
+//! // Build the mesh using the default construction method
+//! let msh = Mesh::from_coords_and_cells(verts, cells);
+//!
+//! // Iteration over cells
+//! for cell in msh.cell_iter() {
+//!     println!("{:?}", cell);
+//! }
+//! ```
 
 use crate::cells::traits::{ElemOfCell, ToElement};
 use crate::element::traits::ElemAllocator;
