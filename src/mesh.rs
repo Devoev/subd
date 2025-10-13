@@ -56,6 +56,16 @@ pub mod vertex_storage;
 ///   defining the geometrical embedding. Parametrized by [`Verts`].
 /// - [`Mesh::cells`] Topological information about the cells, defining
 ///   the partitioning of the mesh's domain. Parametrized by [`Cells`].
+///
+/// # Iteration
+/// Each mesh defines a collection of its cells and provides three different methods
+/// to iterate over its elements:
+/// - [`cell_iter`](Mesh::cell_iter) Iterates over all *topological cells* in the mesh.
+/// - [`elem_iter`](Mesh::elem_iter) Iterates over all *geometrical elements* in the mesh.
+/// - [`elem_cell_iter`](Mesh::elem_cell_iter) Iterates over pairs of cells and elements.
+///
+/// For iteration using `cell_iter` the `Cells` need to implement the [`CellTopology`] trait.
+/// Iteration over elements requires `Cells` to implement the [`ElementTopology`] trait.
 #[derive(Copy, Clone, Debug)]
 pub struct Mesh<T, Verts, Cells> {
     /// Coordinate storage.
