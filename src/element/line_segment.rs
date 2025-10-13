@@ -5,6 +5,7 @@ use nalgebra::{Point, RealField};
 
 /// A line segment, i.e. a straight line bounded by 2 points
 /// in [`M`]-dimensional space.
+#[derive(Debug, Copy, Clone)]
 pub struct LineSegment<T: RealField, const M: usize> {
     pub vertices: [Point<T, M>; 2]
 }
