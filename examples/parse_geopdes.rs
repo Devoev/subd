@@ -41,17 +41,26 @@ fn main() {
 
     // Build quads from each patch
     let quads = patches.iter()
-        .filter_map(|patch| {
-            let control_points = &patch.4;
-            if control_points.ncols() != 4 { return None }  // fixme: this is only to form a quad. Approximate other patches as well
-            let vertices = control_points.column_iter()
-                .map(|col| point![col[0], col[1]])
-                .take(4)
-                .collect_array::<4>()
-                .unwrap();
+        .map(|patch| {
+            let c = &patch.4;
+            let [px, py] = patch.1[0..2] else { panic!("Getting exactly two degrees") };
 
-            let vertices = [vertices[0], vertices[1], vertices[3], vertices[2]];
-            Some(Quad::new(vertices))
+            let vertex_coords = if px == 1 && py == 1 {
+                [c.column(0), c.column(1), c.column(3), c.column(2)]
+            } else if px == 2 && py == 1 {
+                [c.column(0), c.column(2), c.column(5), c.column(3)]
+            } else if px == 1 && py == 2 {
+                [c.column(0), c.column(1), c.column(5), c.column(4)]
+            } else if px == 2 && py == 2 {
+                [c.column(0), c.column(2), c.column(8), c.column(6)]
+            } else {
+                panic!("Degrees >= 2 are not supported yet");
+            };
+
+            let vertices = vertex_coords
+                .map(|col| point![col[0], col[1]]);
+
+            Quad::new(vertices)
         })
         .collect_vec();
 
