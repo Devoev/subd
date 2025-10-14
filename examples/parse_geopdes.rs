@@ -131,5 +131,6 @@ fn main() {
 
     // Build mesh
     let msh = QuadVertexMesh::new(vertices, faces);
+    let msh = msh.lin_subd().unpack();
     plot_faces(&msh, msh.cell_iter().copied()).show();
 }
