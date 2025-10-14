@@ -1,9 +1,9 @@
 //! This example parses a 2D NURBS representation of an electron gun
 //! from the file `egun_geo.txt` in a GeoPDEs format using [`parse_geopdes_nurbs`].
 
+use approx::abs_diff_eq;
 use itertools::Itertools;
 use nalgebra::{point, Point2};
-use std::collections::HashMap;
 use subd::cells::quad::QuadNodes;
 use subd::element::quad::Quad;
 use subd::io::geopdes::parse_geopdes_nurbs;
@@ -33,13 +33,8 @@ fn main() {
         println!("Boundary '{name}' with sides {sides:?}");
     }
 
-    // todo: to convert the above format to a quad-vertex mesh, do the following
-    //  - Iterate over every patch/ quad and find all interfaces connected to it
-    //  - For every interface check if the nodes (interface_idx, node_idx_1/2) has already been processed
-    //  - If not, add the corresponding vertex to a HashSet with key (interface_idx, node_idx_1/2)
-    //  - Otherwise, re-use the vertex at key (interface_idx, node_idx_1/2)
-
     // Build quads from each patch
+    // Do this, by just selecting the four corner vertices
     let quads = patches.iter()
         .map(|patch| {
             let c = &patch.4;
@@ -64,11 +59,11 @@ fn main() {
         })
         .collect_vec();
 
-    // For each interface save the global index of the starting (or ending) node.
-    let mut interface_to_nodes = HashMap::<usize, usize>::new();
+    // Init vertex and face vectors for mesh
     let mut vertices = Vec::<Point2<f64>>::new();
     let mut faces = Vec::<QuadNodes>::new();
 
+    // Converts the lexicographical index to the index used by `QuadNodes`
     let side_to_edge = |side: usize| {
         match side {
             1 => 3,
@@ -79,8 +74,9 @@ fn main() {
         }
     };
 
-    for quad_idx in 0..quads.len() {
-        let gamma = interfaces.iter()
+    // Iterate over every quad to collect all 4 edges
+    for (quad_idx, quad) in quads.iter().enumerate() {
+        let quad_interfaces = interfaces.iter()
             .enumerate()
             .filter_map(|(idx, (_, (patch1, side1), (patch2, side2), orientation))| {
                 if patch1 - 1 == quad_idx {
@@ -90,10 +86,9 @@ fn main() {
                 } else {
                     None
                 }
-            })
-            .collect_vec();
+            });
 
-        let bnd = boundaries.iter()
+        let quad_boundaries = boundaries.iter()
             .flat_map(|(_, sides)| {
                 sides.iter()
                     .filter_map(|(patch, side)| {
@@ -104,64 +99,37 @@ fn main() {
                         }
                     })
                     .collect_vec()
-            })
-            .collect_vec();
+            });
 
-        let quad = quads[quad_idx];
+        // All 4 interfaces corresponding to edges of `quad`
+        let sides = quad_interfaces
+            .map(|side| side.0) // omit interface and orientation
+            .chain(quad_boundaries);
+
         let edges = quad.edges();
-        let mut nodes = [0; 4];
-        // println!("SIDES OF FACE {quad:?}");
-        // Interfaces
-        for (side, orientation, gamma_idx) in gamma {
-            // Save node index of interface
-            // todo: consider orientation and test if already present
-            interface_to_nodes.insert(gamma_idx, vertices.len());
+        let mut nodes = [None; 4];
+        let tol = 1e-8;
 
-            // Save nodes
-            nodes[side] = vertices.len();
-
-            // Save vertex coordinates
+        // Iterate over all 4 sides of the quad
+        for side in sides {
+            // Get vertex of edge
             let vertex = edges[side].vertices[0];
-            // dbg!("(Interface)", side, vertex);
-            vertices.push(vertex)
+
+            // Search if `vertex` has already been added as a node
+            if let Some(node) = vertices.iter().position(|&v| abs_diff_eq!(v, vertex, epsilon = tol)) {
+                // If node does already exist, use it to set the node in `nodes`
+                nodes[side] = Some(node);
+            } else {
+                // If node doesnt exist yet, append coordinates to `vertices` vector
+                nodes[side] = Some(vertices.len());
+                vertices.push(vertex)
+            }
         }
 
-        // Boundaries
-        for side in bnd {
-            // Save nodes
-            nodes[side] = vertices.len();
-
-            // Save vertex coordinates
-            let vertex = edges[side].vertices[0];
-            // dbg!("(Boundary)", side, vertex);
-            vertices.push(vertex)
-        }
-
-        faces.push(QuadNodes(nodes))
+        faces.push(QuadNodes(nodes.map(|n| n.expect("Node should be set"))))
     }
 
-    // dbg!(&vertices);
-    // dbg!(&faces);
-    // dbg!(&quads);
+    // Build mesh
     let msh = QuadVertexMesh::new(vertices, faces);
     plot_faces(&msh, msh.cell_iter().copied()).show();
-
-    // // Collect vertices of quads
-    // let mut quad_to_nodes = HashMap::<usize, QuadNodes>::new();
-    //
-    // for (_, (patch1, side1), (patch2, side2), orientation) in interfaces {
-    //     // Get geometrical quads and interfaces
-    //     let quad1 = &quads[patch1-1];
-    //     let side1 = &quad1.edges()[side1-1];
-    //     let quad2 = &quads[patch2-1];
-    //     let side2 = &quad2.edges()[side2-1];
-    //
-    //     if let Some(nodes) = quad_to_nodes.get_mut(&(patch1 - 1)) {
-    //         // todo: update two nodes corresponding to the interface sides
-    //     } else {
-    //         // todo: create new QuadNodes and update with interface data
-    //     }
-    //
-    //     dbg!((side1, side2, orientation));
-    // }
 }
