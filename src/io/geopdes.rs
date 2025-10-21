@@ -16,7 +16,7 @@ type Boundary = (String, Vec<(usize, usize)>);
 /// Parses a NURBS multipatch geometry from a file `path`
 /// in the [GeoPDEs](https://rafavzqz.github.io/geopdes/) format `v.2.1`.
 ///
-/// The format is detailed [here](https://github.com/rafavzqz/geopdes/blob/master/geopdes/doc/geo_specs_mp_v21.txt).
+/// The format is described [here](https://github.com/rafavzqz/geopdes/blob/master/geopdes/doc/geo_specs_mp_v21.txt).
 pub fn parse_geopdes_nurbs(path: impl AsRef<Path>) -> io::Result<(Vec<Patch>, Vec<Interface>, Vec<Boundary>)> {
     let str = fs::read_to_string(path)?;
     let mut lines = str.lines()
