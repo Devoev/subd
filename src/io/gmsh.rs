@@ -48,7 +48,9 @@ pub fn parse_gmsh_quad_mesh<T: Scalar + FromStr, const M: usize>(path: impl AsRe
     let mut nodes_iter = lines.iter().skip(nodes_block_start_idx + 2);
 
     // todo: repeat the process below until `nodes_iter` is exhausted
-    //  can this be done using nodes_iter.len() != 0?
+    //  - can this be done using nodes_iter.len() != 0?
+    //  - or do it using while let Some(value) = nodes_iter.next() for each header,
+    //    and then calling take to process the coordinates
 
     let [dim, entity_tag, parametric, num_nodes] = nodes_iter.next()
         .expect("")
