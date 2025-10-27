@@ -5,15 +5,15 @@ use crate::cells::quad::QuadNodes;
 use crate::cells::traits::{Cell, CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::Itertools;
-use nalgebra::{RealField, U2};
+use nalgebra::{RealField, Scalar, U2};
 use std::hash::Hash;
 use crate::cells::node::Node;
 
 /// A face-vertex mesh with quadrilateral faces.
 pub type QuadVertexMesh<T, const M: usize> = ElemVertexMesh<T, QuadNodes, M>;
 
-impl <T: RealField, F, const M: usize> ElemVertexMesh<T, F, M>
-    where T: RealField,
+impl <T, F, const M: usize> ElemVertexMesh<T, F, M>
+    where T: Scalar,
           F: CellBoundary<Dim = U2>,
           F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
@@ -71,7 +71,7 @@ impl <T: RealField, F, const M: usize> ElemVertexMesh<T, F, M>
     }
 }
 
-impl<T: RealField, const M: usize> QuadVertexMesh<T, M> {
+impl<T: Scalar, const M: usize> QuadVertexMesh<T, M> {
     /// Returns `true` if the `node` is regular.
     pub fn is_regular_node(&self, node: Node) -> bool {
         self.valence(node) == 4
