@@ -17,7 +17,7 @@ use subd::cells::quad::QuadNodes;
 use subd::cg::cg;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::operator::bc::DirichletBcHom;
+use subd::operator::bc::DirichletBc;
 use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
@@ -102,7 +102,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::new_on_mesh(msh);
+    let dirichlet = DirichletBc::new_homogeneous_on_mesh(msh);
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system

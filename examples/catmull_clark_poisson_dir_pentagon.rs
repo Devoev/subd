@@ -24,7 +24,7 @@ use subd::element::traits::Element;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::operator::bc::DirichletBcHom;
+use subd::operator::bc::DirichletBc;
 use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;
 use subd::plot::{write_connectivity, write_coords, write_coords_with_fn};
@@ -128,7 +128,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, u_g
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::new_on_mesh(msh);
+    let dirichlet = DirichletBc::new_homogeneous_on_mesh(msh);
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system

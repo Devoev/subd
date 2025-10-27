@@ -25,7 +25,7 @@ use subd::knots::knot_span::KnotSpan;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::operator::bc::DirichletBcHom;
+use subd::operator::bc::DirichletBc;
 use subd::operator::hodge::Hodge;
 use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;

@@ -1,50 +1,104 @@
-use crate::bspline::space::BsplineSpace;
 use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
 use itertools::iproduct;
-use nalgebra::{DMatrix, DVector, RealField, Scalar, U2};
+use nalgebra::{DMatrix, DVector, Point, Scalar, U2};
 use nalgebra_sparse::CsrMatrix;
 use num_traits::Zero;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 use std::hash::Hash;
 
 /// Homogeneous Dirichlet boundary conditions on nodes.
-pub struct DirichletBcHom {
+pub struct DirichletBc<T> {
     /// The number of total nodes.
     num_nodes: usize,
 
     /// Degrees-of-freedom indices.
     idx_dof: BTreeSet<usize>,
+
+    // todo: actually use u_bc in inflate and deflate functions
+    /// Vector of solution coefficients on the boundary.
+    u_bc: DVector<T>
 }
 
-impl DirichletBcHom {
-    /// Constructs a new `DirichletBcHom` from the given set of boundary nodes `idx_bc`.
-    pub fn new(num_nodes: usize, idx_bc: BTreeSet<Node>) -> Self {
+impl <T: Scalar + Zero> DirichletBc<T> {
+    /// Constructs a new [`DirichletBc`] from the given set of boundary nodes `idx_bc`
+    /// and solution coefficients at the boundary `u_bc`.
+    pub fn new(num_nodes: usize, idx_bc: BTreeSet<Node>, u_bc: DVector<T>) -> Self {
         let idx: BTreeSet<Node> = (0..num_nodes).collect();
         let idx_dof: BTreeSet<Node> = idx.difference(&idx_bc).copied().collect();
-        DirichletBcHom { num_nodes, idx_dof }
+        DirichletBc { num_nodes, idx_dof, u_bc }
     }
-    
-    
-    /// Constructs a new `DirichletBcHom` from the given elem-to-vertex `msh`,
+
+    /// Constructs a new [`DirichletBc`] with *homogeneous* (= zero) boundary data.
+    pub fn new_homogeneous(num_nodes: usize, idx_bc: BTreeSet<Node>) -> Self {
+        let u_bc = DVector::zeros(idx_bc.len());
+        DirichletBc::new(num_nodes, idx_bc, u_bc)
+    }
+
+    /// Constructs a new [`DirichletBc`] on the given elem-to-vertex `msh`,
     /// where `idx_dof` are all interior nodes.
-    pub fn new_on_mesh<T: RealField, F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>) -> Self
-    where F::Node: Eq + Hash,
+    pub fn new_on_mesh<F, const M: usize>(msh: &ElemVertexMesh<T, F, M>, u_bc: DVector<T>) -> Self
+    where F: CellBoundary<Dim = U2, Node = Node>,
+          F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
         let num_nodes = msh.num_nodes();
         let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
         let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
         let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
-        DirichletBcHom { num_nodes, idx_dof }
+        DirichletBc::new(num_nodes, idx_dof, u_bc)
     }
 
+    /// Constructs a new [`DirichletBc`] with *homogeneous* boundary data on the given `msh`.
+    pub fn new_homogeneous_on_mesh<F, const M: usize>(msh: &ElemVertexMesh<T, F, M>) -> Self
+    where F: CellBoundary<Dim = U2, Node = Node>,
+          F::Node: Eq + Hash,
+          F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
+    {
+        let num_nodes = msh.num_nodes();
+        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
+        let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
+        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
+        DirichletBc::new_homogeneous(num_nodes, idx_dof)
+    }
+
+    /// Constructs a new [`DirichletBc`] on the given `msh`.
+    ///
+    /// The boundary data is given by the function `g`
+    /// and the coefficients of the solution are calculated by evaluation of `g` at the boundary nodes.
+    /// This only holds true for **interpolating** nodal basis function.
+    pub fn new_interpolating<F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>, idx_bc: BTreeSet<Node>, g: impl Fn(&Point<T,M>) -> T) -> Self
+    where F::Node: Eq + Hash,
+          F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
+    {
+        // Find bc and dof indices
+        let num_nodes = msh.num_nodes();
+        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
+        let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
+        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
+
+        // Evaluate boundary function `g` at boundary nodes
+        let u_bc = DVector::from_iterator(
+            idx_bc.len(),
+            idx_bc.iter().map(|&node| g(&msh.coords[node]))
+        );
+
+        DirichletBc::new(num_nodes, idx_dof, u_bc)
+    }
+    
+    /// Returns the number of DOFs.
+    pub fn num_dof(&self) -> usize {
+        self.idx_dof.len()
+    }
+}
+
+impl <T: Scalar + Zero + Copy> DirichletBc<T> {
     /// Deflates the system `ax = b` by removing rows and columns of BC indices.
     /// Returns the reduced system matrix and right hand side vector.
-    pub fn deflate<T: Scalar + Zero>(&self, a: CsrMatrix<T>, b: DVector<T>) -> (CsrMatrix<T>, DVector<T>) {
+    pub fn deflate(&self, a: CsrMatrix<T>, b: DVector<T>) -> (CsrMatrix<T>, DVector<T>) {
         let num_dof = self.idx_dof.len();
-        let b_dof = DVector::from_iterator(num_dof, self.idx_dof.iter().map(|&i| b[i].clone()));
+        let b_dof = DVector::from_iterator(num_dof, self.idx_dof.iter().map(|&i| b[i]));
 
         // todo: this is VERY inefficient and expensive because
         //  - The call to `get_entry` requires a binary search
@@ -57,16 +111,11 @@ impl DirichletBcHom {
     }
 
     /// Inflates a vector `u` by inserting the values from `u_dof` at the DOF indices.
-    pub fn inflate<T: Scalar + Zero + Copy>(&self, u_dof: DVector<T>) -> DVector<T> {
+    pub fn inflate(&self, u_dof: DVector<T>) -> DVector<T> {
         let mut u = DVector::zeros(self.num_nodes);
         for (i_local, &i) in self.idx_dof.iter().enumerate() {
             u[i] = u_dof[i_local];
         }
         u
-    }
-    
-    /// Returns the number of DOFs.
-    pub fn num_dof(&self) -> usize {
-        self.idx_dof.len()
     }
 }

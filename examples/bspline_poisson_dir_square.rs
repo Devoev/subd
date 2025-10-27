@@ -22,7 +22,7 @@ use subd::error::l2_error::L2Norm;
 use subd::knots::knot_vec::KnotVec;
 use subd::mesh::bezier::BezierMesh;
 use subd::mesh::knot_mesh::KnotMesh;
-use subd::operator::bc::DirichletBcHom;
+use subd::operator::bc::DirichletBc;
 use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
@@ -118,7 +118,7 @@ fn solve(
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::new(msh.num_nodes(), space.boundary_indices().into_iter().collect());
+    let dirichlet = DirichletBc::new_homogeneous(msh.num_nodes(), space.boundary_indices().into_iter().collect());
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system

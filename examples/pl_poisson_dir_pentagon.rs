@@ -21,7 +21,7 @@ use subd::element::traits::Element;
 use subd::error::h1_error::H1Norm;
 use subd::error::l2_error::L2Norm;
 use subd::mesh::face_vertex::QuadVertexMesh;
-use subd::operator::bc::DirichletBcHom;
+use subd::operator::bc::DirichletBc;
 use subd::operator::laplace::Laplace;
 use subd::operator::linear_form::LinearForm;
 use subd::quadrature::pullback::PullbackQuad;
@@ -117,7 +117,7 @@ fn solve(msh: &QuadVertexMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, 
     let f = f.assemble(&quad);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::new_on_mesh(msh);
+    let dirichlet = DirichletBc::new_homogeneous_on_mesh(msh);
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system
