@@ -107,6 +107,9 @@ impl <T: Scalar + Zero + Copy> DirichletBc<T> {
             .map(|(&i, &j)| a.get_entry(i, j).unwrap().into_value())
         );
 
+        // todo: possibly implement like this? but this doesnt work...
+        // let a_dof_dof = a.filter(|i, j, _| self.idx_dof.contains(&i) && self.idx_dof.contains(&j));
+
         (CsrMatrix::from(&a_dof_dof), b_dof)
     }
 
