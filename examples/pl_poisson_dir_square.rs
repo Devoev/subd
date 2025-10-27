@@ -113,7 +113,7 @@ fn solve(
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::from_mesh(msh);
+    let dirichlet = DirichletBcHom::new_on_mesh(msh);
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system

@@ -118,7 +118,7 @@ fn solve(
     let k = CsrMatrix::from(&k_coo);
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::from_bspline_space(&space);
+    let dirichlet = DirichletBcHom::new(msh.num_nodes(), space.boundary_indices().into_iter().collect());
     let (k, f) = dirichlet.deflate(k, f);
 
     // Solve system

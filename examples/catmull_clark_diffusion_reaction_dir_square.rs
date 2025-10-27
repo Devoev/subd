@@ -107,7 +107,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>, f: 
     let a = k + m;
 
     // Deflate system (homogeneous BC)
-    let dirichlet = DirichletBcHom::from_mesh(msh);
+    let dirichlet = DirichletBcHom::new_on_mesh(msh);
     let (a, f) = dirichlet.deflate(a, f);
 
     // Solve system

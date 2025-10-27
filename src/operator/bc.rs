@@ -19,25 +19,23 @@ pub struct DirichletBcHom {
 }
 
 impl DirichletBcHom {
-    /// Constructs a new [`DirichletBcHom`] from the given elem-to-vertex `msh`,
+    /// Constructs a new `DirichletBcHom` from the given set of boundary nodes `idx_bc`.
+    pub fn new(num_nodes: usize, idx_bc: BTreeSet<Node>) -> Self {
+        let idx: BTreeSet<Node> = (0..num_nodes).collect();
+        let idx_dof: BTreeSet<Node> = idx.difference(&idx_bc).copied().collect();
+        DirichletBcHom { num_nodes, idx_dof }
+    }
+    
+    
+    /// Constructs a new `DirichletBcHom` from the given elem-to-vertex `msh`,
     /// where `idx_dof` are all interior nodes.
-    pub fn from_mesh<T: RealField, F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>) -> Self
+    pub fn new_on_mesh<T: RealField, F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>) -> Self
     where F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
         let num_nodes = msh.num_nodes();
         let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
         let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
-        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
-        DirichletBcHom { num_nodes, idx_dof }
-    }
-
-    // todo: merge with `from_mesh`
-    /// Same as [`Self::from_mesh`], but for a B-Spline space.
-    pub fn from_bspline_space<T: RealField + Copy, const D: usize>(space: &BsplineSpace<T, D>) -> Self {
-        let num_nodes = space.dim();
-        let idx = (0..num_nodes).collect::<HashSet<_>>();
-        let idx_bc = space.boundary_indices();
         let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
         DirichletBcHom { num_nodes, idx_dof }
     }
