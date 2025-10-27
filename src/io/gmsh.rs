@@ -102,35 +102,32 @@ pub fn parse_gmsh_quad_mesh<T: Scalar + FromStr, const M: usize>(path: impl AsRe
 
     while let Some(header) = elems_iter.next() {
         // Break if end is reached
-        if *header == "EndElements" { break }
-        dbg!(header);
+        if *header == "$EndElements" { break }
 
-        // fixme: find out why the below code panics
         // Parse block header
         let [dim, entity_tag, elem_type, num_elems] = header
             .split_whitespace()
             .map(|str| str.parse::<usize>().expect("First line of an element block must only contain integers"))
             .collect_array()
-            .expect("First line must contain exactly four integers");
+            .expect("First line of an element block must contain exactly four integers");
 
-        if elem_type == 3 { println!("QUAD") }
-        dbg!(num_elems);
-        let _ = (&mut nodes_iter).take(num_elems);
+        if elem_type == 3 { // For quad elements (`elem_type` = 3), collect nodes
+            let block_quads = (&mut elems_iter)
+                .take(num_elems)
+                .map(|line| {
+                    let [_quad_idx, n1, n2, n3, n4] = line.split_whitespace()
+                        .map(|idx| idx.parse::<usize>().expect("Element block must contain only integers") - 1)
+                        .collect_array()
+                        .expect("Quad must be have exactly four nodes");
 
-        // // Collect vertices
-        // let block_verts = (&mut nodes_iter)
-        //     .skip(num_nodes)
-        //     .take(num_nodes)
-        //     .map(|line| {
-        //         let coords = line.split_whitespace()
-        //             .map(|num| num.parse::<T>().expect("Vertex coordinates must be of type `T`"))
-        //             .next_array::<M>() // todo: this is used instead of collect_array, to just remove the z-component. Change?
-        //             .unwrap_or_else(|| panic!("Vertices must be of M = {M} dimensions"));
-        //
-        //         Point::from(coords)
-        //     });
-        // verts.extend(block_verts);
+                    QuadNodes([n1, n2, n3, n4])
+                });
+
+            quads.extend(block_quads);
+        } else { // Else skip element block
+            elems_iter.nth(num_elems-1);
+        }
     }
 
-    todo!()
+    Ok(QuadVertexMesh::new(verts, quads))
 }
