@@ -8,13 +8,12 @@
 //! with `Ω` being a cylinder of radius `1`.
 //! The discretization is performed on a 2D axisymmetric slice of the cylinder.
 
-use std::collections::BTreeSet;
-use std::f64::consts::PI;
 use iter_num_tools::lin_space;
 use itertools::Itertools;
 use nalgebra::{point, DVector, Point2, Vector1};
 use nalgebra_sparse::CsrMatrix;
 use num_traits::Zero;
+use std::collections::BTreeSet;
 use subd::cells::quad::QuadNodes;
 use subd::cells::traits::ToElement;
 use subd::cg::cg;
@@ -36,13 +35,16 @@ use subd::subd::catmull_clark::space::CatmarkSpace;
 
 fn main() {
     // Define problem
-    let u = |p: Point2<f64>| Vector1::new(p.y);
+    let u = |p: Point2<f64>| Vector1::new(p.y); // Voltage at top and bottom plates
+    let u = |p: Point2<f64>| Vector1::new(p.x*1.25 - 0.25); // Voltage at inner and outer hulls (linear version)
+    // let u = |p: Point2<f64>| Vector1::new(p.x.ln() / 5f64.ln()); // Voltage at inner and outer hulls (log version) todo: is this correct?
 
+    let r0 = 0.2;
     let coords_square = vec![
-        point![0.0, 0.0],
+        point![r0, 0.0],
         point![1.0, 0.0],
         point![1.0, 1.0],
-        point![0.0, 1.0]
+        point![r0, 1.0]
     ];
 
     // Define mesh
@@ -81,8 +83,14 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>) -> 
         .iter()
         .enumerate()
         .filter_map(|(i, p)| {
-            if p.y == 0.0 { Some((i, 0.0)) }
-            else if p.y == 1.0 { Some((i, 1.0)) }
+            // Voltage at top and bottom plate
+            // if p.y == 0.0 { Some((i, 0.0)) }
+            // else if p.y == 1.0 { Some((i, 1.0)) }
+            // else { None }
+
+            // Voltage at inner and outer hulls
+            if p.x == 0.2 { Some((i, 0.0)) }
+            else if p.x == 1.0 { Some((i, 1.0)) }
             else { None }
         })
         .unzip();
@@ -108,8 +116,8 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>) -> 
     let plot_fn = |cell: &CatmarkPatchNodes, x: (f64, f64)| {
         let elem = cell.to_element(&msh.coords);
         let p = elem.geo_map().eval(x);
-        u(p).x - uh.eval_on_elem(cell, x).x
-        // uh.eval_on_elem(cell, x).x
+        // u(p).x - uh.eval_on_elem(cell, x).x
+        uh.eval_on_elem(cell, x).x
     };
     plot_fn_msh(msh, &plot_fn, 10, |_, num| {
         let grid = lin_space(0.0..=1.0, num).collect_vec();
