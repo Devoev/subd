@@ -1,12 +1,13 @@
 use crate::cells::node::Node;
 use crate::cells::traits::{CellBoundary, CellConnectivity, OrderedCell, OrientedCell};
 use crate::mesh::elem_vertex::ElemVertexMesh;
-use itertools::iproduct;
-use nalgebra::{DMatrix, DVector, Point, Scalar, U2};
-use nalgebra_sparse::CsrMatrix;
+use itertools::Itertools;
+use nalgebra::{DVector, Point, Scalar, U2};
+use nalgebra_sparse::{CooMatrix, CsrMatrix};
 use num_traits::Zero;
 use std::collections::BTreeSet;
 use std::hash::Hash;
+use std::ops::AddAssign;
 
 /// Homogeneous Dirichlet boundary conditions on nodes.
 pub struct DirichletBc<T> {
@@ -43,11 +44,8 @@ impl <T: Scalar + Zero> DirichletBc<T> {
           F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
-        let num_nodes = msh.num_nodes();
-        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
-        let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
-        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
-        DirichletBc::new(num_nodes, idx_dof, u_bc)
+        let idx_bc = msh.boundary_nodes().collect();
+        DirichletBc::new(msh.num_nodes(), idx_bc, u_bc)
     }
 
     /// Constructs a new [`DirichletBc`] with *homogeneous* boundary data on the given `msh`.
@@ -56,11 +54,8 @@ impl <T: Scalar + Zero> DirichletBc<T> {
           F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
-        let num_nodes = msh.num_nodes();
-        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
-        let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
-        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
-        DirichletBc::new_homogeneous(num_nodes, idx_dof)
+        let idx_bc = msh.boundary_nodes().collect();
+        DirichletBc::new_homogeneous(msh.num_nodes(), idx_bc)
     }
 
     /// Constructs a new [`DirichletBc`] on the given `msh`.
@@ -68,15 +63,12 @@ impl <T: Scalar + Zero> DirichletBc<T> {
     /// The boundary data is given by the function `g`
     /// and the coefficients of the solution are calculated by evaluation of `g` at the boundary nodes.
     /// This only holds true for **interpolating** nodal basis function.
-    pub fn new_interpolating<F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>, idx_bc: BTreeSet<Node>, g: impl Fn(&Point<T,M>) -> T) -> Self
+    pub fn new_interpolating<F: CellBoundary<Dim = U2, Node = Node>, const M: usize>(msh: &ElemVertexMesh<T, F, M>, g: impl Fn(&Point<T,M>) -> T) -> Self
     where F::Node: Eq + Hash,
           F::SubCell: OrderedCell + OrientedCell + CellConnectivity + Clone + Eq + Hash
     {
-        // Find bc and dof indices
-        let num_nodes = msh.num_nodes();
-        let idx = (0..num_nodes).collect::<BTreeSet<Node>>();
+        // Find bc indices
         let idx_bc = msh.boundary_nodes().collect::<BTreeSet<_>>();
-        let idx_dof = idx.difference(&idx_bc).copied().collect::<BTreeSet<_>>();
 
         // Evaluate boundary function `g` at boundary nodes
         let u_bc = DVector::from_iterator(
@@ -84,7 +76,7 @@ impl <T: Scalar + Zero> DirichletBc<T> {
             idx_bc.iter().map(|&node| g(&msh.coords[node]))
         );
 
-        DirichletBc::new(num_nodes, idx_dof, u_bc)
+        DirichletBc::new(msh.num_nodes(), idx_bc, u_bc)
     }
     
     /// Returns the number of DOFs.
@@ -93,24 +85,33 @@ impl <T: Scalar + Zero> DirichletBc<T> {
     }
 }
 
-impl <T: Scalar + Zero + Copy> DirichletBc<T> {
+impl <T: Scalar + Zero + Copy + AddAssign> DirichletBc<T> {
     /// Deflates the system `ax = b` by removing rows and columns of BC indices.
     /// Returns the reduced system matrix and right hand side vector.
     pub fn deflate(&self, a: CsrMatrix<T>, b: DVector<T>) -> (CsrMatrix<T>, DVector<T>) {
+        // Convert `self.idx_dof` to a vec
         let num_dof = self.idx_dof.len();
-        let b_dof = DVector::from_iterator(num_dof, self.idx_dof.iter().map(|&i| b[i]));
+        let idx_dof = self.idx_dof.iter().copied().collect_vec();
 
-        // todo: this is VERY inefficient and expensive because
-        //  - The call to `get_entry` requires a binary search
-        //  - A dense matrix is created, not a sparse one
-        let a_dof_dof = DMatrix::from_iterator(num_dof, num_dof, iproduct!(self.idx_dof.iter(), self.idx_dof.iter())
-            .map(|(&i, &j)| a.get_entry(i, j).unwrap().into_value())
-        );
+        // Deflate right hand side
+        // let b_dof = b.remove_rows_at(&idx_bc); // todo: is this better?
+        let b_dof = b.select_rows(idx_dof.iter());
 
-        // todo: possibly implement like this? but this doesnt work...
-        // let a_dof_dof = a.filter(|i, j, _| self.idx_dof.contains(&i) && self.idx_dof.contains(&j));
+        // Build new COO matrix on DOF indices
+        let mut a_dof_dof = CooMatrix::new(num_dof, num_dof);
 
-        (CsrMatrix::from(&a_dof_dof), b_dof)
+        for i in 0..num_dof {
+            for j in 0..num_dof {
+                let i_dof = idx_dof[i];
+                let j_dof = idx_dof[j];
+                // todo: the call to index_entry / get_entry is very inefficient.
+                a_dof_dof.push(i, j, a.index_entry(i_dof, j_dof).into_value());
+            }
+        }
+
+        let a_dof_dof = CsrMatrix::from(&a_dof_dof);
+
+        (a_dof_dof, b_dof)
     }
 
     /// Inflates a vector `u` by inserting the values from `u_dof` at the DOF indices.
