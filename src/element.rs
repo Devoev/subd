@@ -7,3 +7,4 @@ pub mod lerp;
 pub mod traits;
 pub mod bezier_elem;
 pub mod cartesian;
+mod quad_axi;
