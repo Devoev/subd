@@ -68,7 +68,7 @@ impl<T: Scalar, const M: usize> MultiLerp<T, M> {
 
 // todo: possibly move below transform methods to generalized Lerp or something else
 impl <T: RealField + Copy, const M: usize> MultiLerp<T, M> {
-    /// Linearly transforms the unit-hypercube `[-1,1]^M` to `[a,b]`.
+    /// Linearly transforms the unit-hypercube `[0,1]^M` to `[a,b]`.
     pub fn transform(&self, x: SVector<T, M>) -> Point<T, M> {
         let ones = SVector::repeat(T::one());
         let p = (ones - x).component_mul(&self.a.coords) + x.component_mul(&self.b.coords);
