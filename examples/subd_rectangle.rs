@@ -41,12 +41,12 @@ fn main() -> io::Result<()> {
     ];
     let msh_irregular = QuadVertexMesh::new(coords.clone(), quads).lin_subd().unpack();
 
-    // plot_faces(&msh_irregular, msh_irregular.cell_iter().copied()).show();
+    plot_faces(&msh_irregular, msh_irregular.cell_iter().copied()).show();
 
     // fixme: this panics, because irregular boundaries are not implemented yet
     let msh_irregular = CatmarkMesh::from(msh_irregular);
 
-    // fixme: this panics, because valence = 3 has not been implemented yet for basis evaluation
+    // fixme: this is incorrect, because valence = 3 has not been implemented yet for basis evaluation
     plot_fn_msh(&msh_irregular, &|_cell, _uv| 1.0, 10, |_elem, num| {
         (lin_space(0.0..=1.0, num).collect(), lin_space(0.0..=1.0, num).collect())
     }).show();
