@@ -43,19 +43,18 @@ const NUM_REFINE: u8 = 5;
 
 fn main() -> io::Result<()> {
     // Define problem
+    let r0 = 0.2;
     // let u = |p: Point2<f64>| Vector1::new(p.y); // Voltage at top and bottom plates
     // let u = |p: Point2<f64>| Vector1::new(p.x*1.25 - 0.25); // Voltage at inner and outer hulls (linear version)
-    let u = |p: Point2<f64>| Vector1::new((p.x * 5.0).ln() / 5f64.ln()); // Voltage at inner and outer hulls (log version)
+    let u = |p: Point2<f64>| Vector1::new((p.x / r0).ln() / (1.0 / r0).ln()); // Voltage at inner and outer hulls (log version)
 
-    let r0 = 0.2;
+    // Define mesh
     let coords_square = vec![
         point![r0, 0.0],
         point![1.0, 0.0],
         point![1.0, 1.0],
         point![r0, 1.0]
     ];
-
-    // Define mesh
     let quads = vec![QuadNodes::new(0, 1, 2, 3)];
     let mut quad_msh = QuadVertexMesh::new(coords_square, quads);
 
@@ -71,7 +70,7 @@ fn main() -> io::Result<()> {
         let msh = CatmarkMesh::from(quad_msh.clone());
 
         // Solve problem
-        let (n_dof, err_l2) = solve(&msh, u);
+        let (n_dof, err_l2) = solve(&msh, r0, u);
 
         // Save and print
         n_dofs.push(n_dof);
@@ -98,7 +97,7 @@ fn main() -> io::Result<()> {
 
 /// Solves the problem with the boundary data `g` and solution `u` on the given `msh`.
 /// Returns the number of DOFs and the L2 error.
-fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64) {
+fn solve(msh: &CatmarkMesh<f64, 2>, r0: f64, u: impl Fn(Point2<f64>) -> Vector1<f64>) -> (usize, f64) {
     // Define space
     let basis = CatmarkBasis(msh);
     let space = CatmarkSpace::new(basis);
@@ -125,7 +124,7 @@ fn solve(msh: &CatmarkMesh<f64, 2>, u: impl Fn(Point2<f64>) -> Vector1<f64>) -> 
             // else { None }
 
             // Voltage at inner and outer hulls
-            if p.x == 0.2 { Some((i, 0.0)) }
+            if p.x == r0 { Some((i, 0.0)) }
             else if p.x == 1.0 { Some((i, 1.0)) }
             else { None }
         })
