@@ -79,8 +79,14 @@ impl CatmarkPatchBasis {
     pub fn eval_irregular<T: RealField + Copy + ToPrimitive>(u: T, v: T, n: usize) -> RowDVector<T> {
         // For u,v = 0, return // todo: what should be returned?
         if u.is_zero() && v.is_zero() {
-            // fixme: this is currently hardcoded, but seems to be the limit value. why?
-            return dvector![0.5, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].cast().transpose()
+            if n == 5 {
+                // todo: this is currently hardcoded, but seems to be the limit value. why?
+                return dvector![0.5, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.08, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0].cast().transpose()
+            } else {
+                // todo: find better solution
+                let close_to_zero = T::from_f64(1e-5).unwrap();
+                return Self::eval_irregular(close_to_zero, close_to_zero, n)
+            }
         }
 
         // Transform (u,v)
