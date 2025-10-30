@@ -329,12 +329,28 @@ mod tests {
 
     #[test]
     fn eval_irregular() {
-        let basis = CatmarkPatchBasis::Irregular(5);
+        // Construct basis functions for different valences
+        let basis_3 = CatmarkPatchBasis::Irregular(3);
+        let basis_5 = CatmarkPatchBasis::Irregular(5);
+        let basis_6 = CatmarkPatchBasis::Irregular(6);
+        let basis_7 = CatmarkPatchBasis::Irregular(7);
 
         // Test if sum equals 1
         let u = random_range(0.0..=1.0);
         let v = random_range(0.0..=1.0);
-        let eval_sum = basis.eval((u, v)).sum();
+
+        let eval_sum = basis_5.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+
+        let eval_sum = basis_6.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+
+        let eval_sum = basis_7.eval((u, v)).sum();
+        assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
+
+        // fixme: valence 3 is not correctly implemented yet
+        let eval_sum = basis_3.eval((u, v)).sum();
+        dbg!(basis_3.eval((u, v)).len());
         assert_abs_diff_eq!(eval_sum, 1.0, epsilon = 1e-13);
     }
 }
